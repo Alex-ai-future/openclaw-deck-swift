@@ -1,0 +1,56 @@
+# Xcode
+.DS_Store
+*.swp
+*.xcuserstate
+*.xcuserdata
+*.xccheckout
+*.xcscmblueprint
+*.xcscheme
+xcuserdata/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/registries.json
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/artifacts-*.json
+
+# Build
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.resolved
+Package.pins
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Code Coverage
+*.profraw
+*.gcda
+*.gcno
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# SwiftUI Previews
+*.swiftpm/
+
+# Local Development
+.env
+.env.local
+.env.*.local
+
+# Documentation
+docs/_build/
+
+# OpenClaw Deck Swift specific
+docs/introduction.md  # 文档文件，但可以保留在版本控制中

@@ -72,35 +72,41 @@ OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现
 | 架构模式 | MVVM |
 | 状态管理 | @Observable / @StateObject |
 | 数据持久化 | 仅 Session Key（其他数据在 Gateway） |
+| Markdown 渲染 | [MarkdownView](https://github.com/liyanan2004/MarkdownView) |
 | 最低支持版本 | iPadOS 18.0 / macOS 15.0 |
 
 ### 项目结构
 
 ```
 openclaw-deck-swift/
-├── App/
-│   ├── OpenClawDeckApp.swift       # 应用入口
-│   └── ContentView.swift           # 主视图
-├── Models/
-│   ├── GatewayFrame.swift          # WebSocket 帧模型
-│   ├── SessionConfig.swift         # Session 配置模型
-│   └── ChatMessage.swift           # 消息模型
-├── ViewModels/
-│   ├── DeckViewModel.swift         # 主界面状态管理
-│   └── SessionColumnViewModel.swift # 单列状态管理
-├── Views/
-│   ├── DeckView.swift              # 多列布局视图
-│   ├── SessionColumnView.swift     # 单列 Session 视图
-│   ├── ChatInputView.swift         # 输入框组件
-│   ├── MessageView.swift           # 消息显示组件
-│   ├── SettingsView.swift          # 设置页面
-│   └── Components/                 # 可复用组件
-├── Services/
-│   └── GatewayClient.swift         # WebSocket 客户端
-├── Utils/
-│   └── Extensions.swift            # 扩展工具
-├── Resources/
-│   └── Assets.xcassets             # 资源文件
+├── .gitignore                      # Git 忽略文件（Xcode 相关）
+├── openclaw-deck-swift/            # Xcode 项目主目录
+│   ├── openclaw-deck-swift/        # App 目标
+│   │   ├── OpenClawDeckApp.swift   # 应用入口
+│   │   ├── ContentView.swift       # 主视图
+│   │   ├── Models/                 # 数据模型
+│   │   │   ├── GatewayFrame.swift
+│   │   │   ├── SessionConfig.swift
+│   │   │   └── ChatMessage.swift
+│   │   ├── ViewModels/             # 视图模型
+│   │   │   ├── DeckViewModel.swift
+│   │   │   └── SessionColumnViewModel.swift
+│   │   ├── Views/                  # 视图组件
+│   │   │   ├── DeckView.swift
+│   │   │   ├── SessionColumnView.swift
+│   │   │   ├── ChatInputView.swift
+│   │   │   ├── MessageView.swift
+│   │   │   ├── SettingsView.swift
+│   │   │   └── Components/
+│   │   ├── Services/               # 服务层
+│   │   │   └── GatewayClient.swift
+│   │   ├── Utils/                  # 工具类
+│   │   │   └── Extensions.swift
+│   │   └── Resources/              # 资源文件
+│   │       └── Assets.xcassets
+│   ├── openclaw-deck-swift.xcodeproj/  # Xcode 项目文件
+│   ├── openclaw-deck-swiftTests/       # 单元测试
+│   └── openclaw-deck-swiftUITests/     # UI 测试
 └── docs/
     └── introduction.md             # 本文档
 ```
@@ -1368,37 +1374,134 @@ struct SessionCardView: View {
 
 ## 开发路线
 
-### 第一阶段：核心功能 (MVP)
+### 第一阶段：基础架构（1-2周）
 
-- [ ] 项目结构搭建
-- [ ] GatewayClient WebSocket 实现
-- [ ] 基本数据模型
-- [ ] 多列布局 UI
-- [ ] Session 创建/删除功能
-- [ ] 发送消息功能
-- [ ] 流式接收响应
-- [ ] 设置页面（URL、Token、手动刷新）
+**目标**：建立项目基础结构，实现核心数据模型和 Gateway 连接
 
-### 第二阶段：增强功能
+- [ ] **项目结构重构**
+  - [ ] 创建 Models/ 目录：GatewayFrame.swift, SessionConfig.swift, ChatMessage.swift
+  - [ ] 创建 ViewModels/ 目录：DeckViewModel.swift, SessionColumnViewModel.swift
+  - [ ] 创建 Services/ 目录：GatewayClient.swift
+  - [ ] 创建 Views/Components/ 目录
 
-- [ ] Markdown 渲染
-- [ ] 代码语法高亮
-- [ ] Tool Use 信息展示
-- [ ] Thinking 过程显示
+- [ ] **核心数据模型**
+  - [ ] GatewayFrame（WebSocket 帧模型）
+  - [ ] SessionConfig（Session 配置，包含 ID 生成工具）
+  - [ ] ChatMessage（消息模型，支持流式标记）
+  - [ ] AppConfig（应用配置，Gateway URL 和 Token）
 
-### 第三阶段：跨平台
+- [ ] **GatewayClient 实现**
+  - [ ] WebSocket 连接管理（URLSessionWebSocketTask）
+  - [ ] 请求/响应关联机制（PendingRequest 管理）
+  - [ ] 事件处理（agent.content, agent.done 等）
+  - [ ] 手动重连功能
 
-- [ ] iOS 适配
-- [ ] iPhone 界面优化
-- [ ] macOS 支持
-- [ ] Catalyst 适配
+### 第二阶段：UI 实现（1-2周）
 
-### 第四阶段：高级功能
+**目标**：实现主要用户界面，支持多 Session 管理和消息显示
 
-- [ ] 深色/浅色主题
-- [ ] 多语言支持
-- [ ] 快捷键支持
-- [ ] Split View 优化
+- [ ] **主界面布局**
+  - [ ] DeckView（多列水平滚动布局）
+  - [ ] SessionColumnView（单列 Session 视图）
+  - [ ] Glass Effect 毛玻璃效果（.background(.ultraThinMaterial)）
+  - [ ] 响应式布局适配 iPadOS
+
+- [ ] **Session 管理**
+  - [ ] 创建 Session 表单（名称、图标、颜色、上下文）
+  - [ ] Session 列表显示（卡片式布局）
+  - [ ] 删除 Session 功能（仅本地删除，保留 Gateway 历史）
+  - [ ] Session 持久化（UserDefaults 存储配置）
+
+- [ ] **消息界面**
+  - [ ] MessageView（消息显示组件，区分 user/assistant）
+  - [ ] ChatInputView（输入框，支持发送消息）
+  - [ ] 消息滚动区域（自动滚动到底部）
+  - [ ] Markdown 渲染集成（使用MarkdownView库）
+
+### 第三阶段：功能完善（1周）
+
+**目标**：完善核心功能，实现完整的消息流和设置
+
+- [ ] **设置页面**
+  - [ ] Gateway URL 配置（默认 ws://127.0.0.1:18789）
+  - [ ] Token 输入（手动输入，不持久化存储）
+  - [ ] 连接状态显示（● Connected / ○ Disconnected）
+  - [ ] 手动刷新按钮（断开重连）
+
+- [ ] **消息流式显示**
+  - [ ] 流式消息更新（实时追加文本）
+  - [ ] 历史消息加载（sessions_history API）
+  - [ ] 状态指示器（thinking, streaming, tool_use）
+  - [ ] 错误处理（网络错误、Gateway 错误）
+
+- [ ] **基础交互**
+  - [ ] 键盘适配（输入框自动聚焦）
+  - [ ] 滚动优化（新消息自动滚动）
+  - [ ] 加载状态（历史消息加载中）
+
+### 第四阶段：增强功能（后续迭代）
+
+**目标**：提升用户体验，增加高级功能
+
+- [ ] **Markdown 渲染集成**
+  - [ ] 集成 MarkdownView SPM 依赖
+  - [ ] 配置 MarkdownView 组件
+  - [ ] 实现代码语法高亮
+  - [ ] 支持列表、标题、链接等格式化
+
+- [ ] **Agent 状态显示**
+  - [ ] Tool Use 信息展示
+  - [ ] Thinking 过程显示
+  - [ ] 运行状态指示器
+
+- [ ] **跨平台适配**
+  - [ ] iOS 适配（iPhone 界面优化）
+  - [ ] macOS 支持（可运行，不做 UI 优化）
+  - [ ] Catalyst 适配（可选）
+
+- [ ] **高级功能**
+  - [ ] 深色/浅色主题切换
+  - [ ] 多语言支持（中英文）
+  - [ ] 快捷键支持（Cmd+Enter 发送等）
+  - [ ] Split View 优化（iPad 多任务）
+
+### 迭代建议
+
+**迭代 1：基础架构 + 简单 UI**
+- 完成第一阶段基础架构
+- 实现最简单的消息发送/接收
+- 验证 Gateway 连接
+
+**迭代 2：Gateway 连接 + 完整消息流**
+- 完善 GatewayClient
+- 实现流式消息显示
+- 添加历史消息加载
+
+**迭代 3：UI 美化 + 设置功能**
+- 实现 Glass Effect 毛玻璃效果
+- 完成设置页面
+- 优化交互体验
+
+**迭代 4：增强功能**
+- Markdown 渲染
+- Tool Use 显示
+- 跨平台适配
+
+### 技术风险与应对
+
+| 风险 | 影响 | 应对措施 |
+|------|------|----------|
+| Gateway API 变更 | 高 | 保持协议兼容性，使用可配置的协议版本 |
+| WebSocket 稳定性 | 中 | 实现手动重连，添加连接状态监控 |
+| 内存管理 | 中 | 使用 SwiftUI 状态管理，及时清理无用数据 |
+| 跨平台兼容性 | 低 | 明确平台支持范围，优先保证 iPadOS |
+
+### 成功标准
+
+1. **功能完整**：支持多 Session 管理、消息发送、流式显示
+2. **稳定可靠**：Gateway 连接稳定，错误处理完善
+3. **用户体验**：界面美观，交互流畅
+4. **代码质量**：架构清晰，易于维护扩展
 
 ---
 

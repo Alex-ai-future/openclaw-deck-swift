@@ -658,6 +658,25 @@ struct SessionConfig: Identifiable {
     let sessionKey: String      // 用于 Gateway 的 session key
     let createdAt: Date
     var name: String?           // 可选的用户自定义名称
+    var icon: String?           // 图标（可选）
+    var accentColor: String?    // 主题色（可选）
+    var context: String?        // 上下文描述（可选）
+}
+
+// Session ID 生成工具
+extension SessionConfig {
+    static func generateId(from name: String) -> String {
+        let sanitized = name
+            .lowercased()
+            .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        
+        return sanitized.isEmpty ? "session-\(Date().timeIntervalSince1970)" : sanitized
+    }
+    
+    static func generateSessionKey(sessionId: String) -> String {
+        return "agent:main:\(sessionId)"
+    }
 }
 ```
 
@@ -904,7 +923,63 @@ extension GatewayClient {
 }
 ```
 
-### DeckViewModel - 初始化和加载
+### Session 创建流程
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       Session 创建流程                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. 用户点击 "New Session" 按钮                                   │
+│                     │                                            │
+│                     ▼                                            │
+│  2. 弹出 Session 创建表单                                         │
+│     ┌────────────────────────────────────────┐                  │
+│     │  New Session                           │                  │
+│     │  ┌──────────────────────────────────┐  │                  │
+│     │  │ Name: [Research Agent]           │  │                  │
+│     │  │ Icon: [R] (optional)             │  │                  │
+│     │  │ Color: ████ #a78bfa              │  │                  │
+│     │  │ Context: [Deep web research...]  │  │                  │
+│     │  └──────────────────────────────────┘  │                  │
+│     │  [Cancel]                    [Create]  │                  │
+│     └────────────────────────────────────────┘                  │
+│                     │                                            │
+│                     ▼                                            │
+│  3. 生成 Session ID                                              │
+│     let sessionId = SessionConfig.generateId(from: name)         │
+│     // "research-agent"                                          │
+│                     │                                            │
+│                     ▼                                            │
+│  4. 生成 Session Key                                             │
+│     let sessionKey = SessionConfig.generateSessionKey(           │
+│         sessionId: sessionId                                     │
+│     )                                                            │
+│     // "agent:main:research-agent"                               │
+│                     │                                            │
+│                     ▼                                            │
+│  5. 创建 SessionConfig                                           │
+│     let config = SessionConfig(                                  │
+│         id: sessionId,                                           │
+│         sessionKey: sessionKey,                                  │
+│         createdAt: Date(),                                       │
+│         name: "Research Agent",                                  │
+│         icon: "R",                                               │
+│         accentColor: "#a78bfa",                                  │
+│         context: "Deep web research & synthesis"                 │
+│     )                                                            │
+│                     │                                            │
+│                     ▼                                            │
+│  6. 添加到 DeckViewModel.sessions                                │
+│                     │                                            │
+│                     ▼                                            │
+│  7. 如果 Gateway 已连接，加载历史消息                             │
+│     await loadSessionHistory(sessionKey)                         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### DeckViewModel - Session 管理
 
 ```swift
 @Observable
@@ -937,21 +1012,90 @@ class DeckViewModel {
         await client.connect()
     }
     
+    // MARK: - Session 创建
+    
+    func createSession(
+        name: String,
+        icon: String? = nil,
+        accentColor: String? = nil,
+        context: String? = nil
+    ) -> SessionConfig {
+        // 1. 生成 Session ID
+        let sessionId = SessionConfig.generateId(from: name)
+        
+        // 2. 生成 Session Key
+        let sessionKey = SessionConfig.generateSessionKey(sessionId: sessionId)
+        
+        // 3. 创建 SessionConfig
+        let config = SessionConfig(
+            id: sessionId,
+            sessionKey: sessionKey,
+            createdAt: Date(),
+            name: name,
+            icon: icon ?? String(name.prefix(1)).uppercased(),
+            accentColor: accentColor ?? "#a78bfa",
+            context: context ?? name
+        )
+        
+        // 4. 创建 SessionState
+        let sessionState = SessionState(
+            sessionId: sessionId,
+            sessionKey: sessionKey
+        )
+        
+        // 5. 添加到 sessions
+        sessions[sessionId] = sessionState
+        sessionOrder.append(sessionId)
+        
+        // 6. 如果已连接，加载历史消息
+        if gatewayConnected {
+            Task {
+                await loadSessionHistory(sessionKey: sessionKey)
+            }
+        }
+        
+        return config
+    }
+    
+    // MARK: - 删除 Session
+    
+    func deleteSession(sessionId: String) {
+        // 1. 从 sessions 中移除
+        sessions.removeValue(forKey: sessionId)
+        
+        // 2. 从 sessionOrder 中移除
+        sessionOrder.removeAll { $0 == sessionId }
+        
+        // 注意：Gateway 中的消息历史不会被删除
+        // Session Key 可以继续使用，下次创建同名 Session 会加载历史
+    }
+    
     // MARK: - 加载历史消息
     
     func loadAllSessionHistory() async {
         for (sessionId, session) in sessions {
-            do {
-                let messages = try await gatewayClient?.getSessionHistory(
-                    sessionKey: session.sessionKey
-                ) ?? []
-                
-                // 更新 Session 的消息
-                sessions[sessionId]?.messages = messages
-                sessions[sessionId]?.historyLoaded = true
-            } catch {
-                print("[DeckViewModel] Failed to load history for \(sessionId): \(error)")
-            }
+            await loadSessionHistory(sessionKey: session.sessionKey)
+        }
+    }
+    
+    func loadSessionHistory(sessionKey: String) async {
+        guard let client = gatewayClient, client.connected else { return }
+        
+        // 从 sessionKey 中提取 sessionId
+        let parts = sessionKey.split(separator: ":")
+        guard parts.count >= 3 else { return }
+        let sessionId = String(parts[2])
+        
+        do {
+            let messages = try await client.getSessionHistory(
+                sessionKey: sessionKey
+            ) ?? []
+            
+            // 更新 Session 的消息
+            sessions[sessionId]?.messages = messages
+            sessions[sessionId]?.historyLoaded = true
+        } catch {
+            print("[DeckViewModel] Failed to load history for \(sessionId): \(error)")
         }
     }
     
@@ -1006,6 +1150,51 @@ class DeckViewModel {
     }
 }
 ```
+
+### Session 持久化
+
+```swift
+// Session 配置持久化（仅本地）
+class SessionStorage {
+    private let sessionsKey = "openclaw.deck.sessions.v1"
+    
+    func saveSessions(_ sessions: [SessionConfig]) throws {
+        let data = try JSONEncoder().encode(sessions)
+        UserDefaults.standard.set(data, forKey: sessionsKey)
+    }
+    
+    func loadSessions() throws -> [SessionConfig] {
+        guard let data = UserDefaults.standard.data(forKey: sessionsKey) else {
+            return []
+        }
+        return try JSONDecoder().decode([SessionConfig].self, from: data)
+    }
+    
+    func deleteSessions() {
+        UserDefaults.standard.removeObject(forKey: sessionsKey)
+    }
+}
+```
+
+### 关键设计决策
+
+1. **Session ID 生成规则**：
+   - 基于名称生成：`name.lowercased().replace(/[^a-z0-9]+/g, "-")`
+   - 如果为空：`session-${timestamp}`
+
+2. **Session Key 格式**：
+   - `agent:main:{sessionId}`
+   - 固定使用 "main" Agent，通过 sessionId 区分不同会话
+
+3. **Gateway 交互**：
+   - **不需要**调用 Gateway API 创建 Session
+   - 直接使用 sessionKey 发送消息
+   - Gateway 会自动创建对应的 Session 存储
+
+4. **数据持久化**：
+   - 仅本地存储 SessionConfig（ID、名称、颜色等）
+   - 消息历史存储在 Gateway
+   - 删除 Session 仅删除本地配置，不删除 Gateway 历史
 
 ### DeckState - 应用状态
 

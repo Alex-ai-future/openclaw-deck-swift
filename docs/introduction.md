@@ -1505,6 +1505,310 @@ struct SessionCardView: View {
 
 ---
 
+## 测试标准
+
+每个开发阶段完成后，需要编写单元测试，并通过反复修改直到所有测试通过。
+
+### 测试框架
+
+- **单元测试**：使用 Swift Testing 框架（Xcode 15+）
+- **代码覆盖率目标**：> 70%
+
+---
+
+### 第一阶段：基础架构
+
+**数据模型测试**
+
+```swift
+// SessionConfigTests.swift
+import Testing
+
+struct SessionConfigTests {
+    
+    @Test
+    func testGenerateId_withNormalName() {
+        let sessionId = SessionConfig.generateId(from: "Research Agent")
+        #expect(sessionId == "research-agent")
+    }
+    
+    @Test
+    func testGenerateId_withSpecialCharacters() {
+        let sessionId = SessionConfig.generateId(from: "Test @#$% Agent")
+        #expect(sessionId == "test-agent")
+    }
+    
+    @Test
+    func testGenerateId_withEmptyName() {
+        let sessionId = SessionConfig.generateId(from: "")
+        #expect(sessionId.hasPrefix("session-"))
+    }
+    
+    @Test
+    func testGenerateSessionKey() {
+        let sessionKey = SessionConfig.generateSessionKey(sessionId: "test-agent")
+        #expect(sessionKey == "agent:main:test-agent")
+    }
+}
+```
+
+**ChatMessage 测试**
+
+```swift
+// ChatMessageTests.swift
+import Testing
+
+struct ChatMessageTests {
+    
+    @Test
+    func testMessageEncoding() throws {
+        let message = ChatMessage(
+            id: "msg-1",
+            role: .user,
+            text: "Hello",
+            timestamp: Date(timeIntervalSince1970: 1708123456)
+        )
+        
+        let data = try JSONEncoder().encode(message)
+        let decoded = try JSONDecoder().decode(ChatMessage.self, from: data)
+        
+        #expect(decoded.id == message.id)
+        #expect(decoded.role == message.role)
+        #expect(decoded.text == message.text)
+    }
+}
+```
+
+**GatewayClient 测试（使用 Mock）**
+
+```swift
+// GatewayClientTests.swift
+import Testing
+
+struct GatewayClientTests {
+    
+    @Test
+    func testRequestIdGeneration() {
+        let client = GatewayClient(url: URL(string: "ws://localhost:8080")!)
+        
+        let id1 = client.nextId()
+        let id2 = client.nextId()
+        
+        #expect(id1 != id2)
+        #expect(id1.hasPrefix("deck-1-"))
+        #expect(id2.hasPrefix("deck-2-"))
+    }
+    
+    @Test
+    func testConnectionState() async throws {
+        let client = GatewayClient(url: URL(string: "ws://localhost:8080")!)
+        
+        // 测试初始状态
+        #expect(client.connected == false)
+    }
+}
+```
+
+**通过标准**
+- [ ] `SessionConfig.generateId()` 所有测试通过
+- [ ] `SessionConfig.generateSessionKey()` 所有测试通过
+- [ ] `ChatMessage` 序列化/反序列化测试通过
+- [ ] `AppConfig` 默认值验证测试通过
+- [ ] 代码覆盖率 > 70%
+
+---
+
+### 第二阶段：UI实现
+
+**Session 管理测试**
+
+```swift
+// DeckViewModelTests.swift
+import Testing
+
+struct DeckViewModelTests {
+    
+    @Test
+    func testCreateSession() {
+        let viewModel = DeckViewModel()
+        
+        let config = viewModel.createSession(
+            name: "Research Agent",
+            icon: "R",
+            accentColor: "#a78bfa"
+        )
+        
+        #expect(config.name == "Research Agent")
+        #expect(config.sessionKey == "agent:main:research-agent")
+        #expect(viewModel.sessions[config.id] != nil)
+    }
+    
+    @Test
+    func testDeleteSession() {
+        let viewModel = DeckViewModel()
+        
+        let config = viewModel.createSession(name: "Test Session")
+        viewModel.deleteSession(sessionId: config.id)
+        
+        #expect(viewModel.sessions[config.id] == nil)
+    }
+    
+    @Test
+    func testSessionPersistence() throws {
+        let storage = SessionStorage()
+        
+        let sessions = [
+            SessionConfig(
+                id: "test-1",
+                sessionKey: "agent:main:test-1",
+                createdAt: Date(),
+                name: "Test"
+            )
+        ]
+        
+        try storage.saveSessions(sessions)
+        let loaded = try storage.loadSessions()
+        
+        #expect(loaded.count == 1)
+        #expect(loaded[0].id == "test-1")
+    }
+}
+```
+
+**通过标准**
+- [ ] Session 创建/删除功能测试通过
+- [ ] Session 持久化读写测试通过
+- [ ] ViewModel 状态管理测试通过
+
+---
+
+### 第三阶段：功能完善
+
+**消息流测试**
+
+```swift
+// MessageTests.swift
+import Testing
+
+struct MessageTests {
+    
+    @Test
+    func testSendMessageAddsUserMessage() async {
+        let viewModel = DeckViewModel()
+        let config = viewModel.createSession(name: "Test")
+        
+        await viewModel.sendMessage(sessionId: config.id, text: "Hello")
+        
+        let session = viewModel.sessions[config.id]!
+        #expect(session.messages.count >= 1)
+        #expect(session.messages.last?.role == .user)
+    }
+    
+    @Test
+    func testMessageStatusTransitions() {
+        let session = SessionState(
+            sessionId: "test",
+            sessionKey: "agent:main:test"
+        )
+        
+        // 测试状态转换
+        session.status = .thinking
+        #expect(session.status == .thinking)
+        
+        session.status = .streaming
+        #expect(session.status == .streaming)
+        
+        session.status = .idle
+        #expect(session.status == .idle)
+    }
+}
+```
+
+**设置功能测试**
+
+```swift
+// SettingsTests.swift
+import Testing
+
+struct SettingsTests {
+    
+    @Test
+    func testDefaultConfig() {
+        let config = AppConfig.default
+        
+        #expect(config.gatewayUrl == "ws://127.0.0.1:18789")
+        #expect(config.mainAgentId == "main")
+        #expect(config.token == nil)
+    }
+    
+    @Test
+    func testConfigValidation() {
+        var config = AppConfig.default
+        config.gatewayUrl = "ws://localhost:8080"
+        
+        let isValidURL = URL(string: config.gatewayUrl) != nil
+        #expect(isValidURL == true)
+    }
+}
+```
+
+**通过标准**
+- [ ] 消息发送功能测试通过
+- [ ] 消息状态转换测试通过
+- [ ] 设置配置验证测试通过
+- [ ] 错误处理路径测试通过
+
+---
+
+### 第四阶段：增强功能
+
+**Markdown 渲染测试**
+
+```swift
+// MarkdownTests.swift
+import Testing
+
+struct MarkdownTests {
+    
+    @Test
+    func testPlainTextRendering() {
+        let markdown = "Hello World"
+        // 测试纯文本渲染
+        #expect(!markdown.isEmpty)
+    }
+    
+    @Test
+    func testCodeBlockParsing() {
+        let markdown = "```swift\nlet x = 1\n```"
+        // 测试代码块解析
+        #expect(markdown.contains("```swift"))
+    }
+    
+    @Test
+    func testListParsing() {
+        let markdown = "- Item 1\n- Item 2\n- Item 3"
+        // 测试列表解析
+        #expect(markdown.hasPrefix("- "))
+    }
+}
+```
+
+**通过标准**
+- [ ] Markdown 基础渲染测试通过
+- [ ] 代码块解析测试通过
+- [ ] 列表/标题格式化测试通过
+
+---
+
+### 测试实施建议
+
+1. **Mock Gateway 服务器**：避免依赖真实 Gateway，使用 Mock 对象
+2. **异步测试**：使用 `async/await` 进行异步操作测试
+3. **持续集成**：每次提交自动运行测试（GitHub Actions）
+4. **测试驱动开发(TDD)**：先写测试，再实现功能
+
+---
+
 ## 相关链接
 
 - [OpenClaw 官网](https://openclaw.ai)

@@ -88,8 +88,7 @@ openclaw-deck-swift/
 │   ├── SettingsView.swift          # 设置页面
 │   └── Components/                 # 可复用组件
 ├── Services/
-│   ├── GatewayClient.swift         # WebSocket 客户端
-│   └── KeychainService.swift       # Token 安全存储
+│   └── GatewayClient.swift         # WebSocket 客户端
 ├── Utils/
 │   └── Extensions.swift            # 扩展工具
 ├── Resources/
@@ -205,22 +204,18 @@ struct GatewayEvent: Codable {
 │                                                                         │
 │  App                    GatewayClient                  Gateway          │
 │   │                          │                            │             │
-│   │   connect()              │                            │             │
+│   │   connect(url, token)    │                            │             │
 │   │ ───────────────────────► │                            │             │
 │   │                          │   WebSocket Connect        │             │
 │   │                          │ ──────────────────────────►│             │
 │   │                          │                            │             │
-│   │                          │   event: connect.challenge │             │
-│   │                          │ ◄────────────────────────── │             │
-│   │                          │   { nonce: "xxx" }         │             │
-│   │                          │                            │             │
 │   │                          │   req: connect             │             │
-│   │                          │   (with device signature)  │             │
+│   │                          │   { auth: { token } }      │             │
 │   │                          │ ──────────────────────────►│             │
 │   │                          │                            │             │
 │   │                          │   res: connect             │             │
 │   │                          │ ◄────────────────────────── │             │
-│   │                          │   { auth: { deviceToken }} │             │
+│   │                          │   { ok: true }             │             │
 │   │                          │                            │             │
 │   │   onConnection(true)     │                            │             │
 │   │ ◄─────────────────────── │                            │             │
@@ -261,19 +256,12 @@ struct GatewayEvent: Codable {
 
 ```swift
 import Foundation
-import CryptoKit
 
 // MARK: - Types
 
 struct PendingRequest {
-    let continuation: CheckedContinuation<GatewayResponse, Error>
+    let continuation: CheckedContinuation<Any, Error>
     let timeout: Task<Void, Never>
-}
-
-struct DeviceIdentity: Codable {
-    let id: String
-    let publicKey: String      // base64url encoded
-    let privateKey: Data       // encrypted storage
 }
 
 // MARK: - GatewayClient
@@ -284,7 +272,7 @@ class GatewayClient {
     // MARK: - Configuration
     
     let url: URL
-    var token: String?
+    let token: String?              // 用户手动输入，不存储
     
     // MARK: - State
     
@@ -292,9 +280,6 @@ class GatewayClient {
     private var webSocket: URLSessionWebSocketTask?
     private var pendingRequests: [String: PendingRequest] = [:]
     private var messageCounter: Int = 0
-    private var connectNonce: String?
-    private var connectSent: Bool = false
-    private var deviceIdentity: DeviceIdentity?
     
     // MARK: - Callbacks
     
@@ -311,16 +296,12 @@ class GatewayClient {
     init(url: URL, token: String? = nil) {
         self.url = url
         self.token = token
-        self.deviceIdentity = loadOrCreateDeviceIdentity()
     }
     
     // MARK: - Public Methods
     
     /// 建立连接并完成握手
     func connect() async {
-        connectNonce = nil
-        connectSent = false
-        
         let session = URLSession.shared
         webSocket = session.webSocketTask(with: url)
         webSocket?.resume()
@@ -328,8 +309,7 @@ class GatewayClient {
         // 开始接收消息
         receiveMessage()
         
-        // 等待一小段时间后发送 connect
-        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        // 发送 connect 请求
         await sendConnect()
     }
     
@@ -482,7 +462,7 @@ class GatewayClient {
         let ok = json["ok"] as? Bool ?? false
         
         if ok {
-            pending.continuation.resume(returning: json["payload"])
+            pending.continuation.resume(returning: json["payload"] ?? [:])
         } else {
             let errorMsg = (json["error"] as? [String: Any])?["message"] as? String ?? "Request failed"
             pending.continuation.resume(throwing: NSError(
@@ -494,22 +474,6 @@ class GatewayClient {
     }
     
     private func handleEvent(_ json: [String: Any]) {
-        guard let event = json["event"] as? String else { return }
-        
-        // 处理 connect.challenge
-        if event == "connect.challenge" {
-            if let payload = json["payload"] as? [String: Any],
-               let nonce = payload["nonce"] as? String {
-                connectNonce = nonce
-                connectSent = false
-                Task {
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-                    await sendConnect()
-                }
-            }
-            return
-        }
-        
         // 传递给事件处理器
         onEvent?(GatewayEvent(from: json))
     }
@@ -528,9 +492,6 @@ class GatewayClient {
     }
     
     private func sendConnect() async {
-        guard !connectSent else { return }
-        connectSent = true
-        
         do {
             var params: [String: Any] = [
                 "client": [
@@ -545,24 +506,12 @@ class GatewayClient {
                 "scopes": operatorScopes
             ]
             
-            // 添加 token 认证
-            if let token = getPreferredAuthToken(), !token.isEmpty {
+            // 添加 token 认证（用户手动输入）
+            if let token = token, !token.isEmpty {
                 params["auth"] = ["token": token]
             }
             
-            // 添加设备签名
-            if let device = try await buildSignedDeviceIdentity() {
-                params["device"] = device
-            }
-            
-            let response = try await request(method: "connect", params: params)
-            
-            // 存储 deviceToken
-            if let resp = response as? [String: Any],
-               let auth = resp["auth"] as? [String: Any],
-               let deviceToken = auth["deviceToken"] as? String {
-                storeDeviceToken(deviceToken)
-            }
+            _ = try await request(method: "connect", params: params)
             
             connected = true
             onConnection?(true)
@@ -597,77 +546,6 @@ class GatewayClient {
         messageCounter += 1
         return "deck-\(messageCounter)-\(Int(Date().timeIntervalSince1970 * 1000))"
     }
-    
-    // MARK: - Device Identity
-    
-    private func loadOrCreateDeviceIdentity() -> DeviceIdentity? {
-        // 从 Keychain 加载或创建新的 Ed25519 密钥对
-        // 实现略...
-        return nil
-    }
-    
-    private func buildSignedDeviceIdentity() async throws -> [String: Any]? {
-        guard let identity = deviceIdentity else { return nil }
-        
-        let signedAt = Int(Date().timeIntervalSince1970 * 1000)
-        let version = connectNonce != nil ? "v2" : "v1"
-        
-        // 构建签名载荷
-        let payload = buildDeviceAuthPayload(
-            version: version,
-            deviceId: identity.id,
-            signedAt: signedAt,
-            nonce: connectNonce
-        )
-        
-        // 使用 Ed25519 签名
-        // 实现略...
-        
-        return [
-            "id": identity.id,
-            "publicKey": identity.publicKey,
-            "signature": "signature_here",
-            "signedAt": signedAt,
-            "nonce": connectNonce
-        ]
-    }
-    
-    private func buildDeviceAuthPayload(
-        version: String,
-        deviceId: String,
-        signedAt: Int,
-        nonce: String?
-    ) -> String {
-        var parts = [
-            version,
-            deviceId,
-            "openclaw-deck-swift",
-            "webchat",
-            "operator",
-            operatorScopes.joined(separator: ","),
-            String(signedAt),
-            getPreferredAuthToken() ?? ""
-        ]
-        
-        if version == "v2" {
-            parts.append(nonce ?? "")
-        }
-        
-        return parts.joined(separator: "|")
-    }
-    
-    // MARK: - Token Management
-    
-    private func getPreferredAuthToken() -> String? {
-        // 优先使用存储的 deviceToken，其次使用配置的 token
-        // 实现略...
-        return token
-    }
-    
-    private func storeDeviceToken(_ token: String) {
-        // 存储到 Keychain
-        // 实现略...
-    }
 }
 ```
 
@@ -695,34 +573,6 @@ class GatewayClient {
 │     ├─ 成功: pendingRequests[id].resolve(payload)                │
 │     ├─ 失败: pendingRequests[id].reject(error)                   │
 │     └─ 超时: 删除 pendingRequest，reject timeout error           │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 设备认证流程
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Device Authentication                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  1. 首次启动：生成 Ed25519 密钥对                                  │
-│     ├─ privateKey: 存储到 Keychain（加密）                        │
-│     ├─ publicKey: base64url 编码                                 │
-│     └─ id: SHA-256(publicKey) 作为设备 ID                        │
-│                                                                  │
-│  2. 连接时：构建签名载荷                                          │
-│     payload = version|deviceId|clientId|clientMode|role|         │
-│               scopes|signedAt|token|nonce                        │
-│                                                                  │
-│  3. 签名载荷                                                      │
-│     signature = Ed25519.sign(payload, privateKey)                │
-│                                                                  │
-│  4. 发送 connect 请求                                             │
-│     { device: { id, publicKey, signature, signedAt, nonce } }    │
-│                                                                  │
-│  5. Gateway 返回 deviceToken                                      │
-│     存储到 Keychain 供下次使用                                    │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -785,75 +635,6 @@ func handleGatewayEvent(_ event: GatewayEvent) {
 }
 ```
 
-### Keychain 服务
-
-```swift
-import Security
-
-class KeychainService {
-    static let shared = KeychainService()
-    
-    private let deviceIdentityKey = "openclaw.deck.deviceIdentity.v1"
-    private let deviceTokenKey = "openclaw.deck.deviceToken.v1"
-    
-    // MARK: - Device Identity
-    
-    func saveDeviceIdentity(_ identity: DeviceIdentity) throws {
-        let data = try JSONEncoder().encode(identity)
-        try save(key: deviceIdentityKey, data: data)
-    }
-    
-    func loadDeviceIdentity() throws -> DeviceIdentity? {
-        guard let data = try load(key: deviceIdentityKey) else { return nil }
-        return try JSONDecoder().decode(DeviceIdentity.self, from: data)
-    }
-    
-    // MARK: - Device Token
-    
-    func saveDeviceToken(_ token: String, for gatewayURL: String) throws {
-        let key = "\(deviceTokenKey):\(gatewayURL)"
-        try save(key: key, data: token.data(using: .utf8)!)
-    }
-    
-    func loadDeviceToken(for gatewayURL: String) throws -> String? {
-        let key = "\(deviceTokenKey):\(gatewayURL)"
-        guard let data = try load(key: key) else { return nil }
-        return String(data: data, encoding: .utf8)
-    }
-    
-    // MARK: - Private
-    
-    private func save(key: String, data: Data) throws {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: key,
-            kSecValueData as String: data
-        ]
-        
-        SecItemDelete(query as CFDictionary)
-        
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            throw NSError(domain: "KeychainService", code: Int(status))
-        }
-    }
-    
-    private func load(key: String) throws -> Data? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: key,
-            kSecReturnData as String: true
-        ]
-        
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        
-        guard status == errSecSuccess else { return nil }
-        return result as? Data
-    }
-}
-```
-
 ---
 
 ## 数据模型
@@ -893,21 +674,20 @@ enum MessageRole: String, Codable {
 ### AppConfig - 应用配置
 
 ```swift
-struct AppConfig: Codable {
+struct AppConfig {
     var gatewayUrl: String      // 默认: ws://127.0.0.1:18789
-    var token: String?
+    var token: String?          // 用户手动输入，不持久化存储
     let mainAgentId: String     // 固定的 Main Agent ID
-}
-
-// 默认配置
-extension AppConfig {
+    
     static let `default` = AppConfig(
         gatewayUrl: "ws://127.0.0.1:18789",
         token: nil,
-        mainAgentId: "main"  // 或其他固定值
+        mainAgentId: "main"
     )
 }
 ```
+
+> **注意**：Token 由用户在设置页面手动输入，仅在内存中保存，应用重启后需要重新输入。
 
 ### DeckState - 应用状态
 

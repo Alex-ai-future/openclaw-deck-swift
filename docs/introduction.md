@@ -1,48 +1,54 @@
 # OpenClaw Deck Swift
 
-一款用于管理多个 OpenClaw Agent 的 iPadOS 应用，提供多列聊天界面，实时与 AI Agent 交互。
+一款用于管理多个 OpenClaw Agent Session 的 iPadOS 应用，提供多列聊天界面，实时与 AI Agent 交互。
 
 ## 项目简介
 
-OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现版本。主要面向 iPadOS 平台，提供流畅的多 Agent 聊天体验，未来计划支持 iOS 和 macOS。
+OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现版本。主要面向 iPadOS 平台，提供流畅的多 Session 聊天体验，未来计划支持 iOS 和 macOS。
 
 ### 核心价值
 
 - **原生体验**：使用 SwiftUI 构建，完美适配 iPadOS 界面规范
-- **多任务处理**：单页面多列布局，同时与多个 Agent 交互
+- **多任务处理**：单页面多列布局，同时管理多个 Session
 - **实时通信**：通过 WebSocket 与 OpenClaw Gateway 实时连接
-- **轻量设计**：数据不本地保存，全部同步自 Gateway
+- **数据同步**：所有数据存储在 Gateway，本地仅管理 Session Key
+
+### 设计原则
+
+- **单一 Agent**：使用固定的 Main Agent，不涉及多 Agent 管理
+- **无本地持久化**：消息、状态等数据全部存储在 Gateway，避免数据冲突
+- **Session 即会话**：每个 Session 代表一个独立的聊天会话
 
 ---
 
 ## 功能特性
 
-### 1. 多 Agent 管理
+### 1. 多 Session 管理
 
-- 在单个页面中以多列布局展示多个 Agent
-- 每列独立管理一个 Agent 会话
-- 支持添加、删除、重命名 Agent
-- 可配置 Agent 的模型、上下文等参数
+- 在单个页面中以多列布局展示多个 Session
+- 每列独立管理一个聊天会话
+- **创建 Session**：生成新的 sessionKey，开始新会话
+- **删除 Session**：永久删除会话，**不可恢复**
+- Session Key 由本地生成，消息历史存储在 Gateway
 
 ### 2. 实时聊天
 
 - 发送消息并接收 Agent 流式响应
 - 支持 Markdown 渲染（代码高亮、列表、标题等）
 - 消息实时滚动显示
-- 支持清空当前会话
 
 ### 3. Verbose 日志
 
-- 显示 Agent 执行过程的详细信息
-- 便于调试和了解 Agent 行为
-- 可展开/收起日志详情
+- 通过 `/verbose on` 命令开启 verbose 模式
+- 当 Gateway 推送 verbose 信息时显示
+- 通过 `/verbose off` 关闭
 
 ### 4. Gateway 配置
 
 - 配置 Gateway WebSocket URL
 - 配置认证 Token
-- 支持连接状态实时显示
-- 自动重连机制
+- 连接状态实时显示
+- 手动刷新按钮实现重连（无自动重连）
 
 ### 5. 未来功能
 
@@ -63,7 +69,7 @@ OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现
 | 网络层 | URLSessionWebSocketTask（原生） |
 | 架构模式 | MVVM |
 | 状态管理 | @Observable / @StateObject |
-| 数据持久化 | 无（全部来自 Gateway） |
+| 数据持久化 | 仅 Session Key（其他数据在 Gateway） |
 | 最低支持版本 | iPadOS 16.0 |
 
 ### 项目结构
@@ -75,15 +81,14 @@ openclaw-deck-swift/
 │   └── ContentView.swift           # 主视图
 ├── Models/
 │   ├── GatewayFrame.swift          # WebSocket 帧模型
-│   ├── AgentConfig.swift           # Agent 配置模型
-│   ├── AgentSession.swift          # 会话状态模型
+│   ├── SessionConfig.swift         # Session 配置模型
 │   └── ChatMessage.swift           # 消息模型
 ├── ViewModels/
 │   ├── DeckViewModel.swift         # 主界面状态管理
-│   └── AgentColumnViewModel.swift  # 单列状态管理
+│   └── SessionColumnViewModel.swift # 单列状态管理
 ├── Views/
 │   ├── DeckView.swift              # 多列布局视图
-│   ├── AgentColumnView.swift       # 单列 Agent 视图
+│   ├── SessionColumnView.swift     # 单列 Session 视图
 │   ├── ChatInputView.swift         # 输入框组件
 │   ├── MessageView.swift           # 消息显示组件
 │   ├── SettingsView.swift          # 设置页面
@@ -105,14 +110,16 @@ openclaw-deck-swift/
 ┌─────────────────────────────────────────────────────────────┐
 │                         SwiftUI Views                        │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │ DeckView    │  │ AgentColumn │  │ SettingsView│          │
+│  │ DeckView    │  │ SessionColumn│  │ SettingsView│          │
 │  │ (多列布局)   │  │ View (单列) │  │ (配置页面)   │          │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
 │         │                │                │                  │
 │         ▼                ▼                ▼                  │
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │                    ViewModels                            ││
-│  │  DeckViewModel ◄─── AgentColumnViewModel(s)              ││
+│  │  DeckViewModel ◄─── SessionColumnViewModel(s)            ││
+│  │  • 管理 Session Key 列表                                 ││
+│  │  • 创建/删除 Session                                     ││
 │  └─────────────────────────┬───────────────────────────────┘│
 └────────────────────────────┼────────────────────────────────┘
                              │
@@ -124,14 +131,15 @@ openclaw-deck-swift/
 │  │  • WebSocket 连接管理                                  │   │
 │  │  • 请求/响应关联                                        │   │
 │  │  • 事件流订阅                                          │   │
-│  │  • 自动重连                                            │   │
+│  │  • 手动重连                                            │   │
 │  └─────────────────────────┬───────────────────────────┘   │
 └────────────────────────────┼────────────────────────────────┘
                              │
                              ▼
                     ┌────────────────┐
                     │ OpenClaw Gateway │
-                    │ WebSocket API    │
+                    │ Main Agent       │
+                    │ (消息/状态存储)   │
                     └────────────────┘
 ```
 
@@ -177,10 +185,6 @@ struct GatewayEvent: Codable {
 |------|------|------|
 | `connect` | 建立连接握手 | client, scopes, auth |
 | `agent` | 执行 Agent 轮次 | agentId, message, sessionKey |
-| `agents.create` | 创建新 Agent | id, name, model, context |
-| `agents.update` | 更新 Agent 配置 | id, name?, model?, context? |
-| `agents.delete` | 删除 Agent | agentId |
-| `health` | 获取 Gateway 健康状态 | - |
 
 ### 事件类型
 
@@ -191,46 +195,27 @@ struct GatewayEvent: Codable {
 | `agent.tool_use` | 工具调用信息 |
 | `agent.done` | Agent 轮次完成 |
 | `agent.error` | Agent 错误 |
+| `agent.verbose` | Verbose 日志信息（需 `/verbose on`） |
+
+### 斜杠命令
+
+| 命令 | 说明 |
+|------|------|
+| `/verbose on` | 开启 verbose 模式，显示 Gateway 推送的详细日志 |
+| `/verbose off` | 关闭 verbose 模式 |
 
 ---
 
 ## 数据模型
 
-### AgentConfig - Agent 配置
+### SessionConfig - Session 配置
 
 ```swift
-struct AgentConfig: Codable, Identifiable {
-    let id: String
-    let name: String
-    let icon: String
-    let accent: String          // 主题色（十六进制）
-    var workspace: String?
-    var model: String?          // 模型覆盖
-    let context: String         // Agent 角色描述
-    var shell: String?          // Agent 运行时 shell
-}
-```
-
-### AgentSession - 会话状态
-
-```swift
-struct AgentSession: ObservableObject {
-    let agentId: String
-    var status: AgentStatus     // idle, streaming, thinking, error, disconnected
-    var messages: [ChatMessage]
-    var activeRunId: String?
-    var tokenCount: Int
-    var connected: Bool
-    var usage: SessionUsage?
-}
-
-enum AgentStatus: String, Codable {
-    case idle
-    case streaming
-    case thinking
-    case toolUse = "tool_use"
-    case error
-    case disconnected
+struct SessionConfig: Identifiable {
+    let id: String              // 本地生成的唯一标识
+    let sessionKey: String      // 用于 Gateway 的 session key
+    let createdAt: Date
+    var name: String?           // 可选的用户自定义名称
 }
 ```
 
@@ -255,13 +240,36 @@ enum MessageRole: String, Codable {
 }
 ```
 
-### DeckConfig - 应用配置
+### AppConfig - 应用配置
 
 ```swift
-struct DeckConfig: Codable {
+struct AppConfig: Codable {
     var gatewayUrl: String      // 默认: ws://127.0.0.1:18789
     var token: String?
-    var agents: [AgentConfig]
+    let mainAgentId: String     // 固定的 Main Agent ID
+}
+
+// 默认配置
+extension AppConfig {
+    static let `default` = AppConfig(
+        gatewayUrl: "ws://127.0.0.1:18789",
+        token: nil,
+        mainAgentId: "main"  // 或其他固定值
+    )
+}
+```
+
+### DeckState - 应用状态
+
+```swift
+@Observable
+class DeckState {
+    var config: AppConfig
+    var sessions: [SessionConfig]   // 本地管理的 Session 列表
+    var gatewayConnected: Bool
+    
+    // 每个 Session 的消息从 Gateway 实时获取
+    // 不在本地存储
 }
 ```
 
@@ -273,12 +281,11 @@ struct DeckConfig: Codable {
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│  [☰] OpenClaw Deck                              [⚙️] [+]       │  ← 顶部栏
+│  OpenClaw Deck                               [🔄] [⚙️]          │  ← 顶部栏（刷新、设置）
 ├────────────────────────────────────────────────────────────────┤
 │ ● Connected to ws://127.0.0.1:18789                            │  ← 状态栏
 ├──────────────┬──────────────┬──────────────┬──────────────────┤
-│   Agent 1    │   Agent 2    │   Agent 3    │   Agent 4        │
-│   🤖 Claude  │   🔷 GPT     │   🟢 Custom  │   + Add Agent    │
+│  Session 1   │  Session 2   │  Session 3   │  + New Session   │
 │              │              │              │                  │
 │  ┌─────────┐ │  ┌─────────┐ │  ┌─────────┐ │                  │
 │  │ Message │ │  │ Message │ │  │ Message │ │                  │
@@ -289,6 +296,7 @@ struct DeckConfig: Codable {
 │  ┌─────────┐ │  ┌─────────┐ │  ┌─────────┐ │                  │
 │  │ Input   │ │  │ Input   │ │  │ Input   │ │                  │
 │  └─────────┘ │  └─────────┘ │  └─────────┘ │                  │
+│      [x]     │      [x]     │      [x]     │                  │  ← 删除按钮
 └──────────────┴──────────────┴──────────────┴──────────────────┘
 ```
 
@@ -296,7 +304,7 @@ struct DeckConfig: Codable {
 
 ```
 ┌──────────────────────┐
-│ 🤖 Agent Name    [x] │  ← Agent 头部（图标、名称、关闭按钮）
+│ Session 1        [x] │  ← Session 头部（名称、删除按钮）
 ├──────────────────────┤
 │                      │
 │   消息滚动区域        │  ← ScrollView
@@ -311,7 +319,7 @@ struct DeckConfig: Codable {
 │ ┌──────────────────┐ │
 │ │ 输入消息...       │ │  ← 输入框
 │ └──────────────────┘ │
-│ [📎] [🎤]      [发送] │  ← 工具栏
+│              [发送]   │  ← 发送按钮
 └──────────────────────┘
 ```
 
@@ -333,7 +341,11 @@ struct DeckConfig: Codable {
 │  Connection Status                 │
 │  ● Connected                       │
 │                                    │
-│  [Test Connection]                 │
+│  [Refresh Connection]              │  ← 手动刷新按钮
+│                                    │
+├────────────────────────────────────┤
+│  Main Agent                        │
+│  ID: main (fixed)                  │  ← 固定显示
 │                                    │
 ├────────────────────────────────────┤
 │  About                             │
@@ -352,9 +364,10 @@ struct DeckConfig: Codable {
 - [ ] GatewayClient WebSocket 实现
 - [ ] 基本数据模型
 - [ ] 多列布局 UI
+- [ ] Session 创建/删除功能
 - [ ] 发送消息功能
 - [ ] 流式接收响应
-- [ ] 基本设置页面
+- [ ] 设置页面（URL、Token、手动刷新）
 
 ### 第二阶段：增强功能
 
@@ -362,8 +375,7 @@ struct DeckConfig: Codable {
 - [ ] 代码语法高亮
 - [ ] Tool Use 信息展示
 - [ ] Thinking 过程显示
-- [ ] Verbose 日志面板
-- [ ] Agent 配置管理
+- [ ] Verbose 日志面板（`/verbose on`）
 
 ### 第三阶段：跨平台
 

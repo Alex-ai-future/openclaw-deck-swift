@@ -13,6 +13,14 @@ OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现
 - **实时通信**：通过 WebSocket 与 OpenClaw Gateway 实时连接
 - **数据同步**：所有数据存储在 Gateway，本地仅管理 Session Key
 
+### 平台支持
+
+| 平台 | 状态 | 说明 |
+|------|------|------|
+| iPadOS | ✅ 主要目标 | 完整支持，UI 优化 |
+| macOS | ✅ 必须兼容 | 可运行，不做 UI 优化 |
+| iOS | 🔜 未来支持 | 计划中 |
+
 ### 设计原则
 
 - **单一 Agent**：使用固定的 Main Agent，不涉及多 Agent 管理
@@ -64,7 +72,7 @@ OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现
 | 架构模式 | MVVM |
 | 状态管理 | @Observable / @StateObject |
 | 数据持久化 | 仅 Session Key（其他数据在 Gateway） |
-| 最低支持版本 | iPadOS 18.0 |
+| 最低支持版本 | iPadOS 18.0 / macOS 15.0 |
 
 ### 项目结构
 
@@ -178,6 +186,9 @@ struct GatewayEvent: Codable {
 |------|------|------|
 | `connect` | 建立连接握手 | client, scopes, auth |
 | `agent` | 执行 Agent 轮次 | agentId, message, sessionKey |
+| `sessions_history` | 获取 Session 历史消息 | sessionKey |
+| `sessions_list` | 列出活跃的 Sessions | - |
+| `session_status` | 获取 Session 状态 | sessionKey |
 
 ### 事件类型
 
@@ -688,6 +699,313 @@ struct AppConfig {
 ```
 
 > **注意**：Token 由用户在设置页面手动输入，仅在内存中保存，应用重启后需要重新输入。
+
+---
+
+## Messages 管理逻辑
+
+### 数据存储架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      消息数据存储位置                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  OpenClaw Gateway（持久化）       本地 App（内存缓存）            │
+│  ├─ 完整消息历史                   ├─ SessionState.messages      │
+│  ├─ Session 状态                   ├─ 当前会话的消息缓存          │
+│  ├─ Token 统计                     └─ App 关闭后清空             │
+│  └─ 跨设备同步                                                  │
+│                                                                  │
+│  优势：                          优势：                          │
+│  • 数据不丢失                    • 快速访问                      │
+│  • 多设备同步                    • 流式更新                      │
+│  • 无本地存储冲突                • 实时 UI 更新                  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 启动时加载历史消息
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       应用启动流程                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. 用户输入 Gateway URL 和 Token                                │
+│                     │                                            │
+│                     ▼                                            │
+│  2. GatewayClient.connect()                                      │
+│                     │                                            │
+│                     ▼                                            │
+│  3. WebSocket 连接成功                                           │
+│                     │                                            │
+│                     ▼                                            │
+│  4. 为每个 Session 调用 sessions_history                         │
+│     ┌────────────────────────────────────────┐                  │
+│     │ 请求:                                  │                  │
+│     │ {                                      │                  │
+│     │   "type": "req",                       │                  │
+│     │   "id": "deck-1-xxx",                  │                  │
+│     │   "method": "sessions_history",        │                  │
+│     │   "params": {                          │                  │
+│     │     "sessionKey": "agent:main:session1"│                  │
+│     │   }                                    │                  │
+│     │ }                                      │                  │
+│     └────────────────────────────────────────┘                  │
+│                     │                                            │
+│                     ▼                                            │
+│  5. 响应历史消息                                                  │
+│     ┌────────────────────────────────────────┐                  │
+│     │ {                                      │                  │
+│     │   "type": "res",                       │                  │
+│     │   "id": "deck-1-xxx",                  │                  │
+│     │   "ok": true,                          │                  │
+│     │   "payload": {                         │                  │
+│     │     "messages": [                      │                  │
+│     │       { "role": "user", "text": "..." },│                 │
+│     │       { "role": "assistant", "text": "..." }│             │
+│     │     ]                                  │                  │
+│     │   }                                    │                  │
+│     │ }                                      │                  │
+│     └────────────────────────────────────────┘                  │
+│                     │                                            │
+│                     ▼                                            │
+│  6. 将历史消息填充到 SessionState.messages                       │
+│                     │                                            │
+│                     ▼                                            │
+│  7. UI 显示历史消息                                              │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### SessionState 完整设计
+
+```swift
+@Observable
+class SessionState {
+    let sessionId: String
+    let sessionKey: String          // "agent:main:{sessionId}"
+    
+    // 消息列表（从 Gateway 加载 + 流式更新）
+    var messages: [ChatMessage] = []
+    
+    // 当前状态
+    var status: SessionStatus = .idle
+    var activeRunId: String?
+    
+    // 连接状态
+    var connected: Bool = false
+    
+    // Token 使用统计（从 Gateway 获取）
+    var tokenCount: Int = 0
+    var usage: SessionUsage?
+    
+    // 历史消息是否已加载
+    var historyLoaded: Bool = false
+    
+    init(sessionId: String, sessionKey: String) {
+        self.sessionId = sessionId
+        self.sessionKey = sessionKey
+    }
+}
+
+enum SessionStatus: String {
+    case idle           // 空闲
+    case thinking       // 思考中
+    case streaming      // 流式输出中
+    case toolUse = "tool_use"  // 工具调用
+    case error          // 错误
+    case disconnected   // 断开连接
+}
+```
+
+### 流式消息更新流程
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      流式消息更新流程                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. 用户发送消息                                                 │
+│     ├─ 创建 user 消息 { role: "user", text }                     │
+│     └─ 立即添加到 messages 数组                                  │
+│                                                                  │
+│  2. 调用 runAgent()                                              │
+│     ├─ 返回 runId                                                │
+│     └─ 创建 assistant 占位消息                                   │
+│        { role: "assistant", text: "", streaming: true, runId }   │
+│                                                                  │
+│  3. 接收流式事件                                                  │
+│     │                                                            │
+│     ├─ event: "agent" → stream: "assistant"                      │
+│     │   └─ data.delta 追加到 text                                │
+│     │      messages[index].text += delta                         │
+│     │      (SwiftUI 自动更新 UI)                                  │
+│     │                                                            │
+│     ├─ event: "agent" → stream: "lifecycle" → phase: "end"       │
+│     │   └─ messages[index].streaming = false                     │
+│     │      status = .idle                                        │
+│     │                                                            │
+│     └─ event: "agent" → stream: "tool_use"                       │
+│         └─ status = .toolUse                                     │
+│                                                                  │
+│  4. 通过 sessionKey 关联 Session                                 │
+│     └─ sessionKey: "agent:main:{sessionId}"                      │
+│         从中提取 sessionId 更新对应 Session                       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### GatewayClient 扩展 - 加载历史
+
+```swift
+extension GatewayClient {
+    
+    /// 获取 Session 历史消息
+    func getSessionHistory(sessionKey: String) async throws -> [ChatMessage] {
+        let result = try await request(
+            method: "sessions_history",
+            params: ["sessionKey": sessionKey]
+        )
+        
+        guard let dict = result as? [String: Any],
+              let messagesData = dict["messages"] as? [[String: Any]] else {
+            return []
+        }
+        
+        // 解析消息
+        return messagesData.compactMap { data -> ChatMessage? in
+            guard let role = data["role"] as? String,
+                  let text = data["text"] as? String else {
+                return nil
+            }
+            
+            return ChatMessage(
+                id: data["id"] as? String ?? UUID().uuidString,
+                role: MessageRole(rawValue: role) ?? .user,
+                text: text,
+                timestamp: Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
+            )
+        }
+    }
+    
+    /// 列出所有活跃 Sessions
+    func listSessions() async throws -> [String] {
+        let result = try await request(method: "sessions_list", params: [:])
+        
+        guard let dict = result as? [String: Any],
+              let sessions = dict["sessions"] as? [String] else {
+            return []
+        }
+        
+        return sessions
+    }
+}
+```
+
+### DeckViewModel - 初始化和加载
+
+```swift
+@Observable
+class DeckViewModel {
+    var gatewayClient: GatewayClient?
+    var sessions: [String: SessionState] = [:]
+    var sessionOrder: [String] = []
+    var gatewayConnected: Bool = false
+    
+    var config: AppConfig = .default
+    
+    // MARK: - 初始化
+    
+    func initialize(url: URL, token: String) async {
+        // 创建 GatewayClient
+        let client = GatewayClient(url: url, token: token)
+        client.onEvent = { [weak self] event in
+            self?.handleGatewayEvent(event)
+        }
+        client.onConnection = { [weak self] connected in
+            self?.gatewayConnected = connected
+            if connected {
+                Task { await self?.loadAllSessionHistory() }
+            }
+        }
+        
+        self.gatewayClient = client
+        
+        // 连接
+        await client.connect()
+    }
+    
+    // MARK: - 加载历史消息
+    
+    func loadAllSessionHistory() async {
+        for (sessionId, session) in sessions {
+            do {
+                let messages = try await gatewayClient?.getSessionHistory(
+                    sessionKey: session.sessionKey
+                ) ?? []
+                
+                // 更新 Session 的消息
+                sessions[sessionId]?.messages = messages
+                sessions[sessionId]?.historyLoaded = true
+            } catch {
+                print("[DeckViewModel] Failed to load history for \(sessionId): \(error)")
+            }
+        }
+    }
+    
+    // MARK: - 发送消息
+    
+    func sendMessage(sessionId: String, text: String) async {
+        guard let client = gatewayClient, client.connected else { return }
+        guard let session = sessions[sessionId] else { return }
+        
+        // 1. 添加用户消息
+        let userMsg = ChatMessage(
+            id: UUID().uuidString,
+            role: .user,
+            text: text,
+            timestamp: Date()
+        )
+        sessions[sessionId]?.messages.append(userMsg)
+        sessions[sessionId]?.status = .thinking
+        
+        do {
+            // 2. 调用 runAgent
+            let (runId, _) = try await client.runAgent(
+                agentId: config.mainAgentId,
+                message: text,
+                sessionKey: session.sessionKey
+            )
+            
+            // 3. 创建 assistant 占位消息
+            let assistantMsg = ChatMessage(
+                id: UUID().uuidString,
+                role: .assistant,
+                text: "",
+                timestamp: Date(),
+                streaming: true,
+                runId: runId
+            )
+            sessions[sessionId]?.messages.append(assistantMsg)
+            sessions[sessionId]?.activeRunId = runId
+            sessions[sessionId]?.status = .streaming
+            
+        } catch {
+            print("[DeckViewModel] Failed to send message: \(error)")
+            sessions[sessionId]?.status = .error
+        }
+    }
+    
+    // MARK: - 事件处理
+    
+    func handleGatewayEvent(_ event: GatewayEvent) {
+        // 根据 sessionKey 找到对应的 Session
+        // 更新消息内容...
+    }
+}
+```
 
 ### DeckState - 应用状态
 

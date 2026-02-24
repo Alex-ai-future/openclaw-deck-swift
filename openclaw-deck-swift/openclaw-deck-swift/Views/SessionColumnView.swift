@@ -59,36 +59,34 @@ struct SessionColumnView: View {
   // MARK: - Column Header
 
   private var columnHeader: some View {
-    HStack(spacing: 10) {
-      // Session key button with glass effect
+    HStack(spacing: 12) {
+      // 左边：状态按钮
       Button {
-        copySessionKey()
+        // 可选：点击显示状态详情
       } label: {
-        VStack(alignment: .leading, spacing: 2) {
-          Text(session.sessionKey)
-            .font(.caption)
-            .fontWeight(.medium)
-            .lineLimit(1)
-
-          Text("\(session.messageCount) messages")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-        }
+        StatusIndicator(status: session.status)
       }
       .buttonStyle(.glass)
 
       Spacer()
 
-      // Status indicator with glass button
-      Button {
-        // No action
-      } label: {
-        StatusIndicator(status: session.status)
-      }
-      .buttonStyle(.glass)
-      .disabled(true)
+      // 中间：普通文字（Session Key + 消息数量）
+      VStack(spacing: 2) {
+        Text(session.sessionKey)
+          .font(.caption)
+          .fontWeight(.medium)
+          .lineLimit(1)
 
-      // Delete button
+        Text("\(session.messageCount) messages")
+          .font(.caption2)
+          .foregroundColor(.secondary)
+      }
+      .foregroundStyle(.primary)
+      .multilineTextAlignment(.center)
+
+      Spacer()
+
+      // 右边：删除按钮
       Button {
         showingDeleteAlert = true
       } label: {
@@ -99,21 +97,10 @@ struct SessionColumnView: View {
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 6)
-    .background(.ultraThinMaterial.opacity(0.7))
+    .background(.clear)
     .overlay(alignment: .bottom) {
       Divider()
     }
-  }
-
-  // MARK: - Actions
-
-  private func copySessionKey() {
-    #if os(iOS)
-    UIPasteboard.general.string = session.sessionKey
-    #elseif os(macOS)
-    NSPasteboard.general.clearContents()
-    NSPasteboard.general.setString(session.sessionKey, forType: .string)
-    #endif
   }
 
   // MARK: - Status Indicator

@@ -82,6 +82,10 @@ class SessionState {
   func appendToLastMessage(text: String) {
     guard let index = messages.indices.last else { return }
     let message = messages[index]
+
+    // 只在最后一条消息是 assistant 消息时才追加
+    guard message.role == .assistant else { return }
+
     messages[index] = ChatMessage(
       id: message.id,
       role: message.role,

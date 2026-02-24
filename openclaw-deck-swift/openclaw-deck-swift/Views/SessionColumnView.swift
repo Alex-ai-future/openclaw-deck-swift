@@ -16,6 +16,7 @@ import SwiftUI
 /// Session 列视图 - 单个聊天会话
 struct SessionColumnView: View {
   @Bindable var session: SessionState
+  @Bindable var viewModel: DeckViewModel
   let isSelected: Bool
   let onSelect: () -> Void
   let onDelete: () -> Void
@@ -49,6 +50,7 @@ struct SessionColumnView: View {
       RoundedRectangle(cornerRadius: 12)
         .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
     )
+    .contentShape(Rectangle())
     .onTapGesture {
       onSelect()
     }
@@ -128,10 +130,11 @@ struct SessionColumnView: View {
         }
         .padding()
       }
-      .onChange(of: session.messages.count) { _, newValue in
-        if newValue > 0 {
-          withAnimation {
-            proxy.scrollTo(session.messages.last?.id, anchor: .bottom)
+      .onChange(of: session.messages.last?.id) { _, newLastMessageId in
+        // 当有新消息或消息更新时，滚动到底部
+        if let lastId = newLastMessageId {
+          withAnimation(.smooth(duration: 0.2)) {
+            proxy.scrollTo(lastId, anchor: .bottom)
           }
         }
       }
@@ -155,36 +158,55 @@ struct SessionColumnView: View {
       .onSubmit {
         sendMessage()
       }
-      .disabled(isSending || session.status == .streaming)
+      .disabled(isSending || session.status == .streaming || !viewModel.gatewayConnected)
 
       Button {
         sendMessage()
       } label: {
-        Image(systemName: "paperplane.fill")
-          .font(.title2)
+        Image(systemName: sendIcon)
+          .font(.title3)
+          .fontWeight(.semibold)
           .padding(10)
-          .background(inputText.isEmpty || isSending ? Color.secondary : Color.blue)
+          .background(sendButtonColor)
           .foregroundColor(.white)
           .cornerRadius(10)
       }
-      .disabled(inputText.isEmpty || isSending || session.status == .streaming)
+      .buttonStyle(.plain)
+      .disabled(inputText.isEmpty || isSending || session.status == .streaming || !viewModel.gatewayConnected)
     }
     .padding()
+  }
+
+  // MARK: - Computed Properties
+
+  private var sendIcon: String {
+    if isSending || session.status == .streaming {
+      return "ellipsis.circle.fill"
+    }
+    return "paperplane.fill"
+  }
+
+  private var sendButtonColor: Color {
+    if inputText.isEmpty || isSending || session.status == .streaming || !viewModel.gatewayConnected {
+      return .secondary
+    }
+    return .blue
   }
 
   // MARK: - Actions
 
   private func sendMessage() {
-    guard !inputText.isEmpty, !isSending else { return }
+    guard !inputText.isEmpty, !isSending, viewModel.gatewayConnected else { return }
 
     let text = inputText
     inputText = ""
     isSending = true
 
     Task {
-      // TODO: Need to pass sessionId from parent
-      // await viewModel.sendMessage(sessionId: session.sessionId, text: text)
-      isSending = false
+      await viewModel.sendMessage(sessionId: session.sessionId, text: text)
+      await MainActor.run {
+        isSending = false
+      }
     }
   }
 }
@@ -318,6 +340,7 @@ struct MessageView: View {
 #Preview {
   SessionColumnView(
     session: SessionState(sessionId: "test", sessionKey: "agent:main:test"),
+    viewModel: DeckViewModel(),
     isSelected: true,
     onSelect: {},
     onDelete: {}

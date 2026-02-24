@@ -295,13 +295,28 @@ class DeckViewModel {
       return
     }
 
-    // 找到对应的 Session 和消息
+    // 找到对应的 Session
     guard let session = findSessionForEvent(event) else {
+      print("[DeckViewModel] No session found for agent.content event")
       return
     }
 
-    // 追加文本到最后一条消息
-    session.appendToLastMessage(text: text)
+    // 检查是否有 assistant 消息可以更新
+    if let lastMessage = session.messages.last, lastMessage.role == .assistant {
+      // 追加到现有消息
+      session.appendToLastMessage(text: text)
+    } else {
+      // 创建新的 assistant 消息（正常情况下不应该发生）
+      print("[DeckViewModel] No assistant message found, creating new one")
+      let assistantMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .assistant,
+        text: text,
+        timestamp: Date(),
+        streaming: true
+      )
+      session.messages.append(assistantMsg)
+    }
   }
 
   /// 处理 agent.thinking 事件
@@ -385,17 +400,22 @@ class DeckViewModel {
 
   /// 根据事件找到对应的 Session
   private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
-    // 通过 activeRunId 查找
+    // 优先通过 activeRunId 查找匹配的 Session
     for session in sessions.values {
       if let activeRunId = session.activeRunId {
-        // 如果有 runId 信息，可以匹配
-        // 目前简化处理，返回第一个有 activeRunId 的 session
+        // 如果事件 payload 中有 runId，进行匹配
+        if let payload = event.payload as? [String: Any],
+          let eventRunId = payload["runId"] as? String {
+          if activeRunId == eventRunId {
+            return session
+          }
+        }
+        // 如果没有 runId 信息，返回第一个有 activeRunId 的 session
         return session
       }
     }
 
-    // 或者通过 seq/stateVersion 查找
-    // 这里简化处理，返回最后一个 session
+    // 如果没有找到 activeRunId，返回最后一个 session（作为后备）
     return sessionOrder.last.flatMap { sessions[$0] }
   }
 }

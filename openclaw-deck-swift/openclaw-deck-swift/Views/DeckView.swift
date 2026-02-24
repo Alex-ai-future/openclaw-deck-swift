@@ -80,6 +80,7 @@ struct DeckView: View {
           if let session = viewModel.sessions[sessionId] {
             SessionColumnView(
               session: session,
+              viewModel: viewModel,
               isSelected: sessionId == selectedSessionId,
               onSelect: {
                 withAnimation {

@@ -6,6 +6,42 @@
 
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
+// MARK: - Cross-Platform Color Extension
+
+extension Color {
+    /// Adaptive background color for cross-platform support
+    static var adaptiveBackground: Color {
+        #if os(macOS)
+        if #available(macOS 10.15, *) {
+            return Color(NSColor.windowBackgroundColor)
+        } else {
+            return Color(NSColor.textBackgroundColor)
+        }
+        #else
+        return Color(UIColor.systemBackground)
+        #endif
+    }
+
+    /// Adaptive secondary background color
+    static var adaptiveSecondaryBackground: Color {
+        #if os(macOS)
+        if #available(macOS 10.15, *) {
+            return Color(NSColor.controlBackgroundColor)
+        } else {
+            return Color(NSColor.controlColor)
+        }
+        #else
+        return Color(UIColor.secondarySystemBackground)
+        #endif
+    }
+}
+
 struct ContentView: View {
     @State private var viewModel = DeckViewModel()
     @State private var showingSettings = false
@@ -27,10 +63,15 @@ struct ContentView: View {
                 WelcomeView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,
+                    connectionError: viewModel.connectionError,
+                    isConnecting: viewModel.isInitializing,
                     onConnect: {
                         Task {
                             await viewModel.initialize(url: gatewayUrl, token: token)
                         }
+                    },
+                    onClearError: {
+                        viewModel.clearConnectionError()
                     }
                 )
             }
@@ -61,7 +102,10 @@ struct ContentView: View {
 struct WelcomeView: View {
     @Binding var gatewayUrl: String
     @Binding var token: String
+    let connectionError: String?
+    let isConnecting: Bool
     let onConnect: () -> Void
+    let onClearError: () -> Void
     
     @FocusState private var isUrlFocused: Bool
     
@@ -99,13 +143,44 @@ struct WelcomeView: View {
                 
                 Button(action: onConnect) {
                     HStack {
-                        Image(systemName: "plug")
-                        Text("Connect to Gateway")
+                        if isConnecting {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "plug")
+                        }
+                        Text(isConnecting ? "Connecting..." : "Connect to Gateway")
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .disabled(isConnecting)
+                
+                // Error message
+                if let error = connectionError {
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                            Text("Connection Failed")
+                                .fontWeight(.semibold)
+                                .foregroundColor(.red)
+                            Spacer()
+                            Button("Dismiss", action: onClearError)
+                                .font(.caption)
+                        }
+                        
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+                }
             }
             .padding()
             
@@ -124,7 +199,7 @@ struct WelcomeView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color.adaptiveBackground)
         #if os(macOS)
         .onAppear {
             isUrlFocused = true

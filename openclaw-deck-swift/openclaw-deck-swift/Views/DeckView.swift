@@ -6,6 +6,12 @@
 
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
 /// Deck 视图 - 多列布局容器
 struct DeckView: View {
     @Bindable var viewModel: DeckViewModel
@@ -61,7 +67,7 @@ struct DeckView: View {
             .padding(.trailing)
         }
         .padding(.vertical, 8)
-        .background(Color(.systemBackground))
+        .background(Color.adaptiveBackground)
     }
     
     // MARK: - Session Columns
@@ -103,7 +109,7 @@ struct DeckView: View {
             }
             .padding(.vertical)
         }
-        .background(Color(.systemBackground))
+        .background(Color.adaptiveBackground)
     }
 }
 
@@ -135,7 +141,7 @@ struct AddSessionColumnView: View {
             .disabled(!isEnabled)
             .contentShape(Rectangle())
         }
-        .background(Color(.systemBackground))
+        .background(Color.adaptiveBackground)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
         .padding(.horizontal, 4)

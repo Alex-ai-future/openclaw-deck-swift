@@ -12,19 +12,22 @@ import Foundation
 class DeckViewModel {
     /// Gateway 客户端
     var gatewayClient: GatewayClient?
-    
+
     /// 所有 Session 状态（按 sessionId 索引）
     var sessions: [String: SessionState] = [:]
-    
+
     /// Session 顺序（用于 UI 展示顺序）
     var sessionOrder: [String] = []
-    
+
     /// Gateway 连接状态
     var gatewayConnected: Bool = false
-    
+
+    /// 连接错误信息
+    var connectionError: String?
+
     /// 应用配置
     var config: AppConfig = .default
-    
+
     /// 是否正在初始化
     var isInitializing: Bool = false
     
@@ -45,26 +48,30 @@ class DeckViewModel {
     func initialize(url: String, token: String?) async {
         guard !isInitializing else { return }
         isInitializing = true
-        
+
+        // Clear previous error
+        connectionError = nil
+
         config.gatewayUrl = url
         config.token = token
-        
+
         guard let gatewayUrl = URL(string: url) else {
             print("[DeckViewModel] Invalid gateway URL: \(url)")
+            connectionError = "Invalid gateway URL: \(url)"
             isInitializing = false
             return
         }
-        
+
         // 创建 GatewayClient
         let client = GatewayClient(url: gatewayUrl, token: token)
-        
+
         // 设置事件回调
         client.onEvent = { [weak self] event in
             Task { @MainActor in
                 self?.handleGatewayEvent(event)
             }
         }
-        
+
         // 设置连接状态回调
         client.onConnection = { [weak self] connected in
             Task { @MainActor in
@@ -74,13 +81,22 @@ class DeckViewModel {
                 }
             }
         }
-        
+
         self.gatewayClient = client
-        
+
         // 连接 Gateway
         await client.connect()
-        
+
+        // Sync error state from client
+        connectionError = client.connectionError
+
         isInitializing = false
+    }
+
+    /// 清除连接错误
+    func clearConnectionError() {
+        connectionError = nil
+        gatewayClient?.clearError()
     }
     
     /// 断开 Gateway 连接

@@ -9,6 +9,8 @@ import MarkdownView
 
 #if os(macOS)
 import AppKit
+#else
+import UIKit
 #endif
 
 /// Session 列视图 - 单个聊天会话
@@ -37,7 +39,7 @@ struct SessionColumnView: View {
             // Input area
             chatInput
         }
-        .background(isSelected ? Color(.windowBackgroundColor) : Color(.systemBackground))
+        .background(isSelected ? Color.adaptiveSecondaryBackground : Color.adaptiveBackground)
         .cornerRadius(12)
         .shadow(color: isSelected ? Color.blue.opacity(0.3) : Color.black.opacity(0.1), radius: isSelected ? 4 : 2, x: 0, y: 1)
         .overlay(
@@ -105,7 +107,7 @@ struct SessionColumnView: View {
             .padding(.leading, 4)
         }
         .padding(8)
-        .background(Color(.systemBackground))
+        .background(Color.adaptiveBackground)
     }
     
     // MARK: - Message List
@@ -129,7 +131,7 @@ struct SessionColumnView: View {
                 }
             }
         }
-        .background(Color(.systemBackground))
+        .background(Color.adaptiveBackground)
     }
 
     // MARK: - Chat Input
@@ -143,7 +145,7 @@ struct SessionColumnView: View {
             )
             .textFieldStyle(.plain)
             .padding(10)
-            .background(Color(.controlBackgroundColor))
+            .background(Color.adaptiveSecondaryBackground)
             .cornerRadius(10)
             .onSubmit {
                 sendMessage()
@@ -259,11 +261,7 @@ struct MessageView: View {
         case .user:
             return Color.blue.opacity(0.1)
         case .assistant:
-            #if os(macOS)
-            return Color(NSColor.controlBackgroundColor)
-            #else
-            return Color(.secondarySystemBackground)
-            #endif
+            return Color.adaptiveSecondaryBackground
         case .system:
             return Color.orange.opacity(0.1)
         }

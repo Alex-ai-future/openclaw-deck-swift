@@ -5,6 +5,7 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import Foundation
+import CryptoKit
 
 // MARK: - Types
 
@@ -36,6 +37,12 @@ class GatewayClient {
 
     /// 连接状态（是否已连接）
     private(set) var connected: Bool = false
+    
+    /// 连接错误信息
+    private(set) var connectionError: String?
+    
+    /// 是否正在连接
+    private(set) var isConnecting: Bool = false
 
     /// WebSocket 任务（用于连接和通信）
     private var webSocket: URLSessionWebSocketTask?
@@ -45,6 +52,12 @@ class GatewayClient {
 
     /// 消息计数器（用于生成唯一 ID）
     private var messageCounter: Int = 0
+    
+    /// Connect nonce from challenge
+    private var connectNonce: String?
+    
+    /// Whether connect request was sent
+    private var connectSent: Bool = false
 
     // MARK: - Callbacks
 
@@ -58,6 +71,8 @@ class GatewayClient {
 
     private let requestTimeout: TimeInterval = 30
     private let operatorScopes = ["operator.read", "operator.write"]
+    private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
+    private let deviceTokenStorageKeyPrefix = "openclaw.deck.deviceToken.v1:"
 
     // MARK: - Initialization
 
@@ -71,25 +86,40 @@ class GatewayClient {
 
     /// 建立连接并完成握手
     func connect() async {
-        print("[GatewayClient] Connecting to \(url)")
-
-        // 模拟模式下直接设置连接成功
-        if isMock {
+        guard !isMock else {
             connected = true
+            connectionError = nil
+            isConnecting = false
             onConnection?(true)
             print("[GatewayClient] Mock connected")
             return
         }
-
+        
+        guard !isConnecting else {
+            print("[GatewayClient] Already connecting")
+            return
+        }
+        
+        isConnecting = true
+        connectionError = nil
+        connectNonce = nil
+        connectSent = false
+        
+        print("[GatewayClient] Connecting to \(url)")
+        
         let session = URLSession.shared
         webSocket = session.webSocketTask(with: url)
         webSocket?.resume()
 
         // 开始接收消息
         receiveMessage()
-
-        // 发送 connect 握手请求
-        await sendConnect()
+        
+        // 延迟发送 connect 请求，等待可能的 challenge
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            Task { @MainActor in
+                await self?.sendConnect()
+            }
+        }
     }
 
     /// 断开连接
@@ -98,6 +128,7 @@ class GatewayClient {
 
         let wasConnected = connected
         connected = false
+        isConnecting = false
 
         // 取消 WebSocket
         webSocket?.cancel(with: .normalClosure, reason: nil)
@@ -118,36 +149,30 @@ class GatewayClient {
             onConnection?(false)
         }
     }
+    
+    /// 清除错误状态
+    func clearError() {
+        connectionError = nil
+    }
 
     /// 发送请求并等待响应
     func request(method: String, params: [String: Any]? = nil) async throws -> GatewayResponse {
-        // 模拟模式下返回模拟响应
+        guard isMock || (connected && webSocket != nil) else {
+            throw NSError(
+                domain: "GatewayClient",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]
+            )
+        }
+        
         if isMock {
-            guard connected else {
-                throw NSError(
-                    domain: "GatewayClient",
-                    code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]
-                )
-            }
-
             let id = nextId()
             print("[GatewayClient] Mock sending request: \(method) with id: \(id)")
-
-            // 返回模拟响应
             return GatewayResponse(
                 id: id,
                 ok: true,
                 payload: ["status": "success", "mock": true],
                 error: nil
-            )
-        }
-
-        guard let webSocket = webSocket, webSocket.state == .running else {
-            throw NSError(
-                domain: "GatewayClient",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]
             )
         }
 
@@ -174,17 +199,11 @@ class GatewayClient {
         message: String,
         sessionKey: String? = nil
     ) async throws -> (runId: String, status: String) {
-        // 模拟模式下返回模拟响应
         if isMock {
             let result = try await request(method: "agent", params: ["agentId": agentId, "message": message])
-            guard let payload = result.payload as? [String: Any],
-                  let runId = payload["runId"] as? String ?? (payload["mock"] as? Bool).map { _ in "mock-run-\(nextId())" },
-                  let status = payload["status"] as? String else {
-                return ("mock-run-\(nextId())", "success")
-            }
-            return (runId, status)
+            return ("mock-run-\(nextId())", "success")
         }
-
+        
         let idempotencyKey = "agent-\(Date().timeIntervalSince1970)-\(UUID().uuidString.prefix(6))"
 
         var params: [String: Any] = [
@@ -212,26 +231,26 @@ class GatewayClient {
 
         return (runId, status)
     }
-
+    
     /// 获取 Session 历史消息
     func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
         let result = try await request(method: "sessions_history", params: ["sessionKey": sessionKey])
-
+        
         guard let payload = result.payload as? [String: Any],
               let messagesData = payload["messages"] as? [[String: Any]] else {
             return nil
         }
-
+        
         // 解析消息
         return messagesData.compactMap { data -> ChatMessage? in
             guard let roleString = data["role"] as? String,
                   let text = data["text"] as? String else {
                 return nil
             }
-
+            
             let role = MessageRole(rawValue: roleString) ?? .user
             let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
-
+            
             return ChatMessage(
                 id: data["id"] as? String ?? UUID().uuidString,
                 role: role,
@@ -240,16 +259,16 @@ class GatewayClient {
             )
         }
     }
-
+    
     /// 列出所有活跃 Sessions
     func listSessions() async throws -> [String] {
         let result = try await request(method: "sessions_list", params: [:])
-
+        
         guard let payload = result.payload as? [String: Any],
               let sessions = payload["sessions"] as? [String] else {
             return []
         }
-
+        
         return sessions
     }
 
@@ -344,15 +363,29 @@ class GatewayClient {
 
     /// 处理事件
     private func handleEvent(_ json: [String: Any]) {
-        let event = GatewayEvent.fromJSON(json)
-        onEvent?(event)
+        guard let event = json["event"] as? String else { return }
+        
+        // Handle connect.challenge event for device auth
+        if event == "connect.challenge", let payload = json["payload"] as? [String: Any], let nonce = payload["nonce"] as? String {
+            print("[GatewayClient] Received connect challenge, signing with nonce...")
+            self.connectNonce = nonce
+            self.connectSent = false
+            // Retry connect with nonce after a short delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                Task { @MainActor in
+                    await self?.sendConnect()
+                }
+            }
+            return
+        }
+
+        let gatewayEvent = GatewayEvent.fromJSON(json)
+        onEvent?(gatewayEvent)
     }
 
     /// 发送帧
     private func send(frame: GatewayRequest) {
         do {
-            let encoder = JSONEncoder()
-            // 使用自定义编码策略处理 Any 类型
             let data = try encodeRequest(frame)
             guard let string = String(data: data, encoding: .utf8) else {
                 print("[GatewayClient] Failed to convert data to string")
@@ -384,7 +417,18 @@ class GatewayClient {
 
     /// 发送 connect 握手
     private func sendConnect() async {
+        guard !connectSent else { return }
+        connectSent = true
+        
         do {
+            // Build device identity with nonce if available
+            var device: [String: Any]? = nil
+            do {
+                device = try await buildSignedDeviceIdentity(nonce: connectNonce)
+            } catch {
+                print("[GatewayClient] Device identity unavailable: \(error)")
+            }
+            
             var params: [String: Any] = [
                 "client": [
                     "id": "openclaw-deck-swift",
@@ -397,33 +441,172 @@ class GatewayClient {
                 "role": "operator",
                 "scopes": operatorScopes
             ]
-
-            // 添加 token 认证（用户手动输入）
-            if let token = token, !token.isEmpty {
-                params["auth"] = ["token": token]
+            
+            // Add device identity if available
+            if let device = device {
+                params["device"] = device
             }
 
-            let response = try await request(method: "connect", params: params)
+            // 添加 token 认证（用户手动输入）
+            let authToken = getPreferredAuthToken()
+            if !authToken.isEmpty {
+                params["auth"] = ["token": authToken]
+            }
 
-            if response.ok {
+            let result = try await request(method: "connect", params: params)
+            
+            // Check for device token in response
+            if let payload = result.payload as? [String: Any],
+               let auth = payload["auth"] as? [String: Any],
+               let deviceToken = auth["deviceToken"] as? String {
+                storeDeviceToken(deviceToken)
+            }
+
+            if result.ok {
                 connected = true
+                connectionError = nil
+                isConnecting = false
                 onConnection?(true)
                 print("[GatewayClient] Connected to gateway")
             } else {
-                print("[GatewayClient] Handshake failed: \(response.error?.message ?? "Unknown error")")
+                let errorMsg = result.error?.message ?? "Handshake failed"
+                connectionError = errorMsg
+                isConnecting = false
+                print("[GatewayClient] Handshake failed: \(errorMsg)")
                 disconnect()
             }
 
         } catch {
+            connectionError = error.localizedDescription
+            isConnecting = false
             print("[GatewayClient] Handshake failed: \(error)")
             disconnect()
         }
+    }
+    
+    /// Build signed device identity
+    private func buildSignedDeviceIdentity(nonce: String?) async throws -> [String: Any] {
+        let identity = try loadOrCreateDeviceIdentity()
+        let signedAt = Date().timeIntervalSince1970 * 1000
+        
+        // Use v2 protocol if nonce is provided
+        let version = nonce != nil ? "v2" : "v1"
+        
+        let payload = buildDeviceAuthPayload(
+            version: version,
+            deviceId: identity["id"] as! String,
+            clientId: "openclaw-deck-swift",
+            clientMode: "webchat",
+            role: "operator",
+            scopes: operatorScopes,
+            signedAtMs: Int(signedAt),
+            token: getPreferredAuthToken().isEmpty ? nil : getPreferredAuthToken(),
+            nonce: nonce
+        )
+        
+        // Sign the payload using Ed25519
+        let privateKey = try P256.Signing.PrivateKey(x963Representation: Data(base64Encoded: identity["privateKeyBase64"] as! String)!)
+        let signature = try privateKey.signature(for: Array(payload.utf8))
+        
+        return [
+            "id": identity["id"] as! String,
+            "publicKey": identity["publicKey"] as! String,
+            "signature": signature.derRepresentation.base64EncodedString(),
+            "signedAt": Int(signedAt),
+            "nonce": nonce ?? ""
+        ]
+    }
+    
+    /// Load or create device identity
+    private func loadOrCreateDeviceIdentity() throws -> [String: Any] {
+        // Try to load from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: deviceIdentityStorageKey),
+           let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           identity["id"] != nil, identity["publicKey"] != nil, identity["privateKeyBase64"] != nil {
+            return identity
+        }
+        
+        // Create new identity
+        let privateKey = try P256.Signing.PrivateKey()
+        let publicKey = privateKey.publicKey
+        let publicKeyData = publicKey.x963Representation
+        let privateKeyData = privateKey.rawRepresentation
+        
+        // Generate device ID from public key hash
+        let digest = SHA256.hash(data: publicKeyData)
+        let id = digest.compactMap { String(format: "%02x", $0) }.joined()
+        
+        let identity: [String: Any] = [
+            "id": id,
+            "publicKey": publicKeyData.base64EncodedString(),
+            "privateKeyBase64": privateKeyData.base64EncodedString()
+        ]
+        
+        // Save to UserDefaults
+        if let data = try? JSONSerialization.data(withJSONObject: identity) {
+            UserDefaults.standard.set(data, forKey: deviceIdentityStorageKey)
+        }
+        
+        return identity
+    }
+    
+    /// Build device auth payload string
+    private func buildDeviceAuthPayload(
+        version: String,
+        deviceId: String,
+        clientId: String,
+        clientMode: String,
+        role: String,
+        scopes: [String],
+        signedAtMs: Int,
+        token: String?,
+        nonce: String?
+    ) -> String {
+        let scopesString = scopes.joined(separator: ",")
+        let tokenString = token ?? ""
+        
+        var parts = [
+            version,
+            deviceId,
+            clientId,
+            clientMode,
+            role,
+            scopesString,
+            String(signedAtMs),
+            tokenString
+        ]
+        
+        // Add nonce for v2 protocol
+        if version == "v2" {
+            parts.append(nonce ?? "")
+        }
+        
+        return parts.joined(separator: "|")
+    }
+    
+    /// Get preferred auth token (device token or user token)
+    private func getPreferredAuthToken() -> String {
+        let deviceToken = getStoredDeviceToken()
+        return deviceToken.isEmpty ? (token ?? "") : deviceToken
+    }
+    
+    /// Get stored device token
+    private func getStoredDeviceToken() -> String {
+        let key = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
+        return UserDefaults.standard.string(forKey: key) ?? ""
+    }
+    
+    /// Store device token
+    private func storeDeviceToken(_ token: String) {
+        let key = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
+        UserDefaults.standard.set(token, forKey: key)
     }
 
     /// 处理断开连接
     private func handleDisconnect() {
         let wasConnected = connected
         connected = false
+        isConnecting = false
 
         if wasConnected {
             onConnection?(false)

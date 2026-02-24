@@ -3,8 +3,6 @@
 # build_ipados.sh
 # Build iPadOS version of openclaw-deck-swift
 
-set -e
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_PATH="${PROJECT_DIR}/openclaw-deck-swift/openclaw-deck-swift.xcodeproj"
@@ -26,7 +24,7 @@ rm -rf "$BUILD_DIR"/*
 # Find available iPad simulator
 echo "Finding available iPad simulator..."
 
-# Try to find any available iPad Pro or iPad Air simulator
+# Try to find any available iPad simulator
 IPAD_SIMULATOR=$(xcrun simctl list devices available 'iPad' -j 2>/dev/null | \
     jq -r '.devices | to_entries[] | .value[] | select(.availability | contains("Available")) | .udid' | \
     head -1)
@@ -42,20 +40,27 @@ fi
 
 # Build for iPadOS
 echo "Building for iPadOS..."
-if xcodebuild build \
+xcodebuild build \
     -project "$PROJECT_PATH" \
     -scheme "$SCHEME_NAME" \
     -configuration Release \
     -destination "$DESTINATION" \
     -derivedDataPath "$BUILD_DIR/DerivedData" \
-    -quiet 2>&1 | tee "$BUILD_DIR/build.log"; then
+    -quiet > "$BUILD_DIR/build.log" 2>&1
+
+BUILD_STATUS=$?
+
+# Show last 20 lines of log
+tail -20 "$BUILD_DIR/build.log"
+
+if [ $BUILD_STATUS -eq 0 ]; then
     echo ""
     echo "========================================"
     echo "✅ iPadOS Build Succeeded"
     echo "========================================"
     echo ""
     echo "Build output location: $BUILD_DIR"
-    
+
     # Show build artifacts
     echo ""
     echo "Build artifacts:"
@@ -67,10 +72,5 @@ else
     echo "========================================"
     echo ""
     echo "Check build log: $BUILD_DIR/build.log"
-    
-    # Show last 20 lines of error log
-    echo ""
-    echo "Last 20 lines of build log:"
-    tail -20 "$BUILD_DIR/build.log"
     exit 1
 fi

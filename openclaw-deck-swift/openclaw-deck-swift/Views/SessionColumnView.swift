@@ -68,11 +68,11 @@ struct SessionColumnView: View {
   // MARK: - Column Header
 
   private var columnHeader: some View {
-    HStack {
+    HStack(spacing: 10) {
+      // Session info
       VStack(alignment: .leading, spacing: 2) {
         Text(session.sessionId)
-          .font(.caption)
-          .fontWeight(.semibold)
+          .font(.headline)
           .lineLimit(1)
 
         Text("\(session.messageCount) messages")
@@ -82,38 +82,92 @@ struct SessionColumnView: View {
 
       Spacer()
 
-      // Status indicator
-      switch session.status {
-      case .idle:
-        Image(systemName: "checkmark.circle.fill")
-          .foregroundColor(.green)
-          .font(.caption)
-      case .thinking:
-        ProgressView()
-          .scaleEffect(0.5)
-      case .streaming:
-        Image(systemName: "waveform.circle.fill")
-          .foregroundColor(.blue)
-          .font(.caption)
-      case .error:
-        Image(systemName: "exclamationmark.circle.fill")
-          .foregroundColor(.red)
-          .font(.caption)
-      }
+      // Status capsule
+      statusCapsule
 
-      // Delete button
+      // Delete button - glass style
       Button {
         showingDeleteAlert = true
       } label: {
         Image(systemName: "trash")
-          .foregroundColor(.secondary)
           .font(.caption)
       }
-      .buttonStyle(.plain)
-      .padding(.leading, 4)
+      .buttonStyle(.glass)
     }
-    .padding(8)
-    .background(Color.adaptiveBackground)
+    .padding(.horizontal, 12)
+    .padding(.vertical, 8)
+    .background(.bar)
+    .overlay(alignment: .bottom) {
+      Divider()
+    }
+  }
+
+  // MARK: - Status Capsule
+
+  private var statusCapsule: some View {
+    Group {
+      switch session.status {
+      case .idle:
+        HStack(spacing: 4) {
+          Circle()
+            .fill(.green)
+            .frame(width: 6, height: 6)
+          Text("Ready")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.ultraThinMaterial)
+        .cornerRadius(8)
+        .glassEffect()
+
+      case .thinking:
+        HStack(spacing: 4) {
+          ProgressView()
+            .scaleEffect(0.7)
+          Text("Thinking")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.ultraThinMaterial)
+        .cornerRadius(8)
+        .glassEffect()
+
+      case .streaming:
+        HStack(spacing: 4) {
+          Circle()
+            .fill(.blue)
+            .frame(width: 6, height: 6)
+          Text("Working")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.ultraThinMaterial)
+        .cornerRadius(8)
+        .glassEffect()
+
+      case .error(let message):
+        HStack(spacing: 4) {
+          Circle()
+            .fill(.red)
+            .frame(width: 6, height: 6)
+          Text("Error")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.ultraThinMaterial)
+        .cornerRadius(8)
+        .glassEffect()
+        .help(message)
+      }
+    }
   }
 
   // MARK: - Message List
@@ -143,53 +197,45 @@ struct SessionColumnView: View {
   // MARK: - Chat Input
 
   private var chatInput: some View {
-    HStack(spacing: 10) {
+    HStack(spacing: 8) {
+      // Input field - iOS 26 Liquid Glass style
       TextField(
-        "iMessage",
+        "Message",
         text: $inputText,
         axis: .vertical
       )
       .textFieldStyle(.plain)
-      .padding(10)
-      .padding(.trailing, inputText.isEmpty ? 0 : 40)
+      .padding(12)
       .background(
-        RoundedRectangle(cornerRadius: 20)
-          .fill(Color.adaptiveSecondaryBackground)
-      )
-      .overlay(
-        HStack {
-          Spacer()
-          if !inputText.isEmpty {
-            Button {
-              sendMessage()
-            } label: {
-              Image(systemName: "arrow.up.circle.fill")
-                .font(.title2)
-                .foregroundColor(.blue)
-                .padding(.trailing, 8)
-            }
-            .transition(.scale.combined(with: .opacity))
-          }
-        }
+        RoundedRectangle(cornerRadius: 14)
+          .fill(.regularMaterial)
+          .overlay(
+            RoundedRectangle(cornerRadius: 14)
+              .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+          )
       )
       .onSubmit {
         sendMessage()
       }
-      .disabled(session.status == .streaming || !viewModel.gatewayConnected)
 
-      if inputText.isEmpty {
-        Button {
-          // Could be used for attachments, etc.
-        } label: {
-          Image(systemName: "plus.circle.fill")
-            .font(.title2)
-            .foregroundColor(.blue)
-        }
+      // Send button - native iOS glass style with plain icon
+      Button {
+        sendMessage()
+      } label: {
+        Image(systemName: "arrow.up")
+          .font(.body)
+          .fontWeight(.semibold)
       }
+      .buttonStyle(.glass)
+      .disabled(inputText.isEmpty)
+      .opacity(inputText.isEmpty ? 0.5 : 1.0)
     }
-    .padding(.horizontal)
-    .padding(.vertical, 8)
-    .background(Color.adaptiveBackground)
+    .padding(.horizontal, 12)
+    .padding(.vertical, 10)
+    .background(.bar)
+    .overlay(alignment: .top) {
+      Divider()
+    }
   }
 
   // MARK: - Actions
@@ -242,14 +288,18 @@ struct MessageView: View {
         Spacer()
       }
 
-      VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
+      VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 2) {
+        // Message bubble
         messageContent
+          .padding(.horizontal, 14)
+          .padding(.vertical, 10)
+          .background(backgroundColor)
+          .cornerRadius(18, corners: cornerMask)
+
+        // Timestamp outside the bubble
         timestamp
+          .padding(.horizontal, 4)
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 10)
-      .background(backgroundColor)
-      .cornerRadius(18, corners: cornerMask)
 
       if message.role == .assistant {
         Spacer()
@@ -271,16 +321,6 @@ struct MessageView: View {
       Text(message.text)
         .font(.body)
         .foregroundColor(.white)
-    }
-
-    if message.streaming == true {
-      HStack(spacing: 4) {
-        ProgressView()
-          .scaleEffect(0.5)
-        Text("Receiving...")
-          .font(.caption2)
-      }
-      .foregroundColor(.secondary)
     }
   }
 
@@ -327,14 +367,18 @@ struct MessageView: View {
         Spacer()
       }
 
-      VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
+      VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 2) {
+        // Message bubble
         messageContent
+          .padding(.horizontal, 14)
+          .padding(.vertical, 10)
+          .background(backgroundColor)
+          .cornerRadius(18)
+
+        // Timestamp outside the bubble
         timestamp
+          .padding(.horizontal, 4)
       }
-      .padding(.horizontal, 14)
-      .padding(.vertical, 10)
-      .background(backgroundColor)
-      .cornerRadius(18)
 
       if message.role == .assistant {
         Spacer()
@@ -356,16 +400,6 @@ struct MessageView: View {
       Text(message.text)
         .font(.body)
         .foregroundColor(.white)
-    }
-
-    if message.streaming == true {
-      HStack(spacing: 4) {
-        ProgressView()
-          .scaleEffect(0.5)
-        Text("Receiving...")
-          .font(.caption2)
-      }
-      .foregroundColor(.secondary)
     }
   }
 

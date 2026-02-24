@@ -656,7 +656,8 @@ class GatewayClient {
       binary.append(Character(UnicodeScalar(data[i])))
     }
     let base64 = binary.data(using: .utf8)!.base64EncodedString()
-    return base64
+    return
+      base64
       .replacingOccurrences(of: "+", with: "-")
       .replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "=", with: "")
@@ -664,7 +665,8 @@ class GatewayClient {
 
   /// Base64URL decode (handles missing padding)
   private func base64UrlDecode(_ string: String) -> Data? {
-    var base64 = string
+    var base64 =
+      string
       .replacingOccurrences(of: "-", with: "+")
       .replacingOccurrences(of: "_", with: "/")
     // Add padding if needed

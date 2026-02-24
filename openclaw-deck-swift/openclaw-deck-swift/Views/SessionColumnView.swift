@@ -22,7 +22,6 @@ struct SessionColumnView: View {
   let onDelete: () -> Void
 
   @State private var inputText = ""
-  @State private var isSending = false
   @State private var showingDeleteAlert = false
 
   var body: some View {
@@ -158,7 +157,7 @@ struct SessionColumnView: View {
       .onSubmit {
         sendMessage()
       }
-      .disabled(isSending || session.status == .streaming || !viewModel.gatewayConnected)
+      .disabled(session.status == .streaming || !viewModel.gatewayConnected)
 
       Button {
         sendMessage()
@@ -172,7 +171,7 @@ struct SessionColumnView: View {
           .cornerRadius(10)
       }
       .buttonStyle(.plain)
-      .disabled(inputText.isEmpty || isSending || session.status == .streaming || !viewModel.gatewayConnected)
+      .disabled(inputText.isEmpty || session.status == .streaming || !viewModel.gatewayConnected)
     }
     .padding()
   }
@@ -180,14 +179,16 @@ struct SessionColumnView: View {
   // MARK: - Computed Properties
 
   private var sendIcon: String {
-    if isSending || session.status == .streaming {
+    if session.status == .streaming || session.status == .thinking {
       return "ellipsis.circle.fill"
     }
     return "paperplane.fill"
   }
 
   private var sendButtonColor: Color {
-    if inputText.isEmpty || isSending || session.status == .streaming || !viewModel.gatewayConnected {
+    if inputText.isEmpty || session.status == .streaming || session.status == .thinking
+      || !viewModel.gatewayConnected
+    {
       return .secondary
     }
     return .blue
@@ -196,17 +197,14 @@ struct SessionColumnView: View {
   // MARK: - Actions
 
   private func sendMessage() {
-    guard !inputText.isEmpty, !isSending, viewModel.gatewayConnected else { return }
+    guard !inputText.isEmpty, !viewModel.isInitializing, viewModel.gatewayConnected else { return }
 
     let text = inputText
     inputText = ""
-    isSending = true
 
     Task {
+      // 发送消息到 viewModel（不等待响应）
       await viewModel.sendMessage(sessionId: session.sessionId, text: text)
-      await MainActor.run {
-        isSending = false
-      }
     }
   }
 }

@@ -181,8 +181,8 @@ class DeckViewModel {
 
   /// 加载所有 Session 的历史消息
   func loadAllSessionHistory() async {
-    for sessionKey in sessionOrder.compactMap { sessions[$0]?.sessionKey } {
-      await loadSessionHistory(sessionKey: sessionKey)
+    for session in sessionOrder.compactMap({ sessions[$0] }) {
+      await loadSessionHistory(sessionKey: session.sessionKey)
     }
   }
 
@@ -236,32 +236,37 @@ class DeckViewModel {
     session.messages.append(userMsg)
     session.status = .thinking
 
-    do {
-      // 2. 调用 runAgent
-      let (runId, status) = try await client.runAgent(
-        agentId: config.mainAgentId,
-        message: text,
-        sessionKey: session.sessionKey
-      )
+    // 2. 调用 runAgent（不阻塞 UI）
+    Task {
+      do {
+        let (runId, status) = try await client.runAgent(
+          agentId: config.mainAgentId,
+          message: text,
+          sessionKey: session.sessionKey
+        )
 
-      print("[DeckViewModel] Agent run started: \(runId), status: \(status)")
+        print("[DeckViewModel] Agent run started: \(runId), status: \(status)")
 
-      // 3. 创建 assistant 占位消息
-      let assistantMsg = ChatMessage(
-        id: UUID().uuidString,
-        role: .assistant,
-        text: "",
-        timestamp: Date(),
-        streaming: true,
-        runId: runId
-      )
-      session.messages.append(assistantMsg)
-      session.activeRunId = runId
-      session.status = .streaming
-
-    } catch {
-      print("[DeckViewModel] Failed to send message: \(error)")
-      session.status = .error("Failed to send message: \(error.localizedDescription)")
+        // 3. 创建 assistant 占位消息
+        await MainActor.run {
+          let assistantMsg = ChatMessage(
+            id: UUID().uuidString,
+            role: .assistant,
+            text: "",
+            timestamp: Date(),
+            streaming: true,
+            runId: runId
+          )
+          session.messages.append(assistantMsg)
+          session.activeRunId = runId
+          session.status = .streaming
+        }
+      } catch {
+        print("[DeckViewModel] Failed to send message: \(error)")
+        await MainActor.run {
+          session.status = .error("Failed to send message: \(error.localizedDescription)")
+        }
+      }
     }
   }
 
@@ -271,7 +276,11 @@ class DeckViewModel {
   /// - Parameter event: Gateway 事件
   func handleGatewayEvent(_ event: GatewayEvent) {
     switch event.event {
+    case "agent":
+      // 新的 agent 事件格式：{ runId, stream, data, sessionKey }
+      handleAgentEvent(event)
     case "agent.content":
+      // 兼容旧的 agent.content 事件格式
       handleAgentContent(event)
     case "agent.thinking":
       handleAgentThinking(event)
@@ -281,12 +290,111 @@ class DeckViewModel {
       handleAgentDone(event)
     case "agent.error":
       handleAgentError(event)
+    // 忽略保活和健康检查事件
+    case "tick", "health", "heartbeat":
+      break
     default:
       print("[DeckViewModel] Unknown event type: \(event.event)")
     }
   }
 
-  /// 处理 agent.content 事件
+  /// 处理 agent 事件（新格式）
+  private func handleAgentEvent(_ event: GatewayEvent) {
+    guard let payload = event.payload as? [String: Any],
+      let runId = payload["runId"] as? String,
+      let stream = payload["stream"] as? String,
+      let sessionKey = payload["sessionKey"] as? String
+    else {
+      print("[DeckViewModel] Invalid agent event payload")
+      return
+    }
+
+    // 从 sessionKey 提取 sessionId: "agent:main:<sessionId>"
+    let parts = sessionKey.split(separator: ":")
+    let sessionId = parts.count >= 3 ? String(parts[2]) : nil
+
+    guard let sessionId = sessionId,
+      let session = sessions[sessionId]
+    else {
+      print("[DeckViewModel] Session not found for sessionKey: \(sessionKey)")
+      return
+    }
+
+    switch stream {
+    case "assistant":
+      // 流式内容：{ data: { delta: "..." } }
+      if let data = payload["data"] as? [String: Any],
+        let delta = data["delta"] as? String
+      {
+        appendToAssistantMessage(session: session, runId: runId, text: delta)
+      }
+
+    case "lifecycle":
+      // 生命周期：{ data: { phase: "start" | "end" } }
+      if let data = payload["data"] as? [String: Any],
+        let phase = data["phase"] as? String
+      {
+        switch phase {
+        case "start":
+          session.status = .thinking
+        case "end":
+          session.status = .idle
+          session.activeRunId = nil
+        default:
+          break
+        }
+      }
+
+    case "tool_use":
+      session.status = .streaming
+    // TODO: 处理工具调用信息
+
+    default:
+      break
+    }
+  }
+
+  /// 追加内容到 assistant 消息
+  private func appendToAssistantMessage(session: SessionState, runId: String, text: String) {
+    // 设置状态为 streaming
+    session.status = .streaming
+
+    // 查找对应的消息
+    guard
+      let index = session.messages.enumerated().first(where: { _, msg in
+        msg.role == .assistant && msg.runId == runId
+      })?.offset
+    else {
+      // 如果没有找到消息，创建一个新的
+      let assistantMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .assistant,
+        text: text,
+        timestamp: Date(),
+        streaming: true,
+        runId: runId
+      )
+      session.messages.append(assistantMsg)
+      session.activeRunId = runId
+      return
+    }
+
+    // 追加文本
+    let message = session.messages[index]
+    session.messages[index] = ChatMessage(
+      id: message.id,
+      role: message.role,
+      text: message.text + text,
+      timestamp: message.timestamp,
+      streaming: message.streaming,
+      thinking: message.thinking,
+      toolUse: message.toolUse,
+      runId: message.runId,
+      isLoaded: message.isLoaded
+    )
+  }
+
+  /// 处理 agent.content 事件（旧格式兼容）
   private func handleAgentContent(_ event: GatewayEvent) {
     // 从 payload 中提取文本
     guard let payload = event.payload as? [String: Any],
@@ -301,38 +409,51 @@ class DeckViewModel {
       return
     }
 
-    // 检查是否有 assistant 消息可以更新
-    if let lastMessage = session.messages.last, lastMessage.role == .assistant {
-      // 追加到现有消息
-      session.appendToLastMessage(text: text)
+    // 使用 runId 查找消息，如果没有 runId 则使用 activeRunId
+    let runId = payload["runId"] as? String ?? session.activeRunId
+
+    if let runId = runId {
+      appendToAssistantMessage(session: session, runId: runId, text: text)
     } else {
-      // 创建新的 assistant 消息（正常情况下不应该发生）
-      print("[DeckViewModel] No assistant message found, creating new one")
-      let assistantMsg = ChatMessage(
-        id: UUID().uuidString,
-        role: .assistant,
-        text: text,
-        timestamp: Date(),
-        streaming: true
-      )
-      session.messages.append(assistantMsg)
+      // 后备：追加到最后一条 assistant 消息
+      if let lastMessage = session.messages.last, lastMessage.role == .assistant {
+        session.appendToLastMessage(text: text)
+      } else {
+        // 创建新的 assistant 消息
+        let assistantMsg = ChatMessage(
+          id: UUID().uuidString,
+          role: .assistant,
+          text: text,
+          timestamp: Date(),
+          streaming: true
+        )
+        session.messages.append(assistantMsg)
+      }
     }
   }
 
   /// 处理 agent.thinking 事件
   private func handleAgentThinking(_ event: GatewayEvent) {
-    guard let session = findSessionForEvent(event) else {
+    // 尝试从 sessionKey 提取 sessionId
+    if let session = sessionFromEvent(event) {
+      session.status = .thinking
       return
     }
-
-    session.status = .thinking
+    // 后备：使用 findSessionForEvent
+    if let session = findSessionForEvent(event) {
+      session.status = .thinking
+    }
   }
 
   /// 处理 agent.tool_use 事件
   private func handleAgentToolUse(_ event: GatewayEvent) {
-    guard let payload = event.payload as? [String: Any],
-      let session = findSessionForEvent(event)
-    else {
+    guard let payload = event.payload as? [String: Any] else {
+      return
+    }
+
+    // 尝试从 sessionKey 提取 sessionId
+    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
+    guard let session = session else {
       return
     }
 
@@ -368,20 +489,30 @@ class DeckViewModel {
 
   /// 处理 agent.done 事件
   private func handleAgentDone(_ event: GatewayEvent) {
-    guard let session = findSessionForEvent(event) else {
+    // 尝试从 sessionKey 提取 sessionId
+    if let session = sessionFromEvent(event) {
+      session.status = .idle
+      session.activeRunId = nil
       return
     }
-
-    session.status = .idle
-    session.activeRunId = nil
+    // 后备：使用 findSessionForEvent
+    if let session = findSessionForEvent(event) {
+      session.status = .idle
+      session.activeRunId = nil
+    }
   }
 
   /// 处理 agent.error 事件
   private func handleAgentError(_ event: GatewayEvent) {
     guard let payload = event.payload as? [String: Any],
-      let message = payload["message"] as? String,
-      let session = findSessionForEvent(event)
+      let message = payload["message"] as? String
     else {
+      return
+    }
+
+    // 尝试从 sessionKey 提取 sessionId
+    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
+    guard let session = session else {
       return
     }
 
@@ -398,6 +529,22 @@ class DeckViewModel {
     session.messages.append(errorMsg)
   }
 
+  /// 从事件中提取 sessionId（通过 sessionKey）
+  private func sessionFromEvent(_ event: GatewayEvent) -> SessionState? {
+    guard let payload = event.payload as? [String: Any],
+      let sessionKey = payload["sessionKey"] as? String
+    else {
+      return nil
+    }
+
+    // 从 sessionKey 提取 sessionId: "agent:main:<sessionId>"
+    let parts = sessionKey.split(separator: ":")
+    guard parts.count >= 3 else { return nil }
+    let sessionId = String(parts[2])
+
+    return sessions[sessionId]
+  }
+
   /// 根据事件找到对应的 Session
   private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
     // 优先通过 activeRunId 查找匹配的 Session
@@ -405,7 +552,8 @@ class DeckViewModel {
       if let activeRunId = session.activeRunId {
         // 如果事件 payload 中有 runId，进行匹配
         if let payload = event.payload as? [String: Any],
-          let eventRunId = payload["runId"] as? String {
+          let eventRunId = payload["runId"] as? String
+        {
           if activeRunId == eventRunId {
             return session
           }

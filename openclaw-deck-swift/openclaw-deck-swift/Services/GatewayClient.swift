@@ -105,7 +105,11 @@ class GatewayClient {
 
     let session = URLSession.shared
     var request = URLRequest(url: url)
-    request.setValue("http://127.0.0.1", forHTTPHeaderField: "Origin")
+    // Set Origin header to match Gateway URL (required by Gateway CORS policy)
+    let origin = url.absoluteString
+      .replacingOccurrences(of: "ws://", with: "http://")
+      .replacingOccurrences(of: "wss://", with: "https://")
+    request.setValue(origin, forHTTPHeaderField: "Origin")
     webSocket = session.webSocketTask(with: request)
     webSocket?.resume()
 
@@ -145,6 +149,15 @@ class GatewayClient {
     if wasConnected {
       onConnection?(false)
     }
+  }
+
+  /// 重置设备身份（清除旧的 device identity，下次连接时会生成新的）
+  func resetDeviceIdentity() {
+    UserDefaults.standard.removeObject(forKey: deviceIdentityStorageKey)
+    // Also clear device token
+    let deviceTokenKey = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
+    UserDefaults.standard.removeObject(forKey: deviceTokenKey)
+    print("[GatewayClient] Device identity reset")
   }
 
   /// 清除错误状态
@@ -522,13 +535,23 @@ class GatewayClient {
     )
 
     // Sign the payload using Ed25519
-    guard let privateKeyData = base64UrlDecode(identity["privateKeyBase64"] as! String) else {
+    // privateKeySeed is stored as base64Url encoded 32-byte seed
+    guard let privateKeySeedBase64 = identity["privateKeySeedBase64"] as? String,
+          let privateKeySeed = base64UrlDecode(privateKeySeedBase64)
+    else {
       throw NSError(
         domain: "GatewayClient", code: -5,
-        userInfo: [NSLocalizedDescriptionKey: "Failed to decode private key"])
+        userInfo: [NSLocalizedDescriptionKey: "Failed to decode private key seed"])
     }
 
-    let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeyData)
+    // Ensure we have exactly 32 bytes (Ed25519 seed size)
+    guard privateKeySeed.count == 32 else {
+      throw NSError(
+        domain: "GatewayClient", code: -6,
+        userInfo: [NSLocalizedDescriptionKey: "Incorrect private key seed size: \(privateKeySeed.count) bytes, expected 32"])
+    }
+
+    let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeySeed)
     let signatureData = try privateKey.signature(for: Array(payload.utf8))
 
     // Build result dictionary - only include nonce if provided
@@ -549,18 +572,78 @@ class GatewayClient {
     // Try to load from UserDefaults
     if let data = UserDefaults.standard.data(forKey: deviceIdentityStorageKey),
       let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-      identity["id"] != nil, identity["publicKey"] != nil, identity["privateKeyBase64"] != nil
+      identity["id"] != nil, identity["publicKey"] != nil
     {
-      return identity
+      // Check for new format (privateKeySeedBase64)
+      if identity["privateKeySeedBase64"] != nil {
+        // Validate the key size
+        if let seedBase64 = identity["privateKeySeedBase64"] as? String,
+           let seedData = base64UrlDecode(seedBase64) {
+          if seedData.count == 32 {
+            return identity
+          }
+          // Invalid seed size, recreate identity
+          print("[GatewayClient] Invalid seed size: \(seedData.count) bytes, recreating identity")
+        }
+      }
+
+      // Migrate old format (privateKeyBase64) to new format
+      // Old format may have stored standard base64 instead of base64url
+      if let oldPrivateKeyBase64 = identity["privateKeyBase64"] as? String {
+        // Try base64url decode first
+        var privateKeyData = base64UrlDecode(oldPrivateKeyBase64)
+        
+        // If base64url decode failed or produced invalid size, try standard base64
+        if privateKeyData == nil || (privateKeyData!.count != 32 && privateKeyData!.count != 64) {
+          // Try standard base64 decode
+          var base64 = oldPrivateKeyBase64
+          // Add padding if needed
+          while base64.count % 4 != 0 {
+            base64.append("=")
+          }
+          privateKeyData = Data(base64Encoded: base64)
+        }
+        
+        if let privateKeyData = privateKeyData {
+          // If old key was 64 bytes, extract just the 32-byte seed
+          if privateKeyData.count == 64 {
+            let seedData = privateKeyData.subdata(in: 0..<32)
+            var newIdentity = identity
+            newIdentity["privateKeySeedBase64"] = base64UrlEncode(seedData)
+            
+            // Save migrated identity
+            if let newData = try? JSONSerialization.data(withJSONObject: newIdentity) {
+              UserDefaults.standard.set(newData, forKey: deviceIdentityStorageKey)
+            }
+            return newIdentity
+          } else if privateKeyData.count == 32 {
+            // Old key was already 32 bytes, just rename the key
+            var newIdentity = identity
+            newIdentity["privateKeySeedBase64"] = base64UrlEncode(privateKeyData)
+            
+            if let newData = try? JSONSerialization.data(withJSONObject: newIdentity) {
+              UserDefaults.standard.set(newData, forKey: deviceIdentityStorageKey)
+            }
+            return newIdentity
+          }
+          // Invalid size, fall through to recreate
+        }
+      }
+
+      // Migration failed, create new identity
+      print("[GatewayClient] Failed to migrate old identity, creating new one")
     }
 
     // Create new Ed25519 identity
     let privateKey = Curve25519.Signing.PrivateKey()
     let publicKey = privateKey.publicKey
 
-    // Raw representation is 32 bytes for Ed25519
+    // Raw representation is 32 bytes for Ed25519 (the seed)
     let publicKeyData = publicKey.rawRepresentation
-    let privateKeyData = privateKey.rawRepresentation
+    let privateKeySeed = privateKey.rawRepresentation
+    
+    // Debug: log key sizes
+    print("[GatewayClient] Creating new identity - publicKey: \(publicKeyData.count) bytes, privateKeySeed: \(privateKeySeed.count) bytes")
 
     // Generate device ID from public key hash (SHA-256, then hex)
     let digest = SHA256.hash(data: publicKeyData)
@@ -569,8 +652,13 @@ class GatewayClient {
     let identity: [String: Any] = [
       "id": id,
       "publicKey": base64UrlEncode(publicKeyData),
-      "privateKeyBase64": base64UrlEncode(privateKeyData),
+      "privateKeySeedBase64": base64UrlEncode(privateKeySeed),
     ]
+    
+    // Debug: verify encoded sizes
+    if let seedData = base64UrlDecode(identity["privateKeySeedBase64"] as! String) {
+      print("[GatewayClient] Encoded seed size: \(seedData.count) bytes")
+    }
 
     // Save to UserDefaults
     if let data = try? JSONSerialization.data(withJSONObject: identity) {
@@ -652,8 +740,13 @@ class GatewayClient {
 
   /// 处理请求超时
   private func handleTimeout(id: String, method: String) async {
-    if pendingRequests[id] != nil {
-      pendingRequests.removeValue(forKey: id)
+    if let pending = pendingRequests.removeValue(forKey: id) {
+      pending.continuation.resume(
+        throwing: NSError(
+          domain: "GatewayClient",
+          code: -2,
+          userInfo: [NSLocalizedDescriptionKey: "Request \(method) timed out"]
+        ))
     }
   }
 
@@ -663,15 +756,9 @@ class GatewayClient {
     return "deck-\(messageCounter)-\(Int(Date().timeIntervalSince1970 * 1000))"
   }
 
-  /// Base64URL encode (without padding) - matches TypeScript implementation
+  /// Base64URL encode (without padding)
   private func base64UrlEncode(_ data: Data) -> String {
-    var binary = ""
-    for i in 0..<data.count {
-      binary.append(Character(UnicodeScalar(data[i])))
-    }
-    let base64 = binary.data(using: .utf8)!.base64EncodedString()
-    return
-      base64
+    return data.base64EncodedString()
       .replacingOccurrences(of: "+", with: "-")
       .replacingOccurrences(of: "/", with: "_")
       .replacingOccurrences(of: "=", with: "")

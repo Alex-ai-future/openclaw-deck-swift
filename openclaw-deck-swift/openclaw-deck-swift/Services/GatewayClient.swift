@@ -523,7 +523,7 @@ class GatewayClient {
         let payload = buildDeviceAuthPayload(
             version: version,
             deviceId: identity["id"] as! String,
-            clientId: "openclaw-deck-swift",
+            clientId: "gateway-client",
             clientMode: "webchat",
             role: "operator",
             scopes: operatorScopes,
@@ -535,18 +535,19 @@ class GatewayClient {
         // Sign the payload using Ed25519
         let privateKeyData = Data(base64Encoded: identity["privateKeyBase64"] as! String)!
         let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeyData)
-        let signature = try privateKey.signature(for: Array(payload.utf8))
+        let signatureData = try privateKey.signature(for: Array(payload.utf8))
 
-        // Get signature bytes (Ed25519 signatures are 64 bytes)
-        let signatureData = signature.withUnsafeBytes { Data($0) }
-
-        return [
+        // Build result dictionary - only include nonce if provided
+        var result: [String: Any] = [
             "id": identity["id"] as! String,
             "publicKey": identity["publicKey"] as! String,
             "signature": base64UrlEncode(signatureData),
-            "signedAt": Int(signedAt),
-            "nonce": nonce ?? ""
+            "signedAt": Int(signedAt)
         ]
+        if let nonce = nonce {
+            result["nonce"] = nonce
+        }
+        return result
     }
 
     /// Load or create device identity using Ed25519

@@ -108,7 +108,9 @@ class GatewayClient {
         print("[GatewayClient] Connecting to \(url)")
 
         let session = URLSession.shared
-        webSocket = session.webSocketTask(with: url)
+        var request = URLRequest(url: url)
+        request.setValue("http://127.0.0.1", forHTTPHeaderField: "Origin")
+        webSocket = session.webSocketTask(with: request)
         webSocket?.resume()
 
         print("[GatewayClient] WebSocket state after resume: \(webSocket?.state ?? .suspended)")
@@ -159,14 +161,15 @@ class GatewayClient {
 
     /// 发送请求并等待响应
     func request(method: String, params: [String: Any]? = nil) async throws -> GatewayResponse {
-        guard isMock || (connected && webSocket != nil) else {
+        // 允许 mock 模式、已连接状态、或 connect 握手请求
+        guard isMock || connected || method == "connect" else {
             throw NSError(
                 domain: "GatewayClient",
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]
             )
         }
-        
+
         if isMock {
             let id = nextId()
             print("[GatewayClient] Mock sending request: \(method) with id: \(id)")
@@ -177,6 +180,8 @@ class GatewayClient {
                 error: nil
             )
         }
+
+        print("[GatewayClient] Sending request: \(method)")
 
         let id = nextId()
 
@@ -452,8 +457,8 @@ class GatewayClient {
             
             var params: [String: Any] = [
                 "client": [
-                    "id": "openclaw-deck-swift",
-                    "version": "1.0.0",
+                    "id": "gateway-client",
+                    "version": "2026.2.16",
                     "platform": "ios",
                     "mode": "webchat"
                 ],

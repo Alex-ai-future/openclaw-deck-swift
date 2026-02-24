@@ -513,10 +513,12 @@ class GatewayClient {
     /// Build signed device identity
     private func buildSignedDeviceIdentity(nonce: String?) async throws -> [String: Any] {
         let identity = try loadOrCreateDeviceIdentity()
-        let signedAt = Date().timeIntervalSince1970 * 1000
+        let signedAt = Int(Date().timeIntervalSince1970 * 1000)  // Integer milliseconds
 
         // Use v2 protocol if nonce is provided
         let version = nonce != nil ? "v2" : "v1"
+
+        print("[GatewayClient] Building device identity: version=\(version), nonce=\(nonce ?? "nil"), signedAt=\(signedAt)")
 
         let payload = buildDeviceAuthPayload(
             version: version,
@@ -596,7 +598,7 @@ class GatewayClient {
     ) -> String {
         let scopesString = scopes.joined(separator: ",")
         let tokenString = token ?? ""
-        
+
         var parts = [
             version,
             deviceId,
@@ -607,13 +609,18 @@ class GatewayClient {
             String(signedAtMs),
             tokenString
         ]
-        
+
+        print("[GatewayClient] Payload parts: \(parts)")
+
         // Add nonce for v2 protocol
         if version == "v2" {
             parts.append(nonce ?? "")
+            print("[GatewayClient] Adding nonce to payload")
         }
-        
-        return parts.joined(separator: "|")
+
+        let payload = parts.joined(separator: "|")
+        print("[GatewayClient] Final payload: \(payload)")
+        return payload
     }
     
     /// Get preferred auth token (device token or user token)

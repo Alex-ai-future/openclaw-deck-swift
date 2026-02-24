@@ -26,7 +26,7 @@ struct SessionColumnView: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      // Column header with delete button
+      // Column header
       columnHeader
 
       Divider()
@@ -60,9 +60,9 @@ struct SessionColumnView: View {
 
   private var columnHeader: some View {
     HStack(spacing: 12) {
-      // 左边：状态按钮
+      // Left: Status button
       Button {
-        // 可选：点击显示状态详情
+        // Optional: show status details
       } label: {
         StatusIndicator(status: session.status)
       }
@@ -70,7 +70,7 @@ struct SessionColumnView: View {
 
       Spacer()
 
-      // 中间：普通文字（Session Key + 消息数量）
+      // Center: Session info (plain text, not a button)
       VStack(spacing: 2) {
         Text(session.sessionKey)
           .font(.caption)
@@ -86,7 +86,7 @@ struct SessionColumnView: View {
 
       Spacer()
 
-      // 右边：删除按钮
+      // Right: Delete button
       Button {
         showingDeleteAlert = true
       } label: {

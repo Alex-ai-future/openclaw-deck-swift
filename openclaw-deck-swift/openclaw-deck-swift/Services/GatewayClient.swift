@@ -488,10 +488,10 @@ class GatewayClient {
     private func buildSignedDeviceIdentity(nonce: String?) async throws -> [String: Any] {
         let identity = try loadOrCreateDeviceIdentity()
         let signedAt = Date().timeIntervalSince1970 * 1000
-        
+
         // Use v2 protocol if nonce is provided
         let version = nonce != nil ? "v2" : "v1"
-        
+
         let payload = buildDeviceAuthPayload(
             version: version,
             deviceId: identity["id"] as! String,
@@ -503,21 +503,25 @@ class GatewayClient {
             token: getPreferredAuthToken().isEmpty ? nil : getPreferredAuthToken(),
             nonce: nonce
         )
-        
+
         // Sign the payload using Ed25519
-        let privateKey = try P256.Signing.PrivateKey(x963Representation: Data(base64Encoded: identity["privateKeyBase64"] as! String)!)
+        let privateKeyData = Data(base64Encoded: identity["privateKeyBase64"] as! String)!
+        let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeyData)
         let signature = try privateKey.signature(for: Array(payload.utf8))
-        
+
+        // Get signature bytes (Ed25519 signatures are 64 bytes)
+        let signatureData = signature.withUnsafeBytes { Data($0) }
+
         return [
             "id": identity["id"] as! String,
             "publicKey": identity["publicKey"] as! String,
-            "signature": signature.derRepresentation.base64EncodedString(),
+            "signature": base64UrlEncode(signatureData),
             "signedAt": Int(signedAt),
             "nonce": nonce ?? ""
         ]
     }
-    
-    /// Load or create device identity
+
+    /// Load or create device identity using Ed25519
     private func loadOrCreateDeviceIdentity() throws -> [String: Any] {
         // Try to load from UserDefaults
         if let data = UserDefaults.standard.data(forKey: deviceIdentityStorageKey),
@@ -525,28 +529,30 @@ class GatewayClient {
            identity["id"] != nil, identity["publicKey"] != nil, identity["privateKeyBase64"] != nil {
             return identity
         }
-        
-        // Create new identity
-        let privateKey = try P256.Signing.PrivateKey()
+
+        // Create new Ed25519 identity
+        let privateKey = Curve25519.Signing.PrivateKey()
         let publicKey = privateKey.publicKey
-        let publicKeyData = publicKey.x963Representation
+
+        // Raw representation is 32 bytes for Ed25519
+        let publicKeyData = publicKey.rawRepresentation
         let privateKeyData = privateKey.rawRepresentation
-        
-        // Generate device ID from public key hash
+
+        // Generate device ID from public key hash (SHA-256, then hex)
         let digest = SHA256.hash(data: publicKeyData)
         let id = digest.compactMap { String(format: "%02x", $0) }.joined()
-        
+
         let identity: [String: Any] = [
             "id": id,
-            "publicKey": publicKeyData.base64EncodedString(),
-            "privateKeyBase64": privateKeyData.base64EncodedString()
+            "publicKey": base64UrlEncode(publicKeyData),
+            "privateKeyBase64": base64UrlEncode(privateKeyData)
         ]
-        
+
         // Save to UserDefaults
         if let data = try? JSONSerialization.data(withJSONObject: identity) {
             UserDefaults.standard.set(data, forKey: deviceIdentityStorageKey)
         }
-        
+
         return identity
     }
     
@@ -635,5 +641,13 @@ class GatewayClient {
     private func nextId() -> String {
         messageCounter += 1
         return "deck-\(messageCounter)-\(Int(Date().timeIntervalSince1970 * 1000))"
+    }
+
+    /// Base64URL encode (without padding)
+    private func base64UrlEncode(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }

@@ -340,6 +340,12 @@ class DeckViewModel {
         case "end":
           session.status = .idle
           session.activeRunId = nil
+          // 清除所有消息的 streaming 状态
+          for i in session.messages.indices {
+            if session.messages[i].streaming == true {
+              session.messages[i].streaming = false
+            }
+          }
         default:
           break
         }

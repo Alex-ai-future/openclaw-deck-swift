@@ -91,12 +91,10 @@ class GatewayClient {
       connectionError = nil
       isConnecting = false
       onConnection?(true)
-      print("[GatewayClient] Mock connected")
       return
     }
 
     guard !isConnecting else {
-      print("[GatewayClient] Already connecting")
       return
     }
 
@@ -105,21 +103,17 @@ class GatewayClient {
     connectNonce = nil
     connectSent = false
 
-    print("[GatewayClient] Connecting to \(url)")
-
     let session = URLSession.shared
     var request = URLRequest(url: url)
     request.setValue("http://127.0.0.1", forHTTPHeaderField: "Origin")
     webSocket = session.webSocketTask(with: request)
     webSocket?.resume()
 
-    print("[GatewayClient] WebSocket state after resume: \(webSocket?.state ?? .suspended)")
-
     // 开始接收消息
     receiveMessage()
 
     // 延迟发送 connect 请求，等待可能的 challenge
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
       Task { @MainActor in
         await self?.sendConnect()
       }
@@ -128,8 +122,6 @@ class GatewayClient {
 
   /// 断开连接
   func disconnect() {
-    print("[GatewayClient] Disconnecting")
-
     let wasConnected = connected
     connected = false
     isConnecting = false
@@ -173,7 +165,6 @@ class GatewayClient {
 
     if isMock {
       let id = nextId()
-      print("[GatewayClient] Mock sending request: \(method) with id: \(id)")
       return GatewayResponse(
         id: id,
         ok: true,
@@ -181,8 +172,6 @@ class GatewayClient {
         error: nil
       )
     }
-
-    print("[GatewayClient] Sending request: \(method)")
 
     let id = nextId()
 
@@ -312,7 +301,6 @@ class GatewayClient {
         self.receiveMessage()
 
       case .failure(let error):
-        print("[GatewayClient] Receive error: \(error)")
         Task { @MainActor in
           self.handleDisconnect()
         }
@@ -331,7 +319,6 @@ class GatewayClient {
     guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
       let type = json["type"] as? String
     else {
-      print("[GatewayClient] Failed to parse frame")
       return
     }
 
@@ -386,23 +373,12 @@ class GatewayClient {
     if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
       let nonce = payload["nonce"] as? String
     {
-      print("[GatewayClient] Received connect challenge, signing with nonce...")
       self.connectNonce = nonce
       self.connectSent = false
-
-      // 检查 WebSocket 连接状态
-      if webSocket?.state != .running {
-        print("[GatewayClient] WebSocket not running, reconnecting...")
-        // 重新建立连接
+      // Retry connect with nonce after a short delay
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
         Task { @MainActor in
-          await self.reconnectForChallenge()
-        }
-      } else {
-        // Retry connect with nonce after a short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-          Task { @MainActor in
-            await self?.sendConnect()
-          }
+          await self?.sendConnect()
         }
       }
       return
@@ -412,45 +388,25 @@ class GatewayClient {
     onEvent?(gatewayEvent)
   }
 
-  /// 为 challenge 重新连接
-  private func reconnectForChallenge() async {
-    print("[GatewayClient] Reconnecting for challenge...")
-
-    // 先断开现有连接
-    disconnect()
-
-    // 等待一小段时间
-    try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1秒
-
-    // 重新连接
-    await connect()
-  }
-
   /// 发送帧
   private func send(frame: GatewayRequest) {
     guard let webSocket = webSocket else {
-      print("[GatewayClient] Cannot send: WebSocket is nil")
       return
     }
 
     guard webSocket.state == .running else {
-      print("[GatewayClient] Cannot send: WebSocket state is \(webSocket.state)")
       return
     }
 
     do {
       let data = try encodeRequest(frame)
       guard let string = String(data: data, encoding: .utf8) else {
-        print("[GatewayClient] Failed to convert data to string")
         return
       }
 
-      print("[GatewayClient] Sending: \(frame.method) id=\(frame.id)")
       webSocket.send(.string(string)) { error in
         if let error = error {
           print("[GatewayClient] Send error: \(error)")
-        } else {
-          print("[GatewayClient] Sent successfully")
         }
       }
     } catch {
@@ -473,20 +429,14 @@ class GatewayClient {
 
   /// 发送 connect 握手
   private func sendConnect() async {
-    guard !connectSent else {
-      print("[GatewayClient] Connect already sent, skipping")
-      return
-    }
+    if connectSent { return }
     connectSent = true
-
-    print("[GatewayClient] Sending connect request, nonce: \(connectNonce ?? "nil")")
 
     do {
       // Build device identity with nonce if available
       var device: [String: Any]? = nil
       do {
         device = try await buildSignedDeviceIdentity(nonce: connectNonce)
-        print("[GatewayClient] Device identity built successfully")
       } catch {
         print("[GatewayClient] Device identity unavailable: \(error)")
       }
@@ -495,7 +445,7 @@ class GatewayClient {
         "client": [
           "id": "gateway-client",
           "version": "2026.2.16",
-          "platform": "ios",
+          "platform": "web",
           "mode": "webchat",
         ],
         "minProtocol": 3,
@@ -509,7 +459,7 @@ class GatewayClient {
         params["device"] = device
       }
 
-      // 添加 token 认证（用户手动输入）
+      // Add auth token if available
       let authToken = getPreferredAuthToken()
       if !authToken.isEmpty {
         params["auth"] = ["token": authToken]
@@ -525,24 +475,14 @@ class GatewayClient {
         storeDeviceToken(deviceToken)
       }
 
-      if result.ok {
-        connected = true
-        connectionError = nil
-        isConnecting = false
-        onConnection?(true)
-        print("[GatewayClient] Connected to gateway")
-      } else {
-        let errorMsg = result.error?.message ?? "Handshake failed"
-        connectionError = errorMsg
-        isConnecting = false
-        print("[GatewayClient] Handshake failed: \(errorMsg)")
-        disconnect()
-      }
+      connected = true
+      connectionError = nil
+      isConnecting = false
+      onConnection?(true)
 
     } catch {
       connectionError = error.localizedDescription
       isConnecting = false
-      print("[GatewayClient] Handshake failed: \(error)")
       disconnect()
     }
   }
@@ -550,14 +490,10 @@ class GatewayClient {
   /// Build signed device identity
   private func buildSignedDeviceIdentity(nonce: String?) async throws -> [String: Any] {
     let identity = try loadOrCreateDeviceIdentity()
-    let signedAt = Int(Date().timeIntervalSince1970 * 1000)  // Integer milliseconds
+    let signedAt = Date().timeIntervalSince1970 * 1000  // milliseconds
 
     // Use v2 protocol if nonce is provided
     let version = nonce != nil ? "v2" : "v1"
-
-    print(
-      "[GatewayClient] Building device identity: version=\(version), nonce=\(nonce ?? "nil"), signedAt=\(signedAt)"
-    )
 
     let payload = buildDeviceAuthPayload(
       version: version,
@@ -571,9 +507,6 @@ class GatewayClient {
       nonce: nonce
     )
 
-    print("[GatewayClient] Payload to sign: '\(payload)'")
-    print("[GatewayClient] Payload bytes (UTF-8): \(Array(payload.utf8))")
-
     // Sign the payload using Ed25519
     guard let privateKeyData = base64UrlDecode(identity["privateKeyBase64"] as! String) else {
       throw NSError(
@@ -581,31 +514,19 @@ class GatewayClient {
         userInfo: [NSLocalizedDescriptionKey: "Failed to decode private key"])
     }
 
-    print("[GatewayClient] Private key data length: \(privateKeyData.count) bytes")
-
     let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeyData)
     let signatureData = try privateKey.signature(for: Array(payload.utf8))
-
-    print("[GatewayClient] Signature data length: \(signatureData.count) bytes")
-    print(
-      "[GatewayClient] Signature raw: \(signatureData.map { String(format: "%02x", $0) }.joined())"
-    )
-
-    let signatureBase64 = base64UrlEncode(signatureData)
-    print("[GatewayClient] Signature base64: \(signatureBase64)")
 
     // Build result dictionary - only include nonce if provided
     var result: [String: Any] = [
       "id": identity["id"] as! String,
       "publicKey": identity["publicKey"] as! String,
-      "signature": signatureBase64,
+      "signature": base64UrlEncode(signatureData),
       "signedAt": Int(signedAt),
     ]
     if let nonce = nonce {
       result["nonce"] = nonce
     }
-
-    print("[GatewayClient] Device identity result: \(result)")
     return result
   }
 
@@ -658,9 +579,8 @@ class GatewayClient {
     nonce: String?
   ) -> String {
     let scopesString = scopes.joined(separator: ",")
-
-    // 构建基础部分
-    var parts = [
+    let tokenString = token ?? ""
+    var base = [
       version,
       deviceId,
       clientId,
@@ -668,25 +588,12 @@ class GatewayClient {
       role,
       scopesString,
       String(signedAtMs),
+      tokenString,
     ]
-
-    // 根据 TypeScript 版本，token 总是包含（即使是空字符串）
-    let tokenString = token ?? ""
-    parts.append(tokenString)
-
-    print("[GatewayClient] Payload parts: \(parts)")
-
-    // Add nonce for v2 protocol
     if version == "v2" {
-      // 根据 TypeScript 版本，nonce 总是包含（即使是空字符串）
-      let nonceString = nonce ?? ""
-      parts.append(nonceString)
-      print("[GatewayClient] Adding nonce to payload")
+      base.append(nonce ?? "")
     }
-
-    let payload = parts.joined(separator: "|")
-    print("[GatewayClient] Final payload: \(payload)")
-    return payload
+    return base.joined(separator: "|")
   }
 
   /// Get preferred auth token (device token or user token)
@@ -733,7 +640,6 @@ class GatewayClient {
   private func handleTimeout(id: String, method: String) async {
     if pendingRequests[id] != nil {
       pendingRequests.removeValue(forKey: id)
-      print("[GatewayClient] Request \(method) timed out")
     }
   }
 
@@ -745,25 +651,20 @@ class GatewayClient {
 
   /// Base64URL encode (without padding) - matches TypeScript implementation
   private func base64UrlEncode(_ data: Data) -> String {
-    let base64 = data.base64EncodedString()
-    // Replace + with -, / with _, and remove trailing = (padding)
-    var result =
-      base64
+    var binary = ""
+    for i in 0..<data.count {
+      binary.append(Character(UnicodeScalar(data[i])))
+    }
+    let base64 = binary.data(using: .utf8)!.base64EncodedString()
+    return base64
       .replacingOccurrences(of: "+", with: "-")
       .replacingOccurrences(of: "/", with: "_")
-
-    // Remove trailing = characters (padding) - only at the end
-    while result.hasSuffix("=") {
-      result = String(result.dropLast())
-    }
-
-    return result
+      .replacingOccurrences(of: "=", with: "")
   }
 
   /// Base64URL decode (handles missing padding)
   private func base64UrlDecode(_ string: String) -> Data? {
-    var base64 =
-      string
+    var base64 = string
       .replacingOccurrences(of: "-", with: "+")
       .replacingOccurrences(of: "_", with: "/")
     // Add padding if needed

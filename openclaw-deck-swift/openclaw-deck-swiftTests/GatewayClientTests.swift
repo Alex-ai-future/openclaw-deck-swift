@@ -10,7 +10,6 @@ import Testing
 
 @testable import openclaw_deck_swift
 
-@MainActor
 struct GatewayClientTests {
 
   // MARK: - Initialization Tests
@@ -373,5 +372,152 @@ struct GatewayClientTests {
 
     #expect(events.contains("connected"))
     #expect(events.contains("disconnected"))
+  }
+
+  // MARK: - Real Gateway Integration Tests
+
+  /// Test connecting to a real Gateway server at ws://127.0.0.1:18789
+  /// Requires: Gateway server running locally
+  @Test func testRealGatewayConnection() async throws {
+    await MainActor.run {
+      let gatewayUrl = URL(string: "ws://127.0.0.1:18789")!
+      let client = GatewayClient(url: gatewayUrl, isMock: false)
+
+      var connectionSucceeded = false
+      let lock = NSLock()
+
+      client.onConnection = { connected in
+        lock.lock()
+        connectionSucceeded = connected
+        lock.unlock()
+      }
+
+      // Connect
+      await client.connect()
+
+      // Wait for connection (up to 3 seconds)
+      for _ in 0..<30 {
+        try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1 second
+        lock.lock()
+        let succeeded = connectionSucceeded
+        lock.unlock()
+        if succeeded {
+          break
+        }
+      }
+
+      lock.lock()
+      let finalSucceeded = connectionSucceeded
+      lock.unlock()
+
+      #expect(finalSucceeded, "Should connect to real Gateway")
+      #expect(client.connected, "Client should be connected")
+
+      // Clean up
+      client.disconnect()
+    }
+  }
+
+  /// Test device signature authentication with real Gateway
+  /// Requires: Gateway server running locally
+  @Test func testRealGatewayDeviceSignature() async throws {
+    await MainActor.run {
+      let gatewayUrl = URL(string: "ws://127.0.0.1:18789")!
+
+      // Clear any existing device identity to test fresh registration
+      UserDefaults.standard.removeObject(forKey: "openclaw.deck.deviceIdentity.v1")
+      UserDefaults.standard.removeObject(
+        forKey: "openclaw.deck.deviceToken.v1:ws://127.0.0.1:18789")
+
+      let client = GatewayClient(url: gatewayUrl, isMock: false)
+
+      var connectionSucceeded = false
+      let lock = NSLock()
+      client.onConnection = { connected in
+        lock.lock()
+        connectionSucceeded = connected
+        lock.unlock()
+      }
+
+      // Connect
+      await client.connect()
+
+      // Wait for connection (up to 3 seconds)
+      for _ in 0..<30 {
+        try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1 second
+        lock.lock()
+        let succeeded = connectionSucceeded
+        lock.unlock()
+        if succeeded {
+          break
+        }
+      }
+
+      lock.lock()
+      let finalSucceeded = connectionSucceeded
+      lock.unlock()
+
+      #expect(finalSucceeded, "Device signature authentication should succeed")
+      #expect(client.connected, "Client should be connected after successful handshake")
+
+      // Verify device token was stored
+      let deviceTokenKey = "openclaw.deck.deviceToken.v1:ws://127.0.0.1:18789"
+      let storedToken = UserDefaults.standard.string(forKey: deviceTokenKey)
+      #expect(
+        storedToken != nil && !storedToken!.isEmpty,
+        "Device token should be stored after successful authentication")
+
+      // Clean up
+      client.disconnect()
+    }
+  }
+
+  /// Test making requests after connecting to real Gateway
+  /// Requires: Gateway server running locally
+  @Test func testRealGatewayRequests() async throws {
+    await MainActor.run {
+      let gatewayUrl = URL(string: "ws://127.0.0.1:18789")!
+      let client = GatewayClient(url: gatewayUrl, isMock: false)
+
+      var connectionSucceeded = false
+      let lock = NSLock()
+      client.onConnection = { connected in
+        lock.lock()
+        connectionSucceeded = connected
+        lock.unlock()
+      }
+
+      // Connect
+      await client.connect()
+
+      // Wait for connection (up to 3 seconds)
+      for _ in 0..<30 {
+        try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1 second
+        lock.lock()
+        let succeeded = connectionSucceeded
+        lock.unlock()
+        if succeeded {
+          break
+        }
+      }
+
+      lock.lock()
+      let finalSucceeded = connectionSucceeded
+      lock.unlock()
+
+      #expect(finalSucceeded, "Should connect to Gateway")
+      #expect(client.connected, "Should be connected")
+
+      // Make a health check request
+      do {
+        let response = try await client.request(method: "health")
+        #expect(response.ok, "Health check should succeed")
+      } catch {
+        Issue.record("Health check request failed: \(error)")
+      }
+
+      // Clean up
+      client.disconnect()
+    }
   }
 }

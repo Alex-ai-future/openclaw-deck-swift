@@ -124,7 +124,7 @@ struct WelcomeView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.windowBackgroundColor))
+        .background(Color(.systemBackground))
         #if os(macOS)
         .onAppear {
             isUrlFocused = true

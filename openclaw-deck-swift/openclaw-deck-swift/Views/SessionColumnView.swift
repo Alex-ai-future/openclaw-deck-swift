@@ -73,8 +73,14 @@ struct SessionColumnView: View {
 
       Spacer()
 
-      // Status capsule
-      statusCapsule
+      // Status indicator - wrapped in disabled button for consistent styling
+      Button {
+        // No action
+      } label: {
+        StatusIndicator(status: session.status)
+      }
+      .buttonStyle(.glass)
+      .disabled(true)
 
       // Delete button - glass style
       Button {
@@ -93,70 +99,60 @@ struct SessionColumnView: View {
     }
   }
 
-  // MARK: - Status Capsule
+  // MARK: - Status Indicator
 
-  private var statusCapsule: some View {
-    Group {
-      switch session.status {
+  /// Status indicator - maps status to icon and color only
+  struct StatusIndicator: View {
+    let status: SessionStatus
+
+    var body: some View {
+      HStack(spacing: 4) {
+        statusIcon
+        statusLabel
+      }
+    }
+
+    @ViewBuilder
+    private var statusIcon: some View {
+      switch status {
       case .idle:
-        HStack(spacing: 4) {
-          Circle()
-            .fill(.green)
-            .frame(width: 6, height: 6)
-          Text("Ready")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial)
-        .cornerRadius(8)
-        .glassEffect()
+        Circle()
+          .fill(.green)
+          .frame(width: 6, height: 6)
 
       case .thinking:
-        HStack(spacing: 4) {
-          ProgressView()
-            .scaleEffect(0.7)
-          Text("Thinking")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial)
-        .cornerRadius(8)
-        .glassEffect()
+        ProgressView()
+          .scaleEffect(0.7)
+          .tint(.purple)
 
       case .streaming:
-        HStack(spacing: 4) {
-          Circle()
-            .fill(.blue)
-            .frame(width: 6, height: 6)
-          Text("Working")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial)
-        .cornerRadius(8)
-        .glassEffect()
+        Circle()
+          .fill(.blue)
+          .frame(width: 6, height: 6)
 
+      case .error:
+        Circle()
+          .fill(.red)
+          .frame(width: 6, height: 6)
+      }
+    }
+
+    private var statusLabel: some View {
+      Text(statusText)
+        .font(.caption2)
+        .foregroundColor(.primary)
+    }
+
+    private var statusText: String {
+      switch status {
+      case .idle:
+        return "Ready"
+      case .thinking:
+        return "Thinking"
+      case .streaming:
+        return "Working"
       case .error(let message):
-        HStack(spacing: 4) {
-          Circle()
-            .fill(.red)
-            .frame(width: 6, height: 6)
-          Text("Error")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial)
-        .cornerRadius(8)
-        .glassEffect()
-        .help(message)
+        return "Error"
       }
     }
   }

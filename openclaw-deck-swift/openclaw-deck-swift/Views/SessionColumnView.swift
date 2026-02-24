@@ -7,22 +7,105 @@
 import SwiftUI
 import MarkdownView
 
+#if os(macOS)
+import AppKit
+#endif
+
 /// Session 列视图 - 单个聊天会话
 struct SessionColumnView: View {
-    @ObservedObject var session: SessionState
+    @Bindable var session: SessionState
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onDelete: () -> Void
+
     @State private var inputText = ""
     @State private var isSending = false
-    
+    @State private var showingDeleteAlert = false
+
     var body: some View {
         VStack(spacing: 0) {
+            // Column header with delete button
+            columnHeader
+
+            Divider()
+
             // Message list
             messageList
-            
+
             Divider()
-            
+
             // Input area
             chatInput
         }
+        .background(isSelected ? Color(NSColor.windowBackgroundColor) : Color(NSColor.textBackgroundColor))
+        .cornerRadius(12)
+        .shadow(color: isSelected ? Color.blue.opacity(0.3) : Color.black.opacity(0.1), radius: isSelected ? 4 : 2, x: 0, y: 1)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+        )
+        .onTapGesture {
+            onSelect()
+        }
+        .alert("Delete Session?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                onDelete()
+            }
+        } message: {
+            Text("This will remove the session from the deck. Messages are stored in Gateway and can be reloaded.")
+        }
+    }
+
+    // MARK: - Column Header
+
+    private var columnHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.sessionId)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+
+                Text("\(session.messageCount) messages")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            // Status indicator
+            switch session.status {
+            case .idle:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.caption)
+            case .thinking:
+                ProgressView()
+                    .scaleEffect(0.5)
+            case .streaming:
+                Image(systemName: "waveform.circle.fill")
+                    .foregroundColor(.blue)
+                    .font(.caption)
+            case .error:
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
+
+            // Delete button
+            Button {
+                showingDeleteAlert = true
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 4)
+        }
+        .padding(8)
+        .background(Color(NSColor.textBackgroundColor))
     }
     
     // MARK: - Message List
@@ -46,7 +129,7 @@ struct SessionColumnView: View {
                 }
             }
         }
-        .background(Color(.systemBackground))
+        .background(Color(NSColor.textBackgroundColor))
     }
 
     // MARK: - Chat Input
@@ -60,7 +143,7 @@ struct SessionColumnView: View {
             )
             .textFieldStyle(.plain)
             .padding(10)
-            .background(Color(.secondarySystemBackground))
+            .background(Color(NSColor.controlBackgroundColor))
             .cornerRadius(10)
             .onSubmit {
                 sendMessage()
@@ -176,7 +259,7 @@ struct MessageView: View {
         case .user:
             return Color.blue.opacity(0.1)
         case .assistant:
-            return Color(.secondarySystemBackground)
+            return Color(NSColor.controlBackgroundColor)
         case .system:
             return Color.orange.opacity(0.1)
         }
@@ -227,6 +310,9 @@ struct MessageView: View {
 
 #Preview {
     SessionColumnView(
-        session: SessionState(sessionId: "test", sessionKey: "agent:main:test")
+        session: SessionState(sessionId: "test", sessionKey: "agent:main:test"),
+        isSelected: true,
+        onSelect: {},
+        onDelete: {}
     )
 }

@@ -5,8 +5,6 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import Foundation
-import Combine
-import SwiftUI
 
 /// Session 运行时状态
 enum SessionStatus: Equatable {
@@ -21,7 +19,8 @@ enum SessionStatus: Equatable {
 }
 
 /// Session 运行时状态（内存缓存，不持久化）
-class SessionState: ObservableObject {
+@Observable
+class SessionState {
     /// Session ID
     let sessionId: String
 
@@ -29,16 +28,16 @@ class SessionState: ObservableObject {
     let sessionKey: String
 
     /// 消息列表
-    @Published var messages: [ChatMessage] = []
+    var messages: [ChatMessage] = []
 
     /// 是否已加载历史消息
-    @Published var historyLoaded: Bool = false
+    var historyLoaded: Bool = false
 
     /// 当前状态
-    @Published var status: SessionStatus = .idle
+    var status: SessionStatus = .idle
 
     /// 当前活跃的 runId（用于关联流式响应）
-    @Published var activeRunId: String?
+    var activeRunId: String?
 
     /// 最后一条消息的时间
     var lastMessageAt: Date? {
@@ -66,7 +65,6 @@ class SessionState: ObservableObject {
     func updateLastMessage(text: String) {
         guard let index = messages.indices.last else { return }
         let message = messages[index]
-        objectWillChange.send()
         messages[index] = ChatMessage(
             id: message.id,
             role: message.role,
@@ -84,7 +82,6 @@ class SessionState: ObservableObject {
     func appendToLastMessage(text: String) {
         guard let index = messages.indices.last else { return }
         let message = messages[index]
-        objectWillChange.send()
         messages[index] = ChatMessage(
             id: message.id,
             role: message.role,
@@ -100,7 +97,6 @@ class SessionState: ObservableObject {
 
     /// 清除消息列表
     func clearMessages() {
-        objectWillChange.send()
         messages.removeAll()
         historyLoaded = false
     }

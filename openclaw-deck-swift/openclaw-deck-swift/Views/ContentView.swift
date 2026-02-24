@@ -6,10 +6,6 @@
 
 import SwiftUI
 
-#if os(macOS)
-import AppKit
-#endif
-
 struct ContentView: View {
     @State private var viewModel = DeckViewModel()
     @State private var showingSettings = false
@@ -17,42 +13,26 @@ struct ContentView: View {
     @State private var token = ""
     @State private var showingNewSessionSheet = false
     
-    // New Session form state
-    @State private var newSessionName = ""
-    @State private var newSessionIcon = ""
-    @State private var newSessionColor = "#a78bfa"
-    @State private var newSessionContext = ""
-    
     var body: some View {
-        NavigationSplitView {
-            // Sidebar - Session list
-            sessionList
-        } detail: {
-            // Detail - Selected session or empty state
-            if let selectedId = selectedSessionId,
-               let session = viewModel.getSession(sessionId: selectedId) {
-                SessionColumnView(session: session)
+        Group {
+            if viewModel.gatewayConnected || viewModel.isInitializing {
+                // Main deck view
+                DeckView(
+                    viewModel: viewModel,
+                    showingSettings: $showingSettings,
+                    showingNewSessionSheet: $showingNewSessionSheet
+                )
             } else {
-                EmptyStateView(onNewSession: { showingNewSessionSheet = true })
-            }
-        }
-        .navigationTitle("OpenClaw Deck")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingSettings = true
-                } label: {
-                    Image(systemName: "gear")
-                }
-            }
-            
-            ToolbarItem(placement: .secondaryAction) {
-                Button {
-                    showingNewSessionSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .disabled(!viewModel.gatewayConnected)
+                // Welcome screen - show settings
+                WelcomeView(
+                    gatewayUrl: $gatewayUrl,
+                    token: $token,
+                    onConnect: {
+                        Task {
+                            await viewModel.initialize(url: gatewayUrl, token: token)
+                        }
+                    }
+                )
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -73,162 +53,83 @@ struct ContentView: View {
                 }
             )
         }
-        .sheet(isPresented: $showingNewSessionSheet) {
-            newSessionSheet
-        }
     }
-    
-    // MARK: - Session List
-    
-    private var sessionList: some View {
-        List(viewModel.sessionOrder, id: \.self, selection: $selectedSessionId) { sessionId in
-            if let session = viewModel.sessions[sessionId] {
-                SessionRowView(session: session)
-            }
-        }
-        .listStyle(.sidebar)
-        .navigationTitle("Sessions")
-    }
-    
-    // MARK: - New Session Sheet
-    
-    private var newSessionSheet: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Name", text: $newSessionName)
-                        .textContentType(.name)
-                    
-                    TextField("Icon (optional)", text: $newSessionIcon)
-                        .textContentType(.nickname)
-                    
-                    ColorPicker("Color", selection: Binding(
-                        get: { Color(hex: newSessionColor) ?? .purple },
-                        set: { newSessionColor = $0.hexString ?? "#a78bfa" }
-                    ))
-                    
-                    TextField("Context (optional)", text: $newSessionContext, axis: .vertical)
-                        .textContentType(.fullStreetAddress)
-                }
-            }
-            .formStyle(.grouped)
-            .navigationTitle("New Session")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        showingNewSessionSheet = false
-                        resetNewSessionForm()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        createSession()
-                    }
-                    .disabled(newSessionName.isEmpty)
-                }
-            }
-        }
-    }
-    
-    // MARK: - Actions
-    
-    private func createSession() {
-        _ = viewModel.createSession(
-            name: newSessionName,
-            icon: newSessionIcon.isEmpty ? nil : newSessionIcon,
-            accentColor: newSessionColor,
-            context: newSessionContext.isEmpty ? nil : newSessionContext
-        )
-        showingNewSessionSheet = false
-        resetNewSessionForm()
-    }
-    
-    private func resetNewSessionForm() {
-        newSessionName = ""
-        newSessionIcon = ""
-        newSessionColor = "#a78bfa"
-        newSessionContext = ""
-    }
-    
-    // MARK: - State
-    
-    @State private var selectedSessionId: String?
 }
 
-// MARK: - Session Row View
+// MARK: - Welcome View
 
-struct SessionRowView: View {
-    @ObservedObject var session: SessionState
+struct WelcomeView: View {
+    @Binding var gatewayUrl: String
+    @Binding var token: String
+    let onConnect: () -> Void
+    
+    @FocusState private var isUrlFocused: Bool
     
     var body: some View {
-        HStack {
-            // Icon
-            Text(session.sessionId.prefix(2).uppercased())
-                .font(.caption)
-                .fontWeight(.bold)
-                .frame(width: 32, height: 32)
-                .background(Color.purple.opacity(0.2))
-                .cornerRadius(8)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(session.sessionId)
-                    .font(.headline)
-                    .lineLimit(1)
+        VStack(spacing: 40) {
+            // Logo and title
+            VStack(spacing: 16) {
+                Image(systemName: "message.badge.filled.fill")
+                    .font(.system(size: 80))
+                    .foregroundColor(.blue)
                 
-                Text("\(session.messageCount) messages")
-                    .font(.caption)
+                Text("OpenClaw Deck")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("Multi-Session Chat Client")
+                    .font(.title2)
                     .foregroundColor(.secondary)
             }
             
-            Spacer()
+            // Connection form
+            VStack(spacing: 16) {
+                TextField("Gateway URL", text: $gatewayUrl)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isUrlFocused)
+                    .onSubmit {
+                        onConnect()
+                    }
+                
+                SecureField("Token (optional)", text: $token)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        onConnect()
+                    }
+                
+                Button(action: onConnect) {
+                    HStack {
+                        Image(systemName: "plug")
+                        Text("Connect to Gateway")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+            .padding()
             
-            // Status indicator
-            switch session.status {
-            case .idle:
-                Image(systemName: "checkmark.circle")
-                    .foregroundColor(.green)
-            case .thinking:
-                ProgressView()
-                    .scaleEffect(0.5)
-            case .streaming:
-                Image(systemName: "waveform")
+            // Footer
+            VStack(spacing: 8) {
+                Text("Default Gateway URL:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Text(gatewayUrl)
+                    .font(.caption)
                     .foregroundColor(.blue)
-            case .error:
-                Image(systemName: "exclamationmark.circle")
-                    .foregroundColor(.red)
             }
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Empty State View
-
-struct EmptyStateView: View {
-    var onNewSession: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "message.badge.filled.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
             
-            Text("No Session Selected")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Select a session from the sidebar or create a new one to start chatting.")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Button("New Session") {
-                onNewSession()
-            }
-            .buttonStyle(.borderedProminent)
+            Spacer()
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.windowBackgroundColor))
+        #if os(macOS)
+        .onAppear {
+            isUrlFocused = true
+        }
+        #endif
     }
 }
 
@@ -238,41 +139,41 @@ extension Color {
     init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
+        
         var rgb: UInt64 = 0
         guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
             return nil
         }
-
+        
         let r = Double((rgb & 0xFF0000) >> 16) / 255.0
         let g = Double((rgb & 0x00FF00) >> 8) / 255.0
         let b = Double(rgb & 0x0000FF) / 255.0
-
+        
         self.init(red: r, green: g, blue: b)
     }
-
+    
     var hexString: String? {
         #if os(macOS)
         guard let color = NSColor(self).cgColor.components,
               color.count >= 3 else {
             return nil
         }
-
+        
         let r = Int(color[0] * 255)
         let g = Int(color[1] * 255)
         let b = Int(color[2] * 255)
-
+        
         return String(format: "#%02X%02X%02X", r, g, b)
         #else
         guard let components = UIColor(self).cgColor.components,
               components.count >= 3 else {
             return nil
         }
-
+        
         let r = Int(components[0] * 255)
         let g = Int(components[1] * 255)
         let b = Int(components[2] * 255)
-
+        
         return String(format: "#%02X%02X%02X", r, g, b)
         #endif
     }

@@ -111,13 +111,11 @@ class DeckViewModel {
   /// - Parameters:
   ///   - name: Session 名称
   ///   - icon: 可选的图标
-  ///   - accentColor: 可选的主题色
   ///   - context: 可选的上下文描述
   /// - Returns: 创建的 SessionConfig
   func createSession(
     name: String,
     icon: String? = nil,
-    accentColor: String? = nil,
     context: String? = nil
   ) -> SessionConfig {
     // 1. 生成 Session ID
@@ -133,7 +131,6 @@ class DeckViewModel {
       createdAt: Date(),
       name: name,
       icon: icon ?? String(name.prefix(1)).uppercased(),
-      accentColor: accentColor ?? "#a78bfa",
       context: context ?? name
     )
 

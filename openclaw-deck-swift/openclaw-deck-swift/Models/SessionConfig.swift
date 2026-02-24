@@ -23,9 +23,6 @@ struct SessionConfig: Identifiable, Codable {
   /// 可选的图标（显示在 UI 上）
   var icon: String?
 
-  /// 可选的主题色（显示在 UI 上）
-  var accentColor: String?
-
   /// 可选的上下文描述（用于 AI Agent 理解场景）
   var context: String?
 
@@ -57,7 +54,6 @@ struct SessionConfig: Identifiable, Codable {
 extension SessionConfig {
   /// 检查是否是默认的空配置（仅用于初始化）
   var isEmpty: Bool {
-    return id == "" && sessionKey == "" && name == nil && icon == nil && accentColor == nil
-      && context == nil
+    return id == "" && sessionKey == "" && name == nil && icon == nil && context == nil
   }
 }

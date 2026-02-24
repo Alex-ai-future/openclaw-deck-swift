@@ -74,7 +74,7 @@ struct DeckView: View {
 
   private var sessionColumns: some View {
     ScrollView(.horizontal, showsIndicators: true) {
-      HStack(alignment: .top, spacing: 1) {
+      HStack(alignment: .top, spacing: 0) {
         // Session columns
         ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
           if let session = viewModel.sessions[sessionId] {
@@ -108,7 +108,6 @@ struct DeckView: View {
         )
         .frame(width: 80)
       }
-      .padding(.vertical)
     }
     .background(Color.adaptiveBackground)
   }
@@ -157,7 +156,6 @@ struct NewSessionSheet: View {
 
   @State private var name = ""
   @State private var icon = ""
-  @State private var color = "#a78bfa"
   @State private var context = ""
 
   var body: some View {
@@ -169,13 +167,6 @@ struct NewSessionSheet: View {
 
           TextField("Icon (optional)", text: $icon)
             .textContentType(.nickname)
-
-          ColorPicker(
-            "Color",
-            selection: Binding(
-              get: { Color(hex: color) ?? .purple },
-              set: { color = $0.hexString ?? "#a78bfa" }
-            ))
 
           TextField("Context (optional)", text: $context, axis: .vertical)
         }
@@ -199,7 +190,7 @@ struct NewSessionSheet: View {
       }
     }
     #if os(macOS)
-      .frame(width: 400, height: 500)
+      .frame(width: 400, height: 450)
     #endif
   }
 
@@ -207,7 +198,6 @@ struct NewSessionSheet: View {
     _ = viewModel.createSession(
       name: name,
       icon: icon.isEmpty ? nil : icon,
-      accentColor: color,
       context: context.isEmpty ? nil : context
     )
     isPresented = false
@@ -217,7 +207,6 @@ struct NewSessionSheet: View {
   private func resetForm() {
     name = ""
     icon = ""
-    color = "#a78bfa"
     context = ""
   }
 }

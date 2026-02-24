@@ -39,16 +39,7 @@ struct SessionColumnView: View {
       // Input area
       chatInput
     }
-    .background(isSelected ? Color.adaptiveSecondaryBackground : Color.adaptiveBackground)
-    .cornerRadius(12)
-    .shadow(
-      color: isSelected ? Color.blue.opacity(0.3) : Color.black.opacity(0.1),
-      radius: isSelected ? 4 : 2, x: 0, y: 1
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: 12)
-        .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
-    )
+    .background(Color.adaptiveBackground)
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()

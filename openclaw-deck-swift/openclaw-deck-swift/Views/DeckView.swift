@@ -47,14 +47,13 @@ struct DeckView: View {
 
       Spacer()
 
-      // New Session button - always visible
+      // New Session button
       Button {
         showingNewSessionSheet = true
       } label: {
-        Label("New Session", systemImage: "plus")
-          .labelStyle(.iconOnly)
+        Image(systemName: "plus")
       }
-      .buttonStyle(.bordered)
+      .buttonStyle(.glass)
       .disabled(!viewModel.gatewayConnected)
 
       // Settings button
@@ -63,11 +62,11 @@ struct DeckView: View {
       } label: {
         Image(systemName: "gear")
       }
-      .buttonStyle(.plain)
+      .buttonStyle(.glass)
       .padding(.trailing)
     }
-    .padding(.vertical, 8)
-    .background(Color.adaptiveBackground)
+    .padding(.vertical, 6)
+    .background(.bar)
   }
 
   // MARK: - Session Columns
@@ -98,54 +97,11 @@ struct DeckView: View {
             .transition(.move(edge: .trailing).combined(with: .opacity))
           }
         }
-
-        // Add Session column - always visible
-        AddSessionColumnView(
-          isEnabled: viewModel.gatewayConnected,
-          onTap: {
-            showingNewSessionSheet = true
-          }
-        )
-        .frame(width: 80)
       }
     }
     .background(Color.adaptiveBackground)
   }
-}
 
-// MARK: - Add Session Column View
-
-struct AddSessionColumnView: View {
-  let isEnabled: Bool
-  let onTap: () -> Void
-
-  var body: some View {
-    VStack {
-      Button(action: onTap) {
-        VStack {
-          Spacer()
-
-          Image(systemName: "plus.circle.fill")
-            .font(.system(size: 40))
-            .foregroundColor(isEnabled ? .blue : .gray)
-
-          Text("New")
-            .font(.caption)
-            .foregroundColor(isEnabled ? .blue : .gray)
-
-          Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-      }
-      .buttonStyle(.plain)
-      .disabled(!isEnabled)
-      .contentShape(Rectangle())
-    }
-    .background(Color.adaptiveBackground)
-    .cornerRadius(12)
-    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-    .padding(.horizontal, 4)
-  }
 }
 
 // MARK: - New Session Sheet

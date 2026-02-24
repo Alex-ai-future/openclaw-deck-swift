@@ -58,6 +58,9 @@ struct ContentView: View {
           showingSettings: $showingSettings,
           showingNewSessionSheet: $showingNewSessionSheet
         )
+
+        // Spacer to push content to top when empty
+        Spacer()
       } else {
         // Welcome screen - show settings
         WelcomeView(

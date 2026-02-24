@@ -94,26 +94,28 @@ class GatewayClient {
             print("[GatewayClient] Mock connected")
             return
         }
-        
+
         guard !isConnecting else {
             print("[GatewayClient] Already connecting")
             return
         }
-        
+
         isConnecting = true
         connectionError = nil
         connectNonce = nil
         connectSent = false
-        
+
         print("[GatewayClient] Connecting to \(url)")
-        
+
         let session = URLSession.shared
         webSocket = session.webSocketTask(with: url)
         webSocket?.resume()
 
+        print("[GatewayClient] WebSocket state after resume: \(webSocket?.state ?? .suspended)")
+
         // 开始接收消息
         receiveMessage()
-        
+
         // 延迟发送 connect 请求，等待可能的 challenge
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             Task { @MainActor in
@@ -385,6 +387,16 @@ class GatewayClient {
 
     /// 发送帧
     private func send(frame: GatewayRequest) {
+        guard let webSocket = webSocket else {
+            print("[GatewayClient] Cannot send: WebSocket is nil")
+            return
+        }
+
+        guard webSocket.state == .running else {
+            print("[GatewayClient] Cannot send: WebSocket state is \(webSocket.state)")
+            return
+        }
+
         do {
             let data = try encodeRequest(frame)
             guard let string = String(data: data, encoding: .utf8) else {
@@ -392,9 +404,12 @@ class GatewayClient {
                 return
             }
 
-            webSocket?.send(.string(string)) { error in
+            print("[GatewayClient] Sending: \(frame.method) id=\(frame.id)")
+            webSocket.send(.string(string)) { error in
                 if let error = error {
                     print("[GatewayClient] Send error: \(error)")
+                } else {
+                    print("[GatewayClient] Sent successfully")
                 }
             }
         } catch {
@@ -417,14 +432,20 @@ class GatewayClient {
 
     /// 发送 connect 握手
     private func sendConnect() async {
-        guard !connectSent else { return }
+        guard !connectSent else {
+            print("[GatewayClient] Connect already sent, skipping")
+            return
+        }
         connectSent = true
-        
+
+        print("[GatewayClient] Sending connect request, nonce: \(connectNonce ?? "nil")")
+
         do {
             // Build device identity with nonce if available
             var device: [String: Any]? = nil
             do {
                 device = try await buildSignedDeviceIdentity(nonce: connectNonce)
+                print("[GatewayClient] Device identity built successfully")
             } catch {
                 print("[GatewayClient] Device identity unavailable: \(error)")
             }

@@ -37,10 +37,18 @@ struct SessionColumnView: View {
       }
       .navigationTitle(session.sessionKey)
       .toolbar {
-        // Left: Status indicator
-        ToolbarItem(placement: .topBarLeading) {
-          StatusIndicator(status: session.status)
-        }
+        #if os(macOS)
+          /// Left: Status indicator
+          ToolbarItem {
+            StatusIndicator(status: session.status)
+          }
+        #else
+          // Left: Status indicator
+          ToolbarItem(placement: .topBarLeading) {
+            StatusIndicator(status: session.status)
+          }
+        #endif
+        
 
         // Center: Session key and message count
         ToolbarItem(placement: .principal) {
@@ -56,13 +64,23 @@ struct SessionColumnView: View {
               .lineLimit(1)
           }
         }
-
-        // Right: Delete button
-        ToolbarItem(placement: .topBarTrailing) {
-          Button("Delete", role: .destructive) {
-            showingDeleteAlert = true
+        
+        #if os(macOS)
+          // Right: Delete button
+          ToolbarItem {
+            Button("Delete", role: .destructive) {
+              showingDeleteAlert = true
+            }
           }
-        }
+        #else
+          // Right: Delete button
+          ToolbarItem(placement: .topBarTrailing) {
+            Button("Delete", role: .destructive) {
+              showingDeleteAlert = true
+            }
+          }
+        #endif
+        
       }
     }
     .contentShape(Rectangle())

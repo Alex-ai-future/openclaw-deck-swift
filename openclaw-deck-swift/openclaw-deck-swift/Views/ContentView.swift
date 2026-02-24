@@ -48,6 +48,7 @@ struct ContentView: View {
   @State private var gatewayUrl = "ws://127.0.0.1:18789"
   @State private var token = ""
   @State private var showingNewSessionSheet = false
+  @State private var hasAttemptedAutoConnect = false
 
   init() {
     // 从 UserDefaults 加载保存的配置
@@ -62,13 +63,19 @@ struct ContentView: View {
 
   var body: some View {
     Group {
-      if viewModel.gatewayConnected || viewModel.isInitializing {
+      if viewModel.gatewayConnected {
         // Main deck view
         DeckView(
           viewModel: viewModel,
           showingSettings: $showingSettings,
           showingNewSessionSheet: $showingNewSessionSheet
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+          
+
+      } else if viewModel.isInitializing {
+        // Connecting state - show loading
+        ConnectingView()
 
         // Spacer to push content to top when empty
         Spacer()
@@ -108,6 +115,37 @@ struct ContentView: View {
         }
       )
     }
+    .task {
+      // Auto-connect on first launch if credentials exist
+      guard !hasAttemptedAutoConnect && !viewModel.gatewayConnected else { return }
+      hasAttemptedAutoConnect = true
+
+      print("[ContentView] Attempting auto-connect...")
+      if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
+        let savedToken = UserDefaultsStorage.shared.loadToken()
+        print("[ContentView] Found saved credentials: \(savedUrl)")
+        await viewModel.initialize(url: savedUrl, token: savedToken)
+      } else {
+        print("[ContentView] No saved credentials found")
+      }
+    }
+  }
+}
+
+// MARK: - Connecting View
+
+struct ConnectingView: View {
+  var body: some View {
+    VStack(spacing: 20) {
+      ProgressView()
+        .scaleEffect(1.5)
+
+      Text("Connecting to Gateway...")
+        .font(.headline)
+        .foregroundColor(.secondary)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.adaptiveBackground)
   }
 }
 

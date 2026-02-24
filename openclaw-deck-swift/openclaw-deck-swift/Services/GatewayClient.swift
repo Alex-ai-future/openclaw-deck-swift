@@ -4,8 +4,8 @@
 // Created by jihuihuang on 2/23/2026.
 // Copyright © 2026 OpenClaw. All rights reserved.
 
-import Foundation
 import CryptoKit
+import Foundation
 
 // MARK: - Types
 
@@ -37,10 +37,10 @@ class GatewayClient {
 
     /// 连接状态（是否已连接）
     private(set) var connected: Bool = false
-    
+
     /// 连接错误信息
     private(set) var connectionError: String?
-    
+
     /// 是否正在连接
     private(set) var isConnecting: Bool = false
 
@@ -52,10 +52,10 @@ class GatewayClient {
 
     /// 消息计数器（用于生成唯一 ID）
     private var messageCounter: Int = 0
-    
+
     /// Connect nonce from challenge
     private var connectNonce: String?
-    
+
     /// Whether connect request was sent
     private var connectSent: Bool = false
 
@@ -140,11 +140,12 @@ class GatewayClient {
 
         // 拒绝所有待处理请求
         for (_, pending) in pendingRequests {
-            pending.continuation.resume(throwing: NSError(
-                domain: "GatewayClient",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
-            ))
+            pending.continuation.resume(
+                throwing: NSError(
+                    domain: "GatewayClient",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
+                ))
         }
         pendingRequests.removeAll()
 
@@ -153,7 +154,7 @@ class GatewayClient {
             onConnection?(false)
         }
     }
-    
+
     /// 清除错误状态
     func clearError() {
         connectionError = nil
@@ -207,16 +208,17 @@ class GatewayClient {
         sessionKey: String? = nil
     ) async throws -> (runId: String, status: String) {
         if isMock {
-            let result = try await request(method: "agent", params: ["agentId": agentId, "message": message])
+            let result = try await request(
+                method: "agent", params: ["agentId": agentId, "message": message])
             return ("mock-run-\(nextId())", "success")
         }
-        
+
         let idempotencyKey = "agent-\(Date().timeIntervalSince1970)-\(UUID().uuidString.prefix(6))"
 
         var params: [String: Any] = [
             "agentId": agentId,
             "message": message,
-            "idempotencyKey": idempotencyKey
+            "idempotencyKey": idempotencyKey,
         ]
 
         if let sessionKey = sessionKey {
@@ -227,8 +229,9 @@ class GatewayClient {
 
         // 解析响应
         guard let payload = result.payload as? [String: Any],
-              let runId = payload["runId"] as? String,
-              let status = payload["status"] as? String else {
+            let runId = payload["runId"] as? String,
+            let status = payload["status"] as? String
+        else {
             throw NSError(
                 domain: "GatewayClient",
                 code: -3,
@@ -238,26 +241,29 @@ class GatewayClient {
 
         return (runId, status)
     }
-    
+
     /// 获取 Session 历史消息
     func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
-        let result = try await request(method: "sessions_history", params: ["sessionKey": sessionKey])
-        
+        let result = try await request(
+            method: "sessions_history", params: ["sessionKey": sessionKey])
+
         guard let payload = result.payload as? [String: Any],
-              let messagesData = payload["messages"] as? [[String: Any]] else {
+            let messagesData = payload["messages"] as? [[String: Any]]
+        else {
             return nil
         }
-        
+
         // 解析消息
         return messagesData.compactMap { data -> ChatMessage? in
             guard let roleString = data["role"] as? String,
-                  let text = data["text"] as? String else {
+                let text = data["text"] as? String
+            else {
                 return nil
             }
-            
+
             let role = MessageRole(rawValue: roleString) ?? .user
             let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
-            
+
             return ChatMessage(
                 id: data["id"] as? String ?? UUID().uuidString,
                 role: role,
@@ -266,16 +272,17 @@ class GatewayClient {
             )
         }
     }
-    
+
     /// 列出所有活跃 Sessions
     func listSessions() async throws -> [String] {
         let result = try await request(method: "sessions_list", params: [:])
-        
+
         guard let payload = result.payload as? [String: Any],
-              let sessions = payload["sessions"] as? [String] else {
+            let sessions = payload["sessions"] as? [String]
+        else {
             return []
         }
-        
+
         return sessions
     }
 
@@ -322,7 +329,8 @@ class GatewayClient {
     /// 处理数据消息
     private func handleData(_ data: Data) {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let type = json["type"] as? String else {
+            let type = json["type"] as? String
+        else {
             print("[GatewayClient] Failed to parse frame")
             return
         }
@@ -340,7 +348,8 @@ class GatewayClient {
     /// 处理响应
     private func handleResponse(_ json: [String: Any]) {
         guard let id = json["id"] as? String,
-              let pending = pendingRequests.removeValue(forKey: id) else {
+            let pending = pendingRequests.removeValue(forKey: id)
+        else {
             return
         }
 
@@ -358,7 +367,8 @@ class GatewayClient {
             )
             pending.continuation.resume(returning: response)
         } else {
-            let errorMsg = (json["error"] as? [String: Any])?["message"] as? String ?? "Request failed"
+            let errorMsg =
+                (json["error"] as? [String: Any])?["message"] as? String ?? "Request failed"
             let error = NSError(
                 domain: "GatewayClient",
                 code: -4,
@@ -371,16 +381,28 @@ class GatewayClient {
     /// 处理事件
     private func handleEvent(_ json: [String: Any]) {
         guard let event = json["event"] as? String else { return }
-        
+
         // Handle connect.challenge event for device auth
-        if event == "connect.challenge", let payload = json["payload"] as? [String: Any], let nonce = payload["nonce"] as? String {
+        if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
+            let nonce = payload["nonce"] as? String
+        {
             print("[GatewayClient] Received connect challenge, signing with nonce...")
             self.connectNonce = nonce
             self.connectSent = false
-            // Retry connect with nonce after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+
+            // 检查 WebSocket 连接状态
+            if webSocket?.state != .running {
+                print("[GatewayClient] WebSocket not running, reconnecting...")
+                // 重新建立连接
                 Task { @MainActor in
-                    await self?.sendConnect()
+                    await self.reconnectForChallenge()
+                }
+            } else {
+                // Retry connect with nonce after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    Task { @MainActor in
+                        await self?.sendConnect()
+                    }
                 }
             }
             return
@@ -388,6 +410,20 @@ class GatewayClient {
 
         let gatewayEvent = GatewayEvent.fromJSON(json)
         onEvent?(gatewayEvent)
+    }
+
+    /// 为 challenge 重新连接
+    private func reconnectForChallenge() async {
+        print("[GatewayClient] Reconnecting for challenge...")
+
+        // 先断开现有连接
+        disconnect()
+
+        // 等待一小段时间
+        try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1秒
+
+        // 重新连接
+        await connect()
     }
 
     /// 发送帧
@@ -427,7 +463,7 @@ class GatewayClient {
         var json: [String: Any] = [
             "type": request.type,
             "id": request.id,
-            "method": request.method
+            "method": request.method,
         ]
         if let params = request.params {
             json["params"] = params
@@ -454,20 +490,20 @@ class GatewayClient {
             } catch {
                 print("[GatewayClient] Device identity unavailable: \(error)")
             }
-            
+
             var params: [String: Any] = [
                 "client": [
                     "id": "gateway-client",
                     "version": "2026.2.16",
                     "platform": "ios",
-                    "mode": "webchat"
+                    "mode": "webchat",
                 ],
                 "minProtocol": 3,
                 "maxProtocol": 3,
                 "role": "operator",
-                "scopes": operatorScopes
+                "scopes": operatorScopes,
             ]
-            
+
             // Add device identity if available
             if let device = device {
                 params["device"] = device
@@ -480,11 +516,12 @@ class GatewayClient {
             }
 
             let result = try await request(method: "connect", params: params)
-            
+
             // Check for device token in response
             if let payload = result.payload as? [String: Any],
-               let auth = payload["auth"] as? [String: Any],
-               let deviceToken = auth["deviceToken"] as? String {
+                let auth = payload["auth"] as? [String: Any],
+                let deviceToken = auth["deviceToken"] as? String
+            {
                 storeDeviceToken(deviceToken)
             }
 
@@ -509,7 +546,7 @@ class GatewayClient {
             disconnect()
         }
     }
-    
+
     /// Build signed device identity
     private func buildSignedDeviceIdentity(nonce: String?) async throws -> [String: Any] {
         let identity = try loadOrCreateDeviceIdentity()
@@ -518,7 +555,9 @@ class GatewayClient {
         // Use v2 protocol if nonce is provided
         let version = nonce != nil ? "v2" : "v1"
 
-        print("[GatewayClient] Building device identity: version=\(version), nonce=\(nonce ?? "nil"), signedAt=\(signedAt)")
+        print(
+            "[GatewayClient] Building device identity: version=\(version), nonce=\(nonce ?? "nil"), signedAt=\(signedAt)"
+        )
 
         let payload = buildDeviceAuthPayload(
             version: version,
@@ -532,21 +571,41 @@ class GatewayClient {
             nonce: nonce
         )
 
+        print("[GatewayClient] Payload to sign: '\(payload)'")
+        print("[GatewayClient] Payload bytes (UTF-8): \(Array(payload.utf8))")
+
         // Sign the payload using Ed25519
-        let privateKeyData = Data(base64Encoded: identity["privateKeyBase64"] as! String)!
+        guard let privateKeyData = base64UrlDecode(identity["privateKeyBase64"] as! String) else {
+            throw NSError(
+                domain: "GatewayClient", code: -5,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to decode private key"])
+        }
+
+        print("[GatewayClient] Private key data length: \(privateKeyData.count) bytes")
+
         let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeyData)
         let signatureData = try privateKey.signature(for: Array(payload.utf8))
+
+        print("[GatewayClient] Signature data length: \(signatureData.count) bytes")
+        print(
+            "[GatewayClient] Signature raw: \(signatureData.map { String(format: "%02x", $0) }.joined())"
+        )
+
+        let signatureBase64 = base64UrlEncode(signatureData)
+        print("[GatewayClient] Signature base64: \(signatureBase64)")
 
         // Build result dictionary - only include nonce if provided
         var result: [String: Any] = [
             "id": identity["id"] as! String,
             "publicKey": identity["publicKey"] as! String,
-            "signature": base64UrlEncode(signatureData),
-            "signedAt": Int(signedAt)
+            "signature": signatureBase64,
+            "signedAt": Int(signedAt),
         ]
         if let nonce = nonce {
             result["nonce"] = nonce
         }
+
+        print("[GatewayClient] Device identity result: \(result)")
         return result
     }
 
@@ -554,8 +613,9 @@ class GatewayClient {
     private func loadOrCreateDeviceIdentity() throws -> [String: Any] {
         // Try to load from UserDefaults
         if let data = UserDefaults.standard.data(forKey: deviceIdentityStorageKey),
-           let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           identity["id"] != nil, identity["publicKey"] != nil, identity["privateKeyBase64"] != nil {
+            let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            identity["id"] != nil, identity["publicKey"] != nil, identity["privateKeyBase64"] != nil
+        {
             return identity
         }
 
@@ -574,7 +634,7 @@ class GatewayClient {
         let identity: [String: Any] = [
             "id": id,
             "publicKey": base64UrlEncode(publicKeyData),
-            "privateKeyBase64": base64UrlEncode(privateKeyData)
+            "privateKeyBase64": base64UrlEncode(privateKeyData),
         ]
 
         // Save to UserDefaults
@@ -584,7 +644,7 @@ class GatewayClient {
 
         return identity
     }
-    
+
     /// Build device auth payload string
     private func buildDeviceAuthPayload(
         version: String,
@@ -598,8 +658,8 @@ class GatewayClient {
         nonce: String?
     ) -> String {
         let scopesString = scopes.joined(separator: ",")
-        let tokenString = token ?? ""
 
+        // 构建基础部分
         var parts = [
             version,
             deviceId,
@@ -608,14 +668,19 @@ class GatewayClient {
             role,
             scopesString,
             String(signedAtMs),
-            tokenString
         ]
+
+        // 根据 TypeScript 版本，token 总是包含（即使是空字符串）
+        let tokenString = token ?? ""
+        parts.append(tokenString)
 
         print("[GatewayClient] Payload parts: \(parts)")
 
         // Add nonce for v2 protocol
         if version == "v2" {
-            parts.append(nonce ?? "")
+            // 根据 TypeScript 版本，nonce 总是包含（即使是空字符串）
+            let nonceString = nonce ?? ""
+            parts.append(nonceString)
             print("[GatewayClient] Adding nonce to payload")
         }
 
@@ -623,19 +688,19 @@ class GatewayClient {
         print("[GatewayClient] Final payload: \(payload)")
         return payload
     }
-    
+
     /// Get preferred auth token (device token or user token)
     private func getPreferredAuthToken() -> String {
         let deviceToken = getStoredDeviceToken()
         return deviceToken.isEmpty ? (token ?? "") : deviceToken
     }
-    
+
     /// Get stored device token
     private func getStoredDeviceToken() -> String {
         let key = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
         return UserDefaults.standard.string(forKey: key) ?? ""
     }
-    
+
     /// Store device token
     private func storeDeviceToken(_ token: String) {
         let key = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
@@ -654,11 +719,12 @@ class GatewayClient {
 
         // 拒绝所有待处理请求
         for (_, pending) in pendingRequests {
-            pending.continuation.resume(throwing: NSError(
-                domain: "GatewayClient",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
-            ))
+            pending.continuation.resume(
+                throwing: NSError(
+                    domain: "GatewayClient",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
+                ))
         }
         pendingRequests.removeAll()
     }
@@ -677,11 +743,33 @@ class GatewayClient {
         return "deck-\(messageCounter)-\(Int(Date().timeIntervalSince1970 * 1000))"
     }
 
-    /// Base64URL encode (without padding)
+    /// Base64URL encode (without padding) - matches TypeScript implementation
     private func base64UrlEncode(_ data: Data) -> String {
-        data.base64EncodedString()
+        let base64 = data.base64EncodedString()
+        // Replace + with -, / with _, and remove trailing = (padding)
+        var result =
+            base64
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
+
+        // Remove trailing = characters (padding) - only at the end
+        while result.hasSuffix("=") {
+            result = String(result.dropLast())
+        }
+
+        return result
+    }
+
+    /// Base64URL decode (handles missing padding)
+    private func base64UrlDecode(_ string: String) -> Data? {
+        var base64 =
+            string
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        // Add padding if needed
+        while base64.count % 4 != 0 {
+            base64.append("=")
+        }
+        return Data(base64Encoded: base64)
     }
 }

@@ -26,7 +26,7 @@ struct GatewayRequest {
         var json: [String: Any] = [
             "type": type,
             "id": id,
-            "method": method
+            "method": method,
         ]
         if let params = params {
             json["params"] = params
@@ -37,9 +37,12 @@ struct GatewayRequest {
     /// 从 JSON 数据解码
     static func fromJSON(_ data: Data) throws -> GatewayRequest {
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let id = json["id"] as? String,
-              let method = json["method"] as? String else {
-            throw NSError(domain: "GatewayRequest", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"])
+            let id = json["id"] as? String,
+            let method = json["method"] as? String
+        else {
+            throw NSError(
+                domain: "GatewayRequest", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"])
         }
 
         let type = json["type"] as? String ?? "req"

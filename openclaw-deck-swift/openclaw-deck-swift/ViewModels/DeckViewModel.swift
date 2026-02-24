@@ -31,10 +31,15 @@ class DeckViewModel {
   /// 是否正在初始化
   var isInitializing: Bool = false
 
+  /// UserDefaults 存储
+  private let storage = UserDefaultsStorage.shared
+
   // MARK: - Initialization
 
   init() {
     setupGatewayCallbacks()
+    // 从 UserDefaults 加载 Session
+    loadSessionsFromStorage()
   }
 
   /// 设置 Gateway 回调
@@ -54,6 +59,12 @@ class DeckViewModel {
 
     config.gatewayUrl = url
     config.token = token
+
+    // 保存到 UserDefaults
+    storage.saveGatewayUrl(url)
+    if let token = token {
+      storage.saveToken(token)
+    }
 
     guard let gatewayUrl = URL(string: url) else {
       print("[DeckViewModel] Invalid gateway URL: \(url)")
@@ -144,7 +155,10 @@ class DeckViewModel {
     sessions[sessionId] = sessionState
     sessionOrder.append(sessionId)
 
-    // 6. 如果已连接，加载历史消息
+    // 6. 保存到 UserDefaults
+    saveSessionsToStorage()
+
+    // 7. 如果已连接，加载历史消息
     if gatewayConnected {
       Task {
         await loadSessionHistory(sessionKey: sessionKey)
@@ -163,6 +177,9 @@ class DeckViewModel {
     // 2. 从 sessionOrder 中移除
     sessionOrder.removeAll { $0 == sessionId }
 
+    // 3. 保存到 UserDefaults
+    saveSessionsToStorage()
+
     // 注意：Gateway 中的消息历史不会被删除
     // Session Key 可以继续使用，下次创建同名 Session 会加载历史
   }
@@ -172,6 +189,45 @@ class DeckViewModel {
   /// - Returns: SessionState（如果存在）
   func getSession(sessionId: String) -> SessionState? {
     sessions[sessionId]
+  }
+
+  // MARK: - Storage
+
+  /// 从 UserDefaults 加载 Sessions
+  private func loadSessionsFromStorage() {
+    let configs = storage.loadSessions()
+    let order = storage.loadSessionOrder()
+
+    for config in configs {
+      sessions[config.id] = SessionState(
+        sessionId: config.id,
+        sessionKey: config.sessionKey
+      )
+    }
+
+    if order.isEmpty {
+      sessionOrder = configs.map { $0.id }
+    } else {
+      sessionOrder = order
+    }
+  }
+
+  /// 保存 Sessions 到 UserDefaults
+  private func saveSessionsToStorage() {
+    let configs = sessionOrder.compactMap { id -> SessionConfig? in
+      guard let state = sessions[id] else { return nil }
+      return SessionConfig(
+        id: state.sessionId,
+        sessionKey: state.sessionKey,
+        createdAt: Date(),
+        name: state.sessionId,
+        icon: nil,
+        context: nil
+      )
+    }
+
+    storage.saveSessions(configs)
+    storage.saveSessionOrder(sessionOrder)
   }
 
   // MARK: - Load History

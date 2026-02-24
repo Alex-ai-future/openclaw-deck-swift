@@ -99,6 +99,19 @@ struct SettingsView: View {
         } footer: {
           Text("OpenClaw Deck Swift - A multi-session chat client for OpenClaw Gateway.")
         }
+
+        Section {
+          Button(role: .destructive) {
+            UserDefaultsStorage.shared.clearAll()
+          } label: {
+            HStack {
+              Image(systemName: "trash.fill")
+              Text("Clear All Data")
+            }
+          }
+        } footer: {
+          Text("This will clear Gateway URL, Token, and all Session configurations.")
+        }
       }
       .navigationTitle("Settings")
     }

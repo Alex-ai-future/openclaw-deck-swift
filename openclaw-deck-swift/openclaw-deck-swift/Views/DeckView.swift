@@ -65,7 +65,7 @@ struct DeckView: View {
       .buttonStyle(.glass)
       .padding(.trailing)
     }
-    .padding(.vertical, 6)
+    .padding(.vertical, 8)
     .background(.bar)
   }
 

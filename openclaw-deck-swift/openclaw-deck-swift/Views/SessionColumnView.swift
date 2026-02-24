@@ -64,6 +64,7 @@ struct SessionColumnView: View {
       VStack(alignment: .leading, spacing: 2) {
         Text(session.sessionId)
           .font(.headline)
+          .padding(.leading)
           .lineLimit(1)
 
         Text("\(session.messageCount) messages")

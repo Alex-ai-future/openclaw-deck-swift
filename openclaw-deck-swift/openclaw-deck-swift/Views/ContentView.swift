@@ -49,6 +49,17 @@ struct ContentView: View {
   @State private var token = ""
   @State private var showingNewSessionSheet = false
 
+  init() {
+    // 从 UserDefaults 加载保存的配置
+    let storage = UserDefaultsStorage.shared
+    if let savedUrl = storage.loadGatewayUrl() {
+      _gatewayUrl = State(initialValue: savedUrl)
+    }
+    if let savedToken = storage.loadToken() {
+      _token = State(initialValue: savedToken)
+    }
+  }
+
   var body: some View {
     Group {
       if viewModel.gatewayConnected || viewModel.isInitializing {

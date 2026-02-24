@@ -213,6 +213,46 @@ class GatewayClient {
         return (runId, status)
     }
 
+    /// 获取 Session 历史消息
+    func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
+        let result = try await request(method: "sessions_history", params: ["sessionKey": sessionKey])
+
+        guard let payload = result.payload as? [String: Any],
+              let messagesData = payload["messages"] as? [[String: Any]] else {
+            return nil
+        }
+
+        // 解析消息
+        return messagesData.compactMap { data -> ChatMessage? in
+            guard let roleString = data["role"] as? String,
+                  let text = data["text"] as? String else {
+                return nil
+            }
+
+            let role = MessageRole(rawValue: roleString) ?? .user
+            let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
+
+            return ChatMessage(
+                id: data["id"] as? String ?? UUID().uuidString,
+                role: role,
+                text: text,
+                timestamp: timestamp
+            )
+        }
+    }
+
+    /// 列出所有活跃 Sessions
+    func listSessions() async throws -> [String] {
+        let result = try await request(method: "sessions_list", params: [:])
+
+        guard let payload = result.payload as? [String: Any],
+              let sessions = payload["sessions"] as? [String] else {
+            return []
+        }
+
+        return sessions
+    }
+
     // MARK: - Private Methods
 
     /// 接收消息循环

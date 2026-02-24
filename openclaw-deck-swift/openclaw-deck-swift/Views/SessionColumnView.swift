@@ -60,20 +60,26 @@ struct SessionColumnView: View {
 
   private var columnHeader: some View {
     HStack(spacing: 10) {
-      // Session info
-      VStack(alignment: .leading, spacing: 2) {
-        Text(session.sessionId)
-          .font(.headline)
-          .lineLimit(1)
+      // Session key button with glass effect
+      Button {
+        copySessionKey()
+      } label: {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(session.sessionKey)
+            .font(.caption)
+            .fontWeight(.medium)
+            .lineLimit(1)
 
-        Text("\(session.messageCount) messages")
-          .font(.caption2)
-          .foregroundColor(.secondary)
+          Text("\(session.messageCount) messages")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+        }
       }
+      .buttonStyle(.glass)
 
       Spacer()
 
-      // Status indicator - wrapped in disabled button for consistent styling
+      // Status indicator with glass button
       Button {
         // No action
       } label: {
@@ -82,7 +88,7 @@ struct SessionColumnView: View {
       .buttonStyle(.glass)
       .disabled(true)
 
-      // Delete button - glass style
+      // Delete button
       Button {
         showingDeleteAlert = true
       } label: {
@@ -92,11 +98,22 @@ struct SessionColumnView: View {
       .buttonStyle(.glass)
     }
     .padding(.horizontal, 12)
-    .padding(.vertical, 8)
-    .background(.bar)
+    .padding(.vertical, 6)
+    .background(.ultraThinMaterial.opacity(0.7))
     .overlay(alignment: .bottom) {
       Divider()
     }
+  }
+
+  // MARK: - Actions
+
+  private func copySessionKey() {
+    #if os(iOS)
+    UIPasteboard.general.string = session.sessionKey
+    #elseif os(macOS)
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(session.sessionKey, forType: .string)
+    #endif
   }
 
   // MARK: - Status Indicator

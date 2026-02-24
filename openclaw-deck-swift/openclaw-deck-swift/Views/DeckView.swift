@@ -111,20 +111,15 @@ struct NewSessionSheet: View {
   @Binding var isPresented: Bool
 
   @State private var name = ""
-  @State private var icon = ""
-  @State private var context = ""
 
   var body: some View {
     NavigationStack {
       Form {
         Section {
-          TextField("Name", text: $name)
+          TextField("Session Name", text: $name)
             .textContentType(.name)
-
-          TextField("Icon (optional)", text: $icon)
-            .textContentType(.nickname)
-
-          TextField("Context (optional)", text: $context, axis: .vertical)
+        } footer: {
+          Text("The session key will be generated automatically.")
         }
       }
       .formStyle(.grouped)
@@ -133,7 +128,7 @@ struct NewSessionSheet: View {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") {
             isPresented = false
-            resetForm()
+            name = ""
           }
         }
 
@@ -146,24 +141,14 @@ struct NewSessionSheet: View {
       }
     }
     #if os(macOS)
-      .frame(width: 400, height: 450)
+      .frame(width: 400, height: 300)
     #endif
   }
 
   private func createSession() {
-    _ = viewModel.createSession(
-      name: name,
-      icon: icon.isEmpty ? nil : icon,
-      context: context.isEmpty ? nil : context
-    )
+    _ = viewModel.createSession(name: name)
     isPresented = false
-    resetForm()
-  }
-
-  private func resetForm() {
     name = ""
-    icon = ""
-    context = ""
   }
 }
 

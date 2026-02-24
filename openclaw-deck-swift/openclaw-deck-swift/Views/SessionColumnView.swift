@@ -64,7 +64,6 @@ struct SessionColumnView: View {
       VStack(alignment: .leading, spacing: 2) {
         Text(session.sessionId)
           .font(.headline)
-          .padding(.leading)
           .lineLimit(1)
 
         Text("\(session.messageCount) messages")
@@ -168,6 +167,21 @@ struct SessionColumnView: View {
     ScrollViewReader { proxy in
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 12) {
+          // Loading indicator
+          if session.isHistoryLoading {
+            HStack {
+              Spacer()
+              ProgressView()
+                .scaleEffect(0.8)
+              Text("Loading history...")
+                .font(.caption)
+                .foregroundColor(.secondary)
+              Spacer()
+            }
+            .padding(.vertical, 8)
+          }
+
+          // Messages
           ForEach(session.messages) { message in
             MessageView(message: message)
               .id(message.id)

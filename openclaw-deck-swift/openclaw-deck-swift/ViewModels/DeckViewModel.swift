@@ -86,8 +86,10 @@ class DeckViewModel {
     // 设置连接状态回调
     client.onConnection = { [weak self] connected in
       Task { @MainActor in
+        print("[DeckViewModel] Gateway connection changed: \(connected)")
         self?.gatewayConnected = connected
         if connected {
+          print("[DeckViewModel] Loading history for all sessions...")
           await self?.loadAllSessionHistory()
         }
       }
@@ -198,6 +200,11 @@ class DeckViewModel {
     let configs = storage.loadSessions()
     let order = storage.loadSessionOrder()
 
+    print("[DeckViewModel] Loading sessions from storage: \(configs.count) sessions")
+    for config in configs {
+      print("[DeckViewModel]   - Session: \(config.id) (\(config.sessionKey))")
+    }
+
     for config in configs {
       sessions[config.id] = SessionState(
         sessionId: config.id,
@@ -209,6 +216,17 @@ class DeckViewModel {
       sessionOrder = configs.map { $0.id }
     } else {
       sessionOrder = order
+    }
+
+    print("[DeckViewModel] Session order: \(sessionOrder)")
+    print("[DeckViewModel] Gateway connected: \(gatewayConnected)")
+
+    // 如果 Gateway 已连接，立即加载历史消息
+    if gatewayConnected {
+      print("[DeckViewModel] Gateway already connected, loading history...")
+      Task {
+        await loadAllSessionHistory()
+      }
     }
   }
 
@@ -234,7 +252,9 @@ class DeckViewModel {
 
   /// 加载所有 Session 的历史消息
   func loadAllSessionHistory() async {
+    print("[DeckViewModel] Loading history for \(sessionOrder.count) sessions")
     for session in sessionOrder.compactMap({ sessions[$0] }) {
+      print("[DeckViewModel]   Loading history for: \(session.sessionId)")
       await loadSessionHistory(sessionKey: session.sessionKey)
     }
   }
@@ -242,23 +262,41 @@ class DeckViewModel {
   /// 加载单个 Session 的历史消息
   /// - Parameter sessionKey: Session Key
   func loadSessionHistory(sessionKey: String) async {
-    guard let client = gatewayClient, client.connected else { return }
+    guard let client = gatewayClient, client.connected else {
+      print("[DeckViewModel] Gateway not connected, skipping history load")
+      return
+    }
 
     // 从 sessionKey 中提取 sessionId
     let parts = sessionKey.split(separator: ":")
     guard parts.count >= 3 else { return }
     let sessionId = String(parts[2])
 
+    print("[DeckViewModel] Loading history for session \(sessionId)...")
+
+    // 设置加载状态
+    if let session = sessions[sessionId] {
+      session.isHistoryLoading = true
+      print("[DeckViewModel]   isHistoryLoading = true")
+    }
+
     do {
+      print("[DeckViewModel] Calling getSessionHistory...")
       let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
+      print("[DeckViewModel] Loaded \(messages.count) messages for \(sessionId)")
 
       // 更新 Session 的消息
       if let session = sessions[sessionId] {
         session.messages = messages
         session.historyLoaded = true
+        session.isHistoryLoading = false
+        print("[DeckViewModel]   isHistoryLoading = false, historyLoaded = true")
       }
     } catch {
       print("[DeckViewModel] Failed to load history for \(sessionId): \(error)")
+      if let session = sessions[sessionId] {
+        session.isHistoryLoading = false
+      }
     }
   }
 

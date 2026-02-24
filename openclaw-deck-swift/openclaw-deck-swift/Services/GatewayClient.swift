@@ -70,7 +70,7 @@ class GatewayClient {
   // MARK: - Constants
 
   private let requestTimeout: TimeInterval = 30
-  private let operatorScopes = ["operator.read", "operator.write"]
+  private let operatorScopes = ["operator.read", "operator.write", "operator.admin"]
   private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
   private let deviceTokenStorageKeyPrefix = "openclaw.deck.deviceToken.v1:"
 
@@ -234,7 +234,7 @@ class GatewayClient {
   /// 获取 Session 历史消息
   func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
     let result = try await request(
-      method: "sessions_history", params: ["sessionKey": sessionKey])
+      method: "chat.history", params: ["sessionKey": sessionKey])
 
     guard let payload = result.payload as? [String: Any],
       let messagesData = payload["messages"] as? [[String: Any]]
@@ -244,10 +244,24 @@ class GatewayClient {
 
     // 解析消息
     return messagesData.compactMap { data -> ChatMessage? in
-      guard let roleString = data["role"] as? String,
-        let text = data["text"] as? String
-      else {
+      guard let roleString = data["role"] as? String else {
         return nil
+      }
+
+      // 从 content 数组中提取文本
+      var text = ""
+      if let content = data["content"] as? [[String: Any]] {
+        for item in content {
+          if let itemText = item["text"] as? String {
+            text += itemText
+          }
+          // 也可以处理 thinking 等内容
+        }
+      }
+
+      // 如果 content 为空，尝试直接从 text 字段获取
+      if text.isEmpty {
+        text = data["text"] as? String ?? ""
       }
 
       let role = MessageRole(rawValue: roleString) ?? .user
@@ -264,7 +278,7 @@ class GatewayClient {
 
   /// 列出所有活跃 Sessions
   func listSessions() async throws -> [String] {
-    let result = try await request(method: "sessions_list", params: [:])
+    let result = try await request(method: "list", params: [:])
 
     guard let payload = result.payload as? [String: Any],
       let sessions = payload["sessions"] as? [String]

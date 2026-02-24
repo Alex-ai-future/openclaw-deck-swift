@@ -33,6 +33,9 @@ class SessionState {
   /// 是否已加载历史消息
   var historyLoaded: Bool = false
 
+  /// 是否正在加载历史消息
+  var isHistoryLoading: Bool = false
+
   /// 当前状态
   var status: SessionStatus = .idle
 

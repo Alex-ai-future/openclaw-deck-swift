@@ -5,7 +5,10 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import SwiftUI
+
+#if os(macOS)
 import AppKit
+#endif
 
 struct ContentView: View {
     @State private var viewModel = DeckViewModel()

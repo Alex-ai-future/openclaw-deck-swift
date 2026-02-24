@@ -26,7 +26,7 @@ struct SessionColumnView: View {
     }
     
     // MARK: - Message List
-    
+
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -46,11 +46,11 @@ struct SessionColumnView: View {
                 }
             }
         }
-        .background(Color(NSColor.textBackgroundColor))
+        .background(Color(.systemBackground))
     }
-    
+
     // MARK: - Chat Input
-    
+
     private var chatInput: some View {
         HStack(spacing: 12) {
             TextField(
@@ -60,13 +60,13 @@ struct SessionColumnView: View {
             )
             .textFieldStyle(.plain)
             .padding(10)
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(Color(.secondarySystemBackground))
             .cornerRadius(10)
             .onSubmit {
                 sendMessage()
             }
             .disabled(isSending || session.status == .streaming)
-            
+
             Button {
                 sendMessage()
             } label: {
@@ -176,7 +176,7 @@ struct MessageView: View {
         case .user:
             return Color.blue.opacity(0.1)
         case .assistant:
-            return Color(NSColor.controlBackgroundColor)
+            return Color(.secondarySystemBackground)
         case .system:
             return Color.orange.opacity(0.1)
         }

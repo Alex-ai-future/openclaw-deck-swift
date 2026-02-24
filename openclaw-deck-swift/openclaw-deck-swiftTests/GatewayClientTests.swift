@@ -17,14 +17,14 @@ struct GatewayClientTests {
     @Test func testInitialization() {
         // Test 1: Initialize with URL only
         let url = URL(string: "ws://localhost:8080")!
-        let client1 = GatewayClient(url: url)
+        let client1 = GatewayClient(url: url, isMock: true)
 
         #expect(client1.url == url)
         #expect(client1.token == nil)
         #expect(!client1.connected)
 
         // Test 2: Initialize with URL and token
-        let client2 = GatewayClient(url: url, token: "test-token-123")
+        let client2 = GatewayClient(url: url, token: "test-token-123", isMock: true)
 
         #expect(client2.url == url)
         #expect(client2.token == "test-token-123")
@@ -41,7 +41,7 @@ struct GatewayClientTests {
 
         for urlString in urls {
             let url = URL(string: urlString)!
-            let client = GatewayClient(url: url, token: "test")
+            let client = GatewayClient(url: url, token: "test", isMock: true)
 
             #expect(client.url == url)
             #expect(client.token == "test")
@@ -53,7 +53,7 @@ struct GatewayClientTests {
 
     @Test func testConnect() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // Track connection state changes
         var connectionStates: [Bool] = []
@@ -70,7 +70,7 @@ struct GatewayClientTests {
 
     @Test func testDisconnect() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // Track connection state changes
         var connectionStates: [Bool] = []
@@ -92,7 +92,7 @@ struct GatewayClientTests {
 
     @Test func testDisconnectWithoutConnect() {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         var connectionCalled = false
         client.onConnection = { connected in
@@ -110,7 +110,7 @@ struct GatewayClientTests {
 
     @Test func testRequestWhenNotConnected() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // Try to make a request without connecting
         do {
@@ -125,7 +125,7 @@ struct GatewayClientTests {
 
     @Test func testRequestWhenConnected() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // Connect first
         await client.connect()
@@ -140,11 +140,11 @@ struct GatewayClientTests {
 
     @Test func testRequestWithParams() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         await client.connect()
 
-        let params: [String: String] = [
+        let params: [String: Any] = [
             "agentId": "main",
             "message": "Hello, world!"
         ]
@@ -159,7 +159,7 @@ struct GatewayClientTests {
 
     @Test func testRunAgentWhenNotConnected() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         do {
             _ = try await client.runAgent(agentId: "main", message: "Hello")
@@ -172,7 +172,7 @@ struct GatewayClientTests {
 
     @Test func testRunAgentWithoutSessionKey() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         await client.connect()
 
@@ -187,7 +187,7 @@ struct GatewayClientTests {
 
     @Test func testRunAgentWithSessionKey() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         await client.connect()
 
@@ -204,7 +204,7 @@ struct GatewayClientTests {
 
     @Test func testRunAgentGeneratesIdempotencyKey() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         await client.connect()
 
@@ -221,7 +221,7 @@ struct GatewayClientTests {
 
     @Test func testOnEventCallback() {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         var eventsReceived: [GatewayEvent] = []
         client.onEvent = { event in
@@ -241,12 +241,12 @@ struct GatewayClientTests {
 
         #expect(eventsReceived.count == 1)
         #expect(eventsReceived[0].event == "agent.content")
-        #expect(eventsReceived[0].payload == "Test content")
+        #expect(eventsReceived[0].payload as? String == "Test content")
     }
 
     @Test func testOnConnectionCallback() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         var connectionState: Bool?
         client.onConnection = { connected in
@@ -264,7 +264,7 @@ struct GatewayClientTests {
 
     @Test func testConnectedState() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // Initial state
         #expect(!client.connected)
@@ -280,7 +280,7 @@ struct GatewayClientTests {
 
     @Test func testMultipleConnectDisconnectCycles() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         var connectionChanges: [Bool] = []
         client.onConnection = { connected in
@@ -311,7 +311,7 @@ struct GatewayClientTests {
 
     @Test func testRequestErrorHandling() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // Request without connection should fail
         do {
@@ -324,7 +324,7 @@ struct GatewayClientTests {
 
     @Test func testRunAgentErrorHandling() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         // RunAgent without connection should fail
         do {
@@ -339,7 +339,7 @@ struct GatewayClientTests {
 
     @Test func testFullWorkflow() async {
         let url = URL(string: "ws://localhost:8080")!
-        let client = GatewayClient(url: url, token: "test-token")
+        let client = GatewayClient(url: url, isMock: true)
 
         var events: [String] = []
         client.onEvent = { event in

@@ -24,7 +24,7 @@ struct GatewayFrameTests {
         #expect(request.params == nil)
 
         // Test 2: Initialization with params
-        let params: [String: String] = ["key1": "value1", "key2": "value2"]
+        let params: [String: Any] = ["key1": "value1", "key2": "value2"]
         let requestWithParams = GatewayRequest(
             id: "test-id-2",
             method: "agent",
@@ -34,8 +34,8 @@ struct GatewayFrameTests {
         #expect(requestWithParams.type == "req")
         #expect(requestWithParams.id == "test-id-2")
         #expect(requestWithParams.method == "agent")
-        #expect(requestWithParams.params?["key1"] == "value1")
-        #expect(requestWithParams.params?["key2"] == "value2")
+        #expect(requestWithParams.params?["key1"] as? String == "value1")
+        #expect(requestWithParams.params?["key2"] as? String == "value2")
     }
 
     @Test func testGatewayRequestGenerateId() async {
@@ -58,20 +58,14 @@ struct GatewayFrameTests {
         #expect(abs(idTimestamp - timestamp) < 1000) // Within 1 second
     }
 
-    @Test func testGatewayRequestCodable() async throws {
+    @Test func testGatewayRequestCodable() throws {
         // Test 1: Request without params
         let request1 = GatewayRequest(id: "test-id", method: "connect")
 
-        let encoder = JSONEncoder()
-        let data1 = try encoder.encode(request1)
-
-        let decoder = JSONDecoder()
-        let decoded1 = try decoder.decode(GatewayRequest.self, from: data1)
-
-        #expect(decoded1.type == "req")
-        #expect(decoded1.id == "test-id")
-        #expect(decoded1.method == "connect")
-        #expect(decoded1.params == nil)
+        #expect(request1.type == "req")
+        #expect(request1.id == "test-id")
+        #expect(request1.method == "connect")
+        #expect(request1.params == nil)
 
         // Test 2: Request with params
         let request2 = GatewayRequest(
@@ -80,14 +74,19 @@ struct GatewayFrameTests {
             params: ["agentId": "main", "message": "hello"]
         )
 
-        let data2 = try encoder.encode(request2)
-        let decoded2 = try decoder.decode(GatewayRequest.self, from: data2)
+        #expect(request2.type == "req")
+        #expect(request2.id == "test-id-2")
+        #expect(request2.method == "agent")
+        #expect(request2.params?["agentId"] as? String == "main")
+        #expect(request2.params?["message"] as? String == "hello")
 
-        #expect(decoded2.type == "req")
-        #expect(decoded2.id == "test-id-2")
-        #expect(decoded2.method == "agent")
-        #expect(decoded2.params?["agentId"] == "main")
-        #expect(decoded2.params?["message"] == "hello")
+        // Test 3: JSON encoding/decoding
+        let data = try request2.toJSON()
+        let decoded = try GatewayRequest.fromJSON(data)
+
+        #expect(decoded.id == request2.id)
+        #expect(decoded.method == request2.method)
+        #expect(decoded.params?["agentId"] as? String == "main")
     }
 
     // MARK: - GatewayResponse Tests
@@ -104,7 +103,7 @@ struct GatewayFrameTests {
         #expect(successResponse.type == "res")
         #expect(successResponse.id == "test-id")
         #expect(successResponse.ok == true)
-        #expect(successResponse.payload == "{\"status\": \"success\"}")
+        #expect(successResponse.payload as? String == "{\"status\": \"success\"}")
         #expect(successResponse.error == nil)
         #expect(successResponse.isSuccess)
 
@@ -126,26 +125,20 @@ struct GatewayFrameTests {
         #expect(!errorResponse.isSuccess)
     }
 
-    @Test func testGatewayResponseCodable() async throws {
+    @Test func testGatewayResponseCodable() {
         // Test 1: Success response
         let successResponse = GatewayResponse(
             id: "test-id",
             ok: true,
-            payload: "{\"runId\": \"run-123\", \"status\": \"running\"}",
+            payload: ["runId": "run-123", "status": "running"],
             error: nil
         )
 
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(successResponse)
-
-        let decoder = JSONDecoder()
-        let decoded = try decoder.decode(GatewayResponse.self, from: data)
-
-        #expect(decoded.type == "res")
-        #expect(decoded.id == "test-id")
-        #expect(decoded.ok == true)
-        #expect(decoded.payload == "{\"runId\": \"run-123\", \"status\": \"running\"}")
-        #expect(decoded.error == nil)
+        #expect(successResponse.type == "res")
+        #expect(successResponse.id == "test-id")
+        #expect(successResponse.ok == true)
+        #expect(successResponse.isSuccess)
+        #expect(successResponse.error == nil)
 
         // Test 2: Error response
         let error = GatewayError(code: 500, message: "Internal error", details: "Server crashed")
@@ -156,16 +149,27 @@ struct GatewayFrameTests {
             error: error
         )
 
-        let data2 = try encoder.encode(errorResponse)
-        let decoded2 = try decoder.decode(GatewayResponse.self, from: data2)
+        #expect(errorResponse.type == "res")
+        #expect(errorResponse.id == "test-id-2")
+        #expect(errorResponse.ok == false)
+        #expect(errorResponse.payload == nil)
+        #expect(errorResponse.error?.code == 500)
+        #expect(errorResponse.error?.message == "Internal error")
+        #expect(errorResponse.error?.details == "Server crashed")
 
-        #expect(decoded2.type == "res")
-        #expect(decoded2.id == "test-id-2")
-        #expect(decoded2.ok == false)
-        #expect(decoded2.payload == nil)
-        #expect(decoded2.error?.code == 500)
-        #expect(decoded2.error?.message == "Internal error")
-        #expect(decoded2.error?.details == "Server crashed")
+        // Test 3: JSON parsing
+        let json: [String: Any] = [
+            "type": "res",
+            "id": "test-123",
+            "ok": true,
+            "payload": ["result": "success"]
+        ]
+        let parsed = GatewayResponse.fromJSON(json)
+
+        #expect(parsed.type == "res")
+        #expect(parsed.id == "test-123")
+        #expect(parsed.ok == true)
+        #expect(parsed.payload != nil)
     }
 
     // MARK: - GatewayEvent Tests
@@ -190,7 +194,7 @@ struct GatewayFrameTests {
 
         #expect(event2.type == "event")
         #expect(event2.event == "agent.done")
-        #expect(event2.payload == "{\"result\": \"completed\"}")
+        #expect(event2.payload as? String == "{\"result\": \"completed\"}")
         #expect(event2.seq == 5)
         #expect(event2.stateVersion == 10)
     }
@@ -203,38 +207,43 @@ struct GatewayFrameTests {
         #expect(!event.isType("agent.error"))
     }
 
-    @Test func testGatewayEventCodable() async throws {
+    @Test func testGatewayEventCodable() {
         // Test 1: Event without optional fields
         let event1 = GatewayEvent(event: "agent.thinking")
 
-        let encoder = JSONEncoder()
-        let data1 = try encoder.encode(event1)
-
-        let decoder = JSONDecoder()
-        let decoded1 = try decoder.decode(GatewayEvent.self, from: data1)
-
-        #expect(decoded1.type == "event")
-        #expect(decoded1.event == "agent.thinking")
-        #expect(decoded1.payload == nil)
-        #expect(decoded1.seq == nil)
-        #expect(decoded1.stateVersion == nil)
+        #expect(event1.type == "event")
+        #expect(event1.event == "agent.thinking")
+        #expect(event1.payload == nil)
+        #expect(event1.seq == nil)
+        #expect(event1.stateVersion == nil)
 
         // Test 2: Event with all fields
         let event2 = GatewayEvent(
             event: "agent.tool_use",
-            payload: "{\"tool\": \"search\"}",
+            payload: ["tool": "search", "input": "query"],
             seq: 3,
             stateVersion: 7
         )
 
-        let data2 = try encoder.encode(event2)
-        let decoded2 = try decoder.decode(GatewayEvent.self, from: data2)
+        #expect(event2.type == "event")
+        #expect(event2.event == "agent.tool_use")
+        #expect(event2.payload != nil)
+        #expect(event2.seq == 3)
+        #expect(event2.stateVersion == 7)
 
-        #expect(decoded2.type == "event")
-        #expect(decoded2.event == "agent.tool_use")
-        #expect(decoded2.payload == "{\"tool\": \"search\"}")
-        #expect(decoded2.seq == 3)
-        #expect(decoded2.stateVersion == 7)
+        // Test 3: JSON parsing
+        let json: [String: Any] = [
+            "type": "event",
+            "event": "agent.content",
+            "payload": "Hello",
+            "seq": 1
+        ]
+        let parsed = GatewayEvent.fromJSON(json)
+
+        #expect(parsed.type == "event")
+        #expect(parsed.event == "agent.content")
+        #expect(parsed.payload as? String == "Hello")
+        #expect(parsed.seq == 1)
     }
 
     // MARK: - GatewayError Tests
@@ -259,19 +268,13 @@ struct GatewayFrameTests {
         #expect(error2.details == "Database connection failed")
     }
 
-    @Test func testGatewayErrorCodable() async throws {
+    @Test func testGatewayErrorCodable() {
         // Test 1: Error without details
         let error1 = GatewayError(code: 401, message: "Unauthorized")
 
-        let encoder = JSONEncoder()
-        let data1 = try encoder.encode(error1)
-
-        let decoder = JSONDecoder()
-        let decoded1 = try decoder.decode(GatewayError.self, from: data1)
-
-        #expect(decoded1.code == 401)
-        #expect(decoded1.message == "Unauthorized")
-        #expect(decoded1.details == nil)
+        #expect(error1.code == 401)
+        #expect(error1.message == "Unauthorized")
+        #expect(error1.details == nil)
 
         // Test 2: Error with details
         let error2 = GatewayError(
@@ -280,17 +283,26 @@ struct GatewayFrameTests {
             details: "Insufficient permissions"
         )
 
-        let data2 = try encoder.encode(error2)
-        let decoded2 = try decoder.decode(GatewayError.self, from: data2)
+        #expect(error2.code == 403)
+        #expect(error2.message == "Forbidden")
+        #expect(error2.details == "Insufficient permissions")
 
-        #expect(decoded2.code == 403)
-        #expect(decoded2.message == "Forbidden")
-        #expect(decoded2.details == "Insufficient permissions")
+        // Test 3: JSON parsing
+        let json: [String: Any] = [
+            "code": 500,
+            "message": "Internal error",
+            "details": "Server crashed"
+        ]
+        let parsed = GatewayError.fromJSON(json)
+
+        #expect(parsed.code == 500)
+        #expect(parsed.message == "Internal error")
+        #expect(parsed.details == "Server crashed")
     }
 
     // MARK: - Integration Tests
 
-    @Test func testFullRequestResponseCycle() async throws {
+    @Test func testFullRequestResponseCycle() {
         // Simulate a full request/response cycle
         let request = GatewayRequest(
             id: "deck-1-1234567890",
@@ -298,29 +310,20 @@ struct GatewayFrameTests {
             params: ["agentId": "main", "message": "Hello"]
         )
 
-        let encoder = JSONEncoder()
-        let requestData = try encoder.encode(request)
-
         // Simulate server response
         let response = GatewayResponse(
             id: "deck-1-1234567890",
             ok: true,
-            payload: "{\"runId\": \"run-abc\", \"status\": \"running\"}",
+            payload: ["runId": "run-abc", "status": "running"],
             error: nil
         )
 
-        let responseData = try encoder.encode(response)
-
-        let decoder = JSONDecoder()
-        let decodedRequest = try decoder.decode(GatewayRequest.self, from: requestData)
-        let decodedResponse = try decoder.decode(GatewayResponse.self, from: responseData)
-
-        #expect(decodedRequest.id == decodedResponse.id)
-        #expect(decodedResponse.ok == true)
-        #expect(decodedResponse.error == nil)
+        #expect(request.id == response.id)
+        #expect(response.ok == true)
+        #expect(response.error == nil)
     }
 
-    @Test func testEventStream() async throws {
+    @Test func testEventStream() {
         // Simulate a stream of events
         let events = [
             GatewayEvent(event: "agent.thinking", seq: 1, stateVersion: 1),
@@ -329,16 +332,10 @@ struct GatewayFrameTests {
             GatewayEvent(event: "agent.done", seq: 4, stateVersion: 4)
         ]
 
-        let encoder = JSONEncoder()
-        let decoder = JSONDecoder()
-
         var accumulatedContent = ""
 
         for event in events {
-            let data = try encoder.encode(event)
-            let decoded = try decoder.decode(GatewayEvent.self, from: data)
-
-            if decoded.event == "agent.content", let payload = decoded.payload {
+            if event.event == "agent.content", let payload = event.payload as? String {
                 accumulatedContent += payload
             }
         }

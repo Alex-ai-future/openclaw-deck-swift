@@ -25,21 +25,46 @@ struct SessionColumnView: View {
   @State private var showingDeleteAlert = false
 
   var body: some View {
-    VStack(spacing: 0) {
-      // Column header
-      columnHeader
+    NavigationStack {
+      VStack(spacing: 0) {
+        // Message list
+        messageList
 
-      Divider()
+        Divider()
 
-      // Message list
-      messageList
+        // Input area
+        chatInput
+      }
+      .navigationTitle(session.sessionKey)
+      .toolbar {
+        // Left: Status indicator
+        ToolbarItem(placement: .topBarLeading) {
+          StatusIndicator(status: session.status)
+        }
 
-      Divider()
+        // Center: Session key and message count
+        ToolbarItem(placement: .principal) {
+          VStack(spacing: 1) {
+            Text(session.sessionKey)
+              .font(.caption)
+              .fontWeight(.medium)
+              .lineLimit(1)
 
-      // Input area
-      chatInput
+            Text("\(session.messageCount) messages")
+              .font(.caption2)
+              .foregroundColor(.secondary)
+              .lineLimit(1)
+          }
+        }
+
+        // Right: Delete button
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Delete", role: .destructive) {
+            showingDeleteAlert = true
+          }
+        }
+      }
     }
-    .background(Color.adaptiveBackground)
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()
@@ -56,53 +81,6 @@ struct SessionColumnView: View {
     }
   }
 
-  // MARK: - Column Header
-
-  private var columnHeader: some View {
-    HStack(spacing: 12) {
-      // Left: Status button
-      Button {
-        // Optional: show status details
-      } label: {
-        StatusIndicator(status: session.status)
-      }
-      .buttonStyle(.glass)
-
-      Spacer()
-
-      // Center: Session info (plain text, not a button)
-      VStack(spacing: 2) {
-        Text(session.sessionKey)
-          .font(.caption)
-          .fontWeight(.medium)
-          .lineLimit(1)
-
-        Text("\(session.messageCount) messages")
-          .font(.caption2)
-          .foregroundColor(.secondary)
-      }
-      .foregroundStyle(.primary)
-      .multilineTextAlignment(.center)
-
-      Spacer()
-
-      // Right: Delete button
-      Button {
-        showingDeleteAlert = true
-      } label: {
-        Image(systemName: "trash")
-          .font(.caption)
-      }
-      .buttonStyle(.glass)
-    }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 6)
-    .background(.clear)
-    .overlay(alignment: .bottom) {
-      Divider()
-    }
-  }
-
   // MARK: - Status Indicator
 
   /// Status indicator - maps status to icon and color only
@@ -114,6 +92,7 @@ struct SessionColumnView: View {
         statusIcon
         statusLabel
       }
+      .frame(minWidth: 80, alignment: .center)
     }
 
     @ViewBuilder
@@ -143,8 +122,8 @@ struct SessionColumnView: View {
 
     private var statusLabel: some View {
       Text(statusText)
-        .font(.caption2)
         .foregroundColor(.primary)
+        .lineLimit(1)
     }
 
     private var statusText: String {
@@ -155,7 +134,7 @@ struct SessionColumnView: View {
         return "Thinking"
       case .streaming:
         return "Working"
-      case .error(let message):
+      case .error:
         return "Error"
       }
     }

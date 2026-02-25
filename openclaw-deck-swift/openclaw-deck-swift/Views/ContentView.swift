@@ -161,75 +161,99 @@ struct WelcomeView: View {
   @FocusState private var isUrlFocused: Bool
 
   var body: some View {
-    VStack(spacing: 40) {
-      // Logo and title
-      VStack(spacing: 16) {
-        Image(systemName: "message.badge.filled.fill")
-          .font(.system(size: 80))
-          .foregroundColor(.blue)
+    ScrollView {
+      VStack(spacing: 40) {
+        // Logo and title
+        VStack(spacing: 16) {
+          Image(systemName: "message.badge.filled.fill")
+            .font(.system(size: 80))
+            .foregroundColor(.blue)
 
-        Text("OpenClaw Deck")
-          .font(.largeTitle)
-          .fontWeight(.bold)
+          Text("OpenClaw Deck")
+            .font(.largeTitle)
+            .fontWeight(.bold)
 
-        Text("Multi-Session Chat Client")
-          .font(.title2)
-          .foregroundColor(.secondary)
-      }
+          Text("Multi-Session Chat Client")
+            .font(.title2)
+            .foregroundColor(.secondary)
+        }
 
-      // Connection form
-      VStack(spacing: 16) {
-        TextField("Gateway URL", text: $gatewayUrl)
-          .textFieldStyle(.roundedBorder)
-          .focused($isUrlFocused)
-          .onSubmit {
-            onConnect()
-          }
-
-        SecureField("Token (optional)", text: $token)
-          .textFieldStyle(.roundedBorder)
-          .onSubmit {
-            onConnect()
-          }
-
-        Button(action: onConnect) {
-          HStack {
-            if isConnecting {
-              ProgressView()
-                .scaleEffect(0.8)
-            } else {
-              Image(systemName: "plug")
+        // Connection form
+        VStack(spacing: 16) {
+          TextField("Gateway URL", text: $gatewayUrl)
+            .textFieldStyle(.roundedBorder)
+            .focused($isUrlFocused)
+            .onSubmit {
+              onConnect()
             }
-            Text(isConnecting ? "Connecting..." : "Connect to Gateway")
+
+          SecureField("Token (optional)", text: $token)
+            .textFieldStyle(.roundedBorder)
+            .onSubmit {
+              onConnect()
+            }
+
+          Button(action: onConnect) {
+            HStack {
+              if isConnecting {
+                ProgressView()
+                  .scaleEffect(0.8)
+              } else {
+                Image(systemName: "plug")
+              }
+              Text(isConnecting ? "Connecting..." : "Connect to Gateway")
+            }
+            .frame(maxWidth: .infinity)
           }
-          .frame(maxWidth: .infinity)
+          .buttonStyle(.borderedProminent)
+          .controlSize(.large)
+          .disabled(isConnecting)
+
+          // Error message
+          if let error = connectionError {
+            VStack(spacing: 8) {
+              HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                  .foregroundColor(.red)
+                Text("Connection Failed")
+                  .fontWeight(.semibold)
+                  .foregroundColor(.red)
+                Spacer()
+                Button("Dismiss", action: onClearError)
+                  .font(.caption)
+              }
+
+              Text(error)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.red.opacity(0.1))
+            .cornerRadius(8)
+          }
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .disabled(isConnecting)
+        .padding()
 
-        // Error message (simple plain text)
-        if let error = connectionError {
-          Text("Connection failed: \(error)")
-            .font(.body)
-            .foregroundColor(.red)
-            .multilineTextAlignment(.center)
+        // Footer
+        VStack(spacing: 8) {
+          Text("Default Gateway URL:")
+            .font(.caption)
+            .foregroundColor(.secondary)
+
+          Text(gatewayUrl)
+            .font(.caption)
+            .foregroundColor(.blue)
         }
+
+        Spacer()
       }
-      .padding()
-
-      // Footer
-      VStack(spacing: 8) {
-        Text("Default Gateway URL:")
-          .font(.caption)
-          .foregroundColor(.secondary)
-
-        Text(gatewayUrl)
-          .font(.caption)
-          .foregroundColor(.blue)
-      }
-
-      Spacer()
+      #if os(macOS)
+        .frame(minHeight: NSScreen.main?.frame.height ?? 800)
+      #else
+        .frame(minHeight: UIScreen.main.bounds.height)
+      #endif
     }
     .padding()
     .frame(maxWidth: .infinity, maxHeight: .infinity)

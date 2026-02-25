@@ -105,11 +105,8 @@ struct SessionColumnView: View {
     let status: SessionStatus
 
     var body: some View {
-      HStack(spacing: 4) {
-        statusIcon
-        statusLabel
-      }
-      .frame(minWidth: 120, alignment: .center)
+      statusLabel
+        .frame(minWidth: 80, alignment: .center)
     }
 
     @ViewBuilder

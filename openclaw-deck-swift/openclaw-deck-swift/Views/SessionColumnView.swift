@@ -65,8 +65,6 @@ struct SessionColumnView: View {
         )
       }
       .buttonStyle(.glass)
-      .padding(.horizontal, 12)
-      .padding(.vertical, 8)
 
       Spacer()
 
@@ -75,8 +73,6 @@ struct SessionColumnView: View {
         showingDeleteAlert = true
       }
       .buttonStyle(.glass)
-      .padding(.horizontal, 12)
-      .padding(.vertical, 6)
     }
     .padding(.horizontal, 16)
     .padding(.top, 4)
@@ -100,9 +96,9 @@ struct SessionColumnView: View {
 
         // 第二行：状态 + 消息数量
         HStack {
-          Text(statusText)
-            .foregroundColor(.secondary)
-            .font(.caption2)
+//          Text(statusText)
+//            .foregroundColor(.secondary)
+//            .font(.caption2)
           Text("\(messageCount) messages")
             .font(.caption2)
             .foregroundColor(.secondary)
@@ -171,19 +167,20 @@ struct SessionColumnView: View {
       Spacer()
 
       HStack(spacing: 8) {
-        // Input field - iOS 26 Liquid Glass style
-        TextField(
-          "Message",
-          text: $inputText,
-          axis: .vertical
-        )
-        .textFieldStyle(.plain)
-        .padding(.horizontal, 14)
+        // Input field in glass button
+        Button {
+          // Activate text field focus (optional)
+        } label: {
+          TextField(
+            "Message",
+            text: $inputText,
+            axis: .vertical
+          )
+          .textFieldStyle(.plain)
+          .padding(.horizontal, 14)
+        }
+        .buttonStyle(.glass)
         .frame(height: 36)
-        .background(
-          RoundedRectangle(cornerRadius: 20)
-            .fill(.regularMaterial)
-        )
         .onSubmit {
           sendMessage()
         }
@@ -199,7 +196,6 @@ struct SessionColumnView: View {
         }
         .buttonStyle(.glass)
         .frame(height: 36)
-        .opacity(inputText.isEmpty ? 0.5 : 1.0)
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 8)

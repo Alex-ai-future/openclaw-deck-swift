@@ -204,20 +204,17 @@ struct SessionColumnView: View {
         axis: .vertical
       )
       .textFieldStyle(.plain)
-      .padding(12)
+      .padding(.horizontal, 14)
+      .frame(height: 36)
       .background(
-        RoundedRectangle(cornerRadius: 14)
+        RoundedRectangle(cornerRadius: 20)
           .fill(.regularMaterial)
-          .overlay(
-            RoundedRectangle(cornerRadius: 14)
-              .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
-          )
       )
       .onSubmit {
         sendMessage()
       }
 
-      // Send button - native iOS glass style with plain icon
+      // Send button - native iOS glass style
       Button {
         if !inputText.isEmpty {
           sendMessage()
@@ -227,14 +224,12 @@ struct SessionColumnView: View {
         Text("Send")
       }
       .buttonStyle(.glass)
+      .frame(height: 36)
       .opacity(inputText.isEmpty ? 0.5 : 1.0)
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 10)
-    .background(.bar)
-    .overlay(alignment: .top) {
-      Divider()
-    }
+    .background(Color.clear)
   }
 
   // MARK: - Actions
@@ -282,6 +277,11 @@ struct SessionColumnView: View {
     let message: ChatMessage
 
     var body: some View {
+      messageBody
+    }
+
+    @ViewBuilder
+    private var messageBody: some View {
       HStack {
         if message.role == .user {
           Spacer()
@@ -308,7 +308,16 @@ struct SessionColumnView: View {
 
     @ViewBuilder
     private var messageContent: some View {
-      if message.role == .assistant && !message.text.isEmpty {
+      if message.role == .assistant && message.text.isEmpty && (message.streaming ?? false) {
+        // 正在传输中但内容为空时，显示 Thinking 占位
+        HStack {
+          ProgressView()
+            .scaleEffect(0.8)
+          Text("Thinking...")
+            .font(.body)
+        }
+        .foregroundColor(.secondary)
+      } else if message.role == .assistant && !message.text.isEmpty {
         MarkdownView(message.text)
           .font(.body)
           .foregroundColor(.primary)
@@ -361,6 +370,11 @@ struct SessionColumnView: View {
     let message: ChatMessage
 
     var body: some View {
+      messageBody
+    }
+
+    @ViewBuilder
+    private var messageBody: some View {
       HStack {
         if message.role == .user {
           Spacer()
@@ -387,7 +401,16 @@ struct SessionColumnView: View {
 
     @ViewBuilder
     private var messageContent: some View {
-      if message.role == .assistant && !message.text.isEmpty {
+      if message.role == .assistant && message.text.isEmpty && (message.streaming ?? false) {
+        // 正在传输中但内容为空时，显示 Thinking 占位
+        HStack {
+          ProgressView()
+            .scaleEffect(0.8)
+          Text("Thinking...")
+            .font(.body)
+        }
+        .foregroundColor(.secondary)
+      } else if message.role == .assistant && !message.text.isEmpty {
         MarkdownView(message.text)
           .font(.body)
           .foregroundColor(.primary)

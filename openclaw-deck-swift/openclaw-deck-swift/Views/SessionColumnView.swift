@@ -222,14 +222,14 @@ struct SessionColumnView: View {
 
       // Send button - native iOS glass style with plain icon
       Button {
-        sendMessage()
+        if !inputText.isEmpty {
+          sendMessage()
+        }
+
       } label: {
-        Image(systemName: "arrow.up")
-          .font(.body)
-          .fontWeight(.semibold)
+        Text("Send")
       }
       .buttonStyle(.glass)
-      .disabled(inputText.isEmpty)
       .opacity(inputText.isEmpty ? 0.5 : 1.0)
     }
     .padding(.horizontal, 12)

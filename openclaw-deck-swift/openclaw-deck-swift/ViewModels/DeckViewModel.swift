@@ -188,7 +188,7 @@ class DeckViewModel {
 
     // 3. 保存到 UserDefaults
     saveSessionsToStorage()
-    
+
     // 4. 如果删除后没有 session 了，创建 welcome session
     if sessions.isEmpty {
       print("[DeckViewModel] No sessions left, creating welcome session...")
@@ -214,14 +214,14 @@ class DeckViewModel {
     let order = storage.loadSessionOrder()
 
     print("[DeckViewModel] Loading sessions from storage: \(configs.count) sessions")
-    
+
     // 如果没有 session，创建 welcome session
     if configs.isEmpty {
       print("[DeckViewModel] No sessions found, creating welcome session...")
       createWelcomeSession()
       return
     }
-    
+
     for config in configs {
       print("[DeckViewModel]   - Session: \(config.id) (\(config.sessionKey))")
     }

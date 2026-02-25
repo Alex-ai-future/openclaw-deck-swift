@@ -171,6 +171,12 @@ class DeckViewModel {
     return sessionConfig
   }
 
+  /// 创建 Welcome Session（当没有 session 时自动创建）
+  private func createWelcomeSession() {
+    // 使用 createSession 方法创建
+    _ = createSession(name: "Welcome")
+  }
+
   /// 删除 Session
   /// - Parameter sessionId: 要删除的 Session ID
   func deleteSession(sessionId: String) {
@@ -182,6 +188,12 @@ class DeckViewModel {
 
     // 3. 保存到 UserDefaults
     saveSessionsToStorage()
+    
+    // 4. 如果删除后没有 session 了，创建 welcome session
+    if sessions.isEmpty {
+      print("[DeckViewModel] No sessions left, creating welcome session...")
+      createWelcomeSession()
+    }
 
     // 注意：Gateway 中的消息历史不会被删除
     // Session Key 可以继续使用，下次创建同名 Session 会加载历史
@@ -202,6 +214,14 @@ class DeckViewModel {
     let order = storage.loadSessionOrder()
 
     print("[DeckViewModel] Loading sessions from storage: \(configs.count) sessions")
+    
+    // 如果没有 session，创建 welcome session
+    if configs.isEmpty {
+      print("[DeckViewModel] No sessions found, creating welcome session...")
+      createWelcomeSession()
+      return
+    }
+    
     for config in configs {
       print("[DeckViewModel]   - Session: \(config.id) (\(config.sessionKey))")
     }

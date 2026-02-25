@@ -71,7 +71,6 @@ struct ContentView: View {
           showingNewSessionSheet: $showingNewSessionSheet
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-          
 
       } else if viewModel.isInitializing {
         // Connecting state - show loading

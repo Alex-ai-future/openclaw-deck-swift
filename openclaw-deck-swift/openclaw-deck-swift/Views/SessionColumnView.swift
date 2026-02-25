@@ -48,7 +48,6 @@ struct SessionColumnView: View {
             StatusIndicator(status: session.status)
           }
         #endif
-        
 
         // Center: Session key and message count
         ToolbarItem(placement: .principal) {
@@ -64,7 +63,7 @@ struct SessionColumnView: View {
               .lineLimit(1)
           }
         }
-        
+
         #if os(macOS)
           // Right: Delete button
           ToolbarItem {
@@ -80,7 +79,7 @@ struct SessionColumnView: View {
             }
           }
         #endif
-        
+
       }
     }
     .contentShape(Rectangle())
@@ -110,7 +109,7 @@ struct SessionColumnView: View {
         statusIcon
         statusLabel
       }
-      .frame(minWidth: 80, alignment: .center)
+      .frame(minWidth: 120, alignment: .center)
     }
 
     @ViewBuilder

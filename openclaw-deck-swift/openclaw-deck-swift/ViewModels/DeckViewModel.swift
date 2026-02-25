@@ -153,9 +153,10 @@ class DeckViewModel {
       sessionKey: sessionKey
     )
 
-    // 5. 添加到 sessions
-    sessions[sessionId] = sessionState
-    sessionOrder.append(sessionId)
+    // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）
+    let sessionIdLower = sessionId.lowercased()
+    sessions[sessionIdLower] = sessionState
+    sessionOrder.append(sessionIdLower)
 
     // 6. 保存到 UserDefaults
     saveSessionsToStorage()
@@ -205,17 +206,20 @@ class DeckViewModel {
       print("[DeckViewModel]   - Session: \(config.id) (\(config.sessionKey))")
     }
 
+    // 使用小写 key 确保与 Gateway 一致
     for config in configs {
-      sessions[config.id] = SessionState(
+      let idLower = config.id.lowercased()
+      sessions[idLower] = SessionState(
         sessionId: config.id,
         sessionKey: config.sessionKey
       )
     }
 
+    // 也小写化 sessionOrder
     if order.isEmpty {
-      sessionOrder = configs.map { $0.id }
+      sessionOrder = configs.map { $0.id.lowercased() }
     } else {
-      sessionOrder = order
+      sessionOrder = order.map { $0.lowercased() }
     }
 
     print("[DeckViewModel] Session order: \(sessionOrder)")
@@ -267,15 +271,12 @@ class DeckViewModel {
       return
     }
 
-    // 从 sessionKey 中提取 sessionId
-    let parts = sessionKey.split(separator: ":")
-    guard parts.count >= 3 else { return }
-    let sessionId = String(parts[2])
+    print("[DeckViewModel] Loading history for session \(sessionKey)...")
 
-    print("[DeckViewModel] Loading history for session \(sessionId)...")
-
-    // 设置加载状态
-    if let session = sessions[sessionId] {
+    // 设置加载状态（大小写不敏感匹配）
+    if let session = sessions.values.first(where: {
+      $0.sessionKey.lowercased() == sessionKey.lowercased()
+    }) {
       session.isHistoryLoading = true
       print("[DeckViewModel]   isHistoryLoading = true")
     }
@@ -283,18 +284,22 @@ class DeckViewModel {
     do {
       print("[DeckViewModel] Calling getSessionHistory...")
       let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
-      print("[DeckViewModel] Loaded \(messages.count) messages for \(sessionId)")
+      print("[DeckViewModel] Loaded \(messages.count) messages for \(sessionKey)")
 
-      // 更新 Session 的消息
-      if let session = sessions[sessionId] {
+      // 更新 Session 的消息（大小写不敏感匹配）
+      if let session = sessions.values.first(where: {
+        $0.sessionKey.lowercased() == sessionKey.lowercased()
+      }) {
         session.messages = messages
         session.historyLoaded = true
         session.isHistoryLoading = false
         print("[DeckViewModel]   isHistoryLoading = false, historyLoaded = true")
       }
     } catch {
-      print("[DeckViewModel] Failed to load history for \(sessionId): \(error)")
-      if let session = sessions[sessionId] {
+      print("[DeckViewModel] Failed to load history for \(sessionKey): \(error)")
+      if let session = sessions.values.first(where: {
+        $0.sessionKey.lowercased() == sessionKey.lowercased()
+      }) {
         session.isHistoryLoading = false
       }
     }
@@ -312,7 +317,12 @@ class DeckViewModel {
       return
     }
 
-    guard let session = sessions[sessionId] else {
+    // Find session by sessionId (case-insensitive)
+    guard
+      let session = sessions.values.first(where: {
+        $0.sessionId.lowercased() == sessionId.lowercased()
+      })
+    else {
       print("[DeckViewModel] Session not found: \(sessionId)")
       return
     }
@@ -400,12 +410,11 @@ class DeckViewModel {
       return
     }
 
-    // 从 sessionKey 提取 sessionId: "agent:main:<sessionId>"
-    let parts = sessionKey.split(separator: ":")
-    let sessionId = parts.count >= 3 ? String(parts[2]) : nil
-
-    guard let sessionId = sessionId,
-      let session = sessions[sessionId]
+    // Find session by sessionKey (case-insensitive)
+    guard
+      let session = sessions.values.first(where: {
+        $0.sessionKey.lowercased() == sessionKey.lowercased()
+      })
     else {
       print("[DeckViewModel] Session not found for sessionKey: \(sessionKey)")
       return
@@ -634,12 +643,8 @@ class DeckViewModel {
       return nil
     }
 
-    // 从 sessionKey 提取 sessionId: "agent:main:<sessionId>"
-    let parts = sessionKey.split(separator: ":")
-    guard parts.count >= 3 else { return nil }
-    let sessionId = String(parts[2])
-
-    return sessions[sessionId]
+    // Find session by sessionKey (case-insensitive)
+    return sessions.values.first(where: { $0.sessionKey.lowercased() == sessionKey.lowercased() })
   }
 
   /// 根据事件找到对应的 Session

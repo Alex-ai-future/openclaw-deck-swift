@@ -61,10 +61,10 @@ class GatewayClient {
 
   /// Callback for waiting on connect challenge
   private var challengeCallback: ((String) -> Void)?
-  
+
   /// Timeout timer for challenge
   private var challengeTimeoutTimer: Timer?
-  
+
   /// Whether challenge has been completed (success or timeout)
   private var challengeCompleted: Bool = false
 
@@ -147,18 +147,19 @@ class GatewayClient {
     if connectNonce != nil {
       return
     }
-    
+
     // Reset challenge completed flag
     challengeCompleted = false
 
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+    try await withCheckedThrowingContinuation {
+      (continuation: CheckedContinuation<String, Error>) in
       // Set callback to resume continuation when challenge is received
       self.challengeCallback = { [weak self] nonce in
         guard let self = self else { return }
         // Only resume once
         if self.challengeCompleted { return }
         self.challengeCompleted = true
-        
+
         self.challengeTimeoutTimer?.invalidate()
         self.challengeTimeoutTimer = nil
         self.challengeCallback = nil
@@ -166,19 +167,21 @@ class GatewayClient {
       }
 
       // Timeout after 6 seconds
-      _ = Timer.scheduledTimer(withTimeInterval: self.connectChallengeTimeout, repeats: false) { [weak self] _ in
+      _ = Timer.scheduledTimer(withTimeInterval: self.connectChallengeTimeout, repeats: false) {
+        [weak self] _ in
         guard let self = self else { return }
         // Only resume once
         if self.challengeCompleted { return }
         self.challengeCompleted = true
-        
+
         self.challengeCallback = nil
         self.challengeTimeoutTimer = nil
-        continuation.resume(throwing: NSError(
-          domain: "GatewayClient",
-          code: -10,
-          userInfo: [NSLocalizedDescriptionKey: "Connect challenge timeout"]
-        ))
+        continuation.resume(
+          throwing: NSError(
+            domain: "GatewayClient",
+            code: -10,
+            userInfo: [NSLocalizedDescriptionKey: "Connect challenge timeout"]
+          ))
       }
     }
   }
@@ -465,7 +468,7 @@ class GatewayClient {
       let nonce = payload["nonce"] as? String
     {
       print("[GatewayClient] Received connect challenge, nonce: \(nonce.prefix(8))...")
-      
+
       // Call the challenge callback to resume waiting code
       if let callback = challengeCallback {
         challengeCallback = nil
@@ -473,10 +476,10 @@ class GatewayClient {
         challengeTimeoutTimer = nil
         callback(nonce)
       }
-      
+
       self.connectNonce = nonce
       self.connectSent = false
-      
+
       // Send connect request with nonce after a short delay
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
         Task { @MainActor in
@@ -545,7 +548,9 @@ class GatewayClient {
       do {
         device = try await buildSignedDeviceIdentity(nonce: connectNonce)
         if let device = device {
-          print("[GatewayClient] Device identity built successfully, has nonce: \(device["nonce"] != nil)")
+          print(
+            "[GatewayClient] Device identity built successfully, has nonce: \(device["nonce"] != nil)"
+          )
         }
       } catch {
         print("[GatewayClient] Device identity unavailable: \(error)")
@@ -569,7 +574,8 @@ class GatewayClient {
         params["device"] = device
         // Debug: print full device object
         if let deviceData = try? JSONSerialization.data(withJSONObject: device),
-           let deviceJSON = String(data: deviceData, encoding: .utf8) {
+          let deviceJSON = String(data: deviceData, encoding: .utf8)
+        {
           print("[GatewayClient] Sending device JSON: \(deviceJSON)")
         }
       }
@@ -609,7 +615,8 @@ class GatewayClient {
 
     // Use v2 protocol if nonce is provided
     let version = nonce != nil ? "v2" : "v1"
-    print("[GatewayClient] Building device identity, version: \(version), hasNonce: \(nonce != nil)")
+    print(
+      "[GatewayClient] Building device identity, version: \(version), hasNonce: \(nonce != nil)")
 
     let payload = buildDeviceAuthPayload(
       version: version,
@@ -628,7 +635,7 @@ class GatewayClient {
     // Sign the payload using Ed25519
     // privateKeySeed is stored as base64Url encoded 32-byte seed
     guard let privateKeySeedBase64 = identity["privateKeySeedBase64"] as? String,
-          let privateKeySeed = base64UrlDecode(privateKeySeedBase64)
+      let privateKeySeed = base64UrlDecode(privateKeySeedBase64)
     else {
       throw NSError(
         domain: "GatewayClient", code: -5,
@@ -639,7 +646,10 @@ class GatewayClient {
     guard privateKeySeed.count == 32 else {
       throw NSError(
         domain: "GatewayClient", code: -6,
-        userInfo: [NSLocalizedDescriptionKey: "Incorrect private key seed size: \(privateKeySeed.count) bytes, expected 32"])
+        userInfo: [
+          NSLocalizedDescriptionKey:
+            "Incorrect private key seed size: \(privateKeySeed.count) bytes, expected 32"
+        ])
     }
 
     let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeySeed)
@@ -672,7 +682,8 @@ class GatewayClient {
       if identity["privateKeySeedBase64"] != nil {
         // Validate the key size
         if let seedBase64 = identity["privateKeySeedBase64"] as? String,
-           let seedData = base64UrlDecode(seedBase64) {
+          let seedData = base64UrlDecode(seedBase64)
+        {
           if seedData.count == 32 {
             return identity
           }
@@ -686,7 +697,7 @@ class GatewayClient {
       if let oldPrivateKeyBase64 = identity["privateKeyBase64"] as? String {
         // Try base64url decode first
         var privateKeyData = base64UrlDecode(oldPrivateKeyBase64)
-        
+
         // If base64url decode failed or produced invalid size, try standard base64
         if privateKeyData == nil || (privateKeyData!.count != 32 && privateKeyData!.count != 64) {
           // Try standard base64 decode
@@ -697,14 +708,14 @@ class GatewayClient {
           }
           privateKeyData = Data(base64Encoded: base64)
         }
-        
+
         if let privateKeyData = privateKeyData {
           // If old key was 64 bytes, extract just the 32-byte seed
           if privateKeyData.count == 64 {
             let seedData = privateKeyData.subdata(in: 0..<32)
             var newIdentity = identity
             newIdentity["privateKeySeedBase64"] = base64UrlEncode(seedData)
-            
+
             // Save migrated identity
             if let newData = try? JSONSerialization.data(withJSONObject: newIdentity) {
               UserDefaults.standard.set(newData, forKey: deviceIdentityStorageKey)
@@ -714,7 +725,7 @@ class GatewayClient {
             // Old key was already 32 bytes, just rename the key
             var newIdentity = identity
             newIdentity["privateKeySeedBase64"] = base64UrlEncode(privateKeyData)
-            
+
             if let newData = try? JSONSerialization.data(withJSONObject: newIdentity) {
               UserDefaults.standard.set(newData, forKey: deviceIdentityStorageKey)
             }
@@ -735,9 +746,11 @@ class GatewayClient {
     // Raw representation is 32 bytes for Ed25519 (the seed)
     let publicKeyData = publicKey.rawRepresentation
     let privateKeySeed = privateKey.rawRepresentation
-    
+
     // Debug: log key sizes
-    print("[GatewayClient] Creating new identity - publicKey: \(publicKeyData.count) bytes, privateKeySeed: \(privateKeySeed.count) bytes")
+    print(
+      "[GatewayClient] Creating new identity - publicKey: \(publicKeyData.count) bytes, privateKeySeed: \(privateKeySeed.count) bytes"
+    )
 
     // Generate device ID from public key hash (SHA-256, then hex)
     let digest = SHA256.hash(data: publicKeyData)
@@ -748,7 +761,7 @@ class GatewayClient {
       "publicKey": base64UrlEncode(publicKeyData),
       "privateKeySeedBase64": base64UrlEncode(privateKeySeed),
     ]
-    
+
     // Debug: verify encoded sizes
     if let seedData = base64UrlDecode(identity["privateKeySeedBase64"] as! String) {
       print("[GatewayClient] Encoded seed size: \(seedData.count) bytes")

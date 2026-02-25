@@ -252,7 +252,7 @@ struct WelcomeView: View {
       #if os(macOS)
         .frame(minHeight: NSScreen.main?.frame.height ?? 800)
       #else
-//        .frame(minHeight: UIScreen.main.bounds.height)
+        //        .frame(minHeight: UIScreen.main.bounds.height)
       #endif
     }
     .padding()

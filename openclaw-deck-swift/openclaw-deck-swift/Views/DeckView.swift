@@ -23,65 +23,50 @@ struct DeckView: View {
   #endif
 
   var body: some View {
-    VStack(spacing: 0) {
-      // Top toolbar
-      topToolbar
-
-      Divider()
-
-      // Horizontal scrollable session columns
-      sessionColumns
-    }
-    #if os(iOS) || os(visionOS)
-    .padding(.bottom, keyboardOverlapHeight)
-    .animation(.easeOut(duration: 0.25), value: keyboardOverlapHeight)
-    .onAppear {
-      setupKeyboardNotifications()
-    }
-    .onDisappear {
-      NotificationCenter.default.removeObserver(self)
-    }
-    #endif
-    .sheet(isPresented: $showingNewSessionSheet) {
-      NewSessionSheet(
-        viewModel: viewModel,
-        isPresented: $showingNewSessionSheet
-      )
-    }
-  }
-
-  // MARK: - Top Toolbar
-
-  private var topToolbar: some View {
-    HStack {
-      Text("OpenClaw Deck")
-        .font(.headline)
-        .padding(.leading)
-
-      Spacer()
-
-      // New Session button
-      Button {
-        showingNewSessionSheet = true
-      } label: {
-        Image(systemName: "plus")
+    NavigationStack {
+      VStack(spacing: 0) {
+        // Horizontal scrollable session columns
+        sessionColumns
       }
-      .buttonStyle(.glass)
-      .frame(width: 36, height: 36)
-      .disabled(!viewModel.gatewayConnected)
+      #if os(iOS) || os(visionOS)
+        .padding(.bottom, keyboardOverlapHeight)
+        .animation(.easeOut(duration: 0.25), value: keyboardOverlapHeight)
+        .onAppear {
+          setupKeyboardNotifications()
+        }
+        .onDisappear {
+          NotificationCenter.default.removeObserver(self)
+        }
+      #endif
+      .navigationTitle("OpenClaw Deck")
+      .toolbarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .primaryAction) {
+          HStack(spacing: 12) {
+            // New Session button
+            Button {
+              showingNewSessionSheet = true
+            } label: {
+              Image(systemName: "plus")
+            }
+            .disabled(!viewModel.gatewayConnected)
 
-      // Settings button
-      Button {
-        showingSettings = true
-      } label: {
-        Image(systemName: "gear")
+            // Settings button
+            Button {
+              showingSettings = true
+            } label: {
+              Image(systemName: "gear")
+            }
+          }
+        }
       }
-      .buttonStyle(.glass)
-      .frame(width: 36, height: 36)
-      .padding(.trailing)
+      .sheet(isPresented: $showingNewSessionSheet) {
+        NewSessionSheet(
+          viewModel: viewModel,
+          isPresented: $showingNewSessionSheet
+        )
+      }
     }
-    .padding(.vertical, 8)
-    .background(.bar)
   }
 
   // MARK: - Session Columns
@@ -116,45 +101,49 @@ struct DeckView: View {
     }
     .background(Color.adaptiveBackground)
   }
-  
-  // MARK: - Keyboard Handling
-  
-  #if os(iOS) || os(visionOS)
-  private func setupKeyboardNotifications() {
-    NotificationCenter.default.addObserver(
-      forName: UIResponder.keyboardWillShowNotification,
-      object: nil,
-      queue: .main
-    ) { notification in
-      guard let keyboardEndFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
-        return
-      }
-      
-      guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-            let window = windowScene.windows.first else {
-        return
-      }
-      
-      // keyboardFrameEndUserInfoKey 已经是窗口坐标系，直接使用
-      // 重叠高度 = 窗口高度 - 键盘顶部 Y 位置 = 键盘高度
-      // 除以 6 是因为输入框只需要移动到键盘上方即可，不需要移动整个键盘高度
-      let overlapHeight = max(0, (window.bounds.height - keyboardEndFrame.origin.y) / 6)
 
-      withAnimation(.easeOut(duration: 0.25)) {
-        self.keyboardOverlapHeight = overlapHeight
+  // MARK: - Keyboard Handling
+
+  #if os(iOS) || os(visionOS)
+    private func setupKeyboardNotifications() {
+      NotificationCenter.default.addObserver(
+        forName: UIResponder.keyboardWillShowNotification,
+        object: nil,
+        queue: .main
+      ) { notification in
+        guard
+          let keyboardEndFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
+            as? CGRect
+        else {
+          return
+        }
+
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let window = windowScene.windows.first
+        else {
+          return
+        }
+
+        // keyboardFrameEndUserInfoKey 已经是窗口坐标系，直接使用
+        // 重叠高度 = 窗口高度 - 键盘顶部 Y 位置 = 键盘高度
+        // 除以 6 是因为输入框只需要移动到键盘上方即可，不需要移动整个键盘高度
+        let overlapHeight = max(0, (window.bounds.height - keyboardEndFrame.origin.y) / 6)
+
+        withAnimation(.easeOut(duration: 0.25)) {
+          self.keyboardOverlapHeight = overlapHeight
+        }
+      }
+
+      NotificationCenter.default.addObserver(
+        forName: UIResponder.keyboardWillHideNotification,
+        object: nil,
+        queue: .main
+      ) { _ in
+        withAnimation(.easeOut(duration: 0.25)) {
+          self.keyboardOverlapHeight = 0
+        }
       }
     }
-    
-    NotificationCenter.default.addObserver(
-      forName: UIResponder.keyboardWillHideNotification,
-      object: nil,
-      queue: .main
-    ) { _ in
-      withAnimation(.easeOut(duration: 0.25)) {
-        self.keyboardOverlapHeight = 0
-      }
-    }
-  }
   #endif
 }
 

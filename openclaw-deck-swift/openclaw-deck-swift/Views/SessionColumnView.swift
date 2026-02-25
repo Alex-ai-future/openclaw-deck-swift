@@ -25,75 +25,71 @@ struct SessionColumnView: View {
   @State private var showingDeleteAlert = false
 
   var body: some View {
-    NavigationStack {
-      ZStack {
-        // Message list
-        messageList
+    ZStack {
+      // Message list
+      messageList
 
-        // Input area - floating at bottom
-        chatInput
-      }
-      .navigationTitle(session.sessionKey)
-      .toolbar {
-        #if os(macOS)
-          /// Left: Status indicator
-          ToolbarItem {
-            StatusIndicator(status: session.status)
-          }
-        #else
-          // Left: Status indicator
-          ToolbarItem(placement: .topBarLeading) {
-            StatusIndicator(status: session.status)
-          }
-        #endif
-
-        // Center: Session key and message count
-        ToolbarItem(placement: .principal) {
-          VStack(spacing: 1) {
-            Text(session.sessionKey)
-              .font(.caption)
-              .fontWeight(.medium)
-              .lineLimit(1)
-
-            Text("\(session.messageCount) messages")
-              .font(.caption2)
-              .foregroundColor(.secondary)
-              .lineLimit(1)
-          }
-        }
-
-        #if os(macOS)
-          // Right: Delete button
-          ToolbarItem {
-            Button("Delete", role: .destructive) {
-              showingDeleteAlert = true
-            }
-          }
-        #else
-          // Right: Delete button
-          ToolbarItem(placement: .topBarTrailing) {
-            Button("Delete", role: .destructive) {
-              showingDeleteAlert = true
-            }
-          }
-        #endif
-
-      }
-      .contentShape(Rectangle())
-      .onTapGesture {
-        onSelect()
-      }
-      .alert("Delete Session?", isPresented: $showingDeleteAlert) {
-        Button("Cancel", role: .cancel) {}
-        Button("Delete", role: .destructive) {
-          onDelete()
-        }
-      } message: {
-        Text(
-          "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded."
-        )
-      }
+      // Input area - floating at bottom
+      chatInput
     }
+    .overlay(alignment: .top) {
+      // Top status bar - fixed at top
+      topStatusBar
+    }
+    .contentShape(Rectangle())
+    .onTapGesture {
+      onSelect()
+    }
+    .alert("Delete Session?", isPresented: $showingDeleteAlert) {
+      Button("Cancel", role: .cancel) {}
+      Button("Delete", role: .destructive) {
+        onDelete()
+      }
+    } message: {
+      Text(
+        "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded."
+      )
+    }
+  }
+
+  // MARK: - Top Status Bar
+
+  private var topStatusBar: some View {
+    VStack(spacing: 4) {
+      // Center: Session key with glass
+      Button {
+        // Session key button action (optional)
+      } label: {
+        Text("\(session.sessionKey) \(session.messageCount)")
+          .lineLimit(1)
+      }
+      .buttonStyle(.glass)
+      .padding(.vertical, 6)
+      HStack {
+        // Left: Status indicator with glass
+        Button {
+          // Status button action (optional)
+        } label: {
+          StatusIndicator(status: session.status)
+        }
+        .buttonStyle(.glass)
+        .padding(.vertical, 6)
+
+        Spacer()
+
+        // Right: Delete button with glass
+        Button("Delete", role: .destructive) {
+          showingDeleteAlert = true
+        }
+        .lineLimit(1)
+        .buttonStyle(.glass)
+        .padding(.vertical, 6)
+      }
+
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 4)
+
   }
 
   // MARK: - Status Indicator

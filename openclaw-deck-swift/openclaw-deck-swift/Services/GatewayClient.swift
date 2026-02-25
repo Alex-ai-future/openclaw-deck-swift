@@ -70,7 +70,7 @@ class GatewayClient {
   // MARK: - Constants
 
   private let requestTimeout: TimeInterval = 30
-  private let operatorScopes = ["operator.read", "operator.write", "operator.admin"]
+  private let operatorScopes = ["operator.read", "operator.write"]
   private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
   private let deviceTokenStorageKeyPrefix = "openclaw.deck.deviceToken.v1:"
 
@@ -85,7 +85,7 @@ class GatewayClient {
   // MARK: - Public Methods
 
   /// 建立连接并完成握手
-  func connect() async {
+  func connect(resetNonce: Bool = true) async {
     guard !isMock else {
       connected = true
       connectionError = nil
@@ -100,12 +100,20 @@ class GatewayClient {
 
     isConnecting = true
     connectionError = nil
-    connectNonce = nil
+    // Only reset nonce on fresh connection (not on challenge retry)
+    if resetNonce {
+      connectNonce = nil
+    }
     connectSent = false
 
     let session = URLSession.shared
-    // Don't set Origin header - let Gateway handle it based on config
-    webSocket = session.webSocketTask(with: url)
+    var request = URLRequest(url: url)
+    // Set Origin header - required by Gateway CORS policy
+    let origin = url.absoluteString
+      .replacingOccurrences(of: "ws://", with: "http://")
+      .replacingOccurrences(of: "wss://", with: "https://")
+    request.setValue(origin, forHTTPHeaderField: "Origin")
+    webSocket = session.webSocketTask(with: request)
     webSocket?.resume()
 
     // 开始接收消息
@@ -308,10 +316,12 @@ class GatewayClient {
       case .success(let message):
         switch message {
         case .data(let data):
+          print("[GatewayClient] Received data message: \(data.count) bytes")
           Task { @MainActor in
             self.handleData(data)
           }
         case .string(let string):
+          print("[GatewayClient] Received string message: \(string.prefix(1000))...")
           Task { @MainActor in
             self.handleString(string)
           }
@@ -323,6 +333,7 @@ class GatewayClient {
         self.receiveMessage()
 
       case .failure(let error):
+        print("[GatewayClient] Receive error: \(error)")
         Task { @MainActor in
           self.handleDisconnect()
         }
@@ -391,6 +402,8 @@ class GatewayClient {
   private func handleEvent(_ json: [String: Any]) {
     guard let event = json["event"] as? String else { return }
 
+    print("[GatewayClient] Received event: \(event)")
+
     // Handle connect.challenge event for device auth
     if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
       let nonce = payload["nonce"] as? String
@@ -398,10 +411,10 @@ class GatewayClient {
       print("[GatewayClient] Received connect challenge, nonce: \(nonce.prefix(8))...")
       self.connectNonce = nonce
       self.connectSent = false
-      // Retry connect with nonce after a short delay
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      // Don't close connection - retry on same connection
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
         Task { @MainActor in
-          print("[GatewayClient] Retrying connect with nonce...")
+          print("[GatewayClient] Retrying connect with nonce on same connection...")
           await self?.sendConnect()
         }
       }
@@ -488,6 +501,11 @@ class GatewayClient {
       // Add device identity if available
       if let device = device {
         params["device"] = device
+        // Debug: print full device object
+        if let deviceData = try? JSONSerialization.data(withJSONObject: device),
+           let deviceJSON = String(data: deviceData, encoding: .utf8) {
+          print("[GatewayClient] Sending device JSON: \(deviceJSON)")
+        }
       }
 
       // Add auth token if available
@@ -539,6 +557,8 @@ class GatewayClient {
       nonce: nonce
     )
 
+    print("[GatewayClient] Full payload string: \(payload)")
+
     // Sign the payload using Ed25519
     // privateKeySeed is stored as base64Url encoded 32-byte seed
     guard let privateKeySeedBase64 = identity["privateKeySeedBase64"] as? String,
@@ -568,8 +588,10 @@ class GatewayClient {
     ]
     if let nonce = nonce {
       result["nonce"] = nonce
-      print("[GatewayClient] Adding nonce to device identity")
+      print("[GatewayClient] Adding nonce to device identity: \(nonce)")
     }
+    print("[GatewayClient] Device identity payload: \(payload.prefix(50))...")
+    print("[GatewayClient] Device identity signature: \(result["signature"] as! String)")
     return result
   }
 

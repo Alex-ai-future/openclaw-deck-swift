@@ -67,6 +67,7 @@ struct DeckView: View {
         Image(systemName: "plus")
       }
       .buttonStyle(.glass)
+      .frame(width: 36, height: 36)
       .disabled(!viewModel.gatewayConnected)
 
       // Settings button
@@ -76,6 +77,7 @@ struct DeckView: View {
         Image(systemName: "gear")
       }
       .buttonStyle(.glass)
+      .frame(width: 36, height: 36)
       .padding(.trailing)
     }
     .padding(.vertical, 8)

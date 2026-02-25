@@ -26,13 +26,11 @@ struct SessionColumnView: View {
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 0) {
+      ZStack {
         // Message list
         messageList
 
-        Divider()
-
-        // Input area
+        // Input area - floating at bottom
         chatInput
       }
       .navigationTitle(session.sessionKey)
@@ -81,20 +79,20 @@ struct SessionColumnView: View {
         #endif
 
       }
-    }
-    .contentShape(Rectangle())
-    .onTapGesture {
-      onSelect()
-    }
-    .alert("Delete Session?", isPresented: $showingDeleteAlert) {
-      Button("Cancel", role: .cancel) {}
-      Button("Delete", role: .destructive) {
-        onDelete()
+      .contentShape(Rectangle())
+      .onTapGesture {
+        onSelect()
       }
-    } message: {
-      Text(
-        "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded."
-      )
+      .alert("Delete Session?", isPresented: $showingDeleteAlert) {
+        Button("Cancel", role: .cancel) {}
+        Button("Delete", role: .destructive) {
+          onDelete()
+        }
+      } message: {
+        Text(
+          "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded."
+        )
+      }
     }
   }
 
@@ -181,6 +179,7 @@ struct SessionColumnView: View {
           }
         }
         .padding()
+        .padding(.bottom, 80)  // 为悬浮输入框预留空间
       }
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {
@@ -196,40 +195,44 @@ struct SessionColumnView: View {
   // MARK: - Chat Input
 
   private var chatInput: some View {
-    HStack(spacing: 8) {
-      // Input field - iOS 26 Liquid Glass style
-      TextField(
-        "Message",
-        text: $inputText,
-        axis: .vertical
-      )
-      .textFieldStyle(.plain)
-      .padding(.horizontal, 14)
-      .frame(height: 36)
-      .background(
-        RoundedRectangle(cornerRadius: 20)
-          .fill(.regularMaterial)
-      )
-      .onSubmit {
-        sendMessage()
-      }
+    VStack {
+      Spacer()
 
-      // Send button - native iOS glass style
-      Button {
-        if !inputText.isEmpty {
+      HStack(spacing: 8) {
+        // Input field - iOS 26 Liquid Glass style
+        TextField(
+          "Message",
+          text: $inputText,
+          axis: .vertical
+        )
+        .textFieldStyle(.plain)
+        .padding(.horizontal, 14)
+        .frame(height: 36)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+        )
+        .onSubmit {
           sendMessage()
         }
 
-      } label: {
-        Text("Send")
+        // Send button - native iOS glass style
+        Button {
+          if !inputText.isEmpty {
+            sendMessage()
+          }
+
+        } label: {
+          Text("Send")
+        }
+        .buttonStyle(.glass)
+        .frame(height: 36)
+        .opacity(inputText.isEmpty ? 0.5 : 1.0)
       }
-      .buttonStyle(.glass)
-      .frame(height: 36)
-      .opacity(inputText.isEmpty ? 0.5 : 1.0)
+      .padding(.horizontal, 12)
+      .padding(.bottom, 8)
+      .padding(.top, 8)
     }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 10)
-    .background(Color.clear)
   }
 
   // MARK: - Actions

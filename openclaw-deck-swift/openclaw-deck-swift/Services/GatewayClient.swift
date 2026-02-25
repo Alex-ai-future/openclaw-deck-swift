@@ -104,13 +104,8 @@ class GatewayClient {
     connectSent = false
 
     let session = URLSession.shared
-    var request = URLRequest(url: url)
-    // Set Origin header to match Gateway URL (required by Gateway CORS policy)
-    let origin = url.absoluteString
-      .replacingOccurrences(of: "ws://", with: "http://")
-      .replacingOccurrences(of: "wss://", with: "https://")
-    request.setValue(origin, forHTTPHeaderField: "Origin")
-    webSocket = session.webSocketTask(with: request)
+    // Don't set Origin header - let Gateway handle it based on config
+    webSocket = session.webSocketTask(with: url)
     webSocket?.resume()
 
     // 开始接收消息
@@ -400,11 +395,13 @@ class GatewayClient {
     if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
       let nonce = payload["nonce"] as? String
     {
+      print("[GatewayClient] Received connect challenge, nonce: \(nonce.prefix(8))...")
       self.connectNonce = nonce
       self.connectSent = false
       // Retry connect with nonce after a short delay
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
         Task { @MainActor in
+          print("[GatewayClient] Retrying connect with nonce...")
           await self?.sendConnect()
         }
       }
@@ -456,14 +453,21 @@ class GatewayClient {
 
   /// 发送 connect 握手
   private func sendConnect() async {
-    if connectSent { return }
+    if connectSent {
+      print("[GatewayClient] sendConnect skipped - already sent")
+      return
+    }
     connectSent = true
+    print("[GatewayClient] Sending connect request, hasNonce: \(connectNonce != nil)")
 
     do {
       // Build device identity with nonce if available
       var device: [String: Any]? = nil
       do {
         device = try await buildSignedDeviceIdentity(nonce: connectNonce)
+        if let device = device {
+          print("[GatewayClient] Device identity built successfully, has nonce: \(device["nonce"] != nil)")
+        }
       } catch {
         print("[GatewayClient] Device identity unavailable: \(error)")
       }
@@ -521,6 +525,7 @@ class GatewayClient {
 
     // Use v2 protocol if nonce is provided
     let version = nonce != nil ? "v2" : "v1"
+    print("[GatewayClient] Building device identity, version: \(version), hasNonce: \(nonce != nil)")
 
     let payload = buildDeviceAuthPayload(
       version: version,
@@ -563,6 +568,7 @@ class GatewayClient {
     ]
     if let nonce = nonce {
       result["nonce"] = nonce
+      print("[GatewayClient] Adding nonce to device identity")
     }
     return result
   }

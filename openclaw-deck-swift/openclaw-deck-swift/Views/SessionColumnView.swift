@@ -60,7 +60,9 @@ struct SessionColumnView: View {
       Button {
         // Status button action (optional)
       } label: {
-        StatusIndicator(status: session.status, sessionKey: session.sessionKey, messageCount: session.messageCount)
+        StatusIndicator(
+          status: session.status, sessionKey: session.sessionKey, messageCount: session.messageCount
+        )
       }
       .buttonStyle(.glass)
       .padding(.horizontal, 12)
@@ -89,52 +91,23 @@ struct SessionColumnView: View {
     let messageCount: Int
 
     var body: some View {
-      HStack(spacing: 8) {
-        statusLabel
-        Spacer()
-        // Session info
-        VStack(alignment: .trailing, spacing: 2) {
-          Text(sessionKey)
+      VStack(spacing: 2) {
+        // 第一行：Session Key
+        Text(sessionKey)
+          .font(.caption)
+          .fontWeight(.medium)
+          .lineLimit(1)
+
+        // 第二行：状态 + 消息数量
+        HStack {
+          Text(statusText)
+            .foregroundColor(.secondary)
             .font(.caption2)
-            .fontWeight(.medium)
-            .lineLimit(1)
           Text("\(messageCount) messages")
             .font(.caption2)
             .foregroundColor(.secondary)
-            .lineLimit(1)
         }
       }
-    }
-
-    @ViewBuilder
-    private var statusIcon: some View {
-      switch status {
-      case .idle:
-        Circle()
-          .fill(.green)
-          .frame(width: 6, height: 6)
-
-      case .thinking:
-        ProgressView()
-          .scaleEffect(0.7)
-          .tint(.purple)
-
-      case .streaming:
-        Circle()
-          .fill(.blue)
-          .frame(width: 6, height: 6)
-
-      case .error:
-        Circle()
-          .fill(.red)
-          .frame(width: 6, height: 6)
-      }
-    }
-
-    private var statusLabel: some View {
-      Text(statusText)
-        .foregroundColor(.primary)
-        .lineLimit(1)
     }
 
     private var statusText: String {

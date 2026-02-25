@@ -313,7 +313,7 @@ struct SessionColumnView: View {
       switch message.role {
       case .user:
         return Color.blue
-      case .assistant:
+      case .assistant, .tool, .status, .parameter, .thinking:
         return Color.adaptiveSecondaryBackground
       case .system:
         return Color.orange.opacity(0.15)
@@ -324,7 +324,7 @@ struct SessionColumnView: View {
       switch message.role {
       case .user:
         return [.topLeft, .topRight, .bottomLeft]
-      case .assistant, .system:
+      case .assistant, .system, .tool, .status, .parameter, .thinking:
         return [.topLeft, .topRight, .bottomRight]
       }
     }
@@ -406,7 +406,7 @@ struct SessionColumnView: View {
       switch message.role {
       case .user:
         return Color.blue
-      case .assistant:
+      case .assistant, .tool, .status, .parameter, .thinking:
         return Color.adaptiveSecondaryBackground
       case .system:
         return Color.orange.opacity(0.15)

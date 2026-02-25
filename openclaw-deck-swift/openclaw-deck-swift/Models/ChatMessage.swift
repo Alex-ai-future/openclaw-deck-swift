@@ -91,6 +91,18 @@ enum MessageRole: String, Codable {
 
   /// 系统生成的消息（如连接状态等）
   case system
+
+  /// 工具调用消息（tool_use, tool, tool_result）
+  case tool
+
+  /// 状态消息
+  case status
+
+  /// 参数消息
+  case parameter
+
+  /// 思考内容
+  case thinking
 }
 
 /// 工具调用信息（用于显示 tool_use 状态）
@@ -173,7 +185,7 @@ extension ChatMessage {
     switch role {
     case .user:
       return "\(text)"
-    case .assistant:
+    case .assistant, .tool, .status, .parameter, .thinking:
       return "\(text)"
     case .system:
       return "\(text)"

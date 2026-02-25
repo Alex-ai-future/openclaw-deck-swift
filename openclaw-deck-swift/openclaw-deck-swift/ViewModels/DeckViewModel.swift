@@ -407,6 +407,10 @@ class DeckViewModel {
       handleAgentThinking(event)
     case "agent.tool_use":
       handleAgentToolUse(event)
+    case "agent.status":
+      handleAgentStatus(event)
+    case "agent.parameter":
+      handleAgentParameter(event)
     case "agent.done":
       handleAgentDone(event)
     case "agent.error":
@@ -560,15 +564,28 @@ class DeckViewModel {
 
   /// 处理 agent.thinking 事件
   private func handleAgentThinking(_ event: GatewayEvent) {
-    // 尝试从 sessionKey 提取 sessionId
-    if let session = sessionFromEvent(event) {
-      session.status = .thinking
+    guard let payload = event.payload as? [String: Any] else {
       return
     }
-    // 后备：使用 findSessionForEvent
-    if let session = findSessionForEvent(event) {
-      session.status = .thinking
+
+    // 尝试从 sessionKey 提取 sessionId
+    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
+    guard let session = session else {
+      return
     }
+
+    // 提取思考内容
+    if let thinking = payload["thinking"] as? String, !thinking.isEmpty {
+      let thinkingMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .thinking,
+        text: thinking,
+        timestamp: Date()
+      )
+      session.messages.append(thinkingMsg)
+    }
+
+    session.status = .thinking
   }
 
   /// 处理 agent.tool_use 事件
@@ -587,30 +604,30 @@ class DeckViewModel {
     let toolName = payload["tool_name"] as? String ?? "unknown"
     let input = payload["input"] as? String ?? ""
     let status = payload["status"] as? String ?? "running"
+    let output = payload["output"] as? String
+
+    // 创建工具消息文本
+    var text = "Using \(toolName)"
+    if !input.isEmpty { text += ": \(input)" }
+    if let output = output { text += "\nResult: \(output)" }
 
     // 创建工具调用信息
     let toolUse = ToolUseInfo(
       toolName: toolName,
       input: input,
-      output: nil,
+      output: output,
       status: status
     )
 
-    // 更新最后一条消息
-    if let index = session.messages.indices.last {
-      let message = session.messages[index]
-      session.messages[index] = ChatMessage(
-        id: message.id,
-        role: message.role,
-        text: message.text,
-        timestamp: message.timestamp,
-        streaming: message.streaming,
-        thinking: message.thinking,
-        toolUse: toolUse,
-        runId: message.runId,
-        isLoaded: message.isLoaded
-      )
-    }
+    // 创建独立的 tool 消息
+    let toolMsg = ChatMessage(
+      id: UUID().uuidString,
+      role: .tool,
+      text: text,
+      timestamp: Date(),
+      toolUse: toolUse
+    )
+    session.messages.append(toolMsg)
   }
 
   /// 处理 agent.done 事件
@@ -625,6 +642,58 @@ class DeckViewModel {
     if let session = findSessionForEvent(event) {
       session.status = .idle
       session.activeRunId = nil
+    }
+  }
+
+  /// 处理 agent.status 事件
+  private func handleAgentStatus(_ event: GatewayEvent) {
+    guard let payload = event.payload as? [String: Any] else {
+      return
+    }
+
+    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
+    guard let session = session else {
+      return
+    }
+
+    // 提取状态信息
+    let statusText = payload["text"] as? String ?? payload["message"] as? String ?? ""
+    let statusCode = payload["code"] as? String ?? payload["status"] as? String ?? ""
+
+    if !statusText.isEmpty {
+      let statusMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .status,
+        text: statusText,
+        timestamp: Date()
+      )
+      session.messages.append(statusMsg)
+    }
+  }
+
+  /// 处理 agent.parameter 事件
+  private func handleAgentParameter(_ event: GatewayEvent) {
+    guard let payload = event.payload as? [String: Any] else {
+      return
+    }
+
+    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
+    guard let session = session else {
+      return
+    }
+
+    // 提取参数信息
+    let paramName = payload["name"] as? String ?? "parameter"
+    let paramValue = payload["value"] as? String ?? ""
+
+    if !paramValue.isEmpty {
+      let paramMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .parameter,
+        text: "\(paramName): \(paramValue)",
+        timestamp: Date()
+      )
+      session.messages.append(paramMsg)
     }
   }
 

@@ -339,7 +339,28 @@ class GatewayClient {
         text = data["text"] as? String ?? ""
       }
 
-      let role = MessageRole(rawValue: roleString) ?? .user
+      // 解析角色类型，将各种角色映射到合适的类型
+      let role: MessageRole
+      let roleLower = roleString.lowercased()
+      switch roleLower {
+      case "user":
+        role = .user
+      case "assistant":
+        role = .assistant
+      case "system":
+        role = .system
+      case "tool_use", "tool", "tool_result", "tooluse":
+        role = .tool
+      case "status":
+        role = .status
+      case "parameter", "parameters", "params":
+        role = .parameter
+      case "thinking":
+        role = .thinking
+      default:
+        // 未知的角色都作为 assistant
+        role = .assistant
+      }
       let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
 
       return ChatMessage(

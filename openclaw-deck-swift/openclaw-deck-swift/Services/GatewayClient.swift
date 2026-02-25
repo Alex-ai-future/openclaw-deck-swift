@@ -59,6 +59,15 @@ class GatewayClient {
   /// Whether connect request was sent
   private var connectSent: Bool = false
 
+  /// Callback for waiting on connect challenge
+  private var challengeCallback: ((String) -> Void)?
+  
+  /// Timeout timer for challenge
+  private var challengeTimeoutTimer: Timer?
+  
+  /// Whether challenge has been completed (success or timeout)
+  private var challengeCompleted: Bool = false
+
   // MARK: - Callbacks
 
   /// 事件回调（接收来自 Gateway 的事件）
@@ -70,6 +79,7 @@ class GatewayClient {
   // MARK: - Constants
 
   private let requestTimeout: TimeInterval = 30
+  private let connectChallengeTimeout: TimeInterval = 6
   private let operatorScopes = ["operator.read", "operator.write"]
   private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
   private let deviceTokenStorageKeyPrefix = "openclaw.deck.deviceToken.v1:"
@@ -85,7 +95,7 @@ class GatewayClient {
   // MARK: - Public Methods
 
   /// 建立连接并完成握手
-  func connect(resetNonce: Bool = true) async {
+  func connect() async {
     guard !isMock else {
       connected = true
       connectionError = nil
@@ -100,10 +110,7 @@ class GatewayClient {
 
     isConnecting = true
     connectionError = nil
-    // Only reset nonce on fresh connection (not on challenge retry)
-    if resetNonce {
-      connectNonce = nil
-    }
+    connectNonce = nil
     connectSent = false
 
     let session = URLSession.shared
@@ -119,10 +126,59 @@ class GatewayClient {
     // 开始接收消息
     receiveMessage()
 
-    // 延迟发送 connect 请求，等待可能的 challenge
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-      Task { @MainActor in
-        await self?.sendConnect()
+    // Wait for connect challenge before sending request
+    do {
+      try await waitForChallenge()
+    } catch {
+      print("[GatewayClient] Failed to receive connect challenge: \(error)")
+      connectionError = error.localizedDescription
+      isConnecting = false
+      disconnect()
+      return
+    }
+
+    // Send connect request with nonce
+    await sendConnect()
+  }
+
+  /// Wait for connect.challenge event from Gateway
+  private func waitForChallenge() async throws {
+    // If we already have a nonce (from retry), don't wait
+    if connectNonce != nil {
+      return
+    }
+    
+    // Reset challenge completed flag
+    challengeCompleted = false
+
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+      // Set callback to resume continuation when challenge is received
+      self.challengeCallback = { [weak self] nonce in
+        guard let self = self else { return }
+        // Only resume once
+        if self.challengeCompleted { return }
+        self.challengeCompleted = true
+        
+        self.challengeTimeoutTimer?.invalidate()
+        self.challengeTimeoutTimer = nil
+        self.challengeCallback = nil
+        continuation.resume(returning: nonce)
+      }
+
+      // Timeout after 6 seconds
+      _ = Timer.scheduledTimer(withTimeInterval: self.connectChallengeTimeout, repeats: false) { [weak self] _ in
+        guard let self = self else { return }
+        // Only resume once
+        if self.challengeCompleted { return }
+        self.challengeCompleted = true
+        
+        self.challengeCallback = nil
+        self.challengeTimeoutTimer = nil
+        continuation.resume(throwing: NSError(
+          domain: "GatewayClient",
+          code: -10,
+          userInfo: [NSLocalizedDescriptionKey: "Connect challenge timeout"]
+        ))
       }
     }
   }
@@ -409,12 +465,22 @@ class GatewayClient {
       let nonce = payload["nonce"] as? String
     {
       print("[GatewayClient] Received connect challenge, nonce: \(nonce.prefix(8))...")
+      
+      // Call the challenge callback to resume waiting code
+      if let callback = challengeCallback {
+        challengeCallback = nil
+        challengeTimeoutTimer?.invalidate()
+        challengeTimeoutTimer = nil
+        callback(nonce)
+      }
+      
       self.connectNonce = nonce
       self.connectSent = false
-      // Don't close connection - retry on same connection
+      
+      // Send connect request with nonce after a short delay
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
         Task { @MainActor in
-          print("[GatewayClient] Retrying connect with nonce on same connection...")
+          print("[GatewayClient] Sending connect with nonce...")
           await self?.sendConnect()
         }
       }

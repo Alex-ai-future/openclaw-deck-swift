@@ -1,0 +1,134 @@
+[DeckViewModel] Loading sessions from storage: 0 sessions
+[DeckViewModel] Session order: []
+[DeckViewModel] Gateway connected: false
+No symbol named 'plug' found in system symbol set
+[ContentView] Attempting auto-connect...
+[ContentView] Found saved credentials: ws://192.168.101.3:18789
+[GatewayClient] Received string message: {"type":"event","event":"connect.challenge","payload":{"nonce":"dc1e5876-a3c4-4c48-aedd-f03889ed8c2a","ts":1771990838187}}...
+[GatewayClient] Received event: connect.challenge
+[GatewayClient] Received connect challenge, nonce: dc1e5876...
+[GatewayClient] Sending connect request, hasNonce: true
+[GatewayClient] Building device identity, version: v2, hasNonce: true
+[GatewayClient] Full payload string: v2|6871052afb1d5752e3a161ac224980564688e46ee1518d01b11db8865807b166|gateway-client|webchat|operator|operator.read,operator.write|1771990840175|b6b0af734b992229efa5a9decaddbc3c1f0eb8892da0c028|dc1e5876-a3c4-4c48-aedd-f03889ed8c2a
+[GatewayClient] Adding nonce to device identity: dc1e5876-a3c4-4c48-aedd-f03889ed8c2a
+[GatewayClient] Device identity payload: v2|6871052afb1d5752e3a161ac224980564688e46ee1518d0...
+[GatewayClient] Device identity signature: znG_pdDy6aRsAhXeWlqUc8138HwD6jghUkTG87XikmFVlGSBu4ZEBHkLonoYnWBToaLZp5ygwj9eVX-y5-0bCg
+[GatewayClient] Device identity built successfully, has nonce: true
+[GatewayClient] Sending device JSON: {"publicKey":"etHWHCUPtnZh8wPvKRjletrbe84m-u20VYhFBeGSFo0","signedAt":1771990840175,"nonce":"dc1e5876-a3c4-4c48-aedd-f03889ed8c2a","signature":"znG_pdDy6aRsAhXeWlqUc8138HwD6jghUkTG87XikmFVlGSBu4ZEBHkLonoYnWBToaLZp5ygwj9eVX-y5-0bCg","id":"6871052afb1d5752e3a161ac224980564688e46ee1518d01b11db8865807b166"}
+[GatewayClient] Sending connect with nonce...
+[GatewayClient] sendConnect skipped - already sent
+[GatewayClient] Received string message: {"type":"res","id":"deck-1-1771990840179","ok":true,"payload":{"type":"hello-ok","protocol":3,"server":{"version":"dev","connId":"8de3b23d-7f5e-4654-88cb-1a635f655aa4"},"features":{"methods":["health","doctor.memory.status","logs.tail","channels.status","channels.logout","status","usage.status","usage.cost","tts.status","tts.providers","tts.enable","tts.disable","tts.convert","tts.setProvider","config.get","config.set","config.apply","config.patch","config.schema","exec.approvals.get","exec.approvals.set","exec.approvals.node.get","exec.approvals.node.set","exec.approval.request","exec.approval.waitDecision","exec.approval.resolve","wizard.start","wizard.next","wizard.cancel","wizard.status","talk.config","talk.mode","models.list","tools.catalog","agents.list","agents.create","agents.update","agents.delete","agents.files.list","agents.files.get","agents.files.set","skills.status","skills.bins","skills.install","skills.update","update.run","voicewake.get","voicewake.set","sessions.list"...
+No symbol named 'plug' found in system symbol set
+[DeckViewModel] Gateway connection changed: true
+[DeckViewModel] Loading history for all sessions...
+[DeckViewModel] Loading history for 0 sessions
+[DeckViewModel] Loading sessions from storage: 0 sessions
+[DeckViewModel] Session order: []
+[DeckViewModel] Gateway connected: false
+[GatewayClient] Received string message: {"type":"event","event":"health","payload":{"ok":true,"ts":1771990840318,"durationMs":69,"channels":{"imessage":{"configured":true,"running":false,"lastStartAt":null,"lastStopAt":null,"lastError":null,"cliPath":null,"dbPath":null,"probe":{"ok":true},"lastProbeAt":1771990840318,"accountId":"default","accounts":{"default":{"configured":true,"running":false,"lastStartAt":null,"lastStopAt":null,"lastError":null,"cliPath":null,"dbPath":null,"probe":{"ok":true},"lastProbeAt":1771990840318,"accountId":"default"}}}},"channelOrder":["imessage"],"channelLabels":{"imessage":"iMessage"},"heartbeatSeconds":1800,"defaultAgentId":"main","agents":[{"agentId":"main","isDefault":true,"heartbeat":{"enabled":true,"every":"30m","everyMs":1800000,"prompt":"Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.","target":"last","ackMaxChars":300},"sessions":{"path":"/Users/jihuihuang/.openclaw/...
+[GatewayClient] Received event: health
+[GatewayClient] Received string message: {"type":"event","event":"tick","payload":{"ts":1771990846244},"seq":270}...
+[GatewayClient] Received event: tick
+Received external candidate resultset. Total number of candidates: 0
+Received external candidate resultset. Total number of candidates: 0
+<0x13221e300> Gesture: System gesture gate timed out.
+Received external candidate resultset. Total number of candidates: 16
+Result accumulator timeout: 3.000000, exceeded.
+containerToPush is nil, will not push anything to candidate receiver for request token: 01528086
+Result accumulator timeout: 3.000000, exceeded.
+containerToPush is nil, will not push anything to candidate receiver for request token: F4AC5B7A
+Result accumulator timeout: 3.000000, exceeded.
+containerToPush is nil, will not push anything to candidate receiver for request token: ADD2C026
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+Reporter disconnected. { function=sendMessage, reporterID=7000796692481 }
+        CHHapticEngine.mm:1321  -[CHHapticEngine doStartEngineAndWait:]: ERROR: Startup timeout
+<_UIKBFeedbackGenerator: 0x13336d140>: Error starting CHHapticEngine: Error Domain=com.apple.CoreHaptics Code=-4808 "(null)"
+<_UIKBFeedbackGenerator: 0x13336d140>: Engine is not running. Can't play feedback.
+Received external candidate resultset. Total number of candidates: 0
+Received external candidate resultset. Total number of candidates: 0
+Received external candidate resultset. Total number of candidates: 21
+containerToPush is nil, will not push anything to candidate receiver for request token: F65C40DA
+Received external candidate resultset. Total number of candidates: 18
+containerToPush is nil, will not push anything to candidate receiver for request token: 8D739728
+Received external candidate resultset. Total number of candidates: 26
+containerToPush is nil, will not push anything to candidate receiver for request token: F89F83AD
+Received external candidate resultset. Total number of candidates: 25
+containerToPush is nil, will not push anything to candidate receiver for request token: FCC051A1
+Result accumulator timeout: 3.000000, exceeded.
+containerToPush is nil, will not push anything to candidate receiver for request token: AFE7F99B
+Result accumulator timeout: 3.000000, exceeded.
+containerToPush is nil, will not push anything to candidate receiver for request token: 035821F7
+Received external candidate resultset. Total number of candidates: 10
+containerToPush is nil, will not push anything to candidate receiver for request token: 5324C04E
+[GatewayClient] Received string message: {"type":"event","event":"health","payload":{"ok":true,"ts":1771990872106,"durationMs":56,"channels":{"imessage":{"configured":true,"running":false,"lastStartAt":null,"lastStopAt":null,"lastError":null,"cliPath":null,"dbPath":null,"probe":{"ok":true},"lastProbeAt":1771990872106,"accountId":"default","accounts":{"default":{"configured":true,"running":false,"lastStartAt":null,"lastStopAt":null,"lastError":null,"cliPath":null,"dbPath":null,"probe":{"ok":true},"lastProbeAt":1771990872106,"accountId":"default"}}}},"channelOrder":["imessage"],"channelLabels":{"imessage":"iMessage"},"heartbeatSeconds":1800,"defaultAgentId":"main","agents":[{"agentId":"main","isDefault":true,"heartbeat":{"enabled":true,"every":"30m","everyMs":1800000,"prompt":"Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.","target":"last","ackMaxChars":300},"sessions":{"path":"/Users/jihuihuang/.openclaw/...
+[GatewayClient] Received event: health
+[DeckViewModel] Loading history for session test-5CF0...
+[DeckViewModel]   isHistoryLoading = true
+[DeckViewModel] Calling getSessionHistory...
+[GatewayClient] Received string message: {"type":"res","id":"deck-2-1771990873472","ok":true,"payload":{"sessionKey":"agent:main:test-5CF0","messages":[],"thinkingLevel":"off"}}...
+[DeckViewModel] Loaded 0 messages for test-5CF0
+[DeckViewModel]   isHistoryLoading = false, historyLoaded = true
+[GatewayClient] Received string message: {"type":"event","event":"tick","payload":{"ts":1771990876245},"seq":272}...
+[GatewayClient] Received event: tick
+Received external candidate resultset. Total number of candidates: 16
+containerToPush is nil, will not push anything to candidate receiver for request token: 154F0680
+Received external candidate resultset. Total number of candidates: 16
+containerToPush is nil, will not push anything to candidate receiver for request token: CC2FE1B0
+[GatewayClient] Received string message: {"type":"res","id":"deck-3-1771990888088","ok":true,"payload":{"runId":"agent-1771990888.08842-054454","status":"accepted","acceptedAt":1771990888207}}...
+[DeckViewModel] Agent run started: agent-1771990888.08842-054454, status: accepted
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"lifecycle","data":{"phase":"start","startedAt":1771990888584},"sessionKey":"agent:main:test-5cf0","seq":1,"ts":1771990888584},"seq":273}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫","delta":"我叫"},"sessionKey":"agent:main:test-5cf0","seq":2,"ts":1771990891719},"seq":274}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"chat","payload":{"runId":"agent-1771990888.08842-054454","sessionKey":"agent:main:test-5cf0","seq":2,"state":"delta","message":{"role":"assistant","content":[{"type":"text","text":"我叫"}],"timestamp":1771990891720}},"seq":275}...
+[GatewayClient] Received event: chat
+[DeckViewModel] Unknown event type: chat
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jar","delta":"贾维斯 (Jar"},"sessionKey":"agent:main:test-5cf0","seq":3,"ts":1771990891821},"seq":276}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jarvis)","delta":"vis)"},"sessionKey":"agent:main:test-5cf0","seq":4,"ts":1771990891840},"seq":277}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jarvis) 🤖","delta":" 🤖"},"sessionKey":"agent:main:test-5cf0","seq":5,"ts":1771990891896},"seq":278}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"chat","payload":{"runId":"agent-1771990888.08842-054454","sessionKey":"agent:main:test-5cf0","seq":5,"state":"delta","message":{"role":"assistant","content":[{"type":"text","text":"我叫贾维斯 (Jarvis) 🤖"}],"timestamp":1771990891897}},"seq":279}...
+[GatewayClient] Received event: chat
+[DeckViewModel] Unknown event type: chat
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你","delta":"\n\n是 Alex 你"},"sessionKey":"agent:main:test-5cf0","seq":6,"ts":1771990891898},"seq":280}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你给我的名字。有什么","delta":"给我的名字。有什么"},"sessionKey":"agent:main:test-5cf0","seq":7,"ts":1771990892027},"seq":281}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你给我的名字。有什么我可以帮","delta":"我可以帮"},"sessionKey":"agent:main:test-5cf0","seq":8,"ts":1771990892041},"seq":282}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"assistant","data":{"text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你给我的名字。有什么我可以帮你的吗？","delta":"你的吗？"},"sessionKey":"agent:main:test-5cf0","seq":9,"ts":1771990892050},"seq":283}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"chat","payload":{"runId":"agent-1771990888.08842-054454","sessionKey":"agent:main:test-5cf0","seq":9,"state":"delta","message":{"role":"assistant","content":[{"type":"text","text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你给我的名字。有什么我可以帮你的吗？"}],"timestamp":1771990892050}},"seq":284}...
+[GatewayClient] Received event: chat
+[DeckViewModel] Unknown event type: chat
+[GatewayClient] Received string message: {"type":"event","event":"agent","payload":{"runId":"agent-1771990888.08842-054454","stream":"lifecycle","data":{"phase":"end","endedAt":1771990892089},"sessionKey":"agent:main:test-5cf0","seq":10,"ts":1771990892089},"seq":285}...
+[GatewayClient] Received event: agent
+[DeckViewModel] Session not found for sessionKey: agent:main:test-5cf0
+[GatewayClient] Received string message: {"type":"event","event":"chat","payload":{"runId":"agent-1771990888.08842-054454","sessionKey":"agent:main:test-5cf0","seq":10,"state":"final","message":{"role":"assistant","content":[{"type":"text","text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你给我的名字。有什么我可以帮你的吗？"}],"timestamp":1771990892091}},"seq":286}...
+[GatewayClient] Received event: chat
+[DeckViewModel] Unknown event type: chat
+[GatewayClient] Received string message: {"type":"res","id":"deck-3-1771990888088","ok":true,"payload":{"runId":"agent-1771990888.08842-054454","status":"ok","summary":"completed","result":{"payloads":[{"text":"我叫贾维斯 (Jarvis) 🤖\n\n是 Alex 你给我的名字。有什么我可以帮你的吗？","mediaUrl":null}],"meta":{"durationMs":3726,"agentMeta":{"sessionId":"2cac1dd7-efc5-4988-b85e-fe6a1eb45947","provider":"qwen-portal","model":"coder-model","usage":{"input":15231,"output":85,"total":15316},"lastCallUsage":{"input":15231,"output":85,"cacheRead":0,"cacheWrite":0,"total":15316},"promptTokens":15231},"aborted":false,"systemPromptReport":{"source":"run","generatedAt":1771990888546,"sessionId":"2cac1dd7-efc5-4988-b85e-fe6a1eb45947","sessionKey":"agent:main:test-5cf0","provider":"qwen-portal","model":"coder-model","workspaceDir":"/Users/jihuihuang/.openclaw/workspace","bootstrapMaxChars":20000,"bootstrapTotalMaxChars":150000,"sandbox":{"mode":"off","sandboxed":false},"systemPrompt":{"chars":29799,"projectContextChars":13519,"nonProjectContextChars":16280},"injecte...
+[GatewayClient] Received string message: {"type":"event","event":"tick","payload":{"ts":1771990906244},"seq":287}...
+[GatewayClient] Received event: tick
+Received external candidate resultset. Total number of candidates: 16
+containerToPush is nil, will not push anything to candidate receiver for request token: AE6BBAF9
+Received external candidate resultset. Total number of candidates: 16
+containerToPush is nil, will not push anything to candidate receiver for request token: 2BFB5A03

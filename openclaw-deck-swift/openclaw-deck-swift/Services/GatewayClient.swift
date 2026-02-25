@@ -349,7 +349,7 @@ class GatewayClient {
         role = .assistant
       case "system":
         role = .system
-      case "tool_use", "tool", "tool_result", "tooluse":
+      case "tool_use", "tool", "tool_result", "tooluse", "toolresult":
         role = .tool
       case "status":
         role = .status

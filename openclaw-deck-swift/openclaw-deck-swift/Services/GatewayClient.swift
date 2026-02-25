@@ -317,20 +317,22 @@ class GatewayClient {
       return nil
     }
 
-    // 解析消息
-    return messagesData.compactMap { data -> ChatMessage? in
+    // 解析消息 - 只显示 user 和 assistant 消息
+    var messages: [ChatMessage] = []
+    for data in messagesData {
       guard let roleString = data["role"] as? String else {
-        return nil
+        continue
       }
 
-      // 从 content 数组中提取文本
+      // 从 content 数组中提取文本（只处理 text 类型）
       var text = ""
       if let content = data["content"] as? [[String: Any]] {
         for item in content {
-          if let itemText = item["text"] as? String {
+          let type = item["type"] as? String ?? ""
+          // 只提取 text 类型，忽略 thinking、toolCall 等
+          if type == "text", let itemText = item["text"] as? String {
             text += itemText
           }
-          // 也可以处理 thinking 等内容
         }
       }
 
@@ -339,37 +341,21 @@ class GatewayClient {
         text = data["text"] as? String ?? ""
       }
 
-      // 解析角色类型，将各种角色映射到合适的类型
-      let role: MessageRole
+      // 只处理 user 和 assistant 角色
       let roleLower = roleString.lowercased()
-      switch roleLower {
-      case "user":
-        role = .user
-      case "assistant":
-        role = .assistant
-      case "system":
-        role = .system
-      case "tool_use", "tool", "tool_result", "tooluse", "toolresult":
-        role = .tool
-      case "status":
-        role = .status
-      case "parameter", "parameters", "params":
-        role = .parameter
-      case "thinking":
-        role = .thinking
-      default:
-        // 未知的角色都作为 assistant
-        role = .assistant
-      }
-      let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
+      if roleLower == "user" || roleLower == "assistant" {
+        let role = MessageRole(rawValue: roleLower) ?? .assistant
+        let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
 
-      return ChatMessage(
-        id: data["id"] as? String ?? UUID().uuidString,
-        role: role,
-        text: text,
-        timestamp: timestamp
-      )
+        messages.append(ChatMessage(
+          id: data["id"] as? String ?? UUID().uuidString,
+          role: role,
+          text: text,
+          timestamp: timestamp
+        ))
+      }
     }
+    return messages
   }
 
   /// 列出所有活跃 Sessions

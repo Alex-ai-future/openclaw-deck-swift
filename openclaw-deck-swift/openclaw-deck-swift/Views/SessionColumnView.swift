@@ -96,9 +96,9 @@ struct SessionColumnView: View {
 
         // 第二行：状态 + 消息数量
         HStack {
-//          Text(statusText)
-//            .foregroundColor(.secondary)
-//            .font(.caption2)
+          //          Text(statusText)
+          //            .foregroundColor(.secondary)
+          //            .font(.caption2)
           Text("\(messageCount) messages")
             .font(.caption2)
             .foregroundColor(.secondary)
@@ -249,8 +249,11 @@ struct SessionColumnView: View {
     @State private var showFullContent = false
 
     var body: some View {
-      // 对于非 user 消息，如果内容为空则不显示
-      if message.text.isEmpty && !shouldShowEmptyMessage {
+      // 只显示 user 和 assistant 消息
+      if message.role != .user && message.role != .assistant {
+        EmptyView()
+      } else if message.text.isEmpty && !shouldShowEmptyMessage {
+        // 对于 assistant 空消息，只有在 streaming 时显示占位
         EmptyView()
       } else {
         messageBody
@@ -271,11 +274,6 @@ struct SessionColumnView: View {
             .padding(.vertical, 10)
             .background(backgroundColor)
             .cornerRadius(18, corners: cornerMask)
-            .onTapGesture {
-              if shouldTruncateMessage && !showFullContent {
-                showFullContent = true
-              }
-            }
 
           // Timestamp outside the bubble
           timestamp
@@ -285,13 +283,6 @@ struct SessionColumnView: View {
         if message.role == .assistant {
           Spacer()
         }
-      }
-      .sheet(isPresented: $showFullContent) {
-        FullContentSheet(
-          text: message.text,
-          title: roleTitle,
-          timestamp: message.timestamp
-        )
       }
     }
 
@@ -310,73 +301,16 @@ struct SessionColumnView: View {
         MarkdownView(message.text)
           .font(.body)
           .foregroundColor(.primary)
-      } else if message.role == .system {
-        Text(message.text)
-          .font(.body)
-          .foregroundColor(.orange)
-      } else if shouldTruncateMessage {
-        // 需要截断的消息（.tool, .status, .parameter, .thinking）
-        VStack(alignment: .leading, spacing: 4) {
-          Text(message.text)
-            .font(.body)
-            .foregroundColor(messageTextColor)
-            .lineLimit(3)
-          HStack {
-            Spacer()
-            Text("Show more...")
-              .font(.caption)
-              .foregroundColor(.secondary)
-          }
-        }
       } else {
-        // 短消息直接显示
         Text(message.text)
           .font(.body)
-          .foregroundColor(messageTextColor)
+          .foregroundColor(.white)
       }
     }
 
     /// 是否应该显示空消息（只有 assistant streaming 时显示占位）
     private var shouldShowEmptyMessage: Bool {
       message.role == .assistant && (message.streaming ?? false)
-    }
-
-    /// 是否应该截断消息（非 user 消息且超过 50 字符）
-    private var shouldTruncateMessage: Bool {
-      let shouldTruncate = message.role != .user && message.role != .assistant && message.role != .system && message.text.count > 50
-      return shouldTruncate
-    }
-
-    /// 消息文本颜色
-    private var messageTextColor: Color {
-      switch message.role {
-      case .user:
-        return .white
-      case .assistant, .tool, .status, .parameter, .thinking:
-        return .primary
-      case .system:
-        return .orange
-      }
-    }
-
-    /// 角色标题（用于 sheet 显示）
-    private var roleTitle: String {
-      switch message.role {
-      case .user:
-        return "User"
-      case .assistant:
-        return "Assistant"
-      case .system:
-        return "System"
-      case .tool:
-        return "Tool"
-      case .status:
-        return "Status"
-      case .parameter:
-        return "Parameter"
-      case .thinking:
-        return "Thinking"
-      }
     }
 
     private var timestamp: some View {
@@ -389,10 +323,10 @@ struct SessionColumnView: View {
       switch message.role {
       case .user:
         return Color.blue
-      case .assistant, .tool, .status, .parameter, .thinking:
+      case .assistant:
         return Color.adaptiveSecondaryBackground
-      case .system:
-        return Color.orange.opacity(0.15)
+      default:
+        return Color.adaptiveSecondaryBackground
       }
     }
 
@@ -400,7 +334,9 @@ struct SessionColumnView: View {
       switch message.role {
       case .user:
         return [.topLeft, .topRight, .bottomLeft]
-      case .assistant, .system, .tool, .status, .parameter, .thinking:
+      case .assistant:
+        return [.topLeft, .topRight, .bottomRight]
+      default:
         return [.topLeft, .topRight, .bottomRight]
       }
     }
@@ -411,56 +347,17 @@ struct SessionColumnView: View {
       return formatter.string(from: date)
     }
   }
-
-  /// Full content sheet for truncated messages
-  struct FullContentSheet: View {
-    let text: String
-    let title: String
-    let timestamp: Date
-    @Environment(\.dismiss) private var dismiss
-    @State private var copied = false
-
-    var body: some View {
-      NavigationStack {
-        ScrollView {
-          Text(text)
-            .font(.body)
-            .padding()
-            .textSelection(.enabled)
-        }
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-          ToolbarItem(placement: .confirmationAction) {
-            Button("Copy") {
-              copyToClipboard()
-            }
-          }
-          ToolbarItem(placement: .cancellationAction) {
-            Button("Done") {
-              dismiss()
-            }
-          }
-        }
-      }
-    }
-
-    private func copyToClipboard() {
-      #if os(iOS)
-      UIPasteboard.general.string = text
-      #endif
-      copied = true
-    }
-  }
 #else
   /// iMessage 风格的消息视图 (macOS)
   struct MessageView: View {
     let message: ChatMessage
-    @State private var showFullContent = false
 
     var body: some View {
-      // 对于非 user 消息，如果内容为空则不显示
-      if message.text.isEmpty && !shouldShowEmptyMessage {
+      // 只显示 user 和 assistant 消息
+      if message.role != .user && message.role != .assistant {
+        EmptyView()
+      } else if message.text.isEmpty && !shouldShowEmptyMessage {
+        // 对于 assistant 空消息，只有在 streaming 时显示占位
         EmptyView()
       } else {
         messageBody
@@ -481,11 +378,6 @@ struct SessionColumnView: View {
             .padding(.vertical, 10)
             .background(backgroundColor)
             .cornerRadius(18)
-            .onTapGesture {
-              if shouldTruncateMessage && !showFullContent {
-                showFullContent = true
-              }
-            }
 
           // Timestamp outside the bubble
           timestamp
@@ -495,13 +387,6 @@ struct SessionColumnView: View {
         if message.role == .assistant {
           Spacer()
         }
-      }
-      .sheet(isPresented: $showFullContent) {
-        FullContentSheet(
-          text: message.text,
-          title: roleTitle,
-          timestamp: message.timestamp
-        )
       }
     }
 
@@ -520,73 +405,16 @@ struct SessionColumnView: View {
         MarkdownView(message.text)
           .font(.body)
           .foregroundColor(.primary)
-      } else if message.role == .system {
-        Text(message.text)
-          .font(.body)
-          .foregroundColor(.orange)
-      } else if shouldTruncateMessage {
-        // 需要截断的消息（.tool, .status, .parameter, .thinking）
-        VStack(alignment: .leading, spacing: 4) {
-          Text(message.text)
-            .font(.body)
-            .foregroundColor(messageTextColor)
-            .lineLimit(3)
-          HStack {
-            Spacer()
-            Text("Show more...")
-              .font(.caption)
-              .foregroundColor(.secondary)
-          }
-        }
       } else {
-        // 短消息直接显示
         Text(message.text)
           .font(.body)
-          .foregroundColor(messageTextColor)
+          .foregroundColor(.white)
       }
     }
 
     /// 是否应该显示空消息（只有 assistant streaming 时显示占位）
     private var shouldShowEmptyMessage: Bool {
       message.role == .assistant && (message.streaming ?? false)
-    }
-
-    /// 是否应该截断消息（非 user 消息且超过 50 字符）
-    private var shouldTruncateMessage: Bool {
-      let shouldTruncate = message.role != .user && message.role != .assistant && message.role != .system && message.text.count > 50
-      return shouldTruncate
-    }
-
-    /// 消息文本颜色
-    private var messageTextColor: Color {
-      switch message.role {
-      case .user:
-        return .white
-      case .assistant, .tool, .status, .parameter, .thinking:
-        return .primary
-      case .system:
-        return .orange
-      }
-    }
-
-    /// 角色标题（用于 sheet 显示）
-    private var roleTitle: String {
-      switch message.role {
-      case .user:
-        return "User"
-      case .assistant:
-        return "Assistant"
-      case .system:
-        return "System"
-      case .tool:
-        return "Tool"
-      case .status:
-        return "Status"
-      case .parameter:
-        return "Parameter"
-      case .thinking:
-        return "Thinking"
-      }
     }
 
     private var timestamp: some View {
@@ -599,10 +427,10 @@ struct SessionColumnView: View {
       switch message.role {
       case .user:
         return Color.blue
-      case .assistant, .tool, .status, .parameter, .thinking:
+      case .assistant:
         return Color.adaptiveSecondaryBackground
-      case .system:
-        return Color.orange.opacity(0.15)
+      default:
+        return Color.adaptiveSecondaryBackground
       }
     }
 

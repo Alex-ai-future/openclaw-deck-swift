@@ -403,14 +403,9 @@ class DeckViewModel {
     case "agent.content":
       // 兼容旧的 agent.content 事件格式
       handleAgentContent(event)
-    case "agent.thinking":
-      handleAgentThinking(event)
-    case "agent.tool_use":
-      handleAgentToolUse(event)
-    case "agent.status":
-      handleAgentStatus(event)
-    case "agent.parameter":
-      handleAgentParameter(event)
+    case "agent.thinking", "agent.tool_use", "agent.status", "agent.parameter":
+      // 忽略 thinking、tool_use、status、parameter 事件，不显示这些消息
+      break
     case "agent.done":
       handleAgentDone(event)
     case "agent.error":
@@ -446,11 +441,15 @@ class DeckViewModel {
 
     switch stream {
     case "assistant":
-      // 流式内容：{ data: { delta: "..." } }
-      if let data = payload["data"] as? [String: Any],
-        let delta = data["delta"] as? String
-      {
-        appendToAssistantMessage(session: session, runId: runId, text: delta)
+      // 流式内容：{ data: { delta: "..." } } 或 { data: { text: "..." } }
+      if let data = payload["data"] as? [String: Any] {
+        // 优先处理 text 字段（Gateway 实时流格式）
+        if let text = data["text"] as? String, !text.isEmpty {
+          appendToAssistantMessage(session: session, runId: runId, text: text)
+        } else if let delta = data["delta"] as? String, !delta.isEmpty {
+          // 旧格式：直接使用 delta
+          appendToAssistantMessage(session: session, runId: runId, text: delta)
+        }
       }
 
     case "lifecycle":
@@ -476,8 +475,8 @@ class DeckViewModel {
       }
 
     case "tool_use":
-      session.status = .streaming
-    // TODO: 处理工具调用信息
+      // 忽略工具调用事件，不显示
+      break
 
     default:
       break
@@ -562,74 +561,6 @@ class DeckViewModel {
     }
   }
 
-  /// 处理 agent.thinking 事件
-  private func handleAgentThinking(_ event: GatewayEvent) {
-    guard let payload = event.payload as? [String: Any] else {
-      return
-    }
-
-    // 尝试从 sessionKey 提取 sessionId
-    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
-    guard let session = session else {
-      return
-    }
-
-    // 提取思考内容
-    if let thinking = payload["thinking"] as? String, !thinking.isEmpty {
-      let thinkingMsg = ChatMessage(
-        id: UUID().uuidString,
-        role: .thinking,
-        text: thinking,
-        timestamp: Date()
-      )
-      session.messages.append(thinkingMsg)
-    }
-
-    session.status = .thinking
-  }
-
-  /// 处理 agent.tool_use 事件
-  private func handleAgentToolUse(_ event: GatewayEvent) {
-    guard let payload = event.payload as? [String: Any] else {
-      return
-    }
-
-    // 尝试从 sessionKey 提取 sessionId
-    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
-    guard let session = session else {
-      return
-    }
-
-    // 提取工具信息
-    let toolName = payload["tool_name"] as? String ?? "unknown"
-    let input = payload["input"] as? String ?? ""
-    let status = payload["status"] as? String ?? "running"
-    let output = payload["output"] as? String
-
-    // 创建工具消息文本
-    var text = "Using \(toolName)"
-    if !input.isEmpty { text += ": \(input)" }
-    if let output = output { text += "\nResult: \(output)" }
-
-    // 创建工具调用信息
-    let toolUse = ToolUseInfo(
-      toolName: toolName,
-      input: input,
-      output: output,
-      status: status
-    )
-
-    // 创建独立的 tool 消息
-    let toolMsg = ChatMessage(
-      id: UUID().uuidString,
-      role: .tool,
-      text: text,
-      timestamp: Date(),
-      toolUse: toolUse
-    )
-    session.messages.append(toolMsg)
-  }
-
   /// 处理 agent.done 事件
   private func handleAgentDone(_ event: GatewayEvent) {
     // 尝试从 sessionKey 提取 sessionId
@@ -642,58 +573,6 @@ class DeckViewModel {
     if let session = findSessionForEvent(event) {
       session.status = .idle
       session.activeRunId = nil
-    }
-  }
-
-  /// 处理 agent.status 事件
-  private func handleAgentStatus(_ event: GatewayEvent) {
-    guard let payload = event.payload as? [String: Any] else {
-      return
-    }
-
-    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
-    guard let session = session else {
-      return
-    }
-
-    // 提取状态信息
-    let statusText = payload["text"] as? String ?? payload["message"] as? String ?? ""
-    let statusCode = payload["code"] as? String ?? payload["status"] as? String ?? ""
-
-    if !statusText.isEmpty {
-      let statusMsg = ChatMessage(
-        id: UUID().uuidString,
-        role: .status,
-        text: statusText,
-        timestamp: Date()
-      )
-      session.messages.append(statusMsg)
-    }
-  }
-
-  /// 处理 agent.parameter 事件
-  private func handleAgentParameter(_ event: GatewayEvent) {
-    guard let payload = event.payload as? [String: Any] else {
-      return
-    }
-
-    let session = sessionFromEvent(event) ?? findSessionForEvent(event)
-    guard let session = session else {
-      return
-    }
-
-    // 提取参数信息
-    let paramName = payload["name"] as? String ?? "parameter"
-    let paramValue = payload["value"] as? String ?? ""
-
-    if !paramValue.isEmpty {
-      let paramMsg = ChatMessage(
-        id: UUID().uuidString,
-        role: .parameter,
-        text: "\(paramName): \(paramValue)",
-        timestamp: Date()
-      )
-      session.messages.append(paramMsg)
     }
   }
 

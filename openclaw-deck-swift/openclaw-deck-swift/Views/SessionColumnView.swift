@@ -55,41 +55,29 @@ struct SessionColumnView: View {
   // MARK: - Top Status Bar
 
   private var topStatusBar: some View {
-    VStack(spacing: 4) {
-      // Center: Session key with glass
+    HStack {
+      // Left: Status indicator with session info
       Button {
-        // Session key button action (optional)
+        // Status button action (optional)
       } label: {
-        Text("\(session.sessionKey) \(session.messageCount)")
-          .lineLimit(1)
+        StatusIndicator(status: session.status, sessionKey: session.sessionKey, messageCount: session.messageCount)
       }
       .buttonStyle(.glass)
-      .padding(.vertical, 6)
-      HStack {
-        // Left: Status indicator with glass
-        Button {
-          // Status button action (optional)
-        } label: {
-          StatusIndicator(status: session.status)
-        }
-        .buttonStyle(.glass)
-        .padding(.vertical, 6)
+      .padding(.horizontal, 12)
+      .padding(.vertical, 8)
 
-        Spacer()
+      Spacer()
 
-        // Right: Delete button with glass
-        Button("Delete", role: .destructive) {
-          showingDeleteAlert = true
-        }
-        .lineLimit(1)
-        .buttonStyle(.glass)
-        .padding(.vertical, 6)
+      // Right: Delete button
+      Button("Delete", role: .destructive) {
+        showingDeleteAlert = true
       }
-
+      .buttonStyle(.glass)
+      .padding(.horizontal, 12)
+      .padding(.vertical, 6)
     }
     .padding(.horizontal, 16)
     .padding(.top, 4)
-
   }
 
   // MARK: - Status Indicator
@@ -97,10 +85,25 @@ struct SessionColumnView: View {
   /// Status indicator - maps status to icon and color only
   struct StatusIndicator: View {
     let status: SessionStatus
+    let sessionKey: String
+    let messageCount: Int
 
     var body: some View {
-      statusLabel
-        .frame(minWidth: 80, alignment: .center)
+      HStack(spacing: 8) {
+        statusLabel
+        Spacer()
+        // Session info
+        VStack(alignment: .trailing, spacing: 2) {
+          Text(sessionKey)
+            .font(.caption2)
+            .fontWeight(.medium)
+            .lineLimit(1)
+          Text("\(messageCount) messages")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+            .lineLimit(1)
+        }
+      }
     }
 
     @ViewBuilder

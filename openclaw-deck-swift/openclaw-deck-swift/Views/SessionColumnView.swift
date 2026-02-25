@@ -75,7 +75,6 @@ struct SessionColumnView: View {
       .buttonStyle(.glass)
     }
     .padding(.horizontal, 16)
-    .padding(.top, 4)
   }
 
   // MARK: - Status Indicator
@@ -167,35 +166,32 @@ struct SessionColumnView: View {
       Spacer()
 
       HStack(spacing: 8) {
-        // Input field in glass button
-        Button {
-          // Activate text field focus (optional)
-        } label: {
-          TextField(
-            "Message",
-            text: $inputText,
-            axis: .vertical
-          )
-          .textFieldStyle(.plain)
-          .padding(.horizontal, 14)
-        }
-        .buttonStyle(.glass)
+        // Input field with glass effect
+
+        TextField(
+          "Message",
+          text: $inputText
+        )
+        .padding(.horizontal, 14)
         .frame(height: 36)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+        )
+        .submitLabel(.send)
         .onSubmit {
           sendMessage()
         }
 
         // Send button - native iOS glass style
         Button {
-          if !inputText.isEmpty {
-            sendMessage()
-          }
-
+          sendMessage()
         } label: {
           Text("Send")
         }
         .buttonStyle(.glass)
         .frame(height: 36)
+        .opacity(inputText.isEmpty ? 0.5 : 1.0)
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 8)
@@ -209,7 +205,7 @@ struct SessionColumnView: View {
     guard !inputText.isEmpty, !viewModel.isInitializing, viewModel.gatewayConnected else { return }
 
     let text = inputText
-    inputText = ""
+    inputText = ""  // 立即清空输入框
 
     Task {
       await viewModel.sendMessage(sessionId: session.sessionId, text: text)

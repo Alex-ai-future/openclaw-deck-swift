@@ -443,12 +443,13 @@ class DeckViewModel {
     case "assistant":
       // 流式内容：{ data: { delta: "..." } } 或 { data: { text: "..." } }
       if let data = payload["data"] as? [String: Any] {
-        // 优先处理 text 字段（Gateway 实时流格式）
-        if let text = data["text"] as? String, !text.isEmpty {
-          appendToAssistantMessage(session: session, runId: runId, text: text)
-        } else if let delta = data["delta"] as? String, !delta.isEmpty {
-          // 旧格式：直接使用 delta
+        // 优先使用 delta 进行追加（增量模式）
+        if let delta = data["delta"] as? String, !delta.isEmpty {
           appendToAssistantMessage(session: session, runId: runId, text: delta)
+        }
+        // 如果只有 text 字段，说明是累积文本，需要替换（完整文本模式）
+        else if let text = data["text"] as? String {
+          replaceAssistantMessage(session: session, runId: runId, text: text)
         }
       }
 
@@ -481,6 +482,46 @@ class DeckViewModel {
     default:
       break
     }
+  }
+
+  /// 替换 assistant 消息内容（用于累积文本模式）
+  private func replaceAssistantMessage(session: SessionState, runId: String, text: String) {
+    // 设置状态为 streaming
+    session.status = .streaming
+
+    // 查找对应的消息
+    guard
+      let index = session.messages.enumerated().first(where: { _, msg in
+        msg.role == .assistant && msg.runId == runId
+      })?.offset
+    else {
+      // 如果没有找到消息，创建一个新的
+      let assistantMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .assistant,
+        text: text,
+        timestamp: Date(),
+        streaming: true,
+        runId: runId
+      )
+      session.messages.append(assistantMsg)
+      session.activeRunId = runId
+      return
+    }
+
+    // 替换文本
+    let message = session.messages[index]
+    session.messages[index] = ChatMessage(
+      id: message.id,
+      role: message.role,
+      text: text,  // 替换而不是追加
+      timestamp: message.timestamp,
+      streaming: message.streaming,
+      thinking: message.thinking,
+      toolUse: message.toolUse,
+      runId: message.runId,
+      isLoaded: message.isLoaded
+    )
   }
 
   /// 追加内容到 assistant 消息

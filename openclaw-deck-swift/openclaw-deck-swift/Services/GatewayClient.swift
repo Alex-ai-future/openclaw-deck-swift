@@ -347,12 +347,13 @@ class GatewayClient {
         let role = MessageRole(rawValue: roleLower) ?? .assistant
         let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
 
-        messages.append(ChatMessage(
-          id: data["id"] as? String ?? UUID().uuidString,
-          role: role,
-          text: text,
-          timestamp: timestamp
-        ))
+        messages.append(
+          ChatMessage(
+            id: data["id"] as? String ?? UUID().uuidString,
+            role: role,
+            text: text,
+            timestamp: timestamp
+          ))
       }
     }
     return messages

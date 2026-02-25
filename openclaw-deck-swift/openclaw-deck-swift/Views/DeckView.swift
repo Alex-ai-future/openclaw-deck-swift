@@ -41,24 +41,24 @@ struct DeckView: View {
       .navigationTitle("OpenClaw Deck")
       .toolbarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .primaryAction) {
-          HStack(spacing: 12) {
-            // New Session button
-            Button {
-              showingNewSessionSheet = true
-            } label: {
-              Image(systemName: "plus")
-            }
-            .disabled(!viewModel.gatewayConnected)
+        ToolbarItem {
+          Button {
+            showingNewSessionSheet = true
+          } label: {
+            Image(systemName: "plus")
+          }
+          .disabled(!viewModel.gatewayConnected)
+        }
+        ToolbarItem {
 
-            // Settings button
-            Button {
-              showingSettings = true
-            } label: {
-              Image(systemName: "gear")
-            }
+          // Settings button
+          Button {
+            showingSettings = true
+          } label: {
+            Image(systemName: "gear")
           }
         }
+
       }
       .sheet(isPresented: $showingNewSessionSheet) {
         NewSessionSheet(

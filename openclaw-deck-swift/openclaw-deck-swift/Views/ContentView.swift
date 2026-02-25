@@ -208,29 +208,12 @@ struct WelcomeView: View {
         .controlSize(.large)
         .disabled(isConnecting)
 
-        // Error message
+        // Error message (simple plain text)
         if let error = connectionError {
-          VStack(spacing: 8) {
-            HStack {
-              Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red)
-              Text("Connection Failed")
-                .fontWeight(.semibold)
-                .foregroundColor(.red)
-              Spacer()
-              Button("Dismiss", action: onClearError)
-                .font(.caption)
-            }
-
-            Text(error)
-              .font(.caption)
-              .foregroundColor(.secondary)
-              .multilineTextAlignment(.leading)
-          }
-          .padding()
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .background(Color.red.opacity(0.1))
-          .cornerRadius(8)
+          Text("Connection failed: \(error)")
+            .font(.body)
+            .foregroundColor(.red)
+            .multilineTextAlignment(.center)
         }
       }
       .padding()

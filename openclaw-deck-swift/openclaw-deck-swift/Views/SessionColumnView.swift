@@ -166,8 +166,11 @@ struct SessionColumnView: View {
       Spacer()
 
       HStack(spacing: 8) {
-        // Input field with glass effect
+        // Dictation button
+        DictationButton(text: $inputText)
+          .frame(width: 36, height: 36)
 
+        // Input field with glass effect
         TextField(
           "Message",
           text: $inputText

@@ -22,6 +22,7 @@ echo "Cleaning build directory..."
 rm -rf "$BUILD_DIR"/*
 
 # Build for macOS
+# Note: Code signing is disabled to avoid errSecInternalComponent errors
 echo "Building for macOS..."
 xcodebuild build \
     -project "$PROJECT_PATH" \
@@ -29,7 +30,10 @@ xcodebuild build \
     -configuration Release \
     -destination 'platform=macOS' \
     -derivedDataPath "$BUILD_DIR/DerivedData" \
-    -quiet > "$BUILD_DIR/build.log" 2>&1
+    -quiet \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO > "$BUILD_DIR/build.log" 2>&1
 
 BUILD_STATUS=$?
 

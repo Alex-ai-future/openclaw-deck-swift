@@ -32,11 +32,14 @@ class DeckViewModel {
   var isInitializing: Bool = false
 
   /// UserDefaults 存储
-  private let storage = UserDefaultsStorage.shared
+  private let storage: UserDefaultsStorage
 
   // MARK: - Initialization
 
-  init() {
+  /// 初始化
+  /// - Parameter storage: UserDefaultsStorage 实例（默认为 shared）
+  init(storage: UserDefaultsStorage = .shared) {
+    self.storage = storage
     setupGatewayCallbacks()
     // 从 UserDefaults 加载 Session
     loadSessionsFromStorage()

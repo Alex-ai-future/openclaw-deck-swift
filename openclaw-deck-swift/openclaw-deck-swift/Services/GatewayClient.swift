@@ -151,18 +151,19 @@ class GatewayClient {
     // Reset challenge completed flag
     challengeCompleted = false
 
-    try await withCheckedThrowingContinuation {
+    let _ = try await withCheckedThrowingContinuation {
       (continuation: CheckedContinuation<String, Error>) in
       // Set callback to resume continuation when challenge is received
       self.challengeCallback = { [weak self] nonce in
         guard let self = self else { return }
-        // Only resume once
-        if self.challengeCompleted { return }
-        self.challengeCompleted = true
-
-        self.challengeTimeoutTimer?.invalidate()
-        self.challengeTimeoutTimer = nil
-        self.challengeCallback = nil
+        // Only resume once - check without capturing self
+        Task { @MainActor in
+          guard !self.challengeCompleted else { return }
+          self.challengeCompleted = true
+          self.challengeTimeoutTimer?.invalidate()
+          self.challengeTimeoutTimer = nil
+          self.challengeCallback = nil
+        }
         continuation.resume(returning: nonce)
       }
 
@@ -171,11 +172,12 @@ class GatewayClient {
         [weak self] _ in
         guard let self = self else { return }
         // Only resume once
-        if self.challengeCompleted { return }
-        self.challengeCompleted = true
-
-        self.challengeCallback = nil
-        self.challengeTimeoutTimer = nil
+        Task { @MainActor in
+          guard !self.challengeCompleted else { return }
+          self.challengeCompleted = true
+          self.challengeCallback = nil
+          self.challengeTimeoutTimer = nil
+        }
         continuation.resume(
           throwing: NSError(
             domain: "GatewayClient",
@@ -272,7 +274,7 @@ class GatewayClient {
     sessionKey: String? = nil
   ) async throws -> (runId: String, status: String) {
     if isMock {
-      let result = try await request(
+      _ = try await request(
         method: "agent", params: ["agentId": agentId, "message": message])
       return ("mock-run-\(nextId())", "success")
     }
@@ -397,7 +399,9 @@ class GatewayClient {
         }
 
         // 继续接收下一条消息
-        self.receiveMessage()
+        Task { @MainActor in
+          self.receiveMessage()
+        }
 
       case .failure(let error):
         print("[GatewayClient] Receive error: \(error)")

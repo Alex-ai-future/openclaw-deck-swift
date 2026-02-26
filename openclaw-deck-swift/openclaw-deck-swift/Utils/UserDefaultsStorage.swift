@@ -7,11 +7,11 @@
 import Foundation
 
 /// UserDefaults 存储键
-enum StorageKeys {
-  static let gatewayUrl = "openclaw.deck.gatewayUrl"
-  static let token = "openclaw.deck.token"
-  static let sessionConfigs = "openclaw.deck.sessionConfigs"
-  static let sessionOrder = "openclaw.deck.sessionOrder"
+enum StorageKeys: String {
+  case gatewayUrl = "openclaw.deck.gatewayUrl"
+  case token = "openclaw.deck.token"
+  case sessionConfigs = "openclaw.deck.sessionConfigs"
+  case sessionOrder = "openclaw.deck.sessionOrder"
 }
 
 /// UserDefaults 存储工具类
@@ -20,6 +20,8 @@ class UserDefaultsStorage {
 
   private let defaults: UserDefaults
 
+  /// 初始化
+  /// - Parameter defaults: UserDefaults 实例（默认为 .standard）
   init(defaults: UserDefaults = .standard) {
     self.defaults = defaults
   }
@@ -28,29 +30,29 @@ class UserDefaultsStorage {
 
   /// 保存 Gateway URL
   func saveGatewayUrl(_ url: String) {
-    defaults.set(url, forKey: StorageKeys.gatewayUrl)
+    defaults.set(url, forKey: StorageKeys.gatewayUrl.rawValue)
   }
 
   /// 加载 Gateway URL
   func loadGatewayUrl() -> String? {
-    return defaults.string(forKey: StorageKeys.gatewayUrl)
+    return defaults.string(forKey: StorageKeys.gatewayUrl.rawValue)
   }
 
   // MARK: - Token
 
   /// 保存 Token
   func saveToken(_ token: String) {
-    defaults.set(token, forKey: StorageKeys.token)
+    defaults.set(token, forKey: StorageKeys.token.rawValue)
   }
 
   /// 加载 Token
   func loadToken() -> String? {
-    return defaults.string(forKey: StorageKeys.token)
+    return defaults.string(forKey: StorageKeys.token.rawValue)
   }
 
   /// 清除 Token
   func clearToken() {
-    defaults.removeObject(forKey: StorageKeys.token)
+    defaults.removeObject(forKey: StorageKeys.token.rawValue)
   }
 
   // MARK: - Session Configs
@@ -59,7 +61,7 @@ class UserDefaultsStorage {
   func saveSessions(_ sessions: [SessionConfig]) {
     do {
       let data = try JSONEncoder().encode(sessions)
-      defaults.set(data, forKey: StorageKeys.sessionConfigs)
+      defaults.set(data, forKey: StorageKeys.sessionConfigs.rawValue)
     } catch {
       print("[UserDefaultsStorage] Failed to encode sessions: \(error)")
     }
@@ -67,7 +69,7 @@ class UserDefaultsStorage {
 
   /// 加载 Session 配置列表
   func loadSessions() -> [SessionConfig] {
-    guard let data = defaults.data(forKey: StorageKeys.sessionConfigs) else {
+    guard let data = defaults.data(forKey: StorageKeys.sessionConfigs.rawValue) else {
       return []
     }
 
@@ -84,21 +86,21 @@ class UserDefaultsStorage {
 
   /// 保存 Session 顺序
   func saveSessionOrder(_ order: [String]) {
-    defaults.set(order, forKey: StorageKeys.sessionOrder)
+    defaults.set(order, forKey: StorageKeys.sessionOrder.rawValue)
   }
 
   /// 加载 Session 顺序
   func loadSessionOrder() -> [String] {
-    return defaults.array(forKey: StorageKeys.sessionOrder) as? [String] ?? []
+    return defaults.array(forKey: StorageKeys.sessionOrder.rawValue) as? [String] ?? []
   }
 
   // MARK: - Clear All
 
   /// 清除所有存储数据
   func clearAll() {
-    defaults.removeObject(forKey: StorageKeys.gatewayUrl)
-    defaults.removeObject(forKey: StorageKeys.token)
-    defaults.removeObject(forKey: StorageKeys.sessionConfigs)
-    defaults.removeObject(forKey: StorageKeys.sessionOrder)
+    defaults.removeObject(forKey: StorageKeys.gatewayUrl.rawValue)
+    defaults.removeObject(forKey: StorageKeys.token.rawValue)
+    defaults.removeObject(forKey: StorageKeys.sessionConfigs.rawValue)
+    defaults.removeObject(forKey: StorageKeys.sessionOrder.rawValue)
   }
 }

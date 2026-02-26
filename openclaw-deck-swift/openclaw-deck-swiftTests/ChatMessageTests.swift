@@ -10,7 +10,7 @@ import Testing
 
 @testable import openclaw_deck_swift
 
-@MainActor
+@Suite
 struct ChatMessageTests {
 
   @Test func testMessageRoleEnum() {

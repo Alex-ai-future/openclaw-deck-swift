@@ -45,7 +45,7 @@ struct GatewayRequest {
         userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"])
     }
 
-    let type = json["type"] as? String ?? "req"
+    _ = json["type"] as? String ?? "req"
     let params = json["params"] as? [String: Any]
 
     return GatewayRequest(id: id, method: method, params: params)
@@ -69,7 +69,7 @@ struct GatewayResponse {
 
   /// 从 JSON 字典创建
   static func fromJSON(_ json: [String: Any]) -> GatewayResponse {
-    let type = json["type"] as? String ?? "res"
+    _ = json["type"] as? String ?? "res"
     let id = json["id"] as? String ?? ""
     let ok = json["ok"] as? Bool ?? false
     let payload = json["payload"]

@@ -134,10 +134,10 @@ struct SessionColumnView: View {
 
         } label: {
           Text(session.sessionKey)
-            .font(.subheadline)
+            .font(.body)
             .fontWeight(.medium)
             .lineLimit(1)
-            .padding(8)
+            .padding(12)
         }
         .glassEffect()
         // 🆕 处理中状态：橘黄色背景
@@ -145,17 +145,8 @@ struct SessionColumnView: View {
           Group {
             if session.isProcessing {
               Color.orange.opacity(0.25)
-                .cornerRadius(12)
             }
           }
-        )
-        // 🆕 处理中状态：橘黄色边框增强视觉效果
-        .overlay(
-          RoundedRectangle(cornerRadius: 12)
-            .stroke(
-              session.isProcessing ? Color.orange.opacity(0.5) : Color.white.opacity(0.2),
-              lineWidth: 1
-            )
         )
 
       }

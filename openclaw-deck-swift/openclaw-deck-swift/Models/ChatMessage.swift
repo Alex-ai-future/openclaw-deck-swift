@@ -32,16 +32,20 @@ struct ChatMessage: Codable, Identifiable {
   /// 当前运行的 runId（用于关联消息和 Agent 运行）
   var runId: String?
 
+  /// Gateway 事件序号（用于区分同 run 内的不同消息）
+  var seq: Int?
+
   /// 消息是否已加载（用于判断是否为新消息）
   var isLoaded: Bool = false
 
   enum CodingKeys: String, CodingKey {
-    case id, role, text, timestamp, streaming, thinking, toolUse, runId, isLoaded
+    case id, role, text, timestamp, streaming, thinking, toolUse, runId, seq, isLoaded
   }
 
   init(
     id: String, role: MessageRole, text: String, timestamp: Date, streaming: Bool? = nil,
-    thinking: Bool? = nil, toolUse: ToolUseInfo? = nil, runId: String? = nil, isLoaded: Bool = false
+    thinking: Bool? = nil, toolUse: ToolUseInfo? = nil, runId: String? = nil, seq: Int? = nil, 
+    isLoaded: Bool = false
   ) {
     self.id = id
     self.role = role
@@ -51,6 +55,7 @@ struct ChatMessage: Codable, Identifiable {
     self.thinking = thinking
     self.toolUse = toolUse
     self.runId = runId
+    self.seq = seq
     self.isLoaded = isLoaded
   }
 
@@ -64,6 +69,7 @@ struct ChatMessage: Codable, Identifiable {
     thinking = try container.decodeIfPresent(Bool.self, forKey: .thinking)
     toolUse = try container.decodeIfPresent(ToolUseInfo.self, forKey: .toolUse)
     runId = try container.decodeIfPresent(String.self, forKey: .runId)
+    seq = try container.decodeIfPresent(Int.self, forKey: .seq)
     isLoaded = try container.decodeIfPresent(Bool.self, forKey: .isLoaded) ?? false
   }
 
@@ -77,6 +83,7 @@ struct ChatMessage: Codable, Identifiable {
     try container.encodeIfPresent(thinking, forKey: .thinking)
     try container.encodeIfPresent(toolUse, forKey: .toolUse)
     try container.encodeIfPresent(runId, forKey: .runId)
+    try container.encodeIfPresent(seq, forKey: .seq)
     try container.encode(isLoaded, forKey: .isLoaded)
   }
 }

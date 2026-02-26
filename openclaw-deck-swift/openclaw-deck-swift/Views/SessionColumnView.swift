@@ -24,20 +24,16 @@ struct SessionColumnView: View {
   @State private var inputText = ""
   @State private var showingDeleteAlert = false
   @State private var textHeight: CGFloat = 36
+  @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
   @StateObject private var speechRecognizer = SpeechRecognizer()
   
   // 计算文本高度
   private func calculateTextHeight() {
     let text = inputText.isEmpty ? " " : inputText
+    let font = UIFont.preferredFont(forTextStyle: .body)
     
-    #if os(iOS) || os(visionOS)
-      let font = UIFont.preferredFont(forTextStyle: .body)
-      let screenWidth = UIScreen.main.bounds.width
-      let maxWidth = screenWidth * 0.6  // 使用屏幕宽度的 60%
-    #else
-      let font = NSFont.preferredFont(forTextStyle: .body)
-      let maxWidth: CGFloat = 300
-    #endif
+    // 使用输入框的实际宽度计算
+    let maxWidth = inputFieldWidth
     
     #if os(macOS)
       let textStorage = NSTextStorage(string: text)
@@ -220,6 +216,17 @@ struct SessionColumnView: View {
           }
         }
         .frame(height: textHeight)
+        .background(GeometryReader { geometry in
+          Color.clear
+            .onAppear {
+              inputFieldWidth = geometry.size.width
+              print("📐 Input field width: \(geometry.size.width)")
+            }
+            .onChange(of: geometry.size.width) { newWidth in
+              inputFieldWidth = newWidth
+              print("📐 Input field width changed: \(newWidth)")
+            }
+        })
         .onChange(of: inputText) { _ in
           calculateTextHeight()
         }

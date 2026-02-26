@@ -369,6 +369,9 @@ class DeckViewModel {
   /// 处理 Gateway 事件
   /// - Parameter event: Gateway 事件
   func handleGatewayEvent(_ event: GatewayEvent) {
+    // 调试：打印所有事件
+    logger.info("=== Gateway Event: \(event.event) ===")
+    
     switch event.event {
     case "agent":
       // 新的 agent 事件格式：{ runId, stream, data, sessionKey }
@@ -388,7 +391,7 @@ class DeckViewModel {
     case "tick", "health", "heartbeat":
       break
     default:
-      // Unknown event ignored
+      logger.info("Unknown event type: \(event.event)")
       break
     }
   }

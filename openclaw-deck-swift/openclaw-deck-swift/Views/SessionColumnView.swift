@@ -25,6 +25,13 @@ struct SessionColumnView: View {
   @State private var showingDeleteAlert = false
   @State private var textHeight: CGFloat = 36
   @StateObject private var speechRecognizer = SpeechRecognizer()
+  
+  // 计算是否正在输入
+  private var isTyping: Bool {
+    let typing = session.status == .thinking || session.status == .streaming
+    print("[SessionColumnView] isTyping: \(typing), status: \(session.status)")
+    return typing
+  }
 
   var body: some View {
     ZStack {
@@ -154,6 +161,7 @@ struct SessionColumnView: View {
             .padding(.trailing, 40)
             .lineLimit(1...7)
             .textFieldStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)  // ← 关键：明确宽度
             .tint(.accentColor)
             .background(GeometryReader { geometry in
               Color.clear
@@ -260,6 +268,8 @@ struct SessionColumnView: View {
   struct MessageView: View {
     let message: ChatMessage
     @State private var showFullContent = false
+    @State private var showingCopyToast = false
+    @State private var copyText = ""
 
     var body: some View {
       // 只显示 user 和 assistant 消息
@@ -287,10 +297,40 @@ struct SessionColumnView: View {
             .padding(.vertical, 10)
             .background(backgroundColor)
             .cornerRadius(18, corners: cornerMask)
+            .contextMenu {
+              Button {
+                copyText = message.text
+                UIPasteboard.general.string = message.text
+                showingCopyToast = true
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                  showingCopyToast = false
+                }
+                
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+              } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+              }
+            }
 
           // Timestamp outside the bubble
           timestamp
             .padding(.horizontal, 4)
+        }
+        .overlay(alignment: .bottom) {
+          if showingCopyToast {
+            Text("Copied!")
+              .font(.caption)
+              .fontWeight(.medium)
+              .foregroundColor(.white)
+              .padding(.horizontal, 12)
+              .padding(.vertical, 6)
+              .background(Color.black.opacity(0.7))
+              .cornerRadius(8)
+              .transition(.opacity.combined(with: .scale))
+              .animation(.easeInOut(duration: 0.2), value: showingCopyToast)
+          }
         }
 
         if message.role == .assistant {

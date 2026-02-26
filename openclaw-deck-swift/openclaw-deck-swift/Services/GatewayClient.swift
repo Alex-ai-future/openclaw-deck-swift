@@ -24,6 +24,10 @@ struct PendingRequest {
 @MainActor
 @Observable
 class GatewayClient {
+  
+  // Fix for Swift 6 @Observable + @MainActor crash in XCTest
+  // See: https://github.com/swiftlang/swift/issues/87316
+  nonisolated deinit {}
 
   // MARK: - Configuration
 

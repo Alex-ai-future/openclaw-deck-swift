@@ -104,13 +104,13 @@ struct ContentView: View {
           get: { viewModel.gatewayConnected },
           set: { _ in }
         ),
-        onConnect: {
+        onDisconnect: {
+          viewModel.disconnect()
+        },
+        onApplyAndReconnect: {
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
           }
-        },
-        onDisconnect: {
-          viewModel.disconnect()
         }
       )
     }
@@ -158,8 +158,6 @@ struct WelcomeView: View {
   let onConnect: () -> Void
   let onClearError: () -> Void
 
-  @FocusState private var isUrlFocused: Bool
-
   var body: some View {
     ScrollView {
       VStack(spacing: 40) {
@@ -178,92 +176,49 @@ struct WelcomeView: View {
             .foregroundColor(.secondary)
         }
 
-        // Connection form
-        VStack(spacing: 16) {
-          TextField("Gateway URL", text: $gatewayUrl)
-            .textFieldStyle(.roundedBorder)
-            .focused($isUrlFocused)
-            .onSubmit {
-              onConnect()
-            }
+        // Gateway Config Input (公用组件)
+        GatewayConfigInput(
+          gatewayUrl: $gatewayUrl,
+          token: $token,
+          onConnect: onConnect,
+          isConnected: false
+        )
 
-          SecureField("Token (optional)", text: $token)
-            .textFieldStyle(.roundedBorder)
-            .onSubmit {
-              onConnect()
-            }
-
-          Button(action: onConnect) {
+        // Error message
+        if let error = connectionError {
+          VStack(spacing: 8) {
             HStack {
-              if isConnecting {
-                ProgressView()
-                  .scaleEffect(0.8)
-              } else {
-                Image(systemName: "plug")
-              }
-              Text(isConnecting ? "Connecting..." : "Connect to Gateway")
-            }
-            .frame(maxWidth: .infinity)
-          }
-          .buttonStyle(.borderedProminent)
-          .controlSize(.large)
-          .disabled(isConnecting)
-
-          // Error message
-          if let error = connectionError {
-            VStack(spacing: 8) {
-              HStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                  .foregroundColor(.red)
-                Text("Connection Failed")
-                  .fontWeight(.semibold)
-                  .foregroundColor(.red)
-                Spacer()
-                Button("Dismiss", action: onClearError)
-                  .font(.caption)
-              }
-
-              Text(error)
+              Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.red)
+              Text("Connection Failed")
+                .fontWeight(.semibold)
+                .foregroundColor(.red)
+              Spacer()
+              Button("Dismiss", action: onClearError)
                 .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.leading)
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.red.opacity(0.1))
-            .cornerRadius(8)
+
+            Text(error)
+              .font(.caption)
+              .foregroundColor(.secondary)
+              .multilineTextAlignment(.leading)
           }
-        }
-        .padding()
-
-        // Footer
-        VStack(spacing: 8) {
-          Text("Default Gateway URL:")
-            .font(.caption)
-            .foregroundColor(.secondary)
-
-          Text(gatewayUrl)
-            .font(.caption)
-            .foregroundColor(.blue)
+          .padding()
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(Color.red.opacity(0.1))
+          .cornerRadius(8)
         }
 
         Spacer()
       }
+      .padding()
       #if os(macOS)
         .frame(minHeight: NSScreen.main?.frame.height ?? 800)
-      #else
-        //        .frame(minHeight: UIScreen.main.bounds.height)
       #endif
     }
-    .padding()
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.adaptiveBackground)
     .ignoresSafeArea()
-    #if os(macOS)
-      .onAppear {
-        isUrlFocused = true
-      }
-    #endif
   }
 }
 

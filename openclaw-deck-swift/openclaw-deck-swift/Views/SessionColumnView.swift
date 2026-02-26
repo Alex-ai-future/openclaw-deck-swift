@@ -293,6 +293,9 @@ struct SessionColumnView: View {
 
     inputText = ""  // 清空输入框
 
+    // 发送消息后立即滚动到底部
+    scrollToBottom()
+
     Task {
       await viewModel.sendMessage(sessionId: session.sessionId, text: text)
     }

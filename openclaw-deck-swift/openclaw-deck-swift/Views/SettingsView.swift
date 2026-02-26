@@ -1,121 +1,109 @@
 // SettingsView.swift
 // OpenClaw Deck Swift
 //
-// Created by jihuihuang on 2/24/2026.
-// Copyright © 2026 OpenClaw. All rights reserved.
+// 设置页面 - 已连接时显示
 
 import SwiftUI
 
-/// 设置页面 - Gateway 配置
 struct SettingsView: View {
   @Binding var gatewayUrl: String
   @Binding var token: String
   @Binding var isConnected: Bool
-  var onConnect: () -> Void
   var onDisconnect: () -> Void
+  var onApplyAndReconnect: () -> Void
 
-  @State private var showingToken = false
+  @State private var hasChanges = false
+  @State private var originalUrl = ""
+  @State private var originalToken = ""
 
   var body: some View {
     NavigationStack {
       Form {
+        // Gateway Config Input (公用组件)
         Section {
-          TextField("Gateway URL", text: $gatewayUrl)
-            .textContentType(.URL)
-
-          if showingToken {
-            TextField("Token (optional)", text: $token)
-              .textContentType(.password)
-          } else {
-            SecureField("Token (optional)", text: $token)
-              .textContentType(.password)
-          }
-
-          HStack {
-            Button(showingToken ? "Hide" : "Show") {
-              showingToken.toggle()
-            }
-            .buttonStyle(.plain)
-            .font(.caption)
-
-            Spacer()
-          }
+          GatewayConfigInput(
+            gatewayUrl: $gatewayUrl,
+            token: $token,
+            onConnect: {},
+            isConnected: false
+          )
+          .padding(.vertical, 8)
         } header: {
-          Text("Gateway Configuration")
+          Text("Configuration")
         } footer: {
-          Text("Enter your OpenClaw Gateway WebSocket URL and optional authentication token.")
+          Text("Modify and apply to reconnect with new settings")
         }
 
+        // Status
         Section {
           HStack {
             Circle()
-              .fill(isConnected ? Color.green : Color.red)
+              .fill(Color.green)
               .frame(width: 10, height: 10)
 
-            Text(isConnected ? "Connected" : "Disconnected")
+            Text("Connected")
               .foregroundColor(.primary)
+              .fontWeight(.medium)
 
             Spacer()
+          }
+        } header: {
+          Text("Status")
+        }
 
-            if isConnected {
-              Button("Disconnect") {
-                onDisconnect()
+        // Actions
+        Section {
+          if hasChanges {
+            Button {
+              onApplyAndReconnect()
+            } label: {
+              HStack {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                Text("Apply & Reconnect")
               }
-              .buttonStyle(.bordered)
-              .tint(.red)
-            } else {
-              Button("Connect") {
-                onConnect()
-              }
-              .buttonStyle(.bordered)
-              .tint(.green)
+              .frame(maxWidth: .infinity)
             }
-          }
-        } header: {
-          Text("Connection Status")
-        } footer: {
-          Text(
-            isConnected
-              ? "Successfully connected to Gateway. You can now send messages."
-              : "Tap Connect to establish a WebSocket connection to the Gateway.")
-        }
-
-        Section {
-          HStack {
-            Image(systemName: "info.circle")
-              .foregroundColor(.blue)
-            Text("Main Agent ID: main")
-              .foregroundColor(.secondary)
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
           }
 
-          HStack {
-            Image(systemName: "ipad")
-              .foregroundColor(.blue)
-            Text("Platform: iPadOS / macOS")
-              .foregroundColor(.secondary)
-          }
-        } header: {
-          Text("About")
-        } footer: {
-          Text("OpenClaw Deck Swift - A multi-session chat client for OpenClaw Gateway.")
-        }
-
-        Section {
           Button(role: .destructive) {
-            UserDefaultsStorage.shared.clearAll()
+            onDisconnect()
           } label: {
             HStack {
-              Image(systemName: "trash.fill")
-              Text("Clear All Data")
+              Image(systemName: "plug.disconnected")
+              Text("Disconnect")
             }
+            .frame(maxWidth: .infinity)
           }
+          .buttonStyle(.borderedProminent)
+          .tint(.red)
         } footer: {
-          Text("This will clear Gateway URL, Token, and all Session configurations.")
+          if hasChanges {
+            Text("Apply changes and reconnect")
+          } else {
+            Text("Disconnect to return to login")
+          }
         }
       }
       .navigationTitle("Settings")
     }
     .formStyle(.grouped)
+    .onAppear {
+      originalUrl = gatewayUrl
+      originalToken = token
+      hasChanges = false
+    }
+    .onChange(of: gatewayUrl) { _, _ in
+      checkChanges()
+    }
+    .onChange(of: token) { _, _ in
+      checkChanges()
+    }
+  }
+
+  private func checkChanges() {
+    hasChanges = (gatewayUrl != originalUrl || token != originalToken)
   }
 }
 
@@ -123,8 +111,8 @@ struct SettingsView: View {
   SettingsView(
     gatewayUrl: .constant("ws://127.0.0.1:18789"),
     token: .constant(""),
-    isConnected: .constant(false),
-    onConnect: {},
-    onDisconnect: {}
+    isConnected: .constant(true),
+    onDisconnect: {},
+    onApplyAndReconnect: {}
   )
 }

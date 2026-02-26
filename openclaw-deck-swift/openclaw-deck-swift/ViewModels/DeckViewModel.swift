@@ -13,6 +13,10 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewM
 @MainActor
 @Observable
 class DeckViewModel {
+  // Fix for Swift 6 @Observable + @MainActor crash in XCTest
+  // See: https://github.com/swiftlang/swift/issues/87316
+  nonisolated deinit {}
+  
   /// Gateway 客户端
   var gatewayClient: GatewayClient?
 

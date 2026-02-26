@@ -5,7 +5,6 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import XCTest
-
 @testable import openclaw_deck_swift
 
 @MainActor
@@ -26,10 +25,8 @@ final class GatewayClientTests: XCTestCase {
   }
 
   // MARK: - Connection Tests
-  // Note: Tests below trigger @Observable memory bug in Swift 6
 
-  func testMockConnection() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
+  func testMockConnection() async {
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -40,8 +37,7 @@ final class GatewayClientTests: XCTestCase {
     XCTAssertTrue(client.connected)
   }
 
-  func testDisconnect() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
+  func testDisconnect() async {
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -55,8 +51,7 @@ final class GatewayClientTests: XCTestCase {
     XCTAssertFalse(client.connected)
   }
 
-  func testDisconnectWithoutConnect() throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
+  func testDisconnectWithoutConnect() {
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -81,7 +76,6 @@ final class GatewayClientTests: XCTestCase {
   // MARK: - Agent Tests
 
   func testMockRunAgent() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -101,7 +95,6 @@ final class GatewayClientTests: XCTestCase {
   }
 
   func testMockRunAgentWithoutSessionKey() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -120,7 +113,6 @@ final class GatewayClientTests: XCTestCase {
   }
 
   func testRunAgentGeneratesIdempotencyKey() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -137,8 +129,7 @@ final class GatewayClientTests: XCTestCase {
 
   // MARK: - State Tests
 
-  func testConnectedState() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
+  func testConnectedState() async {
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -154,8 +145,7 @@ final class GatewayClientTests: XCTestCase {
     XCTAssertFalse(client.connected)
   }
 
-  func testMultipleConnectDisconnectCycles() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
+  func testMultipleConnectDisconnectCycles() async {
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,
@@ -185,7 +175,6 @@ final class GatewayClientTests: XCTestCase {
   // MARK: - Full Workflow Test
 
   func testFullWorkflow() async throws {
-    try XCTSkipIf(true, "Skipped: @Observable memory bug in Swift 6")
     let client = GatewayClient(
       url: URL(string: "ws://localhost:8080")!,
       token: nil,

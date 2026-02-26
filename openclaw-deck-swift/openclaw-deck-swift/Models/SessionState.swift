@@ -27,6 +27,10 @@ class SessionState {
   /// Session Key（用于 Gateway 通信）
   let sessionKey: String
 
+  // Fix for Swift 6 @Observable + @MainActor crash in XCTest
+  // See: https://github.com/swiftlang/swift/issues/87316
+  nonisolated deinit {}
+
   /// 消息列表
   var messages: [ChatMessage] = []
 

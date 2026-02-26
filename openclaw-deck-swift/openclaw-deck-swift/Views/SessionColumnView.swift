@@ -27,7 +27,7 @@ struct SessionColumnView: View {
   @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
   @State private var scrollToTop = false  // 用于触发滚动到底部
   @StateObject private var speechRecognizer = SpeechRecognizer()
-  
+
   // 滚动到底部
   private func scrollToBottom() {
     withAnimation(.smooth(duration: 0.3)) {
@@ -180,7 +180,7 @@ struct SessionColumnView: View {
           }
         }
       }
-      .onChange(of: scrollToTop) { _ in
+      .onChange(of: scrollToTop) { _, _ in
         // 滚动到底部（最新消息）
         if let lastId = session.messages.last?.id {
           withAnimation(.smooth(duration: 0.3)) {
@@ -240,14 +240,6 @@ struct SessionColumnView: View {
         }
         .frame(height: textHeight)
 
-        // Scroll to bottom button
-        ScrollToBottomButton {
-          scrollToBottom()
-        }
-      }
-      .padding(.horizontal, 12)
-      .padding(.bottom, 8)
-      .padding(.top, 8)
         .background(
           GeometryReader { geometry in
             Color.clear
@@ -262,6 +254,20 @@ struct SessionColumnView: View {
         .onChange(of: inputText) { _, _ in
           calculateTextHeight()
         }
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        )
+
+        // Scroll to bottom button
+        ScrollToBottomButton {
+          scrollToBottom()
+        }
+
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 8)
@@ -271,6 +277,7 @@ struct SessionColumnView: View {
         // Empty gesture handler to prevent event bubbling to parent view
       }
     }
+  }
 
   // MARK: - Actions
 
@@ -295,17 +302,17 @@ struct SessionColumnView: View {
 // MARK: - Corner Radius Extension (iOS only)
 
 #if os(iOS) || os(visionOS)
-extension View {
-  func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-    clipShape(RoundedCorner(radius: radius, corners: corners))
+  extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+      clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
   }
-}
 
-struct RoundedCorner: Shape {
-  var radius: CGFloat = .infinity
-  var corners: UIRectCorner = .allCorners
+  struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
 
-  func path(in rect: CGRect) -> Path {
+    func path(in rect: CGRect) -> Path {
       let path = UIBezierPath(
         roundedRect: rect,
         byRoundingCorners: corners,

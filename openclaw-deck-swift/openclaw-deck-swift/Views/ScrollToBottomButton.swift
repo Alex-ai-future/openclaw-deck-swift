@@ -9,7 +9,7 @@ import SwiftUI
 /// 滚动到底部按钮 - 点击后自动滚动到最新消息
 struct ScrollToBottomButton: View {
   let action: () -> Void
-  
+
   var body: some View {
     Button(action: action) {
       Image(systemName: "arrow.down.circle")

@@ -198,21 +198,26 @@ struct SessionColumnView: View {
             MessageView(message: message)
               .id(message.id)
           }
+          
+          // 底部锚点视图（用于滚动定位）
+          Color.clear
+            .frame(height: 80)
+            .id("bottom-anchor")
         }
         .padding()
-        .padding(.bottom, 80)  // 为悬浮输入框预留空间（与手动滑动一致）
+        // 移除 .padding(.bottom, 80)，改用锚点视图
       }
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
-        if let lastId = newLastMessageId {
+        if newLastMessageId != nil {
           withAnimation(.smooth(duration: 0.2)) {
-            proxy.scrollTo(lastId)  // 默认行为，自动考虑 padding
+            proxy.scrollTo("bottom-anchor")  // 滚动到底部锚点
           }
         }
       }
       .onChange(of: scrollTrigger) { _, newValue in
         // 只在 trigger=1 时滚动（确保每次位置一致）
-        if newValue == 1, let lastId = session.messages.last?.id {
-          proxy.scrollTo(lastId)  // 默认行为，自动考虑 padding
+        if newValue == 1 {
+          proxy.scrollTo("bottom-anchor")  // 滚动到底部锚点
         }
       }
     }
@@ -1066,13 +1071,15 @@ struct HeightPreference: PreferenceKey {
 #Preview("Processing State Button") {
   struct ProcessingButtonPreview: View {
     @State private var isProcessing = true
+      
+    
     
     var body: some View {
       VStack(spacing: 20) {
         Text("Processing State Button Preview")
           .font(.headline)
-        
-        // 普通状态
+    
+        // 🆕 使用 tint 方法
         Button {
           isProcessing.toggle()
         } label: {
@@ -1083,69 +1090,77 @@ struct HeightPreference: PreferenceKey {
             .padding(12)
         }
         .buttonStyle(.glass)
-        .overlay(
-          Group {
-            if isProcessing {
-              Color.orange.opacity(0.25)
-            } else {
-              Color.clear
-            }
-          }
-        )
-        .overlay(
-          Group {
-            if isProcessing {
-              RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.orange.opacity(0.5), lineWidth: 1)
-            }
-          }
-        )
+        // 🆕 使用 tint 改变玻璃按钮背景色
+        .tint(isProcessing ? Color.orange : Color.clear)
         
         Text("Tap to toggle state")
           .font(.caption)
           .foregroundColor(.secondary)
         
-        // 测试不同颜色和圆角
+        // 测试不同 tint 颜色
         VStack(spacing: 10) {
-          Text("Color Tests")
+          Text("Tint Color Tests")
             .font(.subheadline)
             .fontWeight(.medium)
           
+          // 测试不同颜色
+          HStack(spacing: 10) {
+            Button(role: .none) {
+            } label: {
+              Text("Orange")
+                .font(.caption)
+                .padding(8)
+            }
+            .buttonStyle(.glass)
+            .tint(Color.orange)
+            
+            Button(role: .none) {
+            } label: {
+              Text("Blue")
+                .font(.caption)
+                .padding(8)
+            }
+            .buttonStyle(.glass)
+            .tint(Color.blue)
+            
+            Button(role: .none) {
+            } label: {
+              Text("Red")
+                .font(.caption)
+                .padding(8)
+            }
+            .buttonStyle(.glass)
+            .tint(Color.red)
+          }
+          
           // 测试不同透明度
           HStack(spacing: 10) {
-            Text("0.15")
-              .font(.caption)
-            RoundedRectangle(cornerRadius: 10)
-              .fill(Color.orange.opacity(0.15))
-              .frame(width: 60, height: 40)
-              .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                  .stroke(Color.orange.opacity(0.5), lineWidth: 1)
-              )
-          }
-          
-          HStack(spacing: 10) {
-            Text("0.25")
-              .font(.caption)
-            RoundedRectangle(cornerRadius: 10)
-              .fill(Color.orange.opacity(0.25))
-              .frame(width: 60, height: 40)
-              .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                  .stroke(Color.orange.opacity(0.5), lineWidth: 1)
-              )
-          }
-          
-          HStack(spacing: 10) {
-            Text("0.35")
-              .font(.caption)
-            RoundedRectangle(cornerRadius: 10)
-              .fill(Color.orange.opacity(0.35))
-              .frame(width: 60, height: 40)
-              .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                  .stroke(Color.orange.opacity(0.5), lineWidth: 1)
-              )
+            Button(role: .none) {
+            } label: {
+              Text("0.3")
+                .font(.caption)
+                .padding(8)
+            }
+            .buttonStyle(.glass)
+            .tint(Color.orange.opacity(0.3))
+            
+            Button(role: .none) {
+            } label: {
+              Text("0.5")
+                .font(.caption)
+                .padding(8)
+            }
+            .buttonStyle(.glass)
+            .tint(Color.orange.opacity(0.5))
+            
+            Button(role: .none) {
+            } label: {
+              Text("0.7")
+                .font(.caption)
+                .padding(8)
+            }
+            .buttonStyle(.glass)
+            .tint(Color.orange.opacity(0.7))
           }
         }
         .padding()

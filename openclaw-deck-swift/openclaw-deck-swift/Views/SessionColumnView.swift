@@ -171,12 +171,15 @@ struct SessionColumnView: View {
           }
         }
         .padding()
-        .padding(.bottom, 80)  // 为悬浮输入框预留空间
+        .padding(.bottom, 120)  // 为悬浮输入框预留空间（增加 padding 避免遮挡）
       }
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {
-          withAnimation(.smooth(duration: 0.2)) {
-            proxy.scrollTo(lastId)  // 移除 anchor，使用默认行为（与手动滑动一致）
+          // 延时滚动，避免与手动滑动冲突
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.smooth(duration: 0.2)) {
+              proxy.scrollTo(lastId)
+            }
           }
         }
       }
@@ -184,7 +187,7 @@ struct SessionColumnView: View {
         // 滚动到底部（最新消息）
         if let lastId = session.messages.last?.id {
           withAnimation(.smooth(duration: 0.3)) {
-            proxy.scrollTo(lastId)  // 移除 anchor，使用默认行为（与手动滑动一致）
+            proxy.scrollTo(lastId)
           }
         }
       }

@@ -6,6 +6,22 @@
 
 import Foundation
 
+// MARK: - Protocol
+
+/// UserDefaults 存储协议
+protocol UserDefaultsStorageProtocol {
+  func saveGatewayUrl(_ url: String)
+  func loadGatewayUrl() -> String?
+  func saveToken(_ token: String)
+  func loadToken() -> String?
+  func saveSessions(_ sessions: [SessionConfig])
+  func loadSessions() -> [SessionConfig]
+  func saveSessionOrder(_ order: [String])
+  func loadSessionOrder() -> [String]
+}
+
+// MARK: - UserDefaults Storage Keys
+
 /// UserDefaults 存储键
 enum StorageKeys: String {
   case gatewayUrl = "openclaw.deck.gatewayUrl"
@@ -14,9 +30,12 @@ enum StorageKeys: String {
   case sessionOrder = "openclaw.deck.sessionOrder"
 }
 
+// MARK: - Default Implementation
+
 /// UserDefaults 存储工具类
-class UserDefaultsStorage {
-  @MainActor static let shared = UserDefaultsStorage()
+@MainActor
+class UserDefaultsStorage: UserDefaultsStorageProtocol {
+  static let shared = UserDefaultsStorage()
 
   private let defaults: UserDefaults
 
@@ -28,24 +47,20 @@ class UserDefaultsStorage {
 
   // MARK: - Gateway URL
 
-  /// 保存 Gateway URL
   func saveGatewayUrl(_ url: String) {
     defaults.set(url, forKey: StorageKeys.gatewayUrl.rawValue)
   }
 
-  /// 加载 Gateway URL
   func loadGatewayUrl() -> String? {
     return defaults.string(forKey: StorageKeys.gatewayUrl.rawValue)
   }
 
   // MARK: - Token
 
-  /// 保存 Token
   func saveToken(_ token: String) {
     defaults.set(token, forKey: StorageKeys.token.rawValue)
   }
 
-  /// 加载 Token
   func loadToken() -> String? {
     return defaults.string(forKey: StorageKeys.token.rawValue)
   }
@@ -57,7 +72,6 @@ class UserDefaultsStorage {
 
   // MARK: - Session Configs
 
-  /// 保存 Session 配置列表
   func saveSessions(_ sessions: [SessionConfig]) {
     do {
       let data = try JSONEncoder().encode(sessions)
@@ -67,7 +81,6 @@ class UserDefaultsStorage {
     }
   }
 
-  /// 加载 Session 配置列表
   func loadSessions() -> [SessionConfig] {
     guard let data = defaults.data(forKey: StorageKeys.sessionConfigs.rawValue) else {
       return []
@@ -84,12 +97,10 @@ class UserDefaultsStorage {
 
   // MARK: - Session Order
 
-  /// 保存 Session 顺序
   func saveSessionOrder(_ order: [String]) {
     defaults.set(order, forKey: StorageKeys.sessionOrder.rawValue)
   }
 
-  /// 加载 Session 顺序
   func loadSessionOrder() -> [String] {
     return defaults.array(forKey: StorageKeys.sessionOrder.rawValue) as? [String] ?? []
   }

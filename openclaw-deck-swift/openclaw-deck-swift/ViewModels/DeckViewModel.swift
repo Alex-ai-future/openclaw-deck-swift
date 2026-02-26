@@ -39,14 +39,14 @@ class DeckViewModel {
   var isInitializing: Bool = false
 
   /// UserDefaults 存储
-  private let storage: UserDefaultsStorage
+  private let storage: UserDefaultsStorageProtocol
 
   // MARK: - Initialization
 
   /// 初始化
   /// - Parameter storage: UserDefaultsStorage 实例（默认为 shared）
-  @MainActor init(storage: UserDefaultsStorage? = nil) {
-    self.storage = storage ?? .shared
+  @MainActor init(storage: UserDefaultsStorageProtocol = UserDefaultsStorage.shared) {
+    self.storage = storage
     setupGatewayCallbacks()
     // 从 UserDefaults 加载 Session
     loadSessionsFromStorage()
@@ -449,10 +449,15 @@ class DeckViewModel {
       if let data = payload["data"] as? [String: Any],
         let phase = data["phase"] as? String
       {
+        // 🔔 打印日志，验证是否收到 lifecycle 事件
+        logger.info("🔔 Lifecycle 事件：phase = \(phase), runId = \(runId)")
+        
         switch phase {
         case "start":
+          logger.info("✅ 收到新消息开始 - 可以发送通知了！")
           session.status = .thinking
         case "end":
+          logger.info("✅ 消息接收完成")
           session.status = .idle
           session.activeRunId = nil
           // 清除所有消息的 streaming 状态

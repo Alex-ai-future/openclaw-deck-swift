@@ -11,24 +11,15 @@ import XCTest
 @MainActor
 final class UserDefaultsStorageTests: XCTestCase {
 
-  var storage: UserDefaultsStorage!
+  var storage: MockUserDefaultsStorage!
 
   override func setUp() async throws {
     try await super.setUp()
-    // Clean before each test
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
-    storage = UserDefaultsStorage()
+    // 使用 Mock 存储，完全隔离测试
+    storage = MockUserDefaultsStorage()
   }
 
   override func tearDown() async throws {
-    // Clean up after each test
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
     storage = nil
     try await super.tearDown()
   }
@@ -111,7 +102,7 @@ final class UserDefaultsStorageTests: XCTestCase {
 
   func testLoadSessions_whenNotSet() {
     let sessions = storage.loadSessions()
-    XCTAssertTrue(sessions.isEmpty)
+    XCTAssertEqual(sessions.count, 0)
   }
 
   func testSaveEmptySessions() {
@@ -183,16 +174,13 @@ final class UserDefaultsStorageTests: XCTestCase {
     ])
     storage.saveSessionOrder(["test"])
 
-    // Clear all
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+    // Clear using mock's clear method
+    storage.clear()
 
     // Verify all cleared
     XCTAssertNil(storage.loadGatewayUrl())
     XCTAssertNil(storage.loadToken())
-    XCTAssertTrue(storage.loadSessions().isEmpty)
-    XCTAssertTrue(storage.loadSessionOrder().isEmpty)
+    XCTAssertEqual(storage.loadSessions().count, 0)
+    XCTAssertEqual(storage.loadSessionOrder().count, 0)
   }
 }

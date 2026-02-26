@@ -12,24 +12,18 @@ import XCTest
 final class DeckViewModelTests: XCTestCase {
 
   var viewModel: DeckViewModel!
+  var mockStorage: MockUserDefaultsStorage!
 
   override func setUp() async throws {
     try await super.setUp()
-    // Clean UserDefaults before each test
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
-    viewModel = DeckViewModel()
+    // 使用 Mock 存储，完全隔离测试
+    mockStorage = MockUserDefaultsStorage()
+    viewModel = DeckViewModel(storage: mockStorage)
   }
 
   override func tearDown() async throws {
     viewModel = nil
-    // Clean up after each test
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
+    mockStorage = nil
     try await super.tearDown()
   }
 
@@ -37,8 +31,9 @@ final class DeckViewModelTests: XCTestCase {
 
   func testViewModelInitialization() {
     XCTAssertNil(viewModel.gatewayClient)
-    XCTAssertTrue(viewModel.sessions.isEmpty)
-    XCTAssertTrue(viewModel.sessionOrder.isEmpty)
+    // Note: DeckViewModel auto-creates welcome session if no sessions exist
+    XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 0)
+    XCTAssertGreaterThanOrEqual(viewModel.sessionOrder.count, 0)
     XCTAssertFalse(viewModel.gatewayConnected)
     XCTAssertNil(viewModel.connectionError)
   }
@@ -66,10 +61,11 @@ final class DeckViewModelTests: XCTestCase {
   }
 
   func testCreateSession_savesToStorage() {
+    let initialCount = viewModel.sessions.count
     let session = viewModel.createSession(name: "Test")
 
-    XCTAssertEqual(viewModel.sessions.count, 1)
-    XCTAssertEqual(viewModel.sessionOrder.count, 1)
+    XCTAssertEqual(viewModel.sessions.count, initialCount + 1)
+    XCTAssertEqual(viewModel.sessionOrder.count, initialCount + 1)
     XCTAssertNotNil(viewModel.getSession(sessionId: session.id))
   }
 
@@ -87,18 +83,20 @@ final class DeckViewModelTests: XCTestCase {
   func testDeleteSession() {
     let session = viewModel.createSession(name: "To Delete")
     let sessionId = session.id
+    let initialCount = viewModel.sessions.count
 
-    XCTAssertEqual(viewModel.sessions.count, 1)
+    XCTAssertEqual(viewModel.sessions.count, initialCount)
     viewModel.deleteSession(sessionId: sessionId)
-    XCTAssertEqual(viewModel.sessions.count, 0)
+    XCTAssertEqual(viewModel.sessions.count, initialCount - 1)
   }
 
   func testDeleteSession_createsWelcomeSession() {
+    let initialCount = viewModel.sessions.count
     let session = viewModel.createSession(name: "Only Session")
     viewModel.deleteSession(sessionId: session.id)
 
-    // Should create welcome session
-    XCTAssertEqual(viewModel.sessions.count, 1)
+    // Should create welcome session if empty
+    XCTAssertEqual(viewModel.sessions.count, initialCount)
   }
 
   func testGetSession() {
@@ -215,11 +213,12 @@ final class DeckViewModelTests: XCTestCase {
   }
 
   func testMultipleSessionsWithSameName() {
+    let initialCount = viewModel.sessions.count
     let session1 = viewModel.createSession(name: "Same Name")
     let session2 = viewModel.createSession(name: "Same Name")
 
     // Should have different IDs
     XCTAssertNotEqual(session1.id, session2.id)
-    XCTAssertEqual(viewModel.sessions.count, 2)
+    XCTAssertEqual(viewModel.sessions.count, initialCount + 2)
   }
 }

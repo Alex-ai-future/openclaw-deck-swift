@@ -25,14 +25,23 @@ struct SessionColumnView: View {
   @State private var showingDeleteAlert = false
   @State private var textHeight: CGFloat = 36
   @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
+  @State private var scrollToTop = false  // 用于触发滚动到底部
   @StateObject private var speechRecognizer = SpeechRecognizer()
+  
+  // 滚动到底部
+  private func scrollToBottom() {
+    withAnimation(.smooth(duration: 0.3)) {
+      scrollToTop.toggle()
+    }
+  }
 
   // 计算文本高度
   private func calculateTextHeight() {
     let text = inputText.isEmpty ? " " : inputText
 
-    // 使用输入框的实际宽度计算
-    let maxWidth = inputFieldWidth
+    // 精确计算输入框实际可用宽度（减去 padding 和发送按钮空间）
+    let actualInputWidth = inputFieldWidth - 14 - 40 - 14  // left padding + send button space + right padding
+    let maxWidth = max(100, actualInputWidth)  // 确保最小宽度
 
     #if os(macOS)
       let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
@@ -56,7 +65,13 @@ struct SessionColumnView: View {
     #endif
 
     DispatchQueue.main.async {
-      withAnimation(.easeOut(duration: 0.1)) {
+      // 只有高度变化明显时才更新（避免频繁小幅度动画）
+      let heightDiff = abs(height - textHeight)
+      if heightDiff > 5 || textHeight == 36 {
+        withAnimation(.easeOut(duration: 0.05)) {  // 更快的动画
+          textHeight = height
+        }
+      } else {
         textHeight = height
       }
     }
@@ -165,6 +180,14 @@ struct SessionColumnView: View {
           }
         }
       }
+      .onChange(of: scrollToTop) { _ in
+        // 滚动到底部（最新消息）
+        if let lastId = session.messages.last?.id {
+          withAnimation(.smooth(duration: 0.3)) {
+            proxy.scrollTo(lastId, anchor: .bottom)
+          }
+        }
+      }
     }
     .background(Color.adaptiveBackground)
   }
@@ -216,6 +239,15 @@ struct SessionColumnView: View {
           }
         }
         .frame(height: textHeight)
+
+        // Scroll to bottom button
+        ScrollToBottomButton {
+          scrollToBottom()
+        }
+      }
+      .padding(.horizontal, 12)
+      .padding(.bottom, 8)
+      .padding(.top, 8)
         .background(
           GeometryReader { geometry in
             Color.clear
@@ -230,14 +262,6 @@ struct SessionColumnView: View {
         .onChange(of: inputText) { _, _ in
           calculateTextHeight()
         }
-        .background(
-          RoundedRectangle(cornerRadius: 20)
-            .fill(.regularMaterial)
-            .overlay(
-              RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
-        )
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 8)
@@ -247,7 +271,6 @@ struct SessionColumnView: View {
         // Empty gesture handler to prevent event bubbling to parent view
       }
     }
-  }
 
   // MARK: - Actions
 
@@ -272,17 +295,17 @@ struct SessionColumnView: View {
 // MARK: - Corner Radius Extension (iOS only)
 
 #if os(iOS) || os(visionOS)
-  extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-      clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
+extension View {
+  func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+    clipShape(RoundedCorner(radius: radius, corners: corners))
   }
+}
 
-  struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
+struct RoundedCorner: Shape {
+  var radius: CGFloat = .infinity
+  var corners: UIRectCorner = .allCorners
 
-    func path(in rect: CGRect) -> Path {
+  func path(in rect: CGRect) -> Path {
       let path = UIBezierPath(
         roundedRect: rect,
         byRoundingCorners: corners,

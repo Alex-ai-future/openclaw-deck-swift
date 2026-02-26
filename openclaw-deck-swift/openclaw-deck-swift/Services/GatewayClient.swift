@@ -154,7 +154,7 @@ class GatewayClient {
     // Reset challenge completed flag
     challengeCompleted = false
 
-    try await withCheckedThrowingContinuation {
+    _ = try await withCheckedThrowingContinuation {
       (continuation: CheckedContinuation<String, Error>) in
 
       var resumed = false

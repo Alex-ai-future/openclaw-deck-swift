@@ -15,11 +15,21 @@ final class DeckViewModelTests: XCTestCase {
 
   override func setUp() async throws {
     try await super.setUp()
+    // Clean UserDefaults before each test
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
     viewModel = DeckViewModel()
   }
 
   override func tearDown() async throws {
     viewModel = nil
+    // Clean up after each test
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
+    UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
     try await super.tearDown()
   }
 

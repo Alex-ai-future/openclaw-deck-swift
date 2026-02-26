@@ -147,7 +147,7 @@ class SpeechRecognizer: ObservableObject {
       }
       let result = await group.next()
       group.cancelAll()
-      return result as! T?
+      return result!!
     }
   }
 

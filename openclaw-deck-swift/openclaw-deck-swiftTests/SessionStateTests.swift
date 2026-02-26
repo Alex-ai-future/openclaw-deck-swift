@@ -10,7 +10,8 @@ import XCTest
 
 final class SessionStateTests: XCTestCase {
 
-  func testSessionStateInitialization() {
+  func testSessionStateInitialization() throws {
+    // Simple initialization test - should be stable
     let session = SessionState(
       sessionId: "test-session",
       sessionKey: "agent:main:test-session"
@@ -25,7 +26,7 @@ final class SessionStateTests: XCTestCase {
     XCTAssertNil(session.activeRunId)
   }
 
-  func testAppendMessage() {
+  func testAppendMessage() throws {
     let session = SessionState(
       sessionId: "test",
       sessionKey: "agent:main:test"

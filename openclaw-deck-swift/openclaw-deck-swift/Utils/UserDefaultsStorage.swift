@@ -16,7 +16,7 @@ enum StorageKeys: String {
 
 /// UserDefaults 存储工具类
 class UserDefaultsStorage {
-  static let shared = UserDefaultsStorage()
+  @MainActor static let shared = UserDefaultsStorage()
 
   private let defaults: UserDefaults
 

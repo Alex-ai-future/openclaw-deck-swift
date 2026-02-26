@@ -8,19 +8,19 @@ import XCTest
 
 @testable import openclaw_deck_swift
 
+@MainActor
 final class UserDefaultsStorageTests: XCTestCase {
 
   var storage: UserDefaultsStorage!
 
   override func setUp() async throws {
     try await super.setUp()
-    storage = UserDefaultsStorage()
-
-    // Clean up before each test
+    // Clean before each test
     UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
     UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
     UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessions")
     UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+    storage = UserDefaultsStorage()
   }
 
   override func tearDown() async throws {

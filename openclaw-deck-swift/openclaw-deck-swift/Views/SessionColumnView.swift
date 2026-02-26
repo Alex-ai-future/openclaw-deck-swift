@@ -1060,3 +1060,99 @@ struct HeightPreference: PreferenceKey {
     value = nextValue()
   }
 }
+
+// MARK: - Preview for Processing State Button
+
+#Preview("Processing State Button") {
+  struct ProcessingButtonPreview: View {
+    @State private var isProcessing = true
+    
+    var body: some View {
+      VStack(spacing: 20) {
+        Text("Processing State Button Preview")
+          .font(.headline)
+        
+        // 普通状态
+        Button {
+          isProcessing.toggle()
+        } label: {
+          Text("Welcome")
+            .font(.body)
+            .fontWeight(.medium)
+            .lineLimit(1)
+            .padding(12)
+        }
+        .buttonStyle(.glass)
+        .overlay(
+          Group {
+            if isProcessing {
+              Color.orange.opacity(0.25)
+            } else {
+              Color.clear
+            }
+          }
+        )
+        .overlay(
+          Group {
+            if isProcessing {
+              RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+            }
+          }
+        )
+        
+        Text("Tap to toggle state")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        
+        // 测试不同颜色和圆角
+        VStack(spacing: 10) {
+          Text("Color Tests")
+            .font(.subheadline)
+            .fontWeight(.medium)
+          
+          // 测试不同透明度
+          HStack(spacing: 10) {
+            Text("0.15")
+              .font(.caption)
+            RoundedRectangle(cornerRadius: 10)
+              .fill(Color.orange.opacity(0.15))
+              .frame(width: 60, height: 40)
+              .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                  .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+              )
+          }
+          
+          HStack(spacing: 10) {
+            Text("0.25")
+              .font(.caption)
+            RoundedRectangle(cornerRadius: 10)
+              .fill(Color.orange.opacity(0.25))
+              .frame(width: 60, height: 40)
+              .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                  .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+              )
+          }
+          
+          HStack(spacing: 10) {
+            Text("0.35")
+              .font(.caption)
+            RoundedRectangle(cornerRadius: 10)
+              .fill(Color.orange.opacity(0.35))
+              .frame(width: 60, height: 40)
+              .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                  .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+              )
+          }
+        }
+        .padding()
+      }
+      .padding()
+    }
+  }
+  
+  return ProcessingButtonPreview()
+}

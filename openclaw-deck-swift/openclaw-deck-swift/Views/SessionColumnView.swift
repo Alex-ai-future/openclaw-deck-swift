@@ -28,15 +28,15 @@ struct SessionColumnView: View {
   @State private var scrollTrigger = 0  // 用于触发滚动到底部（使用计数而非 toggle）
   @State private var isScrolling = false  // 防止重复滚动
   @StateObject private var speechRecognizer = SpeechRecognizer()
-  
+
   // 滚动到底部
   private func scrollToBottom() {
     guard !isScrolling else { return }  // 防止重复点击
     isScrolling = true
-    
+
     // 增加计数触发滚动（避免 toggle 导致的闪烁）
     scrollTrigger += 1
-    
+
     // 动画结束后解锁
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
       isScrolling = false
@@ -133,22 +133,30 @@ struct SessionColumnView: View {
         Button {
 
         } label: {
-          HStack(spacing: 6) {
-            // 🆕 处理中状态指示器
-            if session.isProcessing {
-              ProgressView()
-                .scaleEffect(0.7)
-                .frame(width: 14, height: 14)
-            }
-
-            Text(session.sessionKey)
-              .font(.subheadline)
-              .fontWeight(.medium)
-              .lineLimit(1)
-          }
-          .padding(8)
+          Text(session.sessionKey)
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .lineLimit(1)
+            .padding(8)
         }
         .glassEffect()
+        // 🆕 处理中状态：橘黄色背景
+        .background(
+          Group {
+            if session.isProcessing {
+              Color.orange.opacity(0.25)
+                .cornerRadius(12)
+            }
+          }
+        )
+        // 🆕 处理中状态：橘黄色边框增强视觉效果
+        .overlay(
+          RoundedRectangle(cornerRadius: 12)
+            .stroke(
+              session.isProcessing ? Color.orange.opacity(0.5) : Color.white.opacity(0.2),
+              lineWidth: 1
+            )
+        )
 
       }
 
@@ -193,14 +201,14 @@ struct SessionColumnView: View {
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {
           withAnimation(.smooth(duration: 0.2)) {
-            proxy.scrollTo(lastId, anchor: .bottom)  // 与手动滑动一致
+            proxy.scrollTo(lastId)  // 默认行为，自动考虑 padding
           }
         }
       }
       .onChange(of: scrollTrigger) { _, _ in
         // 滚动到底部（最新消息）
         if let lastId = session.messages.last?.id {
-          proxy.scrollTo(lastId, anchor: .bottom)  // 与手动滑动一致
+          proxy.scrollTo(lastId)  // 默认行为，自动考虑 padding
         }
       }
     }

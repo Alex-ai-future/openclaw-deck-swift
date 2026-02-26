@@ -26,11 +26,44 @@ struct SessionColumnView: View {
   @State private var textHeight: CGFloat = 36
   @StateObject private var speechRecognizer = SpeechRecognizer()
   
-  // 计算是否正在输入
-  private var isTyping: Bool {
-    let typing = session.status == .thinking || session.status == .streaming
-    print("[SessionColumnView] isTyping: \(typing), status: \(session.status)")
-    return typing
+  // 计算文本高度
+  private func calculateTextHeight() {
+    let text = inputText.isEmpty ? " " : inputText
+    
+    #if os(iOS) || os(visionOS)
+      let font = UIFont.preferredFont(forTextStyle: .body)
+      let screenWidth = UIScreen.main.bounds.width
+      let maxWidth = screenWidth * 0.6  // 使用屏幕宽度的 60%
+    #else
+      let font = NSFont.preferredFont(forTextStyle: .body)
+      let maxWidth: CGFloat = 300
+    #endif
+    
+    #if os(macOS)
+      let textStorage = NSTextStorage(string: text)
+      let layoutManager = NSLayoutManager()
+      let textContainer = NSTextContainer(containerSize: CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
+      layoutManager.addTextContainer(textContainer)
+      textStorage.addLayoutManager(layoutManager)
+      let rect = layoutManager.usedRect(for: textContainer)
+      let height = max(36.0, min(rect.height + 8, 150))
+    #else
+      let rect = text.boundingRect(
+        with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+        options: [.usesLineFragmentOrigin, .usesFontLeading],
+        attributes: [.font: font],
+        context: nil
+      )
+      let height = max(36.0, min(rect.height + 8, 150))
+    #endif
+    
+    print("📏 Text: '\(text)' | Chars: \(text.count) | MaxWidth: \(maxWidth) | RectHeight: \(rect.height) | Final: \(height)pt")
+    
+    DispatchQueue.main.async {
+      withAnimation(.easeOut(duration: 0.1)) {
+        textHeight = height
+      }
+    }
   }
 
   var body: some View {
@@ -161,12 +194,7 @@ struct SessionColumnView: View {
             .padding(.trailing, 40)
             .lineLimit(1...7)
             .textFieldStyle(.plain)
-            .frame(maxWidth: .infinity, alignment: .leading)  // ← 关键：明确宽度
             .tint(.accentColor)
-            .background(GeometryReader { geometry in
-              Color.clear
-                .preference(key: HeightPreference.self, value: geometry.size.height)
-            })
 
           // Send button - shown only when text is not empty
           if !inputText.isEmpty {
@@ -192,12 +220,8 @@ struct SessionColumnView: View {
           }
         }
         .frame(height: textHeight)
-        .onPreferenceChange(HeightPreference.self) { newHeight in
-          let height = max(36, min(newHeight, 150))
-          print("📏 Measured: \(newHeight) -> Using: \(height)pt")
-          withAnimation(.easeOut(duration: 0.1)) {
-            textHeight = height
-          }
+        .onChange(of: inputText) { _ in
+          calculateTextHeight()
         }
         .background(
           RoundedRectangle(cornerRadius: 20)

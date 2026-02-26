@@ -151,39 +151,42 @@ class GatewayClient {
     // Reset challenge completed flag
     challengeCompleted = false
 
-    let _ = try await withCheckedThrowingContinuation {
+    try await withCheckedThrowingContinuation {
       (continuation: CheckedContinuation<String, Error>) in
+      
+      var resumed = false
+      
       // Set callback to resume continuation when challenge is received
       self.challengeCallback = { [weak self] nonce in
         guard let self = self else { return }
-        // Only resume once - check without capturing self
         Task { @MainActor in
-          guard !self.challengeCompleted else { return }
+          guard !resumed && !self.challengeCompleted else { return }
+          resumed = true
           self.challengeCompleted = true
           self.challengeTimeoutTimer?.invalidate()
           self.challengeTimeoutTimer = nil
           self.challengeCallback = nil
+          continuation.resume(returning: nonce)
         }
-        continuation.resume(returning: nonce)
       }
 
       // Timeout after 6 seconds
       _ = Timer.scheduledTimer(withTimeInterval: self.connectChallengeTimeout, repeats: false) {
         [weak self] _ in
         guard let self = self else { return }
-        // Only resume once
         Task { @MainActor in
-          guard !self.challengeCompleted else { return }
+          guard !resumed && !self.challengeCompleted else { return }
+          resumed = true
           self.challengeCompleted = true
           self.challengeCallback = nil
           self.challengeTimeoutTimer = nil
+          continuation.resume(
+            throwing: NSError(
+              domain: "GatewayClient",
+              code: -10,
+              userInfo: [NSLocalizedDescriptionKey: "Connect challenge timeout"]
+            ))
         }
-        continuation.resume(
-          throwing: NSError(
-            domain: "GatewayClient",
-            code: -10,
-            userInfo: [NSLocalizedDescriptionKey: "Connect challenge timeout"]
-          ))
       }
     }
   }

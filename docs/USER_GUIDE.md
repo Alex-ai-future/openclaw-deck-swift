@@ -532,6 +532,93 @@ grep "connection" ~/Library/Logs/OpenClaw\ Deck/*.log
 
 ---
 
+### 5.6 Token Mismatch 问题
+
+**症状：**
+- 显示错误：`unauthorized: gateway token mismatch (open the dashboard URL and paste the token in Control UI settings)`
+- 使用同样的 Token 在其他客户端可以连接，但 Deck Swift 无法连接
+- 之前可以正常连接，突然无法连接
+
+**原因：**
+Deck Swift 会自动保存 Gateway 返回的 **Device Token**，后续连接时优先使用 Device Token 而不是用户输入的 Token。
+
+**认证流程：**
+```
+首次连接：
+用户输入 Token → Gateway 验证 → 成功 → Gateway 返回 Device Token → 保存到本地
+
+后续连接：
+读取保存的 Device Token → 发送给 Gateway → 验证失败 → Token Mismatch 错误
+```
+
+**为什么 Device Token 会失效：**
+1. Gateway 重启后 Device Token 记录丢失
+2. Gateway 配置变更，Device Token 被撤销
+3. Device Token 过期或被轮换
+
+**解决方案：**
+
+**方法一：通过 UI 重置（推荐）**
+
+1. 在 Welcome 界面点击右上角的 ⚙️ 设置按钮
+2. 进入 Settings 界面
+3. 点击 "Reset Device Identity" 按钮
+4. 确认重置
+5. 应用会清除保存的 Device Token，并使用你输入的 Token 重新连接
+
+**方法二：命令行清除**
+
+```bash
+# 在 Xcode 控制台运行以下 Swift 代码
+UserDefaults.standard.removeObject(forKey: "openclaw.deck.deviceToken.v1:ws://你的 Gateway 地址")
+UserDefaults.standard.removeObject(forKey: "openclaw.deck.deviceIdentity.v1")
+```
+
+**方法三：删除应用数据**
+
+```bash
+# macOS - 删除应用配置
+rm -rf ~/Library/Preferences/com.openclaw.deck.plist
+rm -rf ~/Library/Application\ Support/com.openclaw.deck
+
+# 然后重新打开应用
+```
+
+**预防措施：**
+
+1. **记录 Token 变化** - 如果 Gateway 的 Token 发生变化，先重置 Device Identity
+2. **Gateway 重启后注意** - Gateway 重启后可能需要重置 Device Identity
+3. **使用固定 Token** - 在 Gateway 配置中设置固定的 `gateway.auth.token`
+
+**调试日志：**
+
+应用已添加详细日志，可以在 Xcode 控制台查看：
+
+```
+🔑 [AuthToken] Using device token: abcd********wxyz
+🔍 [Connect Request] Sending connect request to Gateway
+🔍 [Connect Request] Auth token (source: device): abcd********wxyz
+🔐 [DeviceAuth] Built device auth payload: v2|device-id|...
+📤 [WebSocket] Sending CONNECT frame: {"type":"req","id":"...","method":"connect",...}
+```
+
+- `source: device` - 使用的是保存的 Device Token
+- `source: user` - 使用的是用户输入的 Token
+
+如果看到 `source: device` 但连接失败，需要重置 Device Identity。
+
+**相关配置位置：**
+
+```
+# Gateway 配置 (config.yaml)
+gateway:
+  auth:
+    mode: token
+    token: your-fixed-token  # 固定 Token，避免 Device Token 失效
+```
+
+---
+
 ## 6. 技术细节
 
 ### 6.1 项目结构

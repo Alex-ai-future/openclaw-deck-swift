@@ -118,6 +118,11 @@ struct ContentView: View {
           }
           showingSettings = false
         },
+        onConnect: {
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
+          }
+        },
         onResetDeviceIdentity: {
           viewModel.resetDeviceIdentity()
           Task {
@@ -140,6 +145,11 @@ struct ContentView: View {
             await viewModel.initialize(url: gatewayUrl, token: token)
           }
           showingWelcomeSettings = false
+        },
+        onConnect: {
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
+          }
         },
         onResetDeviceIdentity: {
           viewModel.resetDeviceIdentity()

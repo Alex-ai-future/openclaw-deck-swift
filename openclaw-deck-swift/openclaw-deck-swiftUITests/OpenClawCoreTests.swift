@@ -42,8 +42,8 @@ final class OpenClawCoreTests: XCTestCase {
   
   /// 测试 2: 发送消息
   func testSendMessage() throws {
-    // 等待输入框出现
-    let messageInput = app.textFields["messageInput"]
+    // 等待输入框出现（使用 firstMatch 避免 SwiftUI 多元素问题）
+    let messageInput = app.textFields["messageInput"].firstMatch
     XCTAssertTrue(messageInput.waitForExistence(timeout: 5), "消息输入框应该存在")
     
     // 输入消息
@@ -51,7 +51,7 @@ final class OpenClawCoreTests: XCTestCase {
     messageInput.typeText("Hello, AI!")
     
     // 等待发送按钮出现
-    let sendButton = app.buttons["sendButton"]
+    let sendButton = app.buttons["sendButton"].firstMatch
     XCTAssertTrue(sendButton.waitForExistence(timeout: 2), "发送按钮应该出现")
     
     // 点击发送

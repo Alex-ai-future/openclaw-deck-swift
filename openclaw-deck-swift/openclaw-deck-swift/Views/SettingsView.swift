@@ -11,6 +11,7 @@ struct SettingsView: View {
   @Binding var isConnected: Bool
   var onDisconnect: () -> Void
   var onApplyAndReconnect: () -> Void
+  var onConnect: () -> Void
   var onResetDeviceIdentity: (() -> Void)?
 
   @State private var hasChanges = false
@@ -26,7 +27,7 @@ struct SettingsView: View {
           GatewayConfigInput(
             gatewayUrl: $gatewayUrl,
             token: $token,
-            onConnect: {},
+            onConnect: onConnect,
             isConnected: isConnected
           )
         } header: {
@@ -39,10 +40,10 @@ struct SettingsView: View {
         Section {
           HStack {
             Circle()
-              .fill(Color.green)
+              .fill(isConnected ? Color.green : Color.orange)
               .frame(width: 10, height: 10)
 
-            Text("Connected")
+            Text(isConnected ? "Connected" : "Not Connected")
               .foregroundColor(.primary)
               .fontWeight(.medium)
 
@@ -127,6 +128,6 @@ struct SettingsView: View {
     token: .constant(""),
     isConnected: .constant(true),
     onDisconnect: {},
-    onApplyAndReconnect: {}
+    onApplyAndReconnect: {}, onConnect: {}
   )
 }

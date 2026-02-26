@@ -425,9 +425,9 @@ class DeckViewModel {
         // 调试日志
         logger.info("Assistant event: runId=\(runId), seq=\(seq ?? -1), delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars")
         
-        // 使用 text 字段进行更新（累积文本）
+        // 实时接收时：只更新最后一条消息（累积文本）
         if let text = text, !text.isEmpty {
-          updateOrCreateAssistantMessage(session: session, runId: runId, text: text, seq: seq)
+          updateOrCreateLastAssistantMessage(session: session, runId: runId, text: text, seq: seq)
         }
         // 否则使用 delta 追加（流式更新）
         else if let delta = delta, !delta.isEmpty {
@@ -446,7 +446,7 @@ class DeckViewModel {
         case "end":
           session.status = .idle
           session.activeRunId = nil
-          // 清除所有消息的 streaming 状态（但保留消息，不删除）
+          // 清除所有消息的 streaming 状态
           for i in session.messages.indices {
             if session.messages[i].streaming == true {
               session.messages[i].streaming = false
@@ -466,49 +466,50 @@ class DeckViewModel {
     }
   }
 
-  /// 更新或创建 assistant 消息（检测段落边界）
-  /// - Parameters:
-  ///   - session: Session 状态
-  ///   - runId: 运行 ID
-  ///   - text: 消息文本（累积）
-  ///   - seq: Gateway 事件序号
-  private func updateOrCreateAssistantMessage(session: SessionState, runId: String, text: String, seq: Int?) {
-    // 检测段落分隔符（双换行）
-    let paragraphs = text.components(separatedBy: "\n\n")
+
+  
+  /// 更新或创建最后一条 assistant 消息（实时流式更新）
+  private func updateOrCreateLastAssistantMessage(session: SessionState, runId: String, text: String, seq: Int?) {
+    session.status = .streaming
     
-    if paragraphs.count > 1 {
-      // 多段落：每个段落创建独立消息
-      for (index, paragraph) in paragraphs.enumerated() {
-        let trimmed = paragraph.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { continue }
-        
-        // 为每个段落创建独立 seq（使用 seq + index）
-        let paragraphSeq = (seq ?? 0) + index
-        
-        let existingMsg = session.messages.first { 
-          $0.runId == runId && $0.seq == paragraphSeq 
-        }
-        
-        if existingMsg == nil {
-          let assistantMsg = ChatMessage(
-            id: UUID().uuidString,
-            role: .assistant,
-            text: trimmed,
-            timestamp: Date(),
-            streaming: true,
-            runId: runId,
-            seq: paragraphSeq
-          )
-          session.messages.append(assistantMsg)
-        }
-      }
-      session.status = .streaming
+    // 查找最后一条同 runId 的 streaming 消息
+    guard
+      let index = session.messages.enumerated().last(where: { _, msg in
+        msg.role == .assistant && msg.runId == runId && msg.streaming == true
+      })?.offset
+    else {
+      // 没有找到，创建新消息
+      let assistantMsg = ChatMessage(
+        id: UUID().uuidString,
+        role: .assistant,
+        text: text,
+        timestamp: Date(),
+        streaming: true,
+        runId: runId,
+        seq: seq
+      )
+      session.messages.append(assistantMsg)
       session.activeRunId = runId
-    } else {
-      // 单段落：更新或创建最后一条消息
-      createOrUpdateLastAssistantMessage(session: session, runId: runId, text: text, seq: seq)
+      return
     }
+    
+    // 更新现有消息（替换文本）
+    let message = session.messages[index]
+    session.messages[index] = ChatMessage(
+      id: message.id,
+      role: message.role,
+      text: text,
+      timestamp: message.timestamp,
+      streaming: message.streaming,
+      thinking: message.thinking,
+      toolUse: message.toolUse,
+      runId: message.runId,
+      seq: message.seq ?? seq,
+      isLoaded: message.isLoaded
+    )
   }
+  
+
 
   /// 创建或更新最后一条 assistant 消息
   /// - Parameters:

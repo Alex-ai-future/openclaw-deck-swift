@@ -5,6 +5,7 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import XCTest
+
 @testable import openclaw_deck_swift
 
 final class SessionConfigTests: XCTestCase {

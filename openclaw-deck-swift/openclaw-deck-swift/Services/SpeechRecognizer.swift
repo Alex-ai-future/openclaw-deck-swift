@@ -155,7 +155,7 @@ class SpeechRecognizer: ObservableObject {
   @MainActor
   func startListening(onTextChange: @escaping (String) -> Void) async throws {
     // startListening called
-    
+
     // 重置状态，确保每次听写都是新的开始
     self.transcript = ""
     self.isStopping = false

@@ -343,7 +343,7 @@ class DeckViewModel {
     // Gateway 返回内容时会自动创建 assistant 消息
     Task {
       do {
-        let (runId, status) = try await client.runAgent(
+        let (runId, _) = try await client.runAgent(
           agentId: config.mainAgentId,
           message: text,
           sessionKey: session.sessionKey
@@ -371,7 +371,7 @@ class DeckViewModel {
   func handleGatewayEvent(_ event: GatewayEvent) {
     // 调试：打印所有事件
     logger.info("=== Gateway Event: \(event.event) ===")
-    
+
     switch event.event {
     case "agent":
       // 新的 agent 事件格式：{ runId, stream, data, sessionKey }
@@ -424,10 +424,12 @@ class DeckViewModel {
         let seq = payload["seq"] as? Int
         let delta = data["delta"] as? String
         let text = data["text"] as? String
-        
+
         // 调试日志
-        logger.info("Assistant event: runId=\(runId), seq=\(seq ?? -1), delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars")
-        
+        logger.info(
+          "Assistant event: runId=\(runId), seq=\(seq ?? -1), delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars"
+        )
+
         // 实时接收时：只更新最后一条消息（累积文本）
         if let text = text, !text.isEmpty {
           updateOrCreateLastAssistantMessage(session: session, runId: runId, text: text, seq: seq)
@@ -469,12 +471,12 @@ class DeckViewModel {
     }
   }
 
-
-  
   /// 更新或创建最后一条 assistant 消息（实时流式更新）
-  private func updateOrCreateLastAssistantMessage(session: SessionState, runId: String, text: String, seq: Int?) {
+  private func updateOrCreateLastAssistantMessage(
+    session: SessionState, runId: String, text: String, seq: Int?
+  ) {
     session.status = .streaming
-    
+
     // 查找最后一条同 runId 的 streaming 消息
     guard
       let index = session.messages.enumerated().last(where: { _, msg in
@@ -495,7 +497,7 @@ class DeckViewModel {
       session.activeRunId = runId
       return
     }
-    
+
     // 更新现有消息（替换文本）
     let message = session.messages[index]
     session.messages[index] = ChatMessage(
@@ -511,8 +513,6 @@ class DeckViewModel {
       isLoaded: message.isLoaded
     )
   }
-  
-
 
   /// 创建或更新最后一条 assistant 消息
   /// - Parameters:
@@ -520,9 +520,11 @@ class DeckViewModel {
   ///   - runId: 运行 ID
   ///   - text: 消息文本（累积）
   ///   - seq: Gateway 事件序号
-  private func createOrUpdateLastAssistantMessage(session: SessionState, runId: String, text: String, seq: Int?) {
+  private func createOrUpdateLastAssistantMessage(
+    session: SessionState, runId: String, text: String, seq: Int?
+  ) {
     session.status = .streaming
-    
+
     // 查找最后一条同 runId 的 streaming 消息
     guard
       let index = session.messages.enumerated().last(where: { _, msg in
@@ -543,7 +545,7 @@ class DeckViewModel {
       session.activeRunId = runId
       return
     }
-    
+
     // 更新现有消息（替换文本）
     let message = session.messages[index]
     session.messages[index] = ChatMessage(
@@ -566,23 +568,24 @@ class DeckViewModel {
   ///   - runId: 运行 ID
   ///   - text: 消息文本
   ///   - seq: Gateway 事件序号（用于去重）
-  private func createAssistantMessage(session: SessionState, runId: String, text: String, seq: Int?) {
+  private func createAssistantMessage(session: SessionState, runId: String, text: String, seq: Int?)
+  {
     // 设置状态为 streaming
     session.status = .streaming
-    
+
     // 检查是否已有相同 seq 的消息（避免重复）
     if let seq = seq {
-      let existingMsg = session.messages.first { 
-        $0.runId == runId && $0.seq == seq 
+      let existingMsg = session.messages.first {
+        $0.runId == runId && $0.seq == seq
       }
-      
+
       if existingMsg != nil {
         // 消息已存在，跳过
         logger.debug("Message with seq \(seq) already exists, skipping")
         return
       }
     }
-    
+
     // 创建新消息
     let assistantMsg = ChatMessage(
       id: UUID().uuidString,

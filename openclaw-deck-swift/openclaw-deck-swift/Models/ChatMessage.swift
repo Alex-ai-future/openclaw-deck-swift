@@ -44,7 +44,7 @@ struct ChatMessage: Codable, Identifiable {
 
   init(
     id: String, role: MessageRole, text: String, timestamp: Date, streaming: Bool? = nil,
-    thinking: Bool? = nil, toolUse: ToolUseInfo? = nil, runId: String? = nil, seq: Int? = nil, 
+    thinking: Bool? = nil, toolUse: ToolUseInfo? = nil, runId: String? = nil, seq: Int? = nil,
     isLoaded: Bool = false
   ) {
     self.id = id

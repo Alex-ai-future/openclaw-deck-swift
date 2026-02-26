@@ -26,24 +26,26 @@ struct SessionColumnView: View {
   @State private var textHeight: CGFloat = 36
   @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
   @StateObject private var speechRecognizer = SpeechRecognizer()
-  
+
   // 计算文本高度
   private func calculateTextHeight() {
     let text = inputText.isEmpty ? " " : inputText
-    let font = UIFont.preferredFont(forTextStyle: .body)
-    
+
     // 使用输入框的实际宽度计算
     let maxWidth = inputFieldWidth
-    
+
     #if os(macOS)
+      let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
       let textStorage = NSTextStorage(string: text)
       let layoutManager = NSLayoutManager()
-      let textContainer = NSTextContainer(containerSize: CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
+      let textContainer = NSTextContainer(
+        containerSize: CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
       layoutManager.addTextContainer(textContainer)
       textStorage.addLayoutManager(layoutManager)
       let rect = layoutManager.usedRect(for: textContainer)
       let height = max(36.0, min(rect.height + 8, 150))
     #else
+      let font = UIFont.preferredFont(forTextStyle: .body)
       let rect = text.boundingRect(
         with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
         options: [.usesLineFragmentOrigin, .usesFontLeading],
@@ -52,9 +54,7 @@ struct SessionColumnView: View {
       )
       let height = max(36.0, min(rect.height + 8, 150))
     #endif
-    
-    print("📏 Text: '\(text)' | Chars: \(text.count) | MaxWidth: \(maxWidth) | RectHeight: \(rect.height) | Final: \(height)pt")
-    
+
     DispatchQueue.main.async {
       withAnimation(.easeOut(duration: 0.1)) {
         textHeight = height
@@ -216,18 +216,18 @@ struct SessionColumnView: View {
           }
         }
         .frame(height: textHeight)
-        .background(GeometryReader { geometry in
-          Color.clear
-            .onAppear {
-              inputFieldWidth = geometry.size.width
-              print("📐 Input field width: \(geometry.size.width)")
-            }
-            .onChange(of: geometry.size.width) { newWidth in
-              inputFieldWidth = newWidth
-              print("📐 Input field width changed: \(newWidth)")
-            }
-        })
-        .onChange(of: inputText) { _ in
+        .background(
+          GeometryReader { geometry in
+            Color.clear
+              .onAppear {
+                inputFieldWidth = geometry.size.width
+              }
+              .onChange(of: geometry.size.width) { _, newWidth in
+                inputFieldWidth = newWidth
+              }
+          }
+        )
+        .onChange(of: inputText) { _, _ in
           calculateTextHeight()
         }
         .background(
@@ -255,12 +255,12 @@ struct SessionColumnView: View {
     guard !inputText.isEmpty, !viewModel.isInitializing, viewModel.gatewayConnected else { return }
 
     let text = inputText
-    
+
     // 如果正在听写，先停止听写，防止回调继续更新输入框
     if speechRecognizer.isListening {
       speechRecognizer.stopListening()
     }
-    
+
     inputText = ""  // 清空输入框
 
     Task {
@@ -333,11 +333,11 @@ struct SessionColumnView: View {
                 copyText = message.text
                 UIPasteboard.general.string = message.text
                 showingCopyToast = true
-                
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                   showingCopyToast = false
                 }
-                
+
                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                 impactFeedback.impactOccurred()
               } label: {
@@ -781,13 +781,13 @@ private func createStreamingSession() -> SessionState {
 #Preview("Empty - Single Line") {
   struct TestView: View {
     @State private var text = ""
-    
+
     var body: some View {
       VStack {
         Text("Empty input box - should be 36pt (1 line)")
           .font(.caption)
           .foregroundColor(.secondary)
-        
+
         ZStack(alignment: .trailing) {
           TextEditor(text: $text)
             .font(.body)
@@ -799,7 +799,7 @@ private func createStreamingSession() -> SessionState {
             .lineLimit(1...7)
             .frame(minHeight: 36, maxHeight: 150)
             .tint(.accentColor)
-          
+
           if !text.isEmpty {
             Button {
               text = ""
@@ -810,7 +810,7 @@ private func createStreamingSession() -> SessionState {
             }
             .padding(.trailing, 8)
           }
-          
+
           if text.isEmpty {
             Text("Message")
               .font(.body)
@@ -834,20 +834,20 @@ private func createStreamingSession() -> SessionState {
       .padding()
     }
   }
-  
+
   return TestView()
 }
 
 #Preview("Short Text - 1 Line") {
   struct TestView: View {
     @State private var text = "Hello"
-    
+
     var body: some View {
       VStack {
         Text("Short text - should stay 1 line")
           .font(.caption)
           .foregroundColor(.secondary)
-        
+
         ZStack(alignment: .trailing) {
           TextEditor(text: $text)
             .font(.body)
@@ -859,7 +859,7 @@ private func createStreamingSession() -> SessionState {
             .lineLimit(1...7)
             .frame(minHeight: 36, maxHeight: 150)
             .tint(.accentColor)
-          
+
           if !text.isEmpty {
             Button {
               text = ""
@@ -885,20 +885,20 @@ private func createStreamingSession() -> SessionState {
       .padding()
     }
   }
-  
+
   return TestView()
 }
 
 #Preview("Multi-Line - Auto Growth") {
   struct TestView: View {
     @State private var text = "Line 1\nLine 2\nLine 3"
-    
+
     var body: some View {
       VStack {
         Text("Multi-line text - type to test auto growth")
           .font(.caption)
           .foregroundColor(.secondary)
-        
+
         ZStack(alignment: .trailing) {
           TextEditor(text: $text)
             .font(.body)
@@ -910,7 +910,7 @@ private func createStreamingSession() -> SessionState {
             .lineLimit(1...7)
             .frame(minHeight: 36, maxHeight: 150)
             .tint(.accentColor)
-          
+
           if !text.isEmpty {
             Button {
               text = ""
@@ -936,20 +936,21 @@ private func createStreamingSession() -> SessionState {
       .padding()
     }
   }
-  
+
   return TestView()
 }
 
 #Preview("Long Text - Max Height") {
   struct TestView: View {
-    @State private var text = "This is a very long text that should span multiple lines and eventually reach the maximum height limit of 150 points. After that, the TextEditor should scroll internally instead of growing further. This tests the lineLimit(1...7) modifier. Keep typing to see it stop growing!"
-    
+    @State private var text =
+      "This is a very long text that should span multiple lines and eventually reach the maximum height limit of 150 points. After that, the TextEditor should scroll internally instead of growing further. This tests the lineLimit(1...7) modifier. Keep typing to see it stop growing!"
+
     var body: some View {
       VStack {
         Text("Long text - should max at 150pt (7 lines)")
           .font(.caption)
           .foregroundColor(.secondary)
-        
+
         ZStack(alignment: .trailing) {
           TextEditor(text: $text)
             .font(.body)
@@ -961,7 +962,7 @@ private func createStreamingSession() -> SessionState {
             .lineLimit(1...7)
             .frame(minHeight: 36, maxHeight: 150)
             .tint(.accentColor)
-          
+
           if !text.isEmpty {
             Button {
               text = ""
@@ -987,7 +988,7 @@ private func createStreamingSession() -> SessionState {
       .padding()
     }
   }
-  
+
   return TestView()
 }
 

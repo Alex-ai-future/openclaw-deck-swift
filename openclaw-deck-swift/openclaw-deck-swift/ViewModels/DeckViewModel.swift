@@ -188,11 +188,11 @@ class DeckViewModel {
   /// 删除 Session
   /// - Parameter sessionId: 要删除的 Session ID
   func deleteSession(sessionId: String) {
-    // 1. 从 sessions 中移除
-    sessions.removeValue(forKey: sessionId)
+    // 1. 从 sessions 中移除（使用小写 key）
+    sessions.removeValue(forKey: sessionId.lowercased())
 
     // 2. 从 sessionOrder 中移除
-    sessionOrder.removeAll { $0 == sessionId }
+    sessionOrder.removeAll { $0 == sessionId.lowercased() }
 
     // 3. 保存到 UserDefaults
     saveSessionsToStorage()
@@ -210,7 +210,8 @@ class DeckViewModel {
   /// - Parameter sessionId: Session ID
   /// - Returns: SessionState（如果存在）
   func getSession(sessionId: String) -> SessionState? {
-    sessions[sessionId]
+    // 大小写不敏感匹配
+    sessions[sessionId.lowercased()]
   }
 
   // MARK: - Storage

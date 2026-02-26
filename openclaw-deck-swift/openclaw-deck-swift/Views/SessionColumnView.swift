@@ -188,22 +188,19 @@ struct SessionColumnView: View {
           }
         }
         .padding()
-        .padding(.bottom, 120)  // 为悬浮输入框预留空间（增加 padding 避免遮挡）
+        .padding(.bottom, 80)  // 为悬浮输入框预留空间（与手动滑动一致）
       }
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {
-          // 延时滚动，避免与手动滑动冲突
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.smooth(duration: 0.2)) {
-              proxy.scrollTo(lastId, anchor: .center)  // 使用 .center 确保一致性
-            }
+          withAnimation(.smooth(duration: 0.2)) {
+            proxy.scrollTo(lastId, anchor: .bottom)  // 与手动滑动一致
           }
         }
       }
       .onChange(of: scrollTrigger) { _, _ in
         // 滚动到底部（最新消息）
         if let lastId = session.messages.last?.id {
-          proxy.scrollTo(lastId, anchor: .center)  // 使用 .center 确保与手动滑动一致
+          proxy.scrollTo(lastId, anchor: .bottom)  // 与手动滑动一致
         }
       }
     }

@@ -33,12 +33,15 @@ struct SessionColumnView: View {
   private func scrollToBottom() {
     guard !isScrolling else { return }  // 防止重复点击
     isScrolling = true
-
-    // 增加计数触发滚动（避免 toggle 导致的闪烁）
-    scrollTrigger += 1
-
-    // 动画结束后解锁
+    
+    // 使用固定值触发滚动（确保每次位置一致）
+    withAnimation(.smooth(duration: 0.3)) {
+      scrollTrigger = 1
+    }
+    
+    // 动画结束后重置并解锁
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      scrollTrigger = 0  // 重置为 0
       isScrolling = false
     }
   }
@@ -139,12 +142,22 @@ struct SessionColumnView: View {
             .lineLimit(1)
             .padding(12)
         }
-        .glassEffect()
-        // 🆕 处理中状态：橘黄色背景
-        .background(
+        .buttonStyle(.glass)
+        // 🆕 处理中状态：使用 overlay 改变颜色，不破坏玻璃效果形状
+        .overlay(
           Group {
             if session.isProcessing {
               Color.orange.opacity(0.25)
+            } else {
+              Color.clear
+            }
+          }
+        )
+        .overlay(
+          Group {
+            if session.isProcessing {
+              RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.orange.opacity(0.5), lineWidth: 1)
             }
           }
         )
@@ -196,9 +209,9 @@ struct SessionColumnView: View {
           }
         }
       }
-      .onChange(of: scrollTrigger) { _, _ in
-        // 滚动到底部（最新消息）
-        if let lastId = session.messages.last?.id {
+      .onChange(of: scrollTrigger) { _, newValue in
+        // 只在 trigger=1 时滚动（确保每次位置一致）
+        if newValue == 1, let lastId = session.messages.last?.id {
           proxy.scrollTo(lastId)  // 默认行为，自动考虑 padding
         }
       }

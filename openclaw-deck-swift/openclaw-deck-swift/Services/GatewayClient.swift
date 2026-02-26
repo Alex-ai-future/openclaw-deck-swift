@@ -227,7 +227,7 @@ class GatewayClient {
     // Also clear device token
     let deviceTokenKey = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
     UserDefaults.standard.removeObject(forKey: deviceTokenKey)
-    logger.info("Device identity reset")
+    // Device identity reset
   }
 
   /// 清除错误状态
@@ -391,12 +391,10 @@ class GatewayClient {
       case .success(let message):
         switch message {
         case .data(let data):
-          logger.debug("Received data message: \(data.count) bytes")
           Task { @MainActor in
             self.handleData(data)
           }
         case .string(let string):
-          logger.debug("Received string message: \(String(string.prefix(100)))")
           Task { @MainActor in
             self.handleString(string)
           }
@@ -480,15 +478,13 @@ class GatewayClient {
     guard let event = json["event"] as? String else { return }
 
     // Log non-incremental events only
-    if !["agent.content", "tick", "health", "heartbeat"].contains(event) {
-      logger.info("Event: \(event)")
-    }
+    // Event logging disabled to reduce noise
 
     // Handle connect.challenge event for device auth
     if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
       let nonce = payload["nonce"] as? String
     {
-      logger.debug("Received connect challenge, nonce: \(nonce.prefix(8))...")
+      // Received connect challenge
 
       // Call the challenge callback to resume waiting code
       if let callback = challengeCallback {
@@ -559,7 +555,7 @@ class GatewayClient {
       return
     }
     connectSent = true
-    logger.info("Sending connect request, hasNonce: \(self.connectNonce != nil)")
+    // Sending connect request
 
     do {
       // Build device identity with nonce if available
@@ -567,7 +563,7 @@ class GatewayClient {
       do {
         device = try await buildSignedDeviceIdentity(nonce: self.connectNonce)
       } catch {
-        logger.debug("Device identity unavailable: \(error.localizedDescription)")
+        // Device identity unavailable
       }
 
       var params: [String: Any] = [
@@ -623,7 +619,7 @@ class GatewayClient {
 
     // Use v2 protocol if nonce is provided
     let version = nonce != nil ? "v2" : "v1"
-    logger.debug("Building device identity, version: \(version)")
+    // Building device identity
 
     let payload = buildDeviceAuthPayload(
       version: version,
@@ -637,7 +633,7 @@ class GatewayClient {
       nonce: nonce
     )
 
-    logger.debug("Device auth payload: \(payload.prefix(100))...")
+    // Device auth payload built
 
     // Sign the payload using Ed25519
     // privateKeySeed is stored as base64Url encoded 32-byte seed
@@ -672,7 +668,7 @@ class GatewayClient {
     if let nonce = nonce {
       result["nonce"] = nonce
     }
-    logger.debug("Device identity signature: \(result["signature"] as! String)")
+    // Device identity signature generated
     return result
   }
 
@@ -693,7 +689,7 @@ class GatewayClient {
             return identity
           }
           // Invalid seed size, recreate identity
-          logger.debug("Invalid seed size: \(seedData.count) bytes, recreating identity")
+          // Invalid seed size, recreating identity
         }
       }
 
@@ -741,7 +737,7 @@ class GatewayClient {
       }
 
       // Migration failed, create new identity
-      logger.debug("Failed to migrate old identity, creating new one")
+      // Failed to migrate old identity, creating new one
     }
 
     // Create new Ed25519 identity

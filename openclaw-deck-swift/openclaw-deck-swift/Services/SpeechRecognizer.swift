@@ -54,7 +54,7 @@ class SpeechRecognizer: ObservableObject {
     // 使用中文普通话识别器
     recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
     isAvailable = recognizer?.isAvailable ?? false
-    logger.info("Initialized with zh-CN locale, available: \(self.isAvailable)")
+    // Speech recognizer initialized
     checkPermissions()
   }
 
@@ -64,7 +64,8 @@ class SpeechRecognizer: ObservableObject {
       Task { @MainActor in
         switch authStatus {
         case .authorized:
-          logger.info("Speech recognition authorized")
+          // Speech recognition authorized
+          break
         case .denied, .restricted, .notDetermined:
           logger.error("Speech recognition not authorized: \(authStatus.rawValue)")
         @unknown default:
@@ -153,7 +154,7 @@ class SpeechRecognizer: ObservableObject {
   /// 开始听写
   @MainActor
   func startListening(onTextChange: @escaping (String) -> Void) async throws {
-    logger.debug("startListening called")
+    // startListening called
     
     // 重置状态，确保每次听写都是新的开始
     self.transcript = ""
@@ -172,9 +173,8 @@ class SpeechRecognizer: ObservableObject {
 
     do {
       // Check microphone permission first
-      logger.debug("Checking microphone permission...")
       try await checkMicrophonePermission()
-      logger.debug("Microphone permission granted")
+      // Permission granted
 
       let (audioEngine, request) = try Self.prepareEngine()
       self.audioEngine = audioEngine
@@ -189,16 +189,13 @@ class SpeechRecognizer: ObservableObject {
           }
 
           if error != nil || result?.isFinal == true {
-            logger.debug(
-              "Recognition finished: error=\(error?.localizedDescription ?? "nil"), isFinal=\(result?.isFinal ?? false)"
-            )
             self.stopListening()
           }
         }
       }
 
       self.isListening = true
-      logger.info("Listening started")
+      // Listening started
     } catch {
       logger.error("startListening error: \(error.localizedDescription)")
       self.isListening = false

@@ -16,7 +16,7 @@ class DeckViewModel {
   // Fix for Swift 6 @Observable + @MainActor crash in XCTest
   // See: https://github.com/swiftlang/swift/issues/87316
   nonisolated deinit {}
-  
+
   /// Gateway 客户端
   var gatewayClient: GatewayClient?
 
@@ -375,7 +375,7 @@ class DeckViewModel {
   /// - Parameter event: Gateway 事件
   func handleGatewayEvent(_ event: GatewayEvent) {
     // 调试：打印所有事件
-    logger.info("=== Gateway Event: \(event.event) ===")
+    // logger.info("=== Gateway Event: \(event.event) ===")
 
     switch event.event {
     case "agent":
@@ -452,7 +452,7 @@ class DeckViewModel {
       {
         // 🔔 打印日志，验证是否收到 lifecycle 事件
         logger.info("🔔 Lifecycle 事件：phase = \(phase), runId = \(runId)")
-        
+
         switch phase {
         case "start":
           logger.info("✅ 收到新消息开始 - 显示处理中状态")
@@ -463,17 +463,18 @@ class DeckViewModel {
           session.isProcessing = false
           session.status = .idle
           session.activeRunId = nil
-          
+
           // 🎯 发送通知：无论前台后台都发
           if let lastMessage = session.messages.last,
-             lastMessage.role == .assistant,
-             !lastMessage.text.isEmpty {
+            lastMessage.role == .assistant,
+            !lastMessage.text.isEmpty
+          {
             NotificationService.shared.sendNewMessageNotification(
               sessionName: session.sessionId,
               messageText: lastMessage.text
             )
           }
-          
+
           // 清除所有消息的 streaming 状态
           for i in session.messages.indices {
             if session.messages[i].streaming == true {

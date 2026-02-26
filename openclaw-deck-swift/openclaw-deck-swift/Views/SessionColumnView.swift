@@ -143,24 +143,9 @@ struct SessionColumnView: View {
             .padding(12)
         }
         .buttonStyle(.glass)
-        // 🆕 处理中状态：使用 overlay 改变颜色，不破坏玻璃效果形状
-        .overlay(
-          Group {
-            if session.isProcessing {
-              Color.orange.opacity(0.25)
-            } else {
-              Color.clear
-            }
-          }
-        )
-        .overlay(
-          Group {
-            if session.isProcessing {
-              RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.orange.opacity(0.5), lineWidth: 1)
-            }
-          }
-        )
+        // 🆕 处理中状态：使用 tint 改变玻璃按钮背景色
+        // 工作中：橘黄色，普通状态：蓝色
+        .tint(session.isProcessing ? Color.orange : Color.blue)
 
       }
 
@@ -246,6 +231,7 @@ struct SessionColumnView: View {
             .lineLimit(1...7)
             .textFieldStyle(.plain)
             .tint(.accentColor)
+            .accessibilityIdentifier("messageInput")
 
           // Send button - shown only when text is not empty
           if !inputText.isEmpty {
@@ -258,6 +244,7 @@ struct SessionColumnView: View {
             }
             .padding(.trailing, 8)
             .transition(.opacity.combined(with: .scale))
+            .accessibilityIdentifier("sendButton")
           }
 
           // Placeholder - shown when empty

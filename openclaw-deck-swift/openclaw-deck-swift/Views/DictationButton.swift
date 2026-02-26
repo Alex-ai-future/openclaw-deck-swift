@@ -14,7 +14,7 @@ import SwiftUI
 /// 语音输入按钮 - 点击后开始听写，不弹出键盘
 struct DictationButton: View {
   @Binding var text: String
-  @StateObject private var speechRecognizer = SpeechRecognizer()
+  @ObservedObject var speechRecognizer: SpeechRecognizer
   @State private var errorMessage: String?
   @State private var showingPermissionAlert = false
 
@@ -72,6 +72,7 @@ struct DictationButton: View {
 #Preview {
   struct DictationButtonPreview: View {
     @State private var text = ""
+    @StateObject private var speechRecognizer = SpeechRecognizer()
 
     var body: some View {
       VStack(spacing: 20) {
@@ -79,7 +80,7 @@ struct DictationButton: View {
           .font(.headline)
 
         HStack {
-          DictationButton(text: $text)
+          DictationButton(text: $text, speechRecognizer: speechRecognizer)
             .frame(width: 36, height: 36)
 
           TextField("Text", text: $text)

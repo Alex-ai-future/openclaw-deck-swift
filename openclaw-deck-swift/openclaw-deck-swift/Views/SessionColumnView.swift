@@ -24,6 +24,7 @@ struct SessionColumnView: View {
   @State private var inputText = ""
   @State private var showingDeleteAlert = false
   @State private var textEditorHeight: CGFloat = 36
+  @StateObject private var speechRecognizer = SpeechRecognizer()
 
   var body: some View {
     ZStack {
@@ -140,7 +141,7 @@ struct SessionColumnView: View {
 
       HStack(spacing: 8) {
         // Dictation button - stays outside the input field
-        DictationButton(text: $inputText)
+        DictationButton(text: $inputText, speechRecognizer: speechRecognizer)
           .frame(width: 36, height: 36)
 
         // Input field with overlay for send button
@@ -217,7 +218,13 @@ struct SessionColumnView: View {
     guard !inputText.isEmpty, !viewModel.isInitializing, viewModel.gatewayConnected else { return }
 
     let text = inputText
-    inputText = ""  // 立即清空输入框
+    
+    // 如果正在听写，先停止听写，防止回调继续更新输入框
+    if speechRecognizer.isListening {
+      speechRecognizer.stopListening()
+    }
+    
+    inputText = ""  // 清空输入框
 
     Task {
       await viewModel.sendMessage(sessionId: session.sessionId, text: text)

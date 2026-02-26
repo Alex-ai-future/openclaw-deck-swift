@@ -145,28 +145,17 @@ struct SessionColumnView: View {
 
         // Input field with overlay for send button
         ZStack(alignment: .trailing) {
-          // Auto-resizing text editor with ScrollView
-          ScrollView(.vertical, showsIndicators: false) {
-            TextEditor(text: $inputText)
-              .font(.body)
-              .lineSpacing(4)
-              .scrollContentBackground(.hidden)
-              .padding(.horizontal, 14)
-              .padding(.vertical, 4)
-              .padding(.trailing, 40)  // Make room for send button
-              .multilineTextAlignment(.leading)
-              .fixedSize(horizontal: false, vertical: true)  // Auto-resize vertically
-              .background(Color.clear)
-          }
-          .frame(maxHeight: 150)  // Maximum height limit
-          .background(
-            RoundedRectangle(cornerRadius: 20)
-              .fill(.regularMaterial)
-              .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                  .stroke(Color.white.opacity(0.2), lineWidth: 1)
-              )
-          )
+          // System TextEditor
+          TextEditor(text: $inputText)
+            .font(.body)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .padding(.trailing, 40)
+            .multilineTextAlignment(.leading)
+            .lineLimit(1...7)  // 最小 1 行，最大 7 行
+            .frame(minHeight: 36, maxHeight: 150)
+            .tint(.accentColor)
 
           // Send button - shown only when text is not empty
           if !inputText.isEmpty {
@@ -181,17 +170,25 @@ struct SessionColumnView: View {
             .transition(.opacity.combined(with: .scale))
           }
 
-          // Placeholder - left aligned
+          // Placeholder - shown when empty
           if inputText.isEmpty {
             Text("Message")
               .font(.body)
               .foregroundStyle(.secondary)
               .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(.horizontal, 14)  // Match TextEditor padding
+              .padding(.horizontal, 14)
               .allowsHitTesting(false)
           }
         }
-        .frame(minHeight: 36)  // Minimum height
+        .frame(minHeight: 36, maxHeight: 150)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        )
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 8)
@@ -696,4 +693,219 @@ private func createStreamingSession() -> SessionState {
   session.activeRunId = "run-streaming"
 
   return session
+}
+
+// MARK: - Preview Tests for TextEditor Height
+
+#Preview("Empty - Single Line") {
+  struct TestView: View {
+    @State private var text = ""
+    
+    var body: some View {
+      VStack {
+        Text("Empty input box - should be 36pt (1 line)")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        
+        ZStack(alignment: .trailing) {
+          TextEditor(text: $text)
+            .font(.body)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .padding(.trailing, 40)
+            .multilineTextAlignment(.leading)
+            .lineLimit(1...7)
+            .frame(minHeight: 36, maxHeight: 150)
+            .tint(.accentColor)
+          
+          if !text.isEmpty {
+            Button {
+              text = ""
+            } label: {
+              Image(systemName: "arrow.up.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            }
+            .padding(.trailing, 8)
+          }
+          
+          if text.isEmpty {
+            Text("Message")
+              .font(.body)
+              .foregroundStyle(.secondary)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(.horizontal, 14)
+              .allowsHitTesting(false)
+          }
+        }
+        .frame(minHeight: 36, maxHeight: 150)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        )
+        .frame(width: 300)
+      }
+      .padding()
+    }
+  }
+  
+  return TestView()
+}
+
+#Preview("Short Text - 1 Line") {
+  struct TestView: View {
+    @State private var text = "Hello"
+    
+    var body: some View {
+      VStack {
+        Text("Short text - should stay 1 line")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        
+        ZStack(alignment: .trailing) {
+          TextEditor(text: $text)
+            .font(.body)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .padding(.trailing, 40)
+            .multilineTextAlignment(.leading)
+            .lineLimit(1...7)
+            .frame(minHeight: 36, maxHeight: 150)
+            .tint(.accentColor)
+          
+          if !text.isEmpty {
+            Button {
+              text = ""
+            } label: {
+              Image(systemName: "arrow.up.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            }
+            .padding(.trailing, 8)
+          }
+        }
+        .frame(minHeight: 36, maxHeight: 150)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        )
+        .frame(width: 300)
+      }
+      .padding()
+    }
+  }
+  
+  return TestView()
+}
+
+#Preview("Multi-Line - Auto Growth") {
+  struct TestView: View {
+    @State private var text = "Line 1\nLine 2\nLine 3"
+    
+    var body: some View {
+      VStack {
+        Text("Multi-line text - type to test auto growth")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        
+        ZStack(alignment: .trailing) {
+          TextEditor(text: $text)
+            .font(.body)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .padding(.trailing, 40)
+            .multilineTextAlignment(.leading)
+            .lineLimit(1...7)
+            .frame(minHeight: 36, maxHeight: 150)
+            .tint(.accentColor)
+          
+          if !text.isEmpty {
+            Button {
+              text = ""
+            } label: {
+              Image(systemName: "arrow.up.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            }
+            .padding(.trailing, 8)
+          }
+        }
+        .frame(minHeight: 36, maxHeight: 150)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        )
+        .frame(width: 300)
+      }
+      .padding()
+    }
+  }
+  
+  return TestView()
+}
+
+#Preview("Long Text - Max Height") {
+  struct TestView: View {
+    @State private var text = "This is a very long text that should span multiple lines and eventually reach the maximum height limit of 150 points. After that, the TextEditor should scroll internally instead of growing further. This tests the lineLimit(1...7) modifier. Keep typing to see it stop growing!"
+    
+    var body: some View {
+      VStack {
+        Text("Long text - should max at 150pt (7 lines)")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        
+        ZStack(alignment: .trailing) {
+          TextEditor(text: $text)
+            .font(.body)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .padding(.trailing, 40)
+            .multilineTextAlignment(.leading)
+            .lineLimit(1...7)
+            .frame(minHeight: 36, maxHeight: 150)
+            .tint(.accentColor)
+          
+          if !text.isEmpty {
+            Button {
+              text = ""
+            } label: {
+              Image(systemName: "arrow.up.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            }
+            .padding(.trailing, 8)
+          }
+        }
+        .frame(minHeight: 36, maxHeight: 150)
+        .background(
+          RoundedRectangle(cornerRadius: 20)
+            .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        )
+        .frame(width: 300)
+      }
+      .padding()
+    }
+  }
+  
+  return TestView()
 }

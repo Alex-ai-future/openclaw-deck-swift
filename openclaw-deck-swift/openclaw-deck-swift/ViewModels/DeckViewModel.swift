@@ -195,7 +195,6 @@ class DeckViewModel {
 
     // 4. 如果删除后没有 session 了，创建 welcome session
     if sessions.isEmpty {
-      logger.info("No sessions left, creating welcome session...")
       createWelcomeSession()
     }
 
@@ -217,16 +216,10 @@ class DeckViewModel {
     let configs = storage.loadSessions()
     let order = storage.loadSessionOrder()
 
-    logger.info("Loading sessions from storage: \(configs.count) sessions")
-
     // 如果没有 session，创建 welcome session
     if configs.isEmpty {
       createWelcomeSession()
       return
-    }
-
-    for config in configs {
-      logger.debug("  - Session: \(config.id) (\(config.sessionKey))")
     }
 
     // 使用小写 key 确保与 Gateway 一致
@@ -275,9 +268,7 @@ class DeckViewModel {
 
   /// 加载所有 Session 的历史消息
   func loadAllSessionHistory() async {
-    logger.info("Loading history for \(self.sessionOrder.count) sessions")
     for session in self.sessionOrder.compactMap({ self.sessions[$0] }) {
-      logger.debug("  Loading history for: \(session.sessionId)")
       await loadSessionHistory(sessionKey: session.sessionKey)
     }
   }
@@ -289,8 +280,6 @@ class DeckViewModel {
       return
     }
 
-    logger.debug("Loading history for session \(sessionKey)...")
-
     // 设置加载状态（大小写不敏感匹配）
     if let session = sessions.values.first(where: {
       $0.sessionKey.lowercased() == sessionKey.lowercased()
@@ -300,7 +289,6 @@ class DeckViewModel {
 
     do {
       let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
-      logger.info("Loaded \(messages.count) messages for \(sessionKey)")
 
       // 更新 Session 的消息（大小写不敏感匹配）
       if let session = sessions.values.first(where: {
@@ -351,7 +339,8 @@ class DeckViewModel {
     session.messages.append(userMsg)
     session.status = .thinking
 
-    // 2. 调用 runAgent（不阻塞 UI）
+    // 2. 调用 runAgent（不阻塞 UI，不创建占位消息）
+    // Gateway 返回内容时会自动创建 assistant 消息
     Task {
       do {
         let (runId, status) = try await client.runAgent(
@@ -360,21 +349,11 @@ class DeckViewModel {
           sessionKey: session.sessionKey
         )
 
-        logger.info("Agent run started: \(runId), status: \(status)")
+        // Agent run started
 
-        // 3. 创建 assistant 占位消息
+        // 设置 activeRunId 用于关联响应
         await MainActor.run {
-          let assistantMsg = ChatMessage(
-            id: UUID().uuidString,
-            role: .assistant,
-            text: "",
-            timestamp: Date(),
-            streaming: true,
-            runId: runId
-          )
-          session.messages.append(assistantMsg)
           session.activeRunId = runId
-          session.status = .streaming
         }
       } catch {
         logger.error("Failed to send message: \(error.localizedDescription)")
@@ -401,7 +380,6 @@ class DeckViewModel {
       // 忽略 thinking、tool_use、status、parameter 事件，不显示这些消息
       break
     case "agent.done":
-      logger.info("Agent done")
       handleAgentDone(event)
     case "agent.error":
       logger.error("Agent error")
@@ -410,7 +388,8 @@ class DeckViewModel {
     case "tick", "health", "heartbeat":
       break
     default:
-      logger.debug("Unknown event: \(event.event)")
+      // Unknown event ignored
+      break
     }
   }
 

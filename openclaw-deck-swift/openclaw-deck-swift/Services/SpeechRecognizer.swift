@@ -47,9 +47,10 @@ class SpeechRecognizer: ObservableObject {
   private var recognizer: SFSpeechRecognizer?
 
   init() {
-    recognizer = SFSpeechRecognizer()
+    // 使用中文普通话识别器
+    recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
     isAvailable = recognizer?.isAvailable ?? false
-    print("[SpeechRecognizer] Initialized, isAvailable: \(isAvailable)")
+    print("[SpeechRecognizer] Initialized with zh-CN locale, isAvailable: \(isAvailable)")
     checkPermissions()
   }
 

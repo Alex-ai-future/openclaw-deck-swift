@@ -223,14 +223,16 @@ struct WelcomeView: View {
               .foregroundColor(.secondary)
           }
 
-          // Gateway Config Input (公用组件)
-          GatewayConfigInput(
-            gatewayUrl: $gatewayUrl,
-            token: $token,
-            onConnect: onConnect,
-            isConnected: false
-          )
-          .padding(.horizontal, 24)
+          // Settings hint
+          VStack(spacing: 12) {
+            Image(systemName: "gearshape")
+              .font(.system(size: 40))
+              .foregroundColor(.secondary)
+
+            Text("Tap Settings to Configure")
+              .font(.body)
+              .foregroundColor(.secondary)
+          }
 
           // Error message
           if let error = connectionError {

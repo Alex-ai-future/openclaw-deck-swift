@@ -64,6 +64,9 @@ struct SettingsView: View {
                 Text("Apply & Reconnect")
               }
             }
+            Text("Save changes and reconnect to Gateway with new settings")
+              .font(.caption)
+              .foregroundColor(.secondary)
           }
 
           // Reset Device Identity
@@ -71,6 +74,7 @@ struct SettingsView: View {
             showingResetAlert = true
           } label: {
             HStack {
+              Image(systemName: "trash.fill")
               Text("Reset Device Identity")
             }
           }
@@ -84,15 +88,24 @@ struct SettingsView: View {
               "This will clear the stored device identity and token, then reconnect using the token you entered."
             )
           }
+          Text("Clear stored device identity and token, then reconnect")
+            .font(.caption)
+            .foregroundColor(.secondary)
+
+//          Divider()
+//            .padding(.vertical, 8)
 
           Button(role: .destructive) {
             onDisconnect()
           } label: {
             HStack {
-              Image(systemName: "plug.disconnected")
+              Image(systemName: "xmark.square.fill")
               Text("Disconnect")
             }
           }
+          Text("Disconnect from Gateway and return to welcome screen")
+            .font(.caption)
+            .foregroundColor(.secondary)
         } footer: {
           if hasChanges {
             Text("Apply changes and reconnect")

@@ -1,7 +1,16 @@
 # AGENTS.md - 项目工作规则
 
 **项目：** OpenClaw Deck Swift  
-**位置：** `~/Projects/openclaw-deck-swift/`
+**位置：** `~/Projects/openclaw-deck-swift/`  
+**使用说明书：** [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
+
+---
+
+## 📚 项目文档
+
+- **使用说明书** - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - 完整功能说明和故障排除
+- **项目介绍** - [docs/introduction.md](docs/introduction.md) - 技术架构和实现细节
+- **本文件** - AGENTS.md - 工作规则和流程
 
 ---
 

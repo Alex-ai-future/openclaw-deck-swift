@@ -154,6 +154,10 @@ class SpeechRecognizer: ObservableObject {
   @MainActor
   func startListening(onTextChange: @escaping (String) -> Void) async throws {
     logger.debug("startListening called")
+    
+    // 重置状态，确保每次听写都是新的开始
+    self.transcript = ""
+    self.isStopping = false
 
     // Check if recognizer is available first
     guard let recognizer = recognizer else {
@@ -178,7 +182,8 @@ class SpeechRecognizer: ObservableObject {
 
       task = recognizer.recognitionTask(with: request) { result, error in
         Task { @MainActor in
-          if let result = result {
+          if let result = result, !self.isStopping {
+            // 只在非停止状态下更新 transcript，防止 cancel 后回调污染输入框
             self.transcript = result.bestTranscription.formattedString
             onTextChange(self.transcript)
           }
@@ -204,6 +209,7 @@ class SpeechRecognizer: ObservableObject {
   /// 停止听写
   @MainActor
   func stopListening() {
+    self.isStopping = true  // 先设置标志，防止 cancel 后的回调污染输入框
     self.isListening = false
 
     task?.cancel()

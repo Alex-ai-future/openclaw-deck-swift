@@ -20,29 +20,22 @@ struct DictationButton: View {
 
   var body: some View {
     Button {
-      print(
-        "[DictationButton] Tapped, isListening: \(speechRecognizer.isListening), isAvailable: \(speechRecognizer.isAvailable)"
-      )
       if speechRecognizer.isListening {
         speechRecognizer.stopListening()
       } else {
         // Check availability first
         guard speechRecognizer.isAvailable else {
           errorMessage = "Speech recognizer is not available on this device"
-          print("[DictationButton] Speech recognizer not available")
           return
         }
         Task {
           do {
-            print("[DictationButton] Starting listening...")
             try await speechRecognizer.startListening { newText in
               text = newText
             }
             errorMessage = nil
-            print("[DictationButton] Listening succeeded")
           } catch let error as SpeechRecognizer.RecognizerError {
             errorMessage = error.message
-            print("[DictationButton] RecognizerError: \(error.message)")
             #if os(iOS) || os(visionOS)
               if error == .notPermittedToRecord {
                 showingPermissionAlert = true
@@ -50,7 +43,6 @@ struct DictationButton: View {
             #endif
           } catch {
             errorMessage = error.localizedDescription
-            print("[DictationButton] Error: \(error.localizedDescription)")
           }
         }
       }

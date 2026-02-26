@@ -5,6 +5,9 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewModel")
 
 /// Deck ViewModel - 管理多个 Session
 @MainActor
@@ -70,7 +73,7 @@ class DeckViewModel {
     }
 
     guard let gatewayUrl = URL(string: url) else {
-      print("[DeckViewModel] Invalid gateway URL: \(url)")
+      logger.error("Invalid gateway URL: \(url)")
       connectionError = "Invalid gateway URL: \(url)"
       isInitializing = false
       return
@@ -89,10 +92,8 @@ class DeckViewModel {
     // 设置连接状态回调
     client.onConnection = { [weak self] connected in
       Task { @MainActor in
-        print("[DeckViewModel] Gateway connection changed: \(connected)")
         self?.gatewayConnected = connected
         if connected {
-          print("[DeckViewModel] Loading history for all sessions...")
           await self?.loadAllSessionHistory()
         }
       }
@@ -194,7 +195,7 @@ class DeckViewModel {
 
     // 4. 如果删除后没有 session 了，创建 welcome session
     if sessions.isEmpty {
-      print("[DeckViewModel] No sessions left, creating welcome session...")
+      logger.info("No sessions left, creating welcome session...")
       createWelcomeSession()
     }
 
@@ -216,17 +217,16 @@ class DeckViewModel {
     let configs = storage.loadSessions()
     let order = storage.loadSessionOrder()
 
-    print("[DeckViewModel] Loading sessions from storage: \(configs.count) sessions")
+    logger.info("Loading sessions from storage: \(configs.count) sessions")
 
     // 如果没有 session，创建 welcome session
     if configs.isEmpty {
-      print("[DeckViewModel] No sessions found, creating welcome session...")
       createWelcomeSession()
       return
     }
 
     for config in configs {
-      print("[DeckViewModel]   - Session: \(config.id) (\(config.sessionKey))")
+      logger.debug("  - Session: \(config.id) (\(config.sessionKey))")
     }
 
     // 使用小写 key 确保与 Gateway 一致
@@ -245,12 +245,8 @@ class DeckViewModel {
       sessionOrder = order.map { $0.lowercased() }
     }
 
-    print("[DeckViewModel] Session order: \(sessionOrder)")
-    print("[DeckViewModel] Gateway connected: \(gatewayConnected)")
-
     // 如果 Gateway 已连接，立即加载历史消息
     if gatewayConnected {
-      print("[DeckViewModel] Gateway already connected, loading history...")
       Task {
         await loadAllSessionHistory()
       }
@@ -279,9 +275,9 @@ class DeckViewModel {
 
   /// 加载所有 Session 的历史消息
   func loadAllSessionHistory() async {
-    print("[DeckViewModel] Loading history for \(sessionOrder.count) sessions")
-    for session in sessionOrder.compactMap({ sessions[$0] }) {
-      print("[DeckViewModel]   Loading history for: \(session.sessionId)")
+    logger.info("Loading history for \(self.sessionOrder.count) sessions")
+    for session in self.sessionOrder.compactMap({ self.sessions[$0] }) {
+      logger.debug("  Loading history for: \(session.sessionId)")
       await loadSessionHistory(sessionKey: session.sessionKey)
     }
   }
@@ -290,24 +286,21 @@ class DeckViewModel {
   /// - Parameter sessionKey: Session Key
   func loadSessionHistory(sessionKey: String) async {
     guard let client = gatewayClient, client.connected else {
-      print("[DeckViewModel] Gateway not connected, skipping history load")
       return
     }
 
-    print("[DeckViewModel] Loading history for session \(sessionKey)...")
+    logger.debug("Loading history for session \(sessionKey)...")
 
     // 设置加载状态（大小写不敏感匹配）
     if let session = sessions.values.first(where: {
       $0.sessionKey.lowercased() == sessionKey.lowercased()
     }) {
       session.isHistoryLoading = true
-      print("[DeckViewModel]   isHistoryLoading = true")
     }
 
     do {
-      print("[DeckViewModel] Calling getSessionHistory...")
       let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
-      print("[DeckViewModel] Loaded \(messages.count) messages for \(sessionKey)")
+      logger.info("Loaded \(messages.count) messages for \(sessionKey)")
 
       // 更新 Session 的消息（大小写不敏感匹配）
       if let session = sessions.values.first(where: {
@@ -316,10 +309,9 @@ class DeckViewModel {
         session.messages = messages
         session.historyLoaded = true
         session.isHistoryLoading = false
-        print("[DeckViewModel]   isHistoryLoading = false, historyLoaded = true")
       }
     } catch {
-      print("[DeckViewModel] Failed to load history for \(sessionKey): \(error)")
+      logger.error("Failed to load history for \(sessionKey): \(error.localizedDescription)")
       if let session = sessions.values.first(where: {
         $0.sessionKey.lowercased() == sessionKey.lowercased()
       }) {
@@ -336,7 +328,6 @@ class DeckViewModel {
   ///   - text: 消息文本
   func sendMessage(sessionId: String, text: String) async {
     guard let client = gatewayClient, client.connected else {
-      print("[DeckViewModel] Gateway not connected")
       return
     }
 
@@ -346,7 +337,7 @@ class DeckViewModel {
         $0.sessionId.lowercased() == sessionId.lowercased()
       })
     else {
-      print("[DeckViewModel] Session not found: \(sessionId)")
+      logger.error("Session not found: \(sessionId)")
       return
     }
 
@@ -369,7 +360,7 @@ class DeckViewModel {
           sessionKey: session.sessionKey
         )
 
-        print("[DeckViewModel] Agent run started: \(runId), status: \(status)")
+        logger.info("Agent run started: \(runId), status: \(status)")
 
         // 3. 创建 assistant 占位消息
         await MainActor.run {
@@ -386,7 +377,7 @@ class DeckViewModel {
           session.status = .streaming
         }
       } catch {
-        print("[DeckViewModel] Failed to send message: \(error)")
+        logger.error("Failed to send message: \(error.localizedDescription)")
         await MainActor.run {
           session.status = .error("Failed to send message: \(error.localizedDescription)")
         }
@@ -404,20 +395,22 @@ class DeckViewModel {
       // 新的 agent 事件格式：{ runId, stream, data, sessionKey }
       handleAgentEvent(event)
     case "agent.content":
-      // 兼容旧的 agent.content 事件格式
+      // 兼容旧的 agent.content 事件格式（增量事件，不记录日志）
       handleAgentContent(event)
     case "agent.thinking", "agent.tool_use", "agent.status", "agent.parameter":
       // 忽略 thinking、tool_use、status、parameter 事件，不显示这些消息
       break
     case "agent.done":
+      logger.info("Agent done")
       handleAgentDone(event)
     case "agent.error":
+      logger.error("Agent error")
       handleAgentError(event)
     // 忽略保活和健康检查事件
     case "tick", "health", "heartbeat":
       break
     default:
-      print("[DeckViewModel] Unknown event type: \(event.event)")
+      logger.debug("Unknown event: \(event.event)")
     }
   }
 
@@ -428,7 +421,7 @@ class DeckViewModel {
       let stream = payload["stream"] as? String,
       let sessionKey = payload["sessionKey"] as? String
     else {
-      print("[DeckViewModel] Invalid agent event payload")
+      logger.error("Invalid agent event payload")
       return
     }
 
@@ -438,7 +431,7 @@ class DeckViewModel {
         $0.sessionKey.lowercased() == sessionKey.lowercased()
       })
     else {
-      print("[DeckViewModel] Session not found for sessionKey: \(sessionKey)")
+      logger.error("Session not found for sessionKey: \(sessionKey)")
       return
     }
 
@@ -578,7 +571,6 @@ class DeckViewModel {
 
     // 找到对应的 Session
     guard let session = findSessionForEvent(event) else {
-      print("[DeckViewModel] No session found for agent.content event")
       return
     }
 

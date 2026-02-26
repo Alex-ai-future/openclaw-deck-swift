@@ -6,6 +6,9 @@
 
 import CryptoKit
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "Gateway")
 
 // MARK: - Types
 
@@ -130,7 +133,7 @@ class GatewayClient {
     do {
       try await waitForChallenge()
     } catch {
-      print("[GatewayClient] Failed to receive connect challenge: \(error)")
+      logger.error("Failed to receive connect challenge: \(error.localizedDescription)")
       connectionError = error.localizedDescription
       isConnecting = false
       disconnect()
@@ -224,7 +227,7 @@ class GatewayClient {
     // Also clear device token
     let deviceTokenKey = "\(deviceTokenStorageKeyPrefix)\(url.absoluteString)"
     UserDefaults.standard.removeObject(forKey: deviceTokenKey)
-    print("[GatewayClient] Device identity reset")
+    logger.info("Device identity reset")
   }
 
   /// 清除错误状态
@@ -388,12 +391,12 @@ class GatewayClient {
       case .success(let message):
         switch message {
         case .data(let data):
-          print("[GatewayClient] Received data message: \(data.count) bytes")
+          logger.debug("Received data message: \(data.count) bytes")
           Task { @MainActor in
             self.handleData(data)
           }
         case .string(let string):
-          print("[GatewayClient] Received string message: \(string.prefix(1000))...")
+          logger.debug("Received string message: \(String(string.prefix(100)))")
           Task { @MainActor in
             self.handleString(string)
           }
@@ -407,7 +410,7 @@ class GatewayClient {
         }
 
       case .failure(let error):
-        print("[GatewayClient] Receive error: \(error)")
+        logger.error("Receive error: \(error.localizedDescription)")
         Task { @MainActor in
           self.handleDisconnect()
         }
@@ -476,13 +479,16 @@ class GatewayClient {
   private func handleEvent(_ json: [String: Any]) {
     guard let event = json["event"] as? String else { return }
 
-    print("[GatewayClient] Received event: \(event)")
+    // Log non-incremental events only
+    if !["agent.content", "tick", "health", "heartbeat"].contains(event) {
+      logger.info("Event: \(event)")
+    }
 
     // Handle connect.challenge event for device auth
     if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
       let nonce = payload["nonce"] as? String
     {
-      print("[GatewayClient] Received connect challenge, nonce: \(nonce.prefix(8))...")
+      logger.debug("Received connect challenge, nonce: \(nonce.prefix(8))...")
 
       // Call the challenge callback to resume waiting code
       if let callback = challengeCallback {
@@ -498,7 +504,6 @@ class GatewayClient {
       // Send connect request with nonce after a short delay
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
         Task { @MainActor in
-          print("[GatewayClient] Sending connect with nonce...")
           await self?.sendConnect()
         }
       }
@@ -527,11 +532,11 @@ class GatewayClient {
 
       webSocket.send(.string(string)) { error in
         if let error = error {
-          print("[GatewayClient] Send error: \(error)")
+          logger.error("Send error: \(error.localizedDescription)")
         }
       }
     } catch {
-      print("[GatewayClient] Encode error: \(error)")
+      logger.error("Encode error: \(error.localizedDescription)")
     }
   }
 
@@ -551,24 +556,18 @@ class GatewayClient {
   /// 发送 connect 握手
   private func sendConnect() async {
     if connectSent {
-      print("[GatewayClient] sendConnect skipped - already sent")
       return
     }
     connectSent = true
-    print("[GatewayClient] Sending connect request, hasNonce: \(connectNonce != nil)")
+    logger.info("Sending connect request, hasNonce: \(self.connectNonce != nil)")
 
     do {
       // Build device identity with nonce if available
       var device: [String: Any]? = nil
       do {
-        device = try await buildSignedDeviceIdentity(nonce: connectNonce)
-        if let device = device {
-          print(
-            "[GatewayClient] Device identity built successfully, has nonce: \(device["nonce"] != nil)"
-          )
-        }
+        device = try await buildSignedDeviceIdentity(nonce: self.connectNonce)
       } catch {
-        print("[GatewayClient] Device identity unavailable: \(error)")
+        logger.debug("Device identity unavailable: \(error.localizedDescription)")
       }
 
       var params: [String: Any] = [
@@ -587,12 +586,6 @@ class GatewayClient {
       // Add device identity if available
       if let device = device {
         params["device"] = device
-        // Debug: print full device object
-        if let deviceData = try? JSONSerialization.data(withJSONObject: device),
-          let deviceJSON = String(data: deviceData, encoding: .utf8)
-        {
-          print("[GatewayClient] Sending device JSON: \(deviceJSON)")
-        }
       }
 
       // Add auth token if available
@@ -630,8 +623,7 @@ class GatewayClient {
 
     // Use v2 protocol if nonce is provided
     let version = nonce != nil ? "v2" : "v1"
-    print(
-      "[GatewayClient] Building device identity, version: \(version), hasNonce: \(nonce != nil)")
+    logger.debug("Building device identity, version: \(version)")
 
     let payload = buildDeviceAuthPayload(
       version: version,
@@ -645,7 +637,7 @@ class GatewayClient {
       nonce: nonce
     )
 
-    print("[GatewayClient] Full payload string: \(payload)")
+    logger.debug("Device auth payload: \(payload.prefix(100))...")
 
     // Sign the payload using Ed25519
     // privateKeySeed is stored as base64Url encoded 32-byte seed
@@ -679,10 +671,8 @@ class GatewayClient {
     ]
     if let nonce = nonce {
       result["nonce"] = nonce
-      print("[GatewayClient] Adding nonce to device identity: \(nonce)")
     }
-    print("[GatewayClient] Device identity payload: \(payload.prefix(50))...")
-    print("[GatewayClient] Device identity signature: \(result["signature"] as! String)")
+    logger.debug("Device identity signature: \(result["signature"] as! String)")
     return result
   }
 
@@ -703,7 +693,7 @@ class GatewayClient {
             return identity
           }
           // Invalid seed size, recreate identity
-          print("[GatewayClient] Invalid seed size: \(seedData.count) bytes, recreating identity")
+          logger.debug("Invalid seed size: \(seedData.count) bytes, recreating identity")
         }
       }
 
@@ -751,7 +741,7 @@ class GatewayClient {
       }
 
       // Migration failed, create new identity
-      print("[GatewayClient] Failed to migrate old identity, creating new one")
+      logger.debug("Failed to migrate old identity, creating new one")
     }
 
     // Create new Ed25519 identity
@@ -776,11 +766,6 @@ class GatewayClient {
       "publicKey": base64UrlEncode(publicKeyData),
       "privateKeySeedBase64": base64UrlEncode(privateKeySeed),
     ]
-
-    // Debug: verify encoded sizes
-    if let seedData = base64UrlDecode(identity["privateKeySeedBase64"] as! String) {
-      print("[GatewayClient] Encoded seed size: \(seedData.count) bytes")
-    }
 
     // Save to UserDefaults
     if let data = try? JSONSerialization.data(withJSONObject: identity) {

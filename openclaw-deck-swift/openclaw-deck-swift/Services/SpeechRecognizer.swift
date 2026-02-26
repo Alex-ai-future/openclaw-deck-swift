@@ -8,12 +8,15 @@ import AVFoundation
 import Combine
 import Foundation
 import Speech
+import os
 
 #if os(iOS)
   import UIKit
 #elseif os(macOS)
   import AppKit
 #endif
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "Speech")
 
 /// 语音识别服务
 class SpeechRecognizer: ObservableObject {
@@ -40,6 +43,7 @@ class SpeechRecognizer: ObservableObject {
   @Published var isListening = false
   @Published var transcript = ""
   @Published var isAvailable: Bool = false
+  @Published var isStopping: Bool = false
 
   private var audioEngine: AVAudioEngine?
   private var request: SFSpeechAudioBufferRecognitionRequest?
@@ -50,7 +54,7 @@ class SpeechRecognizer: ObservableObject {
     // 使用中文普通话识别器
     recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
     isAvailable = recognizer?.isAvailable ?? false
-    print("[SpeechRecognizer] Initialized with zh-CN locale, isAvailable: \(isAvailable)")
+    logger.info("Initialized with zh-CN locale, available: \(self.isAvailable)")
     checkPermissions()
   }
 
@@ -60,11 +64,11 @@ class SpeechRecognizer: ObservableObject {
       Task { @MainActor in
         switch authStatus {
         case .authorized:
-          print("Speech recognition authorized")
+          logger.info("Speech recognition authorized")
         case .denied, .restricted, .notDetermined:
-          print("Speech recognition not authorized: \(authStatus)")
+          logger.error("Speech recognition not authorized: \(authStatus.rawValue)")
         @unknown default:
-          print("Unknown authorization status")
+          break
         }
       }
     }
@@ -83,7 +87,7 @@ class SpeechRecognizer: ObservableObject {
           }
         }
         if !(granted ?? false) {
-          print("[SpeechRecognizer] Microphone permission denied (iOS 17+)")
+          logger.error("Microphone permission denied (iOS 17+)")
           throw RecognizerError.notPermittedToRecord
         }
       } else {
@@ -94,7 +98,7 @@ class SpeechRecognizer: ObservableObject {
         case .granted:
           return
         case .denied:
-          print("[SpeechRecognizer] Microphone permission denied")
+          logger.error("Microphone permission denied")
           throw RecognizerError.notPermittedToRecord
         case .undetermined:
           let granted = await withTimeout(timeout: 10) {
@@ -105,7 +109,7 @@ class SpeechRecognizer: ObservableObject {
             }
           }
           if !(granted ?? false) {
-            print("[SpeechRecognizer] Microphone permission denied (request)")
+            logger.error("Microphone permission denied (request)")
             throw RecognizerError.notPermittedToRecord
           }
         @unknown default:
@@ -122,7 +126,7 @@ class SpeechRecognizer: ObservableObject {
         }
       }
       if !(granted ?? false) {
-        print("[SpeechRecognizer] Microphone permission denied (macOS)")
+        logger.error("Microphone permission denied (macOS)")
         throw RecognizerError.notPermittedToRecord
       }
     #endif
@@ -149,24 +153,24 @@ class SpeechRecognizer: ObservableObject {
   /// 开始听写
   @MainActor
   func startListening(onTextChange: @escaping (String) -> Void) async throws {
-    print("[SpeechRecognizer] startListening called")
+    logger.debug("startListening called")
 
     // Check if recognizer is available first
     guard let recognizer = recognizer else {
-      print("[SpeechRecognizer] recognizer is nil")
+      logger.error("Recognizer is nil")
       throw RecognizerError.nilRecognizer
     }
 
     guard recognizer.isAvailable else {
-      print("[SpeechRecognizer] recognizer is not available")
+      logger.error("Recognizer is not available")
       throw RecognizerError.recognizerIsUnavailable
     }
 
     do {
       // Check microphone permission first
-      print("[SpeechRecognizer] Checking microphone permission...")
+      logger.debug("Checking microphone permission...")
       try await checkMicrophonePermission()
-      print("[SpeechRecognizer] Microphone permission granted")
+      logger.debug("Microphone permission granted")
 
       let (audioEngine, request) = try Self.prepareEngine()
       self.audioEngine = audioEngine
@@ -180,8 +184,8 @@ class SpeechRecognizer: ObservableObject {
           }
 
           if error != nil || result?.isFinal == true {
-            print(
-              "[SpeechRecognizer] Recognition finished: error=\(error?.localizedDescription ?? "nil"), isFinal=\(result?.isFinal ?? false)"
+            logger.debug(
+              "Recognition finished: error=\(error?.localizedDescription ?? "nil"), isFinal=\(result?.isFinal ?? false)"
             )
             self.stopListening()
           }
@@ -189,9 +193,9 @@ class SpeechRecognizer: ObservableObject {
       }
 
       self.isListening = true
-      print("[SpeechRecognizer] Listening started")
+      logger.info("Listening started")
     } catch {
-      print("[SpeechRecognizer] startListening error: \(error)")
+      logger.error("startListening error: \(error.localizedDescription)")
       self.isListening = false
       throw error
     }

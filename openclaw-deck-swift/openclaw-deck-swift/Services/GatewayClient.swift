@@ -153,9 +153,9 @@ class GatewayClient {
 
     try await withCheckedThrowingContinuation {
       (continuation: CheckedContinuation<String, Error>) in
-      
+
       var resumed = false
-      
+
       // Set callback to resume continuation when challenge is received
       self.challengeCallback = { [weak self] nonce in
         guard let self = self else { return }

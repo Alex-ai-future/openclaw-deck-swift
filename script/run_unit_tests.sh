@@ -23,12 +23,14 @@ rm -rf "$BUILD_DIR"/*
 # Run unit tests
 # Using macOS destination for faster execution (no simulator boot needed)
 # Code signing disabled to avoid errSecInternalComponent errors
+# Parallel testing disabled for @MainActor types
 OUTPUT=$(xcodebuild test \
     -project "$PROJECT_PATH" \
     -scheme "$SCHEME_NAME" \
     -destination 'platform=macOS,name=My Mac' \
     -only-testing:"${SCHEME_NAME}Tests" \
     -resultBundlePath "$BUILD_DIR/TestResults.xcresult" \
+    -parallel-testing-enabled NO \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=NO \
@@ -36,7 +38,17 @@ OUTPUT=$(xcodebuild test \
 
 # Check if tests passed by looking for the test result summary
 # Note: Disabled tests are counted as "issues" but don't indicate failure
-if echo "$OUTPUT" | grep -q "Test run with.*passed\|Suite.*passed"; then
+# Check for "Test run ... failed" first, then check for overall pass
+if echo "$OUTPUT" | grep -q "Test run with.*failed"; then
+    echo "$OUTPUT" | grep -E "(✔|✘|◇|Suite|Test|error|failed)" | tail -100
+    echo ""
+    echo "========================================"
+    echo "❌ Unit Tests Failed"
+    echo "========================================"
+    echo ""
+    echo "Check detailed results in: $BUILD_DIR/TestResults.xcresult"
+    exit 1
+elif echo "$OUTPUT" | grep -q "Test run with.*passed\|Suite.*passed"; then
     echo "$OUTPUT" | grep -E "(✔|✘|◇|Suite|Test)" | tail -100
     echo ""
     echo "========================================"

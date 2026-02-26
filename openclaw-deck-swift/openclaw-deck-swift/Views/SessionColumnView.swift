@@ -23,6 +23,7 @@ struct SessionColumnView: View {
 
   @State private var inputText = ""
   @State private var showingDeleteAlert = false
+  @State private var textEditorHeight: CGFloat = 36
 
   var body: some View {
     ZStack {
@@ -166,39 +167,75 @@ struct SessionColumnView: View {
       Spacer()
 
       HStack(spacing: 8) {
-        // Dictation button
+        // Dictation button - stays outside the input field
         DictationButton(text: $inputText)
           .frame(width: 36, height: 36)
 
-        // Input field with glass effect
-        TextField(
-          "Message",
-          text: $inputText
-        )
-        .padding(.horizontal, 14)
-        .frame(height: 36)
+        // Input field with overlay for send button
+        ZStack(alignment: .trailing) {
+          // Auto-resizing text editor
+          TextEditor(text: $inputText)
+            .font(.body)
+            .lineSpacing(4)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .padding(.trailing, 40)  // Make room for send button
+            .multilineTextAlignment(.leading)
+            .background(
+              GeometryReader { geometry in
+                Color.clear
+                  .preference(key: HeightPreference.self, value: geometry.size.height)
+              }
+            )
+            .onPreferenceChange(HeightPreference.self) { height in
+              withAnimation(.easeInOut(duration: 0.15)) {
+                textEditorHeight = height
+              }
+            }
+            .glassEffect()
+
+          // Send button - shown only when text is not empty
+          if !inputText.isEmpty {
+            Button {
+              sendMessage()
+            } label: {
+              Image(systemName: "arrow.up.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            }
+            .padding(.trailing, 8)
+            .transition(.opacity.combined(with: .scale))
+          }
+
+          // Placeholder - left aligned
+          if inputText.isEmpty {
+            Text("Message")
+              .font(.body)
+              .foregroundStyle(.secondary)
+              .padding(.horizontal, 14)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(.leading, 14)
+              .allowsHitTesting(false)
+          }
+        }
+        .frame(height: max(36, min(textEditorHeight + 8, 120)))
         .background(
           RoundedRectangle(cornerRadius: 20)
             .fill(.regularMaterial)
+            .overlay(
+              RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
         )
-        .submitLabel(.send)
-        .onSubmit {
-          sendMessage()
-        }
-
-        // Send button - native iOS glass style
-        Button {
-          sendMessage()
-        } label: {
-          Text("Send")
-        }
-        .buttonStyle(.glass)
-        .frame(height: 36)
-        .opacity(inputText.isEmpty ? 0.5 : 1.0)
       }
       .padding(.horizontal, 12)
       .padding(.bottom, 8)
       .padding(.top, 8)
+      .contentShape(Rectangle())
+      .onTapGesture {
+        // Empty gesture handler to prevent event bubbling to parent view
+      }
     }
   }
 
@@ -689,4 +726,13 @@ private func createStreamingSession() -> SessionState {
   session.activeRunId = "run-streaming"
 
   return session
+}
+
+// MARK: - PreferenceKey for Dynamic Height
+
+struct HeightPreference: PreferenceKey {
+  static var defaultValue: CGFloat = 36
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = nextValue()
+  }
 }

@@ -39,6 +39,7 @@ class SpeechRecognizer: ObservableObject {
 
   @Published var isListening = false
   @Published var transcript = ""
+  @Published var isAvailable: Bool = false
 
   private var audioEngine: AVAudioEngine?
   private var request: SFSpeechAudioBufferRecognitionRequest?
@@ -47,6 +48,8 @@ class SpeechRecognizer: ObservableObject {
 
   init() {
     recognizer = SFSpeechRecognizer()
+    isAvailable = recognizer?.isAvailable ?? false
+    print("[SpeechRecognizer] Initialized, isAvailable: \(isAvailable)")
     checkPermissions()
   }
 
@@ -71,12 +74,15 @@ class SpeechRecognizer: ObservableObject {
     #if os(iOS)
       if #available(iOS 17.0, *) {
         // Use new AVAudioApplication API on iOS 17+
-        let granted = await withCheckedContinuation { continuation in
-          AVAudioApplication.requestRecordPermission { granted in
-            continuation.resume(returning: granted)
+        let granted = await withTimeout(timeout: 10) {
+          await withCheckedContinuation { continuation in
+            AVAudioApplication.requestRecordPermission { granted in
+              continuation.resume(returning: granted)
+            }
           }
         }
-        if !granted {
+        if !(granted ?? false) {
+          print("[SpeechRecognizer] Microphone permission denied (iOS 17+)")
           throw RecognizerError.notPermittedToRecord
         }
       } else {
@@ -87,14 +93,18 @@ class SpeechRecognizer: ObservableObject {
         case .granted:
           return
         case .denied:
+          print("[SpeechRecognizer] Microphone permission denied")
           throw RecognizerError.notPermittedToRecord
         case .undetermined:
-          let granted = await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
-              continuation.resume(returning: granted)
+          let granted = await withTimeout(timeout: 10) {
+            await withCheckedContinuation { continuation in
+              AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                continuation.resume(returning: granted)
+              }
             }
           }
-          if !granted {
+          if !(granted ?? false) {
+            print("[SpeechRecognizer] Microphone permission denied (request)")
             throw RecognizerError.notPermittedToRecord
           }
         @unknown default:
@@ -103,32 +113,60 @@ class SpeechRecognizer: ObservableObject {
       }
     #elseif os(macOS)
       // macOS uses AVAudioApplication API
-      let granted = await withCheckedContinuation { continuation in
-        AVAudioApplication.requestRecordPermission { granted in
-          continuation.resume(returning: granted)
+      let granted = await withTimeout(timeout: 10) {
+        await withCheckedContinuation { continuation in
+          AVAudioApplication.requestRecordPermission { granted in
+            continuation.resume(returning: granted)
+          }
         }
       }
-      if !granted {
+      if !(granted ?? false) {
+        print("[SpeechRecognizer] Microphone permission denied (macOS)")
         throw RecognizerError.notPermittedToRecord
       }
     #endif
   }
 
+  /// Helper to add timeout to async operations
+  private func withTimeout<T>(timeout: TimeInterval, operation: @escaping () async -> T?) async
+    -> T?
+  {
+    await withTaskGroup(of: T?.self) { group in
+      group.addTask {
+        return await operation()
+      }
+      group.addTask {
+        try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+        return nil
+      }
+      let result = await group.next()
+      group.cancelAll()
+      return result as! T?
+    }
+  }
+
   /// 开始听写
   @MainActor
   func startListening(onTextChange: @escaping (String) -> Void) async throws {
-    // 先检查麦克风权限
-    try await checkMicrophonePermission()
+    print("[SpeechRecognizer] startListening called")
 
+    // Check if recognizer is available first
     guard let recognizer = recognizer else {
+      print("[SpeechRecognizer] recognizer is nil")
       throw RecognizerError.nilRecognizer
     }
 
     guard recognizer.isAvailable else {
+      print("[SpeechRecognizer] recognizer is not available")
       throw RecognizerError.recognizerIsUnavailable
     }
 
     do {
+      // Check microphone permission first
+      print("[SpeechRecognizer] Checking microphone permission...")
+      try await checkMicrophonePermission()
+      print("[SpeechRecognizer] Microphone permission granted")
+
       let (audioEngine, request) = try Self.prepareEngine()
       self.audioEngine = audioEngine
       self.request = request
@@ -141,13 +179,19 @@ class SpeechRecognizer: ObservableObject {
           }
 
           if error != nil || result?.isFinal == true {
+            print(
+              "[SpeechRecognizer] Recognition finished: error=\(error?.localizedDescription ?? "nil"), isFinal=\(result?.isFinal ?? false)"
+            )
             self.stopListening()
           }
         }
       }
 
       self.isListening = true
+      print("[SpeechRecognizer] Listening started")
     } catch {
+      print("[SpeechRecognizer] startListening error: \(error)")
+      self.isListening = false
       throw error
     }
   }

@@ -10,19 +10,30 @@ import Testing
 @Suite
 struct DeckViewModelTests {
 
+  /// 创建干净的 UserDefaultsStorage 用于测试
+  private func makeStorage() -> UserDefaultsStorage {
+    let suiteName = "test.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)
+    precondition(defaults != nil, "Failed to create UserDefaults with suiteName: \(suiteName)")
+    return UserDefaultsStorage(defaults: defaults!)
+  }
+
   @Test
   func testInitialStatus() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
-    #expect(viewModel.sessions.isEmpty == true)
-    #expect(viewModel.sessionOrder.isEmpty == true)
+    // 注意：DeckViewModel 会自动创建 welcome session
+    #expect(viewModel.sessions.count == 1)
+    #expect(viewModel.sessionOrder.count == 1)
     #expect(viewModel.gatewayConnected == false)
     #expect(viewModel.isInitializing == false)
   }
 
   @Test
   func testCreateSession() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let config = viewModel.createSession(
       name: "Research Agent",
@@ -32,13 +43,14 @@ struct DeckViewModelTests {
 
     #expect(config.name == "Research Agent")
     #expect(config.sessionKey.hasPrefix("agent:main:"))
-    #expect(viewModel.sessions.count == 1)
-    #expect(viewModel.sessionOrder.count == 1)
+    #expect(viewModel.sessions.count == 2)  // 1 (welcome) + 1 (new)
+    #expect(viewModel.sessionOrder.count == 2)
   }
 
   @Test
   func testCreateSession_generatesUniqueIds() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let config1 = viewModel.createSession(name: "Test")
     let config2 = viewModel.createSession(name: "Test")
@@ -49,31 +61,35 @@ struct DeckViewModelTests {
 
   @Test
   func testDeleteSession() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let config = viewModel.createSession(name: "Test Session")
-    #expect(viewModel.sessions.count == 1)
+    #expect(viewModel.sessions.count == 2)  // 1 (welcome) + 1 (new)
 
     viewModel.deleteSession(sessionId: config.id)
 
-    #expect(viewModel.sessions.isEmpty == true)
-    #expect(viewModel.sessionOrder.isEmpty == true)
+    // 删除后应该还有 welcome session
+    #expect(viewModel.sessions.count == 1)
+    #expect(viewModel.sessionOrder.count == 1)
   }
 
   @Test
   func testDeleteSession_createsWelcomeSession() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let config = viewModel.createSession(name: "Test Session")
     viewModel.deleteSession(sessionId: config.id)
 
-    // 删除后应该自动创建 welcome session
+    // 删除后应该自动创建/保留 welcome session
     #expect(viewModel.sessions.count == 1)
   }
 
   @Test
   func testGetSession() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let config = viewModel.createSession(name: "Test")
     let session = viewModel.getSession(sessionId: config.id)
@@ -84,7 +100,8 @@ struct DeckViewModelTests {
 
   @Test
   func testGetSession_notFound() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let session = viewModel.getSession(sessionId: "non-existent")
     #expect(session == nil)
@@ -92,21 +109,29 @@ struct DeckViewModelTests {
 
   @Test
   func testSessionOrder() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
+
+    // 初始有 welcome session
+    #expect(viewModel.sessionOrder.count == 1)
+    let welcomeId = viewModel.sessionOrder[0]
+    #expect(welcomeId.hasPrefix("welcome-"))
 
     let config1 = viewModel.createSession(name: "Session A")
     let config2 = viewModel.createSession(name: "Session B")
     let config3 = viewModel.createSession(name: "Session C")
 
-    #expect(viewModel.sessionOrder.count == 3)
-    #expect(viewModel.sessionOrder[0] == config1.id.lowercased())
-    #expect(viewModel.sessionOrder[1] == config2.id.lowercased())
-    #expect(viewModel.sessionOrder[2] == config3.id.lowercased())
+    #expect(viewModel.sessionOrder.count == 4)  // 1 (welcome) + 3 (new)
+    #expect(viewModel.sessionOrder[0] == welcomeId)
+    #expect(viewModel.sessionOrder[1] == config1.id.lowercased())
+    #expect(viewModel.sessionOrder[2] == config2.id.lowercased())
+    #expect(viewModel.sessionOrder[3] == config3.id.lowercased())
   }
 
   @Test
   func testClearConnectionError() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     // 测试方法存在且可以调用
     viewModel.clearConnectionError()
@@ -115,7 +140,8 @@ struct DeckViewModelTests {
 
   @Test
   func testDisconnect() async {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     // 测试方法存在且可以调用
     viewModel.disconnect()
@@ -124,7 +150,8 @@ struct DeckViewModelTests {
 
   @Test
   func testSendMessage_gatewayNotConnected() async {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     let config = viewModel.createSession(name: "Test")
 
@@ -137,7 +164,8 @@ struct DeckViewModelTests {
 
   @Test
   func testHandleGatewayEvent_unknownEvent() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     // 创建一个测试事件
     let event = GatewayEvent(event: "unknown.event", payload: nil)
@@ -148,7 +176,8 @@ struct DeckViewModelTests {
 
   @Test
   func testHandleGatewayEvent_tickEvent() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     // 忽略 tick 事件
     let event = GatewayEvent(event: "tick", payload: nil)
@@ -157,7 +186,8 @@ struct DeckViewModelTests {
 
   @Test
   func testHandleGatewayEvent_healthEvent() {
-    let viewModel = DeckViewModel()
+    let storage = makeStorage()
+    let viewModel = DeckViewModel(storage: storage)
 
     // 忽略 health 事件
     let event = GatewayEvent(event: "health", payload: nil)

@@ -113,13 +113,14 @@ final class DeckViewModelTests: XCTestCase {
   }
 
   func testSessionOrder() {
+    let initialCount = viewModel.sessionOrder.count
     let session1 = viewModel.createSession(name: "First")
     let session2 = viewModel.createSession(name: "Second")
     let session3 = viewModel.createSession(name: "Third")
 
-    XCTAssertEqual(viewModel.sessionOrder[0], session1.id.lowercased())
-    XCTAssertEqual(viewModel.sessionOrder[1], session2.id.lowercased())
-    XCTAssertEqual(viewModel.sessionOrder[2], session3.id.lowercased())
+    XCTAssertEqual(viewModel.sessionOrder[initialCount], session1.id.lowercased())
+    XCTAssertEqual(viewModel.sessionOrder[initialCount + 1], session2.id.lowercased())
+    XCTAssertEqual(viewModel.sessionOrder[initialCount + 2], session3.id.lowercased())
   }
 
   // MARK: - Event Handling Tests

@@ -454,10 +454,12 @@ class DeckViewModel {
         
         switch phase {
         case "start":
-          logger.info("✅ 收到新消息开始 - 可以发送通知了！")
+          logger.info("✅ 收到新消息开始 - 显示处理中状态")
+          session.isProcessing = true
           session.status = .thinking
         case "end":
-          logger.info("✅ 消息接收完成")
+          logger.info("✅ 消息接收完成 - 隐藏处理中状态")
+          session.isProcessing = false
           session.status = .idle
           session.activeRunId = nil
           // 清除所有消息的 streaming 状态

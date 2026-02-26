@@ -45,6 +45,9 @@ class SessionState {
 
   /// 当前活跃的 runId（用于关联流式响应）
   var activeRunId: String?
+  
+  /// 🆕 是否正在处理中（lifecycle start → end 之间）
+  var isProcessing: Bool = false
 
   /// 最后一条消息的时间
   var lastMessageAt: Date? {

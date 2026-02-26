@@ -26,12 +26,21 @@ struct SessionColumnView: View {
   @State private var textHeight: CGFloat = 36
   @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
   @State private var scrollToTop = false  // 用于触发滚动到底部
+  @State private var isScrolling = false  // 防止重复滚动
   @StateObject private var speechRecognizer = SpeechRecognizer()
-
+  
   // 滚动到底部
   private func scrollToBottom() {
+    guard !isScrolling else { return }  // 防止重复点击
+    isScrolling = true
+    
     withAnimation(.smooth(duration: 0.3)) {
       scrollToTop.toggle()
+    }
+    
+    // 动画结束后解锁
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      isScrolling = false
     }
   }
 
@@ -113,7 +122,7 @@ struct SessionColumnView: View {
       Spacer()
         .frame(width: 44, height: 36)
 
-      // Center: Session name glass button
+      // Center: Session name glass button with processing indicator
       // Menu button (overlay on right spacer)
       Menu {
         Button(role: .destructive) {
@@ -125,11 +134,20 @@ struct SessionColumnView: View {
         Button {
 
         } label: {
-          Text(session.sessionKey)
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .lineLimit(1)
-            .padding(8)
+          HStack(spacing: 6) {
+            // 🆕 处理中状态指示器
+            if session.isProcessing {
+              ProgressView()
+                .scaleEffect(0.7)
+                .frame(width: 14, height: 14)
+            }
+
+            Text(session.sessionKey)
+              .font(.subheadline)
+              .fontWeight(.medium)
+              .lineLimit(1)
+          }
+          .padding(8)
         }
         .glassEffect()
 

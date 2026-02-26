@@ -69,15 +69,11 @@ struct GatewayConfigInput: View {
             Text("Connect")
           }
           .frame(maxWidth: .infinity)
-          .padding(.vertical, 12)
         }
         .buttonStyle(.borderedProminent)
         .tint(.green)
       }
     }
-    .padding()
-    .background(Color.secondary.opacity(0.1))
-    .cornerRadius(12)
   }
 }
 

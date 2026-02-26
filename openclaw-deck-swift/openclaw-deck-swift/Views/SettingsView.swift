@@ -25,9 +25,8 @@ struct SettingsView: View {
             gatewayUrl: $gatewayUrl,
             token: $token,
             onConnect: {},
-            isConnected: false
+            isConnected: isConnected
           )
-          .padding(.vertical, 8)
         } header: {
           Text("Configuration")
         } footer: {
@@ -61,10 +60,7 @@ struct SettingsView: View {
                 Image(systemName: "arrow.triangle.2.circlepath")
                 Text("Apply & Reconnect")
               }
-              .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.blue)
           }
 
           Button(role: .destructive) {
@@ -74,10 +70,7 @@ struct SettingsView: View {
               Image(systemName: "plug.disconnected")
               Text("Disconnect")
             }
-            .frame(maxWidth: .infinity)
           }
-          .buttonStyle(.borderedProminent)
-          .tint(.red)
         } footer: {
           if hasChanges {
             Text("Apply changes and reconnect")

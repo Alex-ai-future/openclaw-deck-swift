@@ -183,6 +183,7 @@ struct WelcomeView: View {
           onConnect: onConnect,
           isConnected: false
         )
+        .padding(.horizontal, 24)
 
         // Error message
         if let error = connectionError {
@@ -207,6 +208,7 @@ struct WelcomeView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
           .background(Color.red.opacity(0.1))
           .cornerRadius(8)
+          .padding(.horizontal, 24)
         }
 
         Spacer()

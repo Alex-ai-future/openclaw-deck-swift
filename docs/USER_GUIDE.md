@@ -19,6 +19,91 @@
 
 ## 1. 快速开始
 
+### 1.0 Gateway 配置（必须先配置）
+
+**OpenClaw Deck Swift 需要连接 OpenClaw Gateway 才能工作。**
+
+**步骤 1：安装 OpenClaw Gateway**
+
+```bash
+# 克隆 OpenClaw 项目
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw
+
+# 安装依赖
+pnpm install
+
+# 启动 Gateway
+pnpm start
+```
+
+**相关资源：**
+- **GitHub 仓库：** https://github.com/openclaw/openclaw
+- **官方文档：** https://docs.openclaw.ai
+- **Discord 社区：** https://discord.gg/clawd
+
+**步骤 2：配置连接方式为 LAN**
+
+在 Gateway 配置中设置连接方式为 LAN（局域网）：
+
+```bash
+# 编辑 Gateway 配置
+# (根据安装方式编辑相应配置文件)
+
+# 设置连接方式为 LAN
+connection.mode = "lan"
+```
+
+**步骤 3：添加设备 IP 到允许源头**
+
+在 Gateway 的允许源头列表中添加运行 Deck Swift 的设备 IP：
+
+```bash
+# 查看当前设备 IP
+# macOS
+ipconfig getifaddr en0
+
+# 或在 Gateway 配置中添加
+allowed_origins = [
+  "192.168.1.xxx",  # 替换为实际 IP
+  "127.0.0.1"       # 本地回环
+]
+```
+
+**步骤 4：配对同意**
+
+首次连接时需要配对同意：
+
+```bash
+# 查看待配对设备
+openclaw pairing list
+
+# 同意配对
+openclaw pairing approve <device-id>
+
+# 或查看配对帮助
+openclaw pairing --help
+```
+
+**步骤 5：测试连接**
+
+```bash
+# 测试 Gateway 是否可访问
+curl ws://127.0.0.1:18789
+
+# 或在 Deck Swift 应用中尝试连接
+```
+
+**常见问题：**
+
+| 问题 | 解决方法 |
+|------|---------|
+| 无法连接 Gateway | 检查 Gateway 是否启动 |
+| 配对失败 | 重启 Gateway 后重试 |
+| IP 地址变化 | 使用静态 IP 或更新配置 |
+
+---
+
 ### 1.1 系统要求
 
 | 平台 | 最低版本 | 推荐版本 |

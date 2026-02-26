@@ -12,45 +12,34 @@ struct GatewayConfigInput: View {
   var isConnected: Bool = false
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      // Gateway URL
-      VStack(alignment: .leading, spacing: 6) {
-        Text("Gateway URL")
-          .font(.subheadline)
-          .fontWeight(.medium)
-          .foregroundColor(.secondary)
+    // Gateway URL
+    TextField("Gateway URL", text: $gatewayUrl, prompt: Text("ws://host:port"))
+      .textContentType(.URL)
+    #if os(iOS) || os(visionOS)
+      .autocapitalization(.none)
+      .keyboardType(.URL)
+    #endif
 
-        TextField("ws://host:port", text: $gatewayUrl)
-          .textContentType(.URL)
-          .textFieldStyle(.roundedBorder)
-      }
+    // Token
+    TextField("Token (optional)", text: $token)
+      .textContentType(.none)
+    #if os(iOS) || os(visionOS)
+      .autocapitalization(.none)
+    #endif
 
-      // Token
-      VStack(alignment: .leading, spacing: 6) {
-        Text("Token (optional)")
-          .font(.subheadline)
-          .fontWeight(.medium)
-          .foregroundColor(.secondary)
-
-        TextField("Token (optional)", text: $token)
-          .textContentType(.none)
-          .textFieldStyle(.roundedBorder)
-      }
-
-      // Connect Button (只在初始页面显示)
-      if !isConnected {
-        Button {
-          onConnect()
-        } label: {
-          HStack {
-            Image(systemName: "plug")
-            Text("Connect")
-          }
-          .frame(maxWidth: .infinity)
+    // Connect Button (只在初始页面显示)
+    if !isConnected {
+      Button {
+        onConnect()
+      } label: {
+        HStack {
+          Image(systemName: "plug")
+          Text("Connect")
         }
-        .buttonStyle(.borderedProminent)
-        .tint(.green)
+        .frame(maxWidth: .infinity)
       }
+      .buttonStyle(.borderedProminent)
+      .tint(.green)
     }
   }
 }

@@ -152,15 +152,21 @@ struct DeckView: View {
 struct NewSessionSheet: View {
   @Bindable var viewModel: DeckViewModel
   @Binding var isPresented: Bool
+  @Environment(\.dismiss) private var dismiss
 
-  @State private var name = ""
+  @State private var name = "default"
+  @FocusState private var isNameFieldFocused: Bool
 
   var body: some View {
     NavigationStack {
       Form {
         Section {
           TextField("Session Name", text: $name)
+            .focused($isNameFieldFocused)
             .textContentType(.name)
+            .onSubmit {
+              createSession()
+            }
         } footer: {
           Text("The session key will be generated automatically.")
         }
@@ -170,8 +176,7 @@ struct NewSessionSheet: View {
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") {
-            isPresented = false
-            name = ""
+            dismiss()
           }
         }
 
@@ -186,12 +191,14 @@ struct NewSessionSheet: View {
     #if os(macOS)
       .frame(width: 400, height: 300)
     #endif
+    .task {
+      isNameFieldFocused = true
+    }
   }
 
   private func createSession() {
     _ = viewModel.createSession(name: name)
-    isPresented = false
-    name = ""
+    dismiss()
   }
 }
 

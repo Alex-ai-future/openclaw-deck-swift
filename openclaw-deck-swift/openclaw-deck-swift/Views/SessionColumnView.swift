@@ -186,9 +186,8 @@ struct SessionColumnView: View {
             Text("Message")
               .font(.body)
               .foregroundStyle(.secondary)
-              .padding(.horizontal, 14)
               .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(.leading, 14)
+              .padding(.horizontal, 14)  // 与 TextEditor 的 padding 保持一致
               .allowsHitTesting(false)
           }
         }

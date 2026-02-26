@@ -462,6 +462,17 @@ class DeckViewModel {
           session.isProcessing = false
           session.status = .idle
           session.activeRunId = nil
+          
+          // 🎯 发送通知：无论前台后台都发
+          if let lastMessage = session.messages.last,
+             lastMessage.role == .assistant,
+             !lastMessage.text.isEmpty {
+            NotificationService.shared.sendNewMessageNotification(
+              sessionName: session.sessionId,
+              messageText: lastMessage.text
+            )
+          }
+          
           // 清除所有消息的 streaming 状态
           for i in session.messages.indices {
             if session.messages[i].streaming == true {

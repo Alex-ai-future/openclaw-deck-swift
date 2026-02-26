@@ -25,7 +25,7 @@ struct SessionColumnView: View {
   @State private var showingDeleteAlert = false
   @State private var textHeight: CGFloat = 36
   @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
-  @State private var scrollToTop = false  // 用于触发滚动到底部
+  @State private var scrollTrigger = 0  // 用于触发滚动到底部（使用计数而非 toggle）
   @State private var isScrolling = false  // 防止重复滚动
   @StateObject private var speechRecognizer = SpeechRecognizer()
   
@@ -34,9 +34,8 @@ struct SessionColumnView: View {
     guard !isScrolling else { return }  // 防止重复点击
     isScrolling = true
     
-    withAnimation(.smooth(duration: 0.3)) {
-      scrollToTop.toggle()
-    }
+    // 增加计数触发滚动（避免 toggle 导致的闪烁）
+    scrollTrigger += 1
     
     // 动画结束后解锁
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -196,17 +195,15 @@ struct SessionColumnView: View {
           // 延时滚动，避免与手动滑动冲突
           DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             withAnimation(.smooth(duration: 0.2)) {
-              proxy.scrollTo(lastId)
+              proxy.scrollTo(lastId, anchor: .center)  // 使用 .center 确保一致性
             }
           }
         }
       }
-      .onChange(of: scrollToTop) { _, _ in
+      .onChange(of: scrollTrigger) { _, _ in
         // 滚动到底部（最新消息）
         if let lastId = session.messages.last?.id {
-          withAnimation(.smooth(duration: 0.3)) {
-            proxy.scrollTo(lastId)
-          }
+          proxy.scrollTo(lastId, anchor: .center)  // 使用 .center 确保与手动滑动一致
         }
       }
     }

@@ -11,8 +11,6 @@ struct GatewayConfigInput: View {
   var onConnect: () -> Void
   var isConnected: Bool = false
 
-  @State private var showingToken = false
-
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
       // Gateway URL
@@ -34,29 +32,9 @@ struct GatewayConfigInput: View {
           .fontWeight(.medium)
           .foregroundColor(.secondary)
 
-        HStack(spacing: 8) {
-          if showingToken {
-            TextField("Token", text: $token)
-              .textContentType(.password)
-          } else {
-            SecureField("Token", text: $token)
-              .textContentType(.password)
-          }
-
-          Button {
-            showingToken.toggle()
-          } label: {
-            Image(systemName: showingToken ? "eye.slash" : "eye")
-              .foregroundColor(.secondary)
-          }
-          .buttonStyle(.plain)
-          .frame(width: 30, height: 30)
-        }
-        .textFieldStyle(.roundedBorder)
-        #if os(iOS)
-        .autocapitalization(.none)
-        .keyboardType(.URL)
-        #endif
+        TextField("Token (optional)", text: $token)
+          .textContentType(.none)
+          .textFieldStyle(.roundedBorder)
       }
 
       // Connect Button (只在初始页面显示)

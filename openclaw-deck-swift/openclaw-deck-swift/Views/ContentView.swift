@@ -49,6 +49,7 @@ struct ContentView: View {
   @State private var token = ""
   @State private var showingNewSessionSheet = false
   @State private var hasAttemptedAutoConnect = false
+  @State private var showingWelcomeSettings = false
 
   init() {
     // 从 UserDefaults 加载保存的配置
@@ -92,6 +93,9 @@ struct ContentView: View {
           },
           onClearError: {
             viewModel.clearConnectionError()
+          },
+          onShowSettings: {
+            showingWelcomeSettings = true
           }
         )
       }
@@ -106,8 +110,39 @@ struct ContentView: View {
         ),
         onDisconnect: {
           viewModel.disconnect()
+          showingSettings = false
         },
         onApplyAndReconnect: {
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
+          }
+          showingSettings = false
+        },
+        onResetDeviceIdentity: {
+          viewModel.resetDeviceIdentity()
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
+          }
+        }
+      )
+    }
+    .sheet(isPresented: $showingWelcomeSettings) {
+      SettingsView(
+        gatewayUrl: $gatewayUrl,
+        token: $token,
+        isConnected: .constant(false),
+        onDisconnect: {
+          viewModel.disconnect()
+          showingWelcomeSettings = false
+        },
+        onApplyAndReconnect: {
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
+          }
+          showingWelcomeSettings = false
+        },
+        onResetDeviceIdentity: {
+          viewModel.resetDeviceIdentity()
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
           }
@@ -157,70 +192,84 @@ struct WelcomeView: View {
   let isConnecting: Bool
   let onConnect: () -> Void
   let onClearError: () -> Void
+  let onShowSettings: () -> Void
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: 40) {
-        // Logo and title
-        VStack(spacing: 16) {
-          Image(systemName: "message.badge.filled.fill")
-            .font(.system(size: 80))
-            .foregroundColor(.blue)
+    NavigationStack {
+      ScrollView {
+        VStack(spacing: 40) {
+          // Logo and title
+          VStack(spacing: 16) {
+            Image(systemName: "message.badge.filled.fill")
+              .font(.system(size: 80))
+              .foregroundColor(.blue)
 
-          Text("OpenClaw Deck")
-            .font(.largeTitle)
-            .fontWeight(.bold)
+            Text("OpenClaw Deck")
+              .font(.largeTitle)
+              .fontWeight(.bold)
 
-          Text("Multi-Session Chat Client")
-            .font(.title2)
-            .foregroundColor(.secondary)
-        }
-
-        // Gateway Config Input (公用组件)
-        GatewayConfigInput(
-          gatewayUrl: $gatewayUrl,
-          token: $token,
-          onConnect: onConnect,
-          isConnected: false
-        )
-        .padding(.horizontal, 24)
-
-        // Error message
-        if let error = connectionError {
-          VStack(spacing: 8) {
-            HStack {
-              Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.red)
-              Text("Connection Failed")
-                .fontWeight(.semibold)
-                .foregroundColor(.red)
-              Spacer()
-              Button("Dismiss", action: onClearError)
-                .font(.caption)
-            }
-
-            Text(error)
-              .font(.caption)
+            Text("Multi-Session Chat Client")
+              .font(.title2)
               .foregroundColor(.secondary)
-              .multilineTextAlignment(.leading)
           }
-          .padding()
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .background(Color.red.opacity(0.1))
-          .cornerRadius(8)
-          .padding(.horizontal, 24)
-        }
 
-        Spacer()
+          // Gateway Config Input (公用组件)
+          GatewayConfigInput(
+            gatewayUrl: $gatewayUrl,
+            token: $token,
+            onConnect: onConnect,
+            isConnected: false
+          )
+          .padding(.horizontal, 24)
+
+          // Error message
+          if let error = connectionError {
+            VStack(spacing: 8) {
+              HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                  .foregroundColor(.red)
+                Text("Connection Failed")
+                  .fontWeight(.semibold)
+                  .foregroundColor(.red)
+                Spacer()
+                Button("Dismiss", action: onClearError)
+                  .font(.caption)
+              }
+
+              Text(error)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.red.opacity(0.1))
+            .cornerRadius(8)
+            .padding(.horizontal, 24)
+          }
+
+          Spacer()
+        }
+        .padding()
+        #if os(macOS)
+          .frame(minHeight: NSScreen.main?.frame.height ?? 800)
+        #endif
       }
-      .padding()
-      #if os(macOS)
-        .frame(minHeight: NSScreen.main?.frame.height ?? 800)
-      #endif
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(Color.adaptiveBackground)
+      .navigationTitle("")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {
+            onShowSettings()
+          } label: {
+            Image(systemName: "gear")
+              .font(.title2)
+          }
+        }
+      }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color.adaptiveBackground)
-    .ignoresSafeArea()
   }
 }
 

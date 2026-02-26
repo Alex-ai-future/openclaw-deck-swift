@@ -24,7 +24,7 @@ struct PendingRequest {
 @MainActor
 @Observable
 class GatewayClient {
-  
+
   // Fix for Swift 6 @Observable + @MainActor crash in XCTest
   // See: https://github.com/swiftlang/swift/issues/87316
   nonisolated deinit {}
@@ -638,6 +638,11 @@ class GatewayClient {
     )
 
     // Device auth payload built
+    logger.info("🔐 [DeviceAuth] Built device auth payload:")
+    logger.info("🔐 [DeviceAuth]   Version: \(version)")
+    logger.info("🔐 [DeviceAuth]   Device ID: \(identity["id"] as! String)")
+    logger.info("🔐 [DeviceAuth]   Nonce: \(nonce ?? "nil")")
+    logger.info("🔐 [DeviceAuth]   Payload string: \(payload)")
 
     // Sign the payload using Ed25519
     // privateKeySeed is stored as base64Url encoded 32-byte seed
@@ -661,6 +666,9 @@ class GatewayClient {
 
     let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeySeed)
     let signatureData = try privateKey.signature(for: Array(payload.utf8))
+
+    logger.info(
+      "🔐 [DeviceAuth] Signature generated: \(self.base64UrlEncode(signatureData).prefix(32))...")
 
     // Build result dictionary - only include nonce if provided
     var result: [String: Any] = [
@@ -808,7 +816,12 @@ class GatewayClient {
   /// Get preferred auth token (device token or user token)
   private func getPreferredAuthToken() -> String {
     let deviceToken = getStoredDeviceToken()
-    return deviceToken.isEmpty ? (token ?? "") : deviceToken
+    let token = deviceToken.isEmpty ? (token ?? "") : deviceToken
+    if !token.isEmpty {
+      let source = deviceToken.isEmpty ? "user" : "device"
+      logger.info("🔑 [AuthToken] Using \(source) token: \(self.maskToken(token))")
+    }
+    return token
   }
 
   /// Get stored device token
@@ -882,5 +895,16 @@ class GatewayClient {
       base64.append("=")
     }
     return Data(base64Encoded: base64)
+  }
+
+  /// Mask token for logging (show first 4 and last 4 characters)
+  private func maskToken(_ token: String) -> String {
+    guard token.count > 8 else {
+      return String(repeating: "*", count: token.count)
+    }
+    let prefix = token.prefix(4)
+    let suffix = token.suffix(4)
+    let masked = String(repeating: "*", count: token.count - 8)
+    return "\(prefix)\(masked)\(suffix)"
   }
 }

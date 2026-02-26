@@ -126,6 +126,11 @@ class DeckViewModel {
     gatewayConnected = false
   }
 
+  /// 重置设备身份（清除 device identity 和 device token）
+  func resetDeviceIdentity() {
+    gatewayClient?.resetDeviceIdentity()
+  }
+
   // MARK: - Session Management
 
   /// 创建新 Session

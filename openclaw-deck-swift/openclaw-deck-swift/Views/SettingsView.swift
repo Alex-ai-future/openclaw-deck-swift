@@ -11,10 +11,12 @@ struct SettingsView: View {
   @Binding var isConnected: Bool
   var onDisconnect: () -> Void
   var onApplyAndReconnect: () -> Void
+  var onResetDeviceIdentity: (() -> Void)?
 
   @State private var hasChanges = false
   @State private var originalUrl = ""
   @State private var originalToken = ""
+  @State private var showingResetAlert = false
 
   var body: some View {
     NavigationStack {
@@ -61,6 +63,25 @@ struct SettingsView: View {
                 Text("Apply & Reconnect")
               }
             }
+          }
+
+          // Reset Device Identity
+          Button(role: .destructive) {
+            showingResetAlert = true
+          } label: {
+            HStack {
+              Text("Reset Device Identity")
+            }
+          }
+          .alert("Reset Device Identity?", isPresented: $showingResetAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) {
+              onResetDeviceIdentity?()
+            }
+          } message: {
+            Text(
+              "This will clear the stored device identity and token, then reconnect using the token you entered."
+            )
           }
 
           Button(role: .destructive) {

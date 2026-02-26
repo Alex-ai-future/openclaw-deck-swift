@@ -57,67 +57,39 @@ struct SessionColumnView: View {
 
   private var topStatusBar: some View {
     HStack {
-      // Left: Status indicator with session info
-      Button {
-        // Status button action (optional)
-      } label: {
-        StatusIndicator(
-          status: session.status, sessionKey: session.sessionKey, messageCount: session.messageCount
-        )
-      }
-      .buttonStyle(.glass)
-
+      // Left: Empty spacer for balance
       Spacer()
+        .frame(width: 44, height: 36)
 
-      // Right: Delete button
-      Button("Delete", role: .destructive) {
-        showingDeleteAlert = true
+      // Center: Session name glass button
+      // Menu button (overlay on right spacer)
+      Menu {
+        Button(role: .destructive) {
+          showingDeleteAlert = true
+        } label: {
+          Label("Delete Session", systemImage: "trash")
+        }
+      } label: {
+        Button {
+
+        } label: {
+          Text(session.sessionKey)
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .lineLimit(1)
+            .padding(8)
+        }
+        .glassEffect()
+
       }
-      .buttonStyle(.glass)
+
+      // Right: Spacer
+      Spacer()
+        .frame(width: 44, height: 36)
+
     }
     .padding(.horizontal, 16)
-  }
-
-  // MARK: - Status Indicator
-
-  /// Status indicator - maps status to icon and color only
-  struct StatusIndicator: View {
-    let status: SessionStatus
-    let sessionKey: String
-    let messageCount: Int
-
-    var body: some View {
-      VStack(spacing: 2) {
-        // 第一行：Session Key
-        Text(sessionKey)
-          .font(.caption)
-          .fontWeight(.medium)
-          .lineLimit(1)
-
-        // 第二行：状态 + 消息数量
-        HStack {
-          //          Text(statusText)
-          //            .foregroundColor(.secondary)
-          //            .font(.caption2)
-          Text("\(messageCount) messages")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-        }
-      }
-    }
-
-    private var statusText: String {
-      switch status {
-      case .idle:
-        return "Ready"
-      case .thinking:
-        return "Thinking"
-      case .streaming:
-        return "Working"
-      case .error:
-        return "Error"
-      }
-    }
+    .padding(.top, 2)
   }
 
   // MARK: - Message List

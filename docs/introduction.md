@@ -55,13 +55,18 @@ OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现
 ### 4. 语音输入
 
 - 点击麦克风按钮开始语音识别
-- 支持 iOS/iPadOS 语音识别权限管理
+- 支持 iOS/iPadOS/macOS 语音识别权限管理
 - 实时转录语音为文本
+- **自动停止机制**：发送消息时自动停止听写，防止状态冲突
+- **状态保护**：使用 `isStopping` 标志防止 cancel 后的回调污染输入框
+- **跨平台支持**：SpeechRecognizer 提升到 SessionColumnView 层级，统一管理
 
 ### 5. 未来功能
 
-- [ ] iOS 设备支持
-- [ ] macOS UI 优化
+- [ ] iOS 设备支持（iPhone 适配）
+- [ ] macOS UI 优化（菜单栏、快捷键）
+- [ ] 自动重连机制
+- [ ] Session 归档功能
 
 ---
 
@@ -930,21 +935,43 @@ struct MessageView: View {
 ```swift
 struct DictationButton: View {
     @Binding var text: String
-    @StateObject private var speechRecognizer = SpeechRecognizer()
+    @ObservedObject var speechRecognizer: SpeechRecognizer  // 从父组件接收
+    @State private var errorMessage: String?
+    @State private var showingPermissionAlert = false
 
     var body: some View {
         Button {
-            Task {
-                try? await speechRecognizer.startListening { newText in
-                    text = newText
+            if speechRecognizer.isListening {
+                speechRecognizer.stopListening()
+            } else {
+                guard speechRecognizer.isAvailable else {
+                    errorMessage = "Speech recognizer is not available"
+                    return
+                }
+                Task {
+                    do {
+                        try await speechRecognizer.startListening { newText in
+                            text = newText
+                        }
+                        errorMessage = nil
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
                 }
             }
         } label: {
             Image(systemName: speechRecognizer.isListening ? "mic.fill" : "mic")
+                .foregroundStyle(speechRecognizer.isListening ? .red : .accentColor)
         }
+        .buttonStyle(.glass)
     }
 }
 ```
+
+**设计说明：**
+- `SpeechRecognizer` 由 `SessionColumnView` 统一管理（`@StateObject`）
+- `DictationButton` 接收外部的 `SpeechRecognizer`（`@ObservedObject`）
+- 这样可以在发送消息时自动停止听写，避免状态冲突
 
 ---
 
@@ -1030,9 +1057,23 @@ bash script/build_macos.sh
 - [x] 平台支持（iPadOS + macOS 条件编译）
 - [x] 构建脚本（build_ipados.sh, build_macos.sh）
 
+### 已修复的 Bug
+
+- [x] 语音输入关闭时清空输入框（2026-02-26）
+  - **原因**：`stopListening()` 调用 `task.cancel()` 后，回调仍触发并清空 transcript
+  - **修复**：添加 `isStopping` 标志，在 cancel 前设置，回调中检查该标志
+- [x] 发送消息后输入框文字消失（2026-02-26）
+  - **原因**：发送消息时听写服务仍在运行，回调继续更新输入框导致状态混乱
+  - **修复**：将 `SpeechRecognizer` 提升到 `SessionColumnView`，发送消息前自动停止听写
+- [x] 占位符与光标对齐问题（2026-02-26）
+  - **原因**：占位符 padding 重复设置（28pt vs 14pt）
+  - **修复**：统一占位符与 TextEditor 的 padding 为 14pt
+
 ### 技术债务
 
 - [ ] 单元测试覆盖率低（目前只有 SessionConfigTests）
+- [ ] WebSocket 断线自动重连（目前需手动刷新）
+- [ ] 错误处理与用户友好提示
 
 ### 平台支持状态
 
@@ -1040,6 +1081,7 @@ bash script/build_macos.sh
 |------|---------|------|
 | iPadOS | ✅ 已完成 | 完整支持，UI 优化完成 |
 | macOS | ✅ 已支持 | 可运行，编译通过 |
+| iOS | 🔜 计划中 | 需要 iPhone 适配 |
 
 ---
 
@@ -1067,5 +1109,31 @@ bash script/build_macos.sh
 
 ### 第四阶段：增强功能 🔜
 
-- [ ] 单元测试完善
-- [ ] macOS UI 优化
+- [ ] 单元测试完善（目标覆盖率 > 70%）
+- [ ] WebSocket 自动重连
+- [ ] 错误处理与用户友好提示
+- [ ] Session 管理增强（重命名、搜索、归档）
+- [ ] macOS UI 优化（菜单栏、快捷键）
+- [ ] iOS 支持（iPhone 适配）
+
+---
+
+## 后续开发优先级
+
+### 高优先级 🔴
+
+1. **完善单元测试** - 技术债务（2-3 天）
+2. **错误处理与恢复** - 自动重连、重试机制（1-2 天）
+3. **用户体验优化** - Enter 发送、长按复制、字数限制（2-3 天）
+
+### 中优先级 🟡
+
+4. **Session 管理增强** - 重命名、搜索、归档（1-2 天）
+5. **设置页面完善** - 主题色、字体大小、清除缓存（1 天）
+6. **通知与提醒** - 回复完成通知、未读消息计数（1-2 天）
+
+### 低优先级 🟢
+
+7. **性能优化** - 虚拟滚动、附件支持（2-3 天）
+8. **iOS 支持** - iPhone 适配、横竖屏切换（2-3 天）
+9. **高级功能** - 多 Agent 切换、自定义 System Prompt（3-5 天）

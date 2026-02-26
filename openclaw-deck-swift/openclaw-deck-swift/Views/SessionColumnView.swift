@@ -23,6 +23,7 @@ struct SessionColumnView: View {
 
   @State private var inputText = ""
   @State private var showingDeleteAlert = false
+  @State private var textHeight: CGFloat = 36
   @StateObject private var speechRecognizer = SpeechRecognizer()
 
   var body: some View {
@@ -145,17 +146,19 @@ struct SessionColumnView: View {
 
         // Input field with overlay for send button
         ZStack(alignment: .trailing) {
-          // System TextEditor
-          TextEditor(text: $inputText)
+          // TextField for input with auto-resize
+          TextField("Message", text: $inputText, axis: .vertical)
             .font(.body)
-            .scrollContentBackground(.hidden)
             .padding(.horizontal, 14)
             .padding(.vertical, 4)
             .padding(.trailing, 40)
-            .multilineTextAlignment(.leading)
-            .lineLimit(1...7)  // 最小 1 行，最大 7 行
-            .frame(minHeight: 36, maxHeight: 150)
+            .lineLimit(1...7)
+            .textFieldStyle(.plain)
             .tint(.accentColor)
+            .background(GeometryReader { geometry in
+              Color.clear
+                .preference(key: HeightPreference.self, value: geometry.size.height)
+            })
 
           // Send button - shown only when text is not empty
           if !inputText.isEmpty {
@@ -180,7 +183,14 @@ struct SessionColumnView: View {
               .allowsHitTesting(false)
           }
         }
-        .frame(minHeight: 36, maxHeight: 150)
+        .frame(height: textHeight)
+        .onPreferenceChange(HeightPreference.self) { newHeight in
+          let height = max(36, min(newHeight, 150))
+          print("📏 Measured: \(newHeight) -> Using: \(height)pt")
+          withAnimation(.easeOut(duration: 0.1)) {
+            textHeight = height
+          }
+        }
         .background(
           RoundedRectangle(cornerRadius: 20)
             .fill(.regularMaterial)
@@ -908,4 +918,13 @@ private func createStreamingSession() -> SessionState {
   }
   
   return TestView()
+}
+
+// MARK: - PreferenceKey for Height Measurement
+
+struct HeightPreference: PreferenceKey {
+  static var defaultValue: CGFloat = 36
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = nextValue()
+  }
 }

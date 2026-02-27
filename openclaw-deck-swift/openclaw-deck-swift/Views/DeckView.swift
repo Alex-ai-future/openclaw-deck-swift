@@ -20,7 +20,6 @@ struct DeckView: View {
   @State private var showingSortSheet: Bool = false
   @State private var selectedSessionId: String?
   @State private var isSyncing: Bool = false
-  @State private var syncMessage: String?
 
   var body: some View {
     NavigationStack {
@@ -74,20 +73,7 @@ struct DeckView: View {
           // Sync button
           Button {
             Task {
-              isSyncing = true
-              let result = await viewModel.syncAll()
-              isSyncing = false
-
-              switch result {
-              case .success(let message):
-                syncMessage = message
-              case .failure(let error):
-                syncMessage = error.localizedDescription
-              }
-
-              // 3 秒后清除提示
-              try? await Task.sleep(nanoseconds: 3_000_000_000)
-              syncMessage = nil
+              await viewModel.syncAll()
             }
           } label: {
             Image(systemName: "arrow.clockwise")
@@ -120,17 +106,6 @@ struct DeckView: View {
           .accessibilityIdentifier("settingsButton")
         }
 
-      }
-      .overlay {
-        if let message = syncMessage {
-          Text(message)
-            .padding()
-            .background(Color.secondary.opacity(0.8))
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .padding(.top, 8)
-            .transition(.opacity)
-        }
       }
       .sheet(isPresented: $showingSortSheet) {
         SessionSortView(viewModel: viewModel)

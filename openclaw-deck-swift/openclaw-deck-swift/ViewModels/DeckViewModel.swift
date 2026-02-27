@@ -458,7 +458,9 @@ class DeckViewModel {
   @MainActor
   func syncAll() async -> Result<String, Error> {
     guard gatewayConnected else {
-      return .failure(NSError(domain: "DeckViewModel", code: 400, userInfo: [NSLocalizedDescriptionKey: "Gateway 未连接"]))
+      return .failure(
+        NSError(
+          domain: "DeckViewModel", code: 400, userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]))
     }
 
     do {

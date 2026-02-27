@@ -129,10 +129,17 @@ struct SettingsView: View {
       }
       .navigationTitle("Settings")
       .toolbar {
-        ToolbarItem(placement: .automatic) {
+        ToolbarItem(placement: .cancellationAction) {
+          Button("Cancel") {
+            onClose?()
+          }
+        }
+
+        ToolbarItem(placement: .confirmationAction) {
           Button("Done") {
             onClose?()
           }
+          .fontWeight(.semibold)
           .keyboardShortcut(.defaultAction)
         }
       }

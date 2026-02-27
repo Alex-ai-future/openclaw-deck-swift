@@ -186,6 +186,7 @@ struct NewSessionSheet: View {
             createSession()
           }
           .disabled(name.isEmpty)
+          .fontWeight(.semibold)
         }
       }
     }

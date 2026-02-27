@@ -260,8 +260,53 @@ class DeckViewModel {
 
   // MARK: - Storage
 
-  /// 从 UserDefaults 加载 Sessions
+  /// 从 UserDefaults 加载 Sessions（带 Cloudflare 同步）
   private func loadSessionsFromStorage() {
+    // 尝试从 Cloudflare 同步（如果已配置）
+    if CloudflareKV.shared.isConfigured {
+      Task {
+        await loadSessionsWithCloudflareSync()
+      }
+    } else {
+      // 没有配置 Cloudflare，使用本地数据
+      loadFromLocalOnly()
+    }
+  }
+
+  /// 从 Cloudflare 同步加载 Sessions
+  private func loadSessionsWithCloudflareSync() async {
+    do {
+      // 智能同步：自动比较本地和云端，返回最新数据
+      let syncData = try await CloudflareKV.shared.syncAndGet()
+
+      // 使用同步后的数据
+      await MainActor.run {
+        self.sessionOrder = syncData.sessions.map { $0.lowercased() }
+        self.loadSessionConfigs()
+
+        // 默认选中第一个 Session
+        if let firstSessionId = sessionOrder.first {
+          globalInputState.selectedSessionId = firstSessionId
+        }
+
+        // 如果 Gateway 已连接，立即加载历史消息
+        if gatewayConnected {
+          Task {
+            await loadAllSessionHistory()
+          }
+        }
+      }
+    } catch {
+      logger.error("Cloudflare sync failed: \(error.localizedDescription)")
+      // 同步失败，退化到本地数据
+      await MainActor.run {
+        self.loadFromLocalOnly()
+      }
+    }
+  }
+
+  /// 仅从本地加载 Sessions（退化模式）
+  private func loadFromLocalOnly() {
     let configs = storage.loadSessions()
     let order = storage.loadSessionOrder()
 
@@ -300,7 +345,23 @@ class DeckViewModel {
     }
   }
 
-  /// 保存 Sessions 到 UserDefaults
+  /// 加载 Session 配置（从 UserDefaults）
+  private func loadSessionConfigs() {
+    let configs = storage.loadSessions()
+
+    // 使用小写 key 确保与 Gateway 一致
+    for config in configs {
+      let idLower = config.id.lowercased()
+      if sessions[idLower] == nil {
+        sessions[idLower] = SessionState(
+          sessionId: config.id,
+          sessionKey: config.sessionKey
+        )
+      }
+    }
+  }
+
+  /// 保存 Sessions 到 UserDefaults（并同步到 Cloudflare）
   func saveSessionsToStorage() {
     let configs = sessionOrder.compactMap { id -> SessionConfig? in
       guard let state = sessions[id] else { return nil }
@@ -316,6 +377,31 @@ class DeckViewModel {
 
     storage.saveSessions(configs)
     storage.saveSessionOrder(sessionOrder)
+
+    // 更新最后更新时间
+    UserDefaults.standard.set(
+      ISO8601DateFormatter().string(from: Date()),
+      forKey: "openclaw.deck.sessionOrder.lastUpdated"
+    )
+
+    // 如果配置了 Cloudflare，异步同步到云端
+    if CloudflareKV.shared.isConfigured {
+      Task {
+        await syncToCloudflare()
+      }
+    }
+  }
+
+  /// 同步到 Cloudflare KV
+  private func syncToCloudflare() async {
+    do {
+      let syncData = SyncData(
+        sessions: sessionOrder, lastUpdated: ISO8601DateFormatter().string(from: Date()))
+      try await CloudflareKV.shared.save(syncData)
+      logger.info("Synced to Cloudflare KV")
+    } catch {
+      logger.error("Cloudflare sync failed: \(error.localizedDescription)")
+    }
   }
 
   // MARK: - Load History

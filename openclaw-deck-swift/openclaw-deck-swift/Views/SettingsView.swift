@@ -126,6 +126,29 @@ struct SettingsView: View {
             Text("Play a sound when a message is received")
           }
         }
+
+        // Cloudflare KV Sync
+        Section {
+          NavigationLink {
+            CloudflareSettingsView(onClose: onClose)
+          } label: {
+            HStack {
+              Image(systemName: "icloud.and.arrow.down")
+              Text("Cloudflare KV 同步")
+
+              Spacer()
+
+              if CloudflareKV.shared.isConfigured {
+                Image(systemName: "checkmark.circle.fill")
+                  .foregroundColor(.green)
+              }
+            }
+          }
+        } header: {
+          Text("多设备同步")
+        } footer: {
+          Text("使用 Cloudflare KV 免费同步 Session 到多设备")
+        }
       }
       .navigationTitle("Settings")
       .toolbar {

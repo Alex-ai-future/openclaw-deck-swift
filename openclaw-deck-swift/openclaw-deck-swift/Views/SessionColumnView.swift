@@ -40,16 +40,49 @@ struct SessionColumnView: View {
     }
   }
 
+  // 发送 OK 消息
+  private func sendOKMessage() {
+    // 设置选中的 Session
+    viewModel.globalInputState.selectedSessionId = session.sessionId
+
+    // 设置输入内容为 "OK"
+    viewModel.globalInputState.inputText = "OK"
+
+    // 发送消息
+    Task {
+      await viewModel.globalInputState.sendMessage(
+        to: session,
+        viewModel: viewModel
+      )
+    }
+  }
+
   var body: some View {
     VStack(spacing: 0) {
       ZStack {
         messageList
 
-        // 滚动到底部按钮 - 底部中间浮动
+        // 底部浮动按钮组
         VStack {
           Spacer()
-          ScrollToBottomButton {
-            scrollToBottom()
+          HStack(spacing: 8) {
+            // 滚动到底部按钮
+            ScrollToBottomButton {
+              scrollToBottom()
+            }
+
+            // OK 按钮 - 点击发送 "OK" 消息
+            Button {
+              sendOKMessage()
+            } label: {
+              Image(systemName: "checkmark.circle.fill")
+                .font(.title3)
+                .foregroundColor(.blue)
+                .padding(12)
+                .background(.ultraThinMaterial)
+                .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
           }
           .padding(12)
         }
@@ -315,9 +348,20 @@ struct SessionColumnView: View {
         }
         .foregroundColor(.secondary)
       } else if message.role == .assistant && !message.text.isEmpty {
-        MarkdownView(message.text)
-          .font(.body)
-          .foregroundColor(.primary)
+        // 使用 ZStack 包裹 MarkdownView 以应用 openURL 环境
+        ZStack {
+          MarkdownView(message.text)
+            .font(.body)
+            .foregroundColor(.primary)
+        }
+        .environment(
+          \.openURL,
+          OpenURLAction { url in
+            #if os(iOS) || os(visionOS)
+              UIApplication.shared.open(url)
+            #endif
+            return .handled
+          })
       } else {
         Text(message.text)
           .font(.body)

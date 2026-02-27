@@ -9,6 +9,7 @@ import SwiftUI
 struct GlobalInputView: View {
   @Bindable var state: GlobalInputState
   let onSend: () async -> Void
+  @FocusState private var isInputFocused: Bool
 
   var body: some View {
     HStack(spacing: 8) {
@@ -27,8 +28,18 @@ struct GlobalInputView: View {
           .textFieldStyle(.plain)
           .tint(.accentColor)
           .accessibilityIdentifier("messageInput")
+          .focused($isInputFocused)
           .onChange(of: state.inputText) { _, _ in
             state.calculateTextHeight()
+          }
+          .onSubmit {
+            // 发送后收起键盘
+            if !state.inputText.isEmpty {
+              Task {
+                await onSend()
+                isInputFocused = false
+              }
+            }
           }
 
         // 发送按钮

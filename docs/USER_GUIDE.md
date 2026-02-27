@@ -1,806 +1,510 @@
-# OpenClaw Deck Swift - 使用说明书
+# OpenClaw Deck Swift - 用户指南
 
 **版本：** 1.2  
 **最后更新：** 2026-02-27  
-**适用平台：** macOS, iPadOS, iOS
+**适用平台：** macOS, iPadOS
 
 ---
 
 ## 目录
 
-1. [快速开始](#1-快速开始)
-2. [功能说明](#2-功能说明)
-3. [常见问题](#3-常见问题)
-4. [快捷键](#4-快捷键)
-5. [故障排除](#5-故障排除)
-6. [技术细节](#6-技术细节)
+1. [5 分钟快速上手](#1-5-分钟快速上手)
+2. [核心功能](#2-核心功能)
+3. [故障排除](#3-故障排除) ⭐⭐⭐⭐⭐
+4. [常见问题](#4-常见问题)
 
 ---
 
-## 1. 快速开始
+## 1. 5 分钟快速上手
 
-### 1.0 Gateway 配置（必须先配置）
+### 1.1 安装
+
+```bash
+cd ~/Projects
+git clone https://github.com/Alex-ai-future/openclaw-deck-swift.git
+open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
+# Xcode 中 Cmd+R 运行
+```
+
+### 1.2 配置 Gateway
 
 **OpenClaw Deck Swift 需要连接 OpenClaw Gateway 才能工作。**
 
-**步骤 1：安装 OpenClaw Gateway**
+**步骤 1：安装 Gateway**
 
 ```bash
 # 克隆 OpenClaw 项目
 git clone https://github.com/openclaw/openclaw.git
 cd openclaw
-
-# 安装依赖
 pnpm install
-
-# 启动 Gateway
 pnpm start
 ```
 
-**相关资源：**
-- **GitHub 仓库：** https://github.com/openclaw/openclaw
-- **官方文档：** https://docs.openclaw.ai
-- **Discord 社区：** https://discord.gg/clawd
+**步骤 2：配置连接**
 
-**步骤 2：配置连接方式为 LAN**
+1. 打开应用
+2. 点击工具栏 ⚙️ 图标
+3. 输入 Gateway URL: `ws://127.0.0.1:18789`
+4. 点击 "Apply & Reconnect"
 
-在 Gateway 配置中设置连接方式为 LAN（局域网）：
+**步骤 3：验证连接**
 
-```bash
-# 编辑 Gateway 配置
-# (根据安装方式编辑相应配置文件)
+- ✅ 绿色状态 = 已连接
+- ⚠️ 橙色状态 = 连接中
+- ❌ 红色状态 = 连接失败
 
-# 设置连接方式为 LAN
-connection.mode = "lan"
-```
+### 1.3 发送第一条消息
 
-**步骤 3：添加设备 IP 到允许源头**
-
-在 Gateway 的允许源头列表中添加运行 Deck Swift 的设备 IP：
-
-```bash
-# 查看当前设备 IP
-# macOS
-ipconfig getifaddr en0
-
-# 或在 Gateway 配置中添加
-allowed_origins = [
-  "192.168.1.xxx",  # 替换为实际 IP
-  "127.0.0.1"       # 本地回环
-]
-```
-
-**步骤 4：配对同意**
-
-首次连接时需要配对同意：
-
-```bash
-# 查看待配对设备
-openclaw pairing list
-
-# 同意配对
-openclaw pairing approve <device-id>
-
-# 或查看配对帮助
-openclaw pairing --help
-```
-
-**步骤 5：测试连接**
-
-```bash
-# 测试 Gateway 是否可访问
-curl ws://127.0.0.1:18789
-
-# 或在 Deck Swift 应用中尝试连接
-```
-
-**常见问题：**
-
-| 问题 | 解决方法 |
-|------|---------|
-| 无法连接 Gateway | 检查 Gateway 是否启动 |
-| 配对失败 | 重启 Gateway 后重试 |
-| IP 地址变化 | 使用静态 IP 或更新配置 |
+1. 点击顶部 `+` 创建 Session
+2. 在输入框输入 "Hello"
+3. 点击发送按钮（→）
+4. 等待 AI 回复
 
 ---
 
-### 1.1 系统要求
+## 2. 核心功能
 
-| 平台 | 最低版本 | 推荐版本 |
-|------|---------|---------|
-| macOS | 15.0+ | 15.3+ |
-| iPadOS | 18.0+ | 18.3+ |
-| iOS | 18.0+ | 18.3+ |
+### 2.1 发送消息
 
-**硬件要求：**
-- 内存：4GB 以上
-- 存储空间：100MB 可用空间
-- 网络：需要访问 OpenClaw Gateway
+**方式 1：输入框发送**
+1. 输入消息
+2. 点击输入框右侧发送按钮（→）
 
-### 1.2 安装步骤
+**方式 2：底部快速发送**
+1. 选中 Session（蓝色底条）
+2. 输入消息
+3. 点击右下角发送按钮（↑）
 
-**方式 A：Xcode 编译（推荐开发者）**
+**方式 3：快速 OK**
+1. 选中 Session（蓝色底条）
+2. 点击右下角 OK 按钮
+3. 自动发送 "OK"
 
-```bash
-# 1. 克隆项目
-cd ~/Projects
-git clone <repository-url> openclaw-deck-swift
+**方式 4：语音输入**
+1. 点击麦克风图标
+2. 说话
+3. 自动转为文字并发送
 
-# 2. 打开项目
-open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
-
-# 3. 在 Xcode 中选择目标平台
-#    - macOS: My Mac
-#    - iPadOS: iPad Simulator 或真实设备
-
-# 4. 编译运行 (Cmd+R)
-```
-
-**方式 B：直接运行已编译应用**
-
-```bash
-# 找到编译好的应用
-open ~/Projects/openclaw-deck-swift/build/Debug/openclaw-deck-swift.app
-```
-
-### 1.3 首次配置
-
-**启动应用后：**
-
-1. **配置 Gateway URL**
-   - 默认：`ws://127.0.0.1:18789`
-   - 如果 Gateway 在远程服务器，填写服务器地址
-
-2. **配置 Token（可选）**
-   - 如果 Gateway 需要认证，输入 Token
-   - 本地 Gateway 通常不需要 Token
-
-3. **点击"连接"**
-   - 等待连接成功提示
-   - 成功后自动创建 Welcome Session
-
-### 1.4 连接 Gateway
-
-**连接状态指示：**
-- ✅ **已连接** - 可以发送消息
-- ⏳ **连接中** - 正在建立连接
-- ❌ **连接失败** - 检查 Gateway 是否运行
-
-**检查 Gateway 是否运行：**
-
-```bash
-# 本地 Gateway
-ps aux | grep openclaw
-
-# 或者检查端口
-lsof -i :18789
-```
-
----
-
-## 2. 功能说明
-
-### 2.1 多 Session 管理
-
-**什么是 Session？**
-- 每个 Session 是一个独立的聊天会话
-- 类似微信的不同聊天窗口
-- 每个 Session 有独立的消息历史
+### 2.2 管理多个对话
 
 **创建 Session：**
-1. 点击顶部工具栏的 `+` 按钮
-2. 输入 Session 名称（可选）
-3. 自动创建并开始新会话
+- 点击顶部 `+` 按钮
 
 **切换 Session：**
-- 横向滚动 Session 列
-- 点击任意 Session 切换到该会话
+- 横向滚动
+- 点击任意 Session
 
 **删除 Session：**
-1. 点击 Session 顶部的菜单按钮（三个点）
-2. 选择"Delete Session"
-3. 确认删除
+1. 点击 Session 顶部菜单按钮（⋮）
+2. 选择 "Delete Session"
 
-**注意：**
-- 删除 Session 只删除本地显示
-- 消息历史仍保存在 Gateway
-- 重新创建同名 Session 会加载历史消息
+**拖拽排序：**
+1. 点击顶部排序按钮（↕️）
+2. 拖拽 Session 调整顺序
+3. 点击 "Done" 保存
 
-### 2.2 发送消息
+### 2.3 快速操作按钮
 
-**文本消息：**
-1. 在底部输入框输入文字
-2. 按 Enter 键或点击发送按钮
-3. 消息立即显示，AI 开始回复
+**位置：** 聊天界面右下角
 
-**输入框自动增长：**
-- 输入框会根据文本内容自动调整高度
-- 最小高度：36pt（单行）
-- 最大高度：150pt（约 7 行）
-- 超过最大高度后自动内部滚动
-- 背景容器跟随输入框高度，无空白区域
+| 按钮 | 图标 | 功能 | 显示条件 |
+|------|------|------|---------|
+| 滚动 | ↡ | 滚动到最新消息 | 始终显示 |
+| OK | OK | 发送 "OK" | 选中时 |
+| 发送 | ↑ | 发送输入框内容 | 选中时 |
 
-**语音输入（macOS/iOS）：**
-1. 点击麦克风图标
-2. 开始说话
-3. 点击麦克风停止
-4. 语音自动转为文字并发送
-
-**消息显示：**
-- ✅ **单条消息显示** - AI 回复显示为一条完整消息
-- ✅ **流式更新** - 实时看到 AI 回复内容
-- ✅ **段落分隔** - 长消息用空行分隔段落
-
-### 2.3 滚动控制
-
-**滚动到底部按钮：**
-- 位置：聊天界面右下角
-- 图标：向下箭头 ↓
-- 功能：快速滚动到最新消息
-- 使用场景：查看历史消息后快速返回
-
-### 2.4 Session 排序
-
-**功能说明**
-- 通过拖拽方式重新排列 Session 顺序
-- 自定义 Session 的显示顺序
-- 排序结果自动保存
-
-**使用方法**
-1. 点击工具栏的排序按钮（↕️ 图标）
-2. 在弹出的排序视图中，按住 Session 行拖拽到新位置
-3. 点击 "Done" 保存排序结果
-
-**界面说明**
-- **拖拽手柄：** 每行左侧的 ≡ 图标
-- **Session 名称：** 显示 Session ID
-- **消息数量：** 右侧徽章显示该 Session 的消息总数
-
-**注意事项**
-- 排序会自动保存，下次启动应用时保持顺序
-- 新建的 Session 会添加到列表末尾
-
-### 2.5 设置配置
-
-**打开设置：**
-- macOS：点击工具栏的齿轮图标 ⚙️
-- iOS/iPadOS：点击顶部导航栏的设置按钮
-
-**可配置项：**
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| Gateway URL | WebSocket 地址 | `ws://127.0.0.1:18789` |
-| Token | 认证 Token | 空 |
-
-**操作按钮：**
-
-| 按钮 | 功能 | 说明 |
-|------|------|------|
-| Apply & Reconnect | 应用并重连 | 保存配置并重新连接 Gateway |
-| Reset Device Identity | 重置设备身份 | 清除存储的身份和 Token |
-| Disconnect | 断开连接 | 返回欢迎界面 |
-
-**保存配置：**
-- 配置自动保存
-- 下次启动自动加载
-
-**关闭设置：** 点击右上角"Done"按钮或按 `Esc` 键
-
-### 2.5 对话状态识别
-
-**每个对话列顶部显示状态指示器（彩色圆点）：**
-
-| 颜色 | 状态 | 说明 |
-|------|------|------|
-| 🟠 **橙色** | 处理中 | AI 正在处理消息（等待回复中） |
-| 🟢 **绿色** | 未读消息 | AI 已完成回复，但用户未查看 |
-| 🔵 **蓝色** | 空闲 | 无正在进行的操作，所有消息已读 |
-
-**状态含义：**
-
-**🟠 处理中（橙色）**
-- AI 正在思考或生成回复
-- 消息正在发送中
-- 等待 Gateway 响应
-- **用户操作：** 等待即可，无需操作
-
-**🟢 未读消息（绿色）**
-- AI 已完成回复
-- 用户尚未查看（未滚动到底部）
-- **用户操作：** 滚动到底部查看消息，状态自动变为蓝色
-
-**🔵 空闲（蓝色）**
-- 无正在进行的操作
-- 所有消息已读
-- 可以发送新消息
-
-**如何切换到其他对话：**
-1. **横向滚动** - 左右滑动切换不同对话列
-2. **点击对话** - 点击任意对话列激活该对话
-3. **创建新对话** - 点击顶部 `+` 按钮
+**设计说明：**
+- 快速操作按钮只在选中的 Session 显示
+- 底部蓝色底条 = 当前选中的 Session
+- 避免多个 Session 同时显示按钮
 
 ---
 
-## 3. 常见问题
+## 3. 故障排除 ⭐⭐⭐⭐⭐
 
-### 3.1 Gateway 连接问题
+### 3.1 连接问题
 
-**Q: 显示"连接失败"怎么办？**
-
-**A:** 检查以下步骤：
-1. 确认 Gateway 已启动
-2. 检查 URL 是否正确
-3. 检查防火墙设置
-4. 尝试重启应用
-
-**Q: 连接后自动断开？**
-
-**A:** 可能原因：
-- Gateway 重启或崩溃
-- 网络不稳定
-- Token 过期（如果启用认证）
-
-**解决方法：**
-1. 检查 Gateway 状态
-2. 重新连接
-3. 更新 Token（如果需要）
-
-### 3.2 消息问题
-
-**Q: 消息显示为一个大气泡？**
-
-**A:** 这是正常行为！
-- 设计为单条消息显示
-- 避免消息碎片化
-- 段落用空行分隔
-
-**Q: 消息重复显示？**
-
-**A:** 可能原因：
-- Gateway 重发消息
-- 网络延迟导致重复接收
-
-**解决方法：**
-- 已自动去重，如仍有问题重启应用
-
-### 3.3 语音输入问题
-
-**Q: 点击麦克风没反应？**
-
-**A:** 检查权限：
-1. macOS: 系统偏好设置 → 安全性与隐私 → 麦克风
-2. iOS: 设置 → 隐私 → 麦克风
-3. 确保应用有麦克风权限
-
-**Q: 语音转文字不准确？**
-
-**A:** 可能原因：
-- 环境噪音大
-- 语速过快
-- 方言口音
-
-**建议：**
-- 在安静环境使用
-- 语速适中
-- 使用普通话
-
-### 3.4 性能优化
-
-**Q: 应用运行卡顿？**
-
-**A:** 优化建议：
-1. 减少 Session 数量（删除不用的）
-2. 清理长消息历史
-3. 关闭不用的应用
-
-**Q: 内存占用高？**
-
-**A:** 正常现象：
-- SwiftUI 应用内存占用较高
-- 消息历史缓存在内存中
-
-**优化：**
-- 重启应用释放内存
-- 减少同时打开的 Session 数
-
----
-
-## 4. 快捷键
-
-### 4.1 macOS 快捷键
-
-| 快捷键 | 功能 |
-|--------|------|
-| `Cmd + R` | 重新连接 Gateway |
-| `Cmd + N` | 创建新 Session |
-| `Cmd + W` | 关闭当前 Session |
-| `Cmd + ,` | 打开设置 |
-| `Enter` | 发送消息 |
-| `Shift + Enter` | 输入框换行 |
-| `Cmd + F` | 搜索消息（未来功能） |
-
-### 4.2 常用操作
-
-| 操作 | 方法 |
-|------|------|
-| 切换 Session | 横向滚动或点击 |
-| 删除 Session | 点击顶部菜单 → Delete |
-| 打开设置 | 点击齿轮图标 |
-| 语音输入 | 点击麦克风图标 |
-
----
-
-## 5. 故障排除（重点）
-
-### 5.1 连接超时
+#### ❌ 无法连接 Gateway
 
 **症状：**
-- 显示"连接超时"
-- 一直显示"连接中..."
+- 显示 "连接失败"
+- 状态指示器为红色
+
+**检查步骤：**
+
+1. **Gateway 是否启动？**
+   ```bash
+   ps aux | grep openclaw
+   ```
+   应该看到 `node` 进程
+
+2. **地址是否正确？**
+   - 默认：`ws://127.0.0.1:18789`
+   - 检查大小写和空格
+
+3. **端口是否被占用？**
+   ```bash
+   lsof -i :18789
+   ```
+
+**解决方法：**
+
+1. **重启 Gateway**
+   ```bash
+   cd openclaw
+   pnpm start
+   ```
+
+2. **检查防火墙**
+   - 系统设置 → 网络 → 防火墙
+   - 允许 Node.js 入站连接
+
+3. **重启应用**
+   - 完全退出（Cmd+Q）
+   - 重新打开
+
+---
+
+#### ❌ 连接后断开
+
+**症状：**
+- 连接成功后突然断开
+- 状态指示器变红
 
 **可能原因：**
-1. Gateway 未启动
-2. URL 错误
-3. 防火墙阻止
-4. 端口被占用
+1. Gateway 崩溃
+2. 网络不稳定
+3. Token 过期
 
-**解决步骤：**
+**解决方法：**
 
-```bash
-# 1. 检查 Gateway 是否运行
-ps aux | grep openclaw
+1. **检查 Gateway 日志**
+   ```bash
+   # 查看 Gateway 输出
+   # 应该看到 "Server listening on port 18789"
+   ```
 
-# 2. 检查端口是否监听
-lsof -i :18789
+2. **重新连接**
+   - 点击 ⚙️ 设置
+   - 点击 "Apply & Reconnect"
 
-# 3. 测试连接
-telnet 127.0.0.1 18789
+3. **检查 Token**
+   - 如果 Gateway 需要认证
+   - 在设置中重新输入 Token
 
-# 4. 查看 Gateway 日志
-# (根据 Gateway 安装位置)
-tail -f /var/log/openclaw.log
-```
+---
 
-**解决方案：**
-
-| 问题 | 解决方法 |
-|------|---------|
-| Gateway 未启动 | 启动 Gateway |
-| URL 错误 | 更正 Gateway URL |
-| 防火墙阻止 | 添加防火墙规则 |
-| 端口被占用 | 更改 Gateway 端口 |
-
-### 5.2 消息合并问题
+#### ❌ Token 无效
 
 **症状：**
-- 多条消息显示成一个气泡
-- 消息内容重复
+- 显示 "认证失败"
+- 无法建立连接
 
-**原因：**
-- Gateway 发送的是累积文本
-- 客户端设计为单条消息显示
+**解决方法：**
 
-**解决方案：**
+1. **检查 Token 格式**
+   - 不应该有空格
+   - 区分大小写
 
-**方案 A：接受当前设计（推荐）**
-- 单条消息更清晰
-- 段落用空行分隔
-- 避免消息碎片化
+2. **重新生成 Token**
+   ```bash
+   cd openclaw
+   openclaw token generate
+   ```
 
-**方案 B：修改 Gateway（需要开发）**
-- 每个 block 发送独立 text
-- 或添加 blockId 字段
-- 需要修改 Gateway 代码
+3. **清除设备身份**
+   - 设置 → Reset Device Identity
+   - 重新输入 Token
 
-### 5.3 语音输入失败
+---
+
+### 3.2 发送失败
+
+#### ❌ 消息发送失败
 
 **症状：**
-- 点击麦克风无反应
-- 语音无法转文字
-- 权限请求不显示
+- 点击发送后无响应
+- 消息不显示
 
-**解决步骤：**
+**检查步骤：**
 
-**macOS:**
-```bash
-# 1. 检查麦克风权限
-tccutil reset Microphone com.openclaw.deck
+1. **是否已连接？**
+   - 查看状态指示器（应为绿色）
 
-# 2. 重新授权
-# 系统偏好设置 → 安全性与隐私 → 麦克风
+2. **是否选中 Session？**
+   - 底部应为蓝色底条
 
-# 3. 重启应用
-```
+3. **输入框是否有内容？**
+   - 空消息不会发送
 
-**iOS/iPadOS:**
-```
-1. 设置 → 隐私 → 麦克风
-2. 找到应用，开启权限
-3. 重启应用
-```
+**解决方法：**
 
-**常见问题：**
+1. **重新连接**
+   - ⚙️ → Apply & Reconnect
 
-| 问题 | 解决方法 |
-|------|---------|
-| 权限已开启但仍失败 | 重置权限后重启 |
-| 语音识别不可用 | 检查网络连接 |
-| 转文字错误 | 检查语言设置 |
+2. **切换 Session**
+   - 点击其他 Session
+   - 再点击回来
 
-### 5.4 应用崩溃
+3. **刷新页面**
+   - Cmd+R 重新加载
+
+---
+
+#### ❌ 收不到回复
+
+**症状：**
+- 消息发送成功
+- AI 没有回复
+
+**可能原因：**
+1. Gateway 配置问题
+2. Agent 未启动
+3. 网络延迟
+
+**解决方法：**
+
+1. **检查 Gateway 日志**
+   ```bash
+   # 查看 Gateway 输出
+   # 应该看到 "Agent processing message..."
+   ```
+
+2. **等待 30 秒**
+   - 可能是网络延迟
+   - AI 正在生成回复
+
+3. **重新发送**
+   - 发送 "OK" 测试
+   - 如果收到回复，说明正常
+
+---
+
+#### ❌ 重复发送
+
+**症状：**
+- 同一条消息发送多次
+- AI 收到多条相同消息
+
+**解决方法：**
+
+1. **不要连续点击发送**
+   - 点击一次后等待
+   - 发送按钮会短暂禁用
+
+2. **检查网络**
+   - 网络不稳定可能导致重发
+   - 使用稳定的网络连接
+
+3. **重启应用**
+   - 完全退出
+   - 重新打开
+
+---
+
+### 3.3 Session 问题
+
+#### ❌ Session 不显示
+
+**症状：**
+- 创建的 Session 不显示
+- 列表为空
+
+**解决方法：**
+
+1. **横向滚动**
+   - Session 可能在右侧
+   - 左右滑动查看
+
+2. **刷新连接**
+   - ⚙️ → Apply & Reconnect
+   - 重新加载 Session 列表
+
+3. **创建新 Session**
+   - 点击 `+` 创建
+   - 如果成功，说明系统正常
+
+---
+
+#### ❌ 消息历史丢失
+
+**症状：**
+- 之前的消息不见了
+- Session 是空的
+
+**可能原因：**
+1. 切换到不同 Session
+2. Gateway 数据未加载
+3. 本地缓存清除
+
+**解决方法：**
+
+1. **检查 Session Key**
+   - 点击顶部菜单（⋮）
+   - 查看 Session Key
+   - 确认是正确的 Session
+
+2. **重新加载**
+   - ⚙️ → Apply & Reconnect
+   - 从 Gateway 加载历史
+
+3. **检查 Gateway**
+   ```bash
+   # 查看 Gateway 存储
+   # 消息应该还在
+   ```
+
+---
+
+#### ❌ 排序混乱
+
+**症状：**
+- Session 顺序错乱
+- 拖拽后不保存
+
+**解决方法：**
+
+1. **重新排序**
+   - 点击 ↕️ 排序按钮
+   - 拖拽调整
+   - 点击 "Done" 保存
+
+2. **检查保存**
+   - 关闭排序视图
+   - 重新打开
+   - 顺序应该保持
+
+3. **清除缓存**
+   - 完全退出应用
+   - 重新打开
+
+---
+
+### 3.4 其他问题
+
+#### ❌ 语音输入不工作
+
+**症状：**
+- 点击麦克风无响应
+- 显示 "不可用"
+
+**解决方法：**
+
+1. **检查权限**
+   - 系统设置 → 隐私与安全 → 麦克风
+   - 允许应用访问麦克风
+
+2. **检查设备**
+   - 系统设置 → 声音 → 输入
+   - 确认麦克风正常工作
+
+3. **重启应用**
+   - 完全退出
+   - 重新打开
+
+---
+
+#### ❌ 应用崩溃
 
 **症状：**
 - 应用突然关闭
-- 启动时崩溃
-- 特定操作时崩溃
+- 无法启动
 
-**诊断步骤：**
+**解决方法：**
 
-**macOS:**
-```bash
-# 查看崩溃日志
-open ~/Library/Logs/DiagnosticReports/
+1. **重启应用**
+   - 完全退出（Cmd+Q）
+   - 重新打开
 
-# 查找 openclaw-deck-swift 相关日志
-ls -lt ~/Library/Logs/DiagnosticReports/ | grep openclaw
-```
+2. **清除缓存**
+   ```bash
+   rm -rf ~/Library/Containers/Alex.openclaw-deck-swift
+   ```
 
-**常见崩溃原因：**
+3. **重新编译**
+   ```bash
+   cd openclaw-deck-swift
+   xcodebuild clean
+   ```
 
-| 崩溃场景 | 可能原因 | 解决方法 |
-|---------|---------|---------|
-| 启动时崩溃 | 配置文件损坏 | 删除配置文件重启 |
-| 连接时崩溃 | Gateway 响应异常 | 检查 Gateway 日志 |
-| 发送消息崩溃 | 消息内容过大 | 减少消息长度 |
-| 随机崩溃 | 内存不足 | 关闭其他应用 |
-
-**解决方案：**
-
-```bash
-# 1. 删除配置（会重置设置）
-rm -rf ~/Library/Preferences/com.openclaw.deck.plist
-
-# 2. 清除缓存
-rm -rf ~/Library/Caches/com.openclaw.deck
-
-# 3. 重新安装
-# 重新编译或下载最新版本
-```
-
-### 5.5 日志查看方法
-
-**应用日志位置：**
-
-**macOS:**
-```bash
-# 控制台应用
-open /Applications/Utilities/Console.app
-
-# 或直接查看文件
-tail -f ~/Library/Logs/OpenClaw\ Deck/*.log
-```
-
-**iOS/iPadOS:**
-```
-1. 连接设备到电脑
-2. 打开 Xcode
-3. Window → Devices and Simulators
-4. 选择设备 → View Device Logs
-```
-
-**关键日志关键字：**
-
-| 关键字 | 说明 |
-|--------|------|
-| `GatewayClient` | Gateway 连接相关 |
-| `DeckViewModel` | Session 管理相关 |
-| `SpeechRecognizer` | 语音输入相关 |
-| `ERROR` | 错误信息 |
-| `WARNING` | 警告信息 |
-
-**调试技巧：**
-
-```bash
-# 实时查看日志
-tail -f ~/Library/Logs/OpenClaw\ Deck/*.log | grep -E "ERROR|WARNING"
-
-# 查找特定问题
-grep "connection" ~/Library/Logs/OpenClaw\ Deck/*.log
-```
+4. **检查日志**
+   ```bash
+   # 查看系统日志
+   log show --predicate 'process == "openclaw-deck-swift"' --last 1h
+   ```
 
 ---
 
-### 5.6 Token Mismatch 问题
+## 4. 常见问题
 
-**症状：**
-- 显示错误：`unauthorized: gateway token mismatch (open the dashboard URL and paste the token in Control UI settings)`
-- 使用同样的 Token 在其他客户端可以连接，但 Deck Swift 无法连接
-- 之前可以正常连接，突然无法连接
+### Q: Gateway 地址是什么？
 
-**原因：**
-Deck Swift 会自动保存 Gateway 返回的 **Device Token**，后续连接时优先使用 Device Token 而不是用户输入的 Token。
+**A:** 默认是 `ws://127.0.0.1:18789`
 
-**认证流程：**
-```
-首次连接：
-用户输入 Token → Gateway 验证 → 成功 → Gateway 返回 Device Token → 保存到本地
+- 本地运行：`ws://127.0.0.1:18789`
+- 远程服务器：`ws://服务器 IP:18789`
 
-后续连接：
-读取保存的 Device Token → 发送给 Gateway → 验证失败 → Token Mismatch 错误
-```
+### Q: 需要 Token 吗？
 
-**为什么 Device Token 会失效：**
-1. Gateway 重启后 Device Token 记录丢失
-2. Gateway 配置变更，Device Token 被撤销
-3. Device Token 过期或被轮换
+**A:** 通常不需要。
 
-**解决方案：**
+- 本地 Gateway：不需要 Token
+- 远程 Gateway：可能需要，咨询管理员
 
-**方法一：通过 UI 重置（推荐）**
+### Q: 消息存储在哪里？
 
-1. 在 Welcome 界面点击右上角的 ⚙️ 设置按钮
-2. 进入 Settings 界面
-3. 点击 "Reset Device Identity" 按钮
-4. 确认重置
-5. 应用会清除保存的 Device Token，并使用你输入的 Token 重新连接
+**A:** 所有消息存储在 Gateway。
 
-**方法二：命令行清除**
+- 本地：只缓存当前显示的消息
+- Gateway：永久存储所有消息
+- 删除 Session：只删除本地显示，Gateway 仍保留
 
-```bash
-# 在 Xcode 控制台运行以下 Swift 代码
-UserDefaults.standard.removeObject(forKey: "openclaw.deck.deviceToken.v1:ws://你的 Gateway 地址")
-UserDefaults.standard.removeObject(forKey: "openclaw.deck.deviceIdentity.v1")
-```
+### Q: 支持多少个 Session？
 
-**方法三：删除应用数据**
+**A:** 理论上无限制。
 
-```bash
-# macOS - 删除应用配置
-rm -rf ~/Library/Preferences/com.openclaw.deck.plist
-rm -rf ~/Library/Application\ Support/com.openclaw.deck
+- 建议：10 个以内（便于管理）
+- 性能：100 个以内流畅运行
 
-# 然后重新打开应用
-```
+### Q: 可以自定义 AI 吗？
 
-**预防措施：**
+**A:** 可以，在 Gateway 配置。
 
-1. **记录 Token 变化** - 如果 Gateway 的 Token 发生变化，先重置 Device Identity
-2. **Gateway 重启后注意** - Gateway 重启后可能需要重置 Device Identity
-3. **使用固定 Token** - 在 Gateway 配置中设置固定的 `gateway.auth.token`
+- OpenClaw 支持多种 Agent
+- 参考：[OpenClaw 文档](https://docs.openclaw.ai)
 
-**调试日志：**
+### Q: 数据会同步吗？
 
-应用已添加详细日志，可以在 Xcode 控制台查看：
+**A:** 会，通过 Gateway 同步。
 
-```
-🔑 [AuthToken] Using device token: abcd********wxyz
-🔍 [Connect Request] Sending connect request to Gateway
-🔍 [Connect Request] Auth token (source: device): abcd********wxyz
-🔐 [DeviceAuth] Built device auth payload: v2|device-id|...
-📤 [WebSocket] Sending CONNECT frame: {"type":"req","id":"...","method":"connect",...}
-```
+- 多设备登录同一 Gateway
+- 消息自动同步
+- Session 列表同步
 
-- `source: device` - 使用的是保存的 Device Token
-- `source: user` - 使用的是用户输入的 Token
+### Q: 离线能用吗？
 
-如果看到 `source: device` 但连接失败，需要重置 Device Identity。
+**A:** 不能。
 
-**相关配置位置：**
-
-```
-# Gateway 配置 (config.yaml)
-gateway:
-  auth:
-    mode: token
-    token: your-fixed-token  # 固定 Token，避免 Device Token 失效
-```
-
----
-
-## 6. 技术细节
-
-### 6.1 项目结构
-
-```
-openclaw-deck-swift/
-├── docs/                      # 文档
-│   ├── introduction.md        # 项目介绍
-│   └── USER_GUIDE.md          # 使用说明书（本文件）
-├── openclaw-deck-swift/       # Xcode 项目
-│   ├── Models/                # 数据模型
-│   ├── Views/                 # UI 组件
-│   ├── ViewModels/            # 视图模型
-│   └── Services/              # 服务层
-└── script/                    # 构建脚本
-```
-
-### 6.2 数据流
-
-```
-用户操作 → View → ViewModel → GatewayClient → Gateway
-                                        ↓
-用户界面 ← View ← ViewModel ← GatewayClient ← Gateway 事件
-```
-
-### 6.3 与 Gateway 通信协议
-
-**WebSocket 连接：**
-```
-ws://<gateway-host>:18789
-```
-
-**主要事件类型：**
-
-| 事件 | 方向 | 说明 |
-|------|------|------|
-| `agent` | Gateway → Client | AI 回复内容 |
-| `agent.done` | Gateway → Client | 回复完成 |
-| `agent.error` | Gateway → Client | 回复错误 |
-| `tick` | Gateway → Client | 保活心跳 |
-| `health` | Gateway → Client | 健康检查 |
-
-**消息格式：**
-
-```json
-{
-  "runId": "agent-123-ABC",
-  "seq": 46,
-  "stream": "assistant",
-  "data": {
-    "text": "AI 回复内容"
-  },
-  "sessionKey": "agent:main:session-id"
-}
-```
-
-### 6.4 消息显示逻辑
-
-**设计决策：**
-- ✅ **单条消息显示** - 避免碎片化
-- ✅ **流式更新** - 实时显示 AI 回复
-- ✅ **累积文本** - Gateway 发送完整文本
-
-**原因：**
-- Gateway 发送的是累积文本（每条包含前面所有内容）
-- 无法可靠分割成多条消息
-- 单条消息更清晰易读
-
-### 6.5 性能考虑
-
-**内存管理：**
-- 消息历史缓存在内存中
-- Session 切换时不重新加载
-- 应用重启后从 Gateway 重新加载
-
-**优化建议：**
-- 保持 Session 数量 < 10
-- 定期清理不用的 Session
-- 长消息会自动分段显示
+- 必须连接 Gateway
+- 所有计算在 Gateway 进行
+- 本地只是界面
 
 ---
 
 ## 附录
 
-### A. 相关资源
+### 系统要求
 
-- **项目仓库：** [GitHub](https://github.com/openclaw/openclaw)
-- **官方文档：** [OpenClaw Docs](https://docs.openclaw.ai)
-- **问题反馈：** [GitHub Issues](https://github.com/openclaw/openclaw/issues)
+- **macOS:** 15.0+
+- **iPadOS:** 18.0+
+- **Xcode:** 16.0+（编译需要）
 
-### B. 版本历史
+### 相关链接
 
-| 版本 | 日期 | 更新内容 |
-|------|------|---------|
-| 1.0 | 2026-02-26 | 初始版本 |
-
-### C. 联系方式
-
-- **开发者：** Alex
-- **AI 助手：** 贾维斯 (Jarvis)
+- [GitHub 仓库](https://github.com/Alex-ai-future/openclaw-deck-swift)
+- [OpenClaw 文档](https://docs.openclaw.ai)
+- [技术架构](introduction.md)
 
 ---
 
-**文档结束**
-
-如有问题，请查看 [故障排除](#5-故障排除) 章节或提交 Issue。
+**需要帮助？** 提交 Issue: [GitHub Issues](https://github.com/Alex-ai-future/openclaw-deck-swift/issues)

@@ -43,8 +43,8 @@ final class NotificationServiceTests: XCTestCase {
   func testCheckPermission_returnsBool() async {
     // 验证检查权限返回布尔值
     let hasPermission = await notificationService.checkPermission()
-    // 权限状态可能是 true 或 false，只验证返回了布尔值
-    XCTAssertTrue(hasPermission || !hasPermission)
+    // 验证返回的是有效的布尔值（true 或 false）
+    XCTAssertTrue(hasPermission == true || hasPermission == false)
   }
 
   // MARK: - Send Notification Tests
@@ -134,8 +134,8 @@ final class NotificationServiceTests: XCTestCase {
     
     // 2. 检查权限
     let hasPermission = await service.checkPermission()
-    // 权限状态可能是 true 或 false
-    XCTAssertTrue(hasPermission || !hasPermission)
+    // 验证返回的是有效的布尔值
+    XCTAssertTrue(hasPermission == true || hasPermission == false)
     
     // 3. 发送通知
     XCTAssertNoThrow(
@@ -171,8 +171,8 @@ final class NotificationServiceTests: XCTestCase {
     // 3. 再次检查权限
     let afterRequestPermission = await notificationService.checkPermission()
     
-    // 权限可能改变也可能不变，只验证返回了布尔值
-    XCTAssertTrue(initialPermission || !initialPermission)
-    XCTAssertTrue(afterRequestPermission || !afterRequestPermission)
+    // 验证返回的是有效的布尔值
+    XCTAssertTrue(initialPermission == true || initialPermission == false)
+    XCTAssertTrue(afterRequestPermission == true || afterRequestPermission == false)
   }
 }

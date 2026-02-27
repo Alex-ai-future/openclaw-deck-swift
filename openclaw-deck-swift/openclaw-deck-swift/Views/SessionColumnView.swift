@@ -181,6 +181,8 @@ struct SessionColumnView: View {
         // 点击按钮选中 Session
         Button {
           onSelect()
+          // 点击时消除未读状态（确认用户已读）
+          session.hasUnreadMessage = false
         } label: {
           Text(session.sessionId)
             .font(.body)

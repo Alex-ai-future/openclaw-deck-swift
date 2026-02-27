@@ -221,6 +221,35 @@ final class GlobalInputStateTests: XCTestCase {
     XCTAssertFalse(inputState.speechRecognizer.isListening)
   }
 
+  func testSendMessage_whenNotListening() async {
+    inputState.inputText = "Test message"
+    inputState.selectedSessionId = "test-session"
+    
+    // 语音识别未监听
+    inputState.speechRecognizer.isListening = false
+    
+    let session = SessionState(
+      sessionId: "test-session",
+      sessionKey: "agent:main:test-session"
+    )
+    
+    // 不应该崩溃
+    await inputState.sendMessage(to: session, viewModel: viewModel)
+    
+    XCTAssertFalse(inputState.speechRecognizer.isListening)
+  }
+
+  func testClearInput_doesNotClearSelectedSession() {
+    inputState.selectedSessionId = "test-session"
+    inputState.inputText = "Test"
+    
+    inputState.clearInput()
+    
+    // selectedSessionId 应该保留
+    XCTAssertEqual(inputState.selectedSessionId, "test-session")
+    XCTAssertEqual(inputState.inputText, "")
+  }
+
   func testMultipleInputChanges() {
     inputState.inputText = "First"
     XCTAssertEqual(inputState.inputText, "First")

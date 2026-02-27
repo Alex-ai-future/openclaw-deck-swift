@@ -519,20 +519,7 @@ class DeckViewModel {
         case "end":
           logger.info("✅ 消息接收完成 - 隐藏处理中状态")
           session.isProcessing = false
-
-          // 检查是否是当前选中的 Session
-          let isSelected = session.sessionId == globalInputState.selectedSessionId
-
-          if isSelected {
-            // 用户正在看这个 Session，不标记为未读
-            logger.info("📖 用户正在查看此 Session，不显示未读状态")
-            session.hasUnreadMessage = false
-          } else {
-            // 用户没在看这个 Session，标记为未读
-            logger.info("📬 用户未查看此 Session，显示未读状态")
-            session.hasUnreadMessage = true
-          }
-
+          session.hasUnreadMessage = true  // 总是标记为未读
           session.status = .idle
           session.activeRunId = nil
 

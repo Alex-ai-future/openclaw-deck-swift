@@ -21,47 +21,45 @@ struct SessionSortView: View {
   var body: some View {
     NavigationStack {
       List {
-        // 说明文字
+        // Session 列表
         Section {
-          Text("Drag items to reorder sessions. Tap Done to save changes.")
+          ForEach(sortedOrder, id: \.self) { sessionId in
+            if let session = viewModel.sessions[sessionId] {
+              HStack {
+                // 拖拽手柄图标
+                Image(systemName: "line.3.horizontal")
+                  .font(.title3)
+                  .foregroundColor(.secondary)
+                  .padding(.trailing, 8)
+
+                // Session 名称
+                Text(session.sessionId)
+                  .lineLimit(1)
+
+                Spacer()
+
+                // 消息数量徽章
+                if session.messageCount > 0 {
+                  Text("\(session.messageCount)")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.secondary.opacity(0.1))
+                    .cornerRadius(8)
+                }
+              }
+              .padding(.vertical, 4)
+            }
+          }
+          .onMove { indices, newOffset in
+            sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
+          }
+        } footer: {
+          Text("拖拽项目重新排序")
             .font(.caption)
             .foregroundColor(.secondary)
-            .padding(.vertical, 8)
-        }
-
-        // Session 列表
-        ForEach(sortedOrder, id: \.self) { sessionId in
-          if let session = viewModel.sessions[sessionId] {
-            HStack {
-              // 拖拽手柄图标
-              Image(systemName: "line.3.horizontal")
-                .font(.title3)
-                .foregroundColor(.secondary)
-                .padding(.trailing, 8)
-
-              // Session 名称
-              Text(session.sessionId)
-                .lineLimit(1)
-
-              Spacer()
-
-              // 消息数量徽章
-              if session.messageCount > 0 {
-                Text("\(session.messageCount)")
-                  .font(.caption)
-                  .fontWeight(.medium)
-                  .foregroundColor(.secondary)
-                  .padding(.horizontal, 8)
-                  .padding(.vertical, 4)
-                  .background(Color.secondary.opacity(0.1))
-                  .cornerRadius(8)
-              }
-            }
-            .padding(.vertical, 4)
-          }
-        }
-        .onMove { indices, newOffset in
-          sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
         }
       }
       .listStyle(.insetGrouped)

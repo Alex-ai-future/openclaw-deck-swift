@@ -213,27 +213,29 @@ struct WelcomeView: View {
             Image(systemName: "message.badge.filled.fill")
               .font(.system(size: 80))
               .foregroundColor(.blue)
-
+            
             Text("OpenClaw Deck")
               .font(.largeTitle)
               .fontWeight(.bold)
-
+            
             Text("Multi-Session Chat Client")
               .font(.title2)
               .foregroundColor(.secondary)
           }
-
+          .frame(maxWidth: .infinity)
+          
           // Settings hint
           VStack(spacing: 12) {
             Image(systemName: "gearshape")
               .font(.system(size: 40))
               .foregroundColor(.secondary)
-
+            
             Text("Tap Settings to Configure")
               .font(.body)
               .foregroundColor(.secondary)
           }
-
+          .frame(maxWidth: .infinity)
+          
           // Error message
           if let error = connectionError {
             VStack(spacing: 8) {
@@ -247,7 +249,7 @@ struct WelcomeView: View {
                 Button("Dismiss", action: onClearError)
                   .font(.caption)
               }
-
+              
               Text(error)
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -259,12 +261,15 @@ struct WelcomeView: View {
             .cornerRadius(8)
             .padding(.horizontal, 24)
           }
-
+          
           Spacer()
         }
-        .padding()
+        .padding(.horizontal)
+        .frame(maxWidth: .infinity)
         #if os(macOS)
           .frame(minHeight: NSScreen.main?.frame.height ?? 800)
+        #else
+          .frame(minHeight: 800)
         #endif
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -278,7 +283,7 @@ struct WelcomeView: View {
               onShowSettings()
             } label: {
               Image(systemName: "gear")
-              .font(.title2)
+                .font(.title2)
             }
           }
         }
@@ -289,7 +294,7 @@ struct WelcomeView: View {
               onShowSettings()
             } label: {
               Image(systemName: "gear")
-              .font(.title2)
+                .font(.title2)
             }
           }
         }

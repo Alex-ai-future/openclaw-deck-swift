@@ -9,13 +9,13 @@ import SwiftUI
 struct GlobalInputView: View {
   @Bindable var state: GlobalInputState
   let onSend: () async -> Void
-  
+
   var body: some View {
     HStack(spacing: 8) {
       // 语音按钮
       DictationButton(text: $state.inputText, speechRecognizer: state.speechRecognizer)
         .frame(width: 36, height: 36)
-      
+
       // 输入框
       ZStack(alignment: .trailing) {
         TextField("Message", text: $state.inputText, axis: .vertical)
@@ -30,7 +30,7 @@ struct GlobalInputView: View {
           .onChange(of: state.inputText) { _, _ in
             state.calculateTextHeight()
           }
-        
+
         // 发送按钮
         if !state.inputText.isEmpty {
           Button {
@@ -46,7 +46,7 @@ struct GlobalInputView: View {
           .transition(.opacity.combined(with: .scale))
           .accessibilityIdentifier("sendButton")
         }
-        
+
         // 占位文字
         if state.inputText.isEmpty {
           Text("Message")

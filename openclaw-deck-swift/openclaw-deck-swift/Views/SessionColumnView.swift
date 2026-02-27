@@ -44,7 +44,7 @@ struct SessionColumnView: View {
     VStack(spacing: 0) {
       ZStack {
         messageList
-        
+
         // 滚动到底部按钮 - 底部中间浮动
         VStack {
           Spacer()
@@ -57,7 +57,7 @@ struct SessionColumnView: View {
       .overlay(alignment: .top) {
         topStatusBar
       }
-      
+
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
@@ -107,8 +107,7 @@ struct SessionColumnView: View {
             .padding(12)
             // 工作中显示橘黄色，其他情况蓝色
             .foregroundColor(
-              session.isProcessing ? Color.orange :
-              Color.blue
+              session.isProcessing ? Color.orange : Color.blue
             )
         }
         .buttonStyle(.glass)

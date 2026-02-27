@@ -484,7 +484,7 @@ class DeckViewModel {
           let hasExistingMessage = session.messages.contains {
             $0.runId == runId && $0.role == .assistant
           }
-          
+
           if !hasExistingMessage {
             createAssistantMessage(session: session, runId: runId, text: text, seq: seq)
           }

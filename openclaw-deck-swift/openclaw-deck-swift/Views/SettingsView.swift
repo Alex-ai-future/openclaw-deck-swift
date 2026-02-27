@@ -110,10 +110,11 @@ struct SettingsView: View {
       }
       .navigationTitle("Settings")
       .toolbar {
-        ToolbarItem(placement: .primaryAction) {
+        ToolbarItem(placement: .automatic) {
           Button("Done") {
             onClose?()
           }
+          .keyboardShortcut(.defaultAction)
         }
       }
     }

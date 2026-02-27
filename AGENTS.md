@@ -146,6 +146,39 @@
 
 ---
 
+## 🧹 代码清理规则
+
+### 使用 swift-format 格式化代码
+
+**命令：**
+```bash
+swift-format format --in-place --recursive .
+```
+
+**参数说明：**
+- `format` - 格式化命令
+- `--in-place` - 直接修改文件（不输出到新文件）
+- `--recursive` - 递归处理所有子目录
+- `.` - 当前目录
+
+**使用场景：**
+- 提交代码前统一格式
+- 清理他人贡献的代码
+- 保持代码风格一致
+
+**执行位置：**
+```bash
+cd ~/Projects/openclaw-deck-swift/openclaw-deck-swift/openclaw-deck-swift
+swift-format format --in-place --recursive .
+```
+
+**注意事项：**
+- 格式化后需要检查是否有误改
+- 建议格式化后运行编译测试
+- 格式化后应该提交代码
+
+---
+
 ## 🔒 编译锁规则（多 AI 协作）
 
 **问题：** 多个 AI 同时编译会导致 `build.db` 数据库锁定冲突

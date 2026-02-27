@@ -11,10 +11,18 @@ struct GatewayConfigInput: View {
   var onConnect: () -> Void
   var isConnected: Bool = false
 
+  @FocusState private var isGatewayUrlFocused: Bool
+  @FocusState private var isTokenFocused: Bool
+
   var body: some View {
     // Gateway URL
     TextField("Gateway URL", text: $gatewayUrl, prompt: Text("ws://host:port"))
       .textContentType(.URL)
+      .focused($isGatewayUrlFocused)
+      .submitLabel(.done)
+      .onSubmit {
+        isGatewayUrlFocused = false
+      }
       #if os(iOS) || os(visionOS)
         .autocapitalization(.none)
         .keyboardType(.URL)
@@ -23,6 +31,11 @@ struct GatewayConfigInput: View {
     // Token
     TextField("Token (optional)", text: $token)
       .textContentType(.none)
+      .focused($isTokenFocused)
+      .submitLabel(.done)
+      .onSubmit {
+        isTokenFocused = false
+      }
       #if os(iOS) || os(visionOS)
         .autocapitalization(.none)
       #endif

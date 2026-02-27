@@ -16,6 +16,15 @@ struct CloudflareSettingsView: View {
   @State private var testResult: String?
   @State private var isTesting = false
 
+  @FocusState private var focusedField: Field?
+
+  enum Field: Hashable {
+    case userId
+    case accountId
+    case namespaceId
+    case apiToken
+  }
+
   var onSave: (() -> Void)?
   var onClose: (() -> Void)?
 
@@ -43,12 +52,32 @@ struct CloudflareSettingsView: View {
         // 配置输入
         Section {
           TextField("User ID（自定义，如邮箱）", text: $userId)
+            .focused($focusedField, equals: .userId)
+            .submitLabel(.done)
+            .onSubmit {
+              focusedField = .accountId
+            }
 
           TextField("Account ID", text: $accountId)
+            .focused($focusedField, equals: .accountId)
+            .submitLabel(.done)
+            .onSubmit {
+              focusedField = .namespaceId
+            }
 
           TextField("Namespace ID", text: $namespaceId)
+            .focused($focusedField, equals: .namespaceId)
+            .submitLabel(.done)
+            .onSubmit {
+              focusedField = .apiToken
+            }
 
           SecureField("API Token", text: $apiToken)
+            .focused($focusedField, equals: .apiToken)
+            .submitLabel(.done)
+            .onSubmit {
+              focusedField = nil  // 收起键盘
+            }
         } header: {
           Text("Cloudflare 配置")
         } footer: {

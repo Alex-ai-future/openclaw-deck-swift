@@ -105,8 +105,8 @@ struct SessionColumnView: View {
             Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
           }
 
-          // Session ID
-          Label("ID: \(session.sessionId)", systemImage: "tag")
+          // Session Key
+          Label("Key: \(session.sessionKey)", systemImage: "tag")
         }
 
         Divider()

@@ -460,7 +460,8 @@ class DeckViewModel {
     guard gatewayConnected else {
       return .failure(
         NSError(
-          domain: "DeckViewModel", code: 400, userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]))
+          domain: "DeckViewModel", code: 400,
+          userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]))
     }
 
     do {

@@ -90,26 +90,49 @@ struct SessionColumnView: View {
       // Center: Session name glass button
       // 点击选中，长按弹出菜单
       Menu {
-        Button(role: .destructive) {
-          showingDeleteAlert = true
-        } label: {
-          Label("Delete Session", systemImage: "trash")
+        // 会话详细信息（仅 4 项）
+        Section {
+          // 消息数量
+          Label("\(session.messages.count) messages", systemImage: "message")
+
+          // 最后活动时间
+          if let lastActivity = session.lastMessageAt {
+            Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
+          }
+
+          // 上下文（如果有，限制 100 字符）
+          if let context = session.context, !context.isEmpty {
+            Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
+          }
+
+          // Session ID
+          Label("ID: \(session.sessionId)", systemImage: "tag")
+        }
+
+        Divider()
+
+        // 删除按钮
+        Section {
+          Button(role: .destructive) {
+            showingDeleteAlert = true
+          } label: {
+            Label("Delete Session", systemImage: "trash")
+          }
         }
       } label: {
         // 点击按钮选中 Session
         Button {
           onSelect()
         } label: {
-          Text(session.sessionKey)
+          Text(session.sessionId)
             .font(.body)
             .fontWeight(.medium)
             .lineLimit(1)
             .padding(12)
             // 工作中橘黄，完成未读绿色，其他蓝色
             .foregroundColor(
-              session.isProcessing ? Color.orange :
-              session.hasUnreadMessage ? Color.green :
-              Color.blue
+              session.isProcessing
+                ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
             )
         }
         .buttonStyle(.glass)
@@ -173,6 +196,15 @@ struct SessionColumnView: View {
       }
     }
     .background(Color.adaptiveBackground)
+  }
+
+  // MARK: - Helper Functions
+
+  /// 格式化日期
+  private func formatDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd HH:mm"
+    return formatter.string(from: date)
   }
 }
 

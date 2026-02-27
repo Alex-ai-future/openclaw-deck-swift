@@ -121,12 +121,20 @@ struct ContentView: View {
         onConnect: {
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
+            // 连接成功后关闭设置页面
+            await MainActor.run {
+              showingSettings = false
+            }
           }
         },
         onResetDeviceIdentity: {
           viewModel.resetDeviceIdentity()
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
+            // 重置成功后关闭设置页面
+            await MainActor.run {
+              showingSettings = false
+            }
           }
         },
         onClose: {
@@ -153,12 +161,20 @@ struct ContentView: View {
         onConnect: {
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
+            // 连接成功后关闭设置页面
+            await MainActor.run {
+              showingWelcomeSettings = false
+            }
           }
         },
         onResetDeviceIdentity: {
           viewModel.resetDeviceIdentity()
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
+            // 重置成功后关闭设置页面
+            await MainActor.run {
+              showingWelcomeSettings = false
+            }
           }
         },
         onClose: {

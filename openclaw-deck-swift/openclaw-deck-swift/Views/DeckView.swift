@@ -31,10 +31,10 @@ struct DeckView: View {
           await viewModel.sendCurrentInput()
         }
       }
-      .task {
-        // 初始化选中状态：从 ViewModel 读取默认选中的 Session
-        if let defaultSessionId = viewModel.globalInputState.selectedSessionId {
-          selectedSessionId = defaultSessionId
+      .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
+        // ViewModel 的选中状态变化时，同步到本地
+        if let sessionId = newId {
+          selectedSessionId = sessionId
         }
       }
       .onChange(of: selectedSessionId) { _, newId in
@@ -47,6 +47,15 @@ struct DeckView: View {
         {
           session.hasUnreadMessage = false
         }
+      }
+      .task {
+        // 初始化选中状态：确保 ViewModel 有选中的 Session
+        if viewModel.globalInputState.selectedSessionId == nil,
+          let firstSessionId = viewModel.sessionOrder.first
+        {
+          viewModel.selectSession(firstSessionId)
+        }
+        selectedSessionId = viewModel.globalInputState.selectedSessionId
       }
       .navigationTitle("OpenClaw Deck")
       .toolbarTitleDisplayMode(.inline)

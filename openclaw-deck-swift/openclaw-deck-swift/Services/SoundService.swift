@@ -19,11 +19,21 @@ class SoundService {
   /// 播放消息提示音
   func playMessageNotification() {
     #if os(macOS)
-      // macOS: 使用系统消息音
-      NSSound.beep()
+      // macOS: 使用更响亮的系统声音
+      if let sound = NSSound(named: "Glass") {
+        sound.volume = 1.0
+        sound.play()
+      } else {
+        NSSound.beep()
+      }
     #else
-      // iOS: 使用系统短信提示音
-      AudioServicesPlaySystemSound(1005)
+      // iOS/iPadOS: 连续播放 3 次增强效果
+      // 1014 - 多消息提示音（很响亮）
+      for i in 0..<3 {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.12) {
+          AudioServicesPlayAlertSound(1014)
+        }
+      }
     #endif
   }
 

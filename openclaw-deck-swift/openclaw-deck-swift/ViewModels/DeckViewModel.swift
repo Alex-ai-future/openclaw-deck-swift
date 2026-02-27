@@ -518,6 +518,7 @@ class DeckViewModel {
         case "end":
           logger.info("✅ 消息接收完成 - 隐藏处理中状态")
           session.isProcessing = false
+          session.hasUnreadMessage = true  // 标记为未读
           session.status = .idle
           session.activeRunId = nil
 
@@ -530,7 +531,7 @@ class DeckViewModel {
               sessionName: session.sessionId,
               messageText: lastMessage.text
             )
-
+            
             // 🎵 播放提示音（如果启用）
             if playSoundOnMessage {
               SoundService.shared.playMessageNotification()

@@ -39,6 +39,12 @@ struct DeckView: View {
       .onChange(of: selectedSessionId) { _, newId in
         // Session 切换时通知 ViewModel
         viewModel.selectSession(newId)
+        
+        // 新选中的 Session 标记为已读
+        if let sessionId = newId,
+           let session = viewModel.sessions[sessionId] {
+          session.hasUnreadMessage = false
+        }
       }
       .navigationTitle("OpenClaw Deck")
       .toolbarTitleDisplayMode(.inline)
@@ -87,6 +93,7 @@ struct DeckView: View {
               onSelect: {
                 withAnimation {
                   selectedSessionId = sessionId
+                  // hasUnreadMessage 在 .onChange 中统一处理
                 }
               },
               onDelete: {

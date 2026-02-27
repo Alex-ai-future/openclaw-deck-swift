@@ -105,9 +105,11 @@ struct SessionColumnView: View {
             .fontWeight(.medium)
             .lineLimit(1)
             .padding(12)
-            // 工作中显示橘黄色，其他情况蓝色
+            // 工作中橘黄，完成未读绿色，其他蓝色
             .foregroundColor(
-              session.isProcessing ? Color.orange : Color.blue
+              session.isProcessing ? Color.orange :
+              session.hasUnreadMessage ? Color.green :
+              Color.blue
             )
         }
         .buttonStyle(.glass)

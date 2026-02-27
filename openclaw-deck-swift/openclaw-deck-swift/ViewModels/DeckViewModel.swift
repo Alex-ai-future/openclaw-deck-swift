@@ -38,6 +38,9 @@ class DeckViewModel {
   /// 是否正在初始化
   var isInitializing: Bool = false
 
+  /// 全局输入状态（唯一实例）
+  let globalInputState = GlobalInputState()
+
   /// UserDefaults 存储
   private let storage: UserDefaultsStorageProtocol
 
@@ -99,10 +102,12 @@ class DeckViewModel {
         self?.gatewayConnected = connected
         if connected {
           // 重连时重置所有 session 的处理状态
-          for session in self?.sessions.values ?? [] {
-            session.isProcessing = false
-            session.status = .idle
-            session.activeRunId = nil
+          if let sessions = self?.sessions {
+            for session in sessions.values {
+              session.isProcessing = false
+              session.status = .idle
+              session.activeRunId = nil
+            }
           }
           await self?.loadAllSessionHistory()
         }
@@ -135,6 +140,22 @@ class DeckViewModel {
   /// 重置设备身份（清除 device identity 和 device token）
   func resetDeviceIdentity() {
     gatewayClient?.resetDeviceIdentity()
+  }
+
+  /// 设置当前选中的 Session
+  func selectSession(_ sessionId: String?) {
+    globalInputState.selectedSessionId = sessionId
+  }
+
+  /// 发送当前输入（全局入口）
+  func sendCurrentInput() async {
+    guard let sessionId = globalInputState.selectedSessionId,
+          let session = getSession(sessionId: sessionId)
+    else {
+      return
+    }
+    
+    await globalInputState.sendMessage(to: session, viewModel: self)
   }
 
   // MARK: - Session Management
@@ -252,6 +273,11 @@ class DeckViewModel {
       sessionOrder = configs.map { $0.id.lowercased() }
     } else {
       sessionOrder = order.map { $0.lowercased() }
+    }
+
+    // 默认选中第一个 Session
+    if let firstSessionId = sessionOrder.first {
+      globalInputState.selectedSessionId = firstSessionId
     }
 
     // 如果 Gateway 已连接，立即加载历史消息

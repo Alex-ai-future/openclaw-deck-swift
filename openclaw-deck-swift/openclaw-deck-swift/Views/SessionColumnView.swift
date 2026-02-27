@@ -13,7 +13,7 @@ import SwiftUI
   import UIKit
 #endif
 
-/// Session 列视图 - 单个聊天会话
+/// Session 列视图 - 单个聊天会话（只负责展示）
 struct SessionColumnView: View {
   @Bindable var session: SessionState
   @Bindable var viewModel: DeckViewModel
@@ -21,84 +21,47 @@ struct SessionColumnView: View {
   let onSelect: () -> Void
   let onDelete: () -> Void
 
-  @State private var inputText = ""
   @State private var showingDeleteAlert = false
-  @State private var textHeight: CGFloat = 36
-  @State private var inputFieldWidth: CGFloat = 300  // 输入框实际宽度
   @State private var scrollTrigger = 0  // 用于触发滚动到底部（使用计数而非 toggle）
   @State private var isScrolling = false  // 防止重复滚动
-  @StateObject private var speechRecognizer = SpeechRecognizer()
 
   // 滚动到底部
   private func scrollToBottom() {
-    guard !isScrolling else { return }  // 防止重复点击
+    guard !isScrolling else { return }
     isScrolling = true
 
-    // 使用固定值触发滚动（确保每次位置一致）
     withAnimation(.smooth(duration: 0.3)) {
       scrollTrigger = 1
     }
 
-    // 动画结束后重置并解锁
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-      scrollTrigger = 0  // 重置为 0
+      scrollTrigger = 0
       isScrolling = false
     }
   }
 
-  // 计算文本高度
-  private func calculateTextHeight() {
-    let text = inputText.isEmpty ? " " : inputText
-
-    // 精确计算输入框实际可用宽度（减去 padding 和发送按钮空间）
-    let actualInputWidth = inputFieldWidth - 14 - 40 - 14  // left padding + send button space + right padding
-    let maxWidth = max(100, actualInputWidth)  // 确保最小宽度
-
-    #if os(macOS)
-      let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-      let textStorage = NSTextStorage(string: text)
-      let layoutManager = NSLayoutManager()
-      let textContainer = NSTextContainer(
-        containerSize: CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
-      layoutManager.addTextContainer(textContainer)
-      textStorage.addLayoutManager(layoutManager)
-      let rect = layoutManager.usedRect(for: textContainer)
-      let height = max(36.0, min(rect.height + 8, 150))
-    #else
-      let font = UIFont.preferredFont(forTextStyle: .body)
-      let rect = text.boundingRect(
-        with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        attributes: [.font: font],
-        context: nil
-      )
-      let height = max(36.0, min(rect.height + 8, 150))
-    #endif
-
-    DispatchQueue.main.async {
-      // 只有高度变化明显时才更新（避免频繁小幅度动画）
-      let heightDiff = abs(height - textHeight)
-      if heightDiff > 5 || textHeight == 36 {
-        withAnimation(.easeOut(duration: 0.05)) {  // 更快的动画
-          textHeight = height
-        }
-      } else {
-        textHeight = height
-      }
-    }
-  }
-
   var body: some View {
-    ZStack {
-      // Message list
-      messageList
-
-      // Input area - floating at bottom
-      chatInput
-    }
-    .overlay(alignment: .top) {
-      // Top status bar - fixed at top
-      topStatusBar
+    VStack(spacing: 0) {
+      ZStack {
+        messageList
+        
+        // 滚动到底部按钮 - 底部中间浮动
+        VStack {
+          Spacer()
+          ScrollToBottomButton {
+            scrollToBottom()
+          }
+          .padding(12)
+        }
+      }
+      .overlay(alignment: .top) {
+        topStatusBar
+      }
+      
+      // 底部状态条 - 选中蓝色，未选中灰色
+      Rectangle()
+        .fill(isSelected ? Color.blue : Color.gray)
+        .frame(height: 3)
     }
     .contentShape(Rectangle())
     .onTapGesture {
@@ -124,8 +87,8 @@ struct SessionColumnView: View {
       Spacer()
         .frame(width: 44, height: 36)
 
-      // Center: Session name glass button with processing indicator
-      // Menu button (overlay on right spacer)
+      // Center: Session name glass button
+      // 点击选中，长按弹出菜单
       Menu {
         Button(role: .destructive) {
           showingDeleteAlert = true
@@ -133,20 +96,22 @@ struct SessionColumnView: View {
           Label("Delete Session", systemImage: "trash")
         }
       } label: {
+        // 点击按钮选中 Session
         Button {
-
+          onSelect()
         } label: {
           Text(session.sessionKey)
             .font(.body)
             .fontWeight(.medium)
             .lineLimit(1)
             .padding(12)
+            // 工作中显示橘黄色，其他情况蓝色
+            .foregroundColor(
+              session.isProcessing ? Color.orange :
+              Color.blue
+            )
         }
         .buttonStyle(.glass)
-        // 🆕 处理中状态：使用 tint 改变玻璃按钮背景色
-        // 工作中：橘黄色，普通状态：蓝色
-        .tint(session.isProcessing ? Color.orange : Color.blue)
-
       }
 
       // Right: Spacer
@@ -207,117 +172,6 @@ struct SessionColumnView: View {
       }
     }
     .background(Color.adaptiveBackground)
-  }
-
-  // MARK: - Chat Input
-
-  private var chatInput: some View {
-    VStack {
-      Spacer()
-
-      HStack(spacing: 8) {
-        // Dictation button - stays outside the input field
-        DictationButton(text: $inputText, speechRecognizer: speechRecognizer)
-          .frame(width: 36, height: 36)
-
-        // Input field with overlay for send button
-        ZStack(alignment: .trailing) {
-          // TextField for input with auto-resize
-          TextField("Message", text: $inputText, axis: .vertical)
-            .font(.body)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 4)
-            .padding(.trailing, 40)
-            .lineLimit(1...7)
-            .textFieldStyle(.plain)
-            .tint(.accentColor)
-            .accessibilityIdentifier("messageInput")
-
-          // Send button - shown only when text is not empty
-          if !inputText.isEmpty {
-            Button {
-              sendMessage()
-            } label: {
-              Image(systemName: "arrow.up.circle.fill")
-                .font(.title2)
-                .foregroundStyle(.blue)
-            }
-            .padding(.trailing, 8)
-            .transition(.opacity.combined(with: .scale))
-            .accessibilityIdentifier("sendButton")
-          }
-
-          // Placeholder - shown when empty
-          if inputText.isEmpty {
-            Text("Message")
-              .font(.body)
-              .foregroundStyle(.secondary)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(.horizontal, 14)
-              .allowsHitTesting(false)
-          }
-        }
-        .frame(height: textHeight)
-
-        .background(
-          GeometryReader { geometry in
-            Color.clear
-              .onAppear {
-                inputFieldWidth = geometry.size.width
-              }
-              .onChange(of: geometry.size.width) { _, newWidth in
-                inputFieldWidth = newWidth
-              }
-          }
-        )
-        .onChange(of: inputText) { _, _ in
-          calculateTextHeight()
-        }
-        .background(
-          RoundedRectangle(cornerRadius: 20)
-            .fill(.regularMaterial)
-            .overlay(
-              RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
-        )
-
-        // Scroll to bottom button
-        ScrollToBottomButton {
-          scrollToBottom()
-        }
-
-      }
-      .padding(.horizontal, 12)
-      .padding(.bottom, 8)
-      .padding(.top, 8)
-      .contentShape(Rectangle())
-      .onTapGesture {
-        // Empty gesture handler to prevent event bubbling to parent view
-      }
-    }
-  }
-
-  // MARK: - Actions
-
-  private func sendMessage() {
-    guard !inputText.isEmpty, !viewModel.isInitializing, viewModel.gatewayConnected else { return }
-
-    let text = inputText
-
-    // 如果正在听写，先停止听写，防止回调继续更新输入框
-    if speechRecognizer.isListening {
-      speechRecognizer.stopListening()
-    }
-
-    inputText = ""  // 清空输入框
-
-    // 发送消息后立即滚动到底部
-    scrollToBottom()
-
-    Task {
-      await viewModel.sendMessage(sessionId: session.sessionId, text: text)
-    }
   }
 }
 

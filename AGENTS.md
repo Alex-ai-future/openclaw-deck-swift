@@ -179,6 +179,32 @@ swift-format format --in-place --recursive .
 
 ---
 
+## ✅ 代码修改后的标准流程
+
+**每次修改代码后，按以下步骤操作：**
+
+### 1. 自动格式化
+```bash
+cd ~/Projects/openclaw-deck-swift/openclaw-deck-swift/openclaw-deck-swift
+swift-format format --in-place --recursive .
+```
+
+### 2. 提交代码
+- 格式化后提交
+- 提交信息清晰描述修改内容
+
+**好处：**
+- ✅ 代码风格统一
+- ✅ 保持代码整洁
+- ✅ 提交前自动清理
+
+**注意：**
+- ⚠️ 不自动执行编译（太耗时）
+- ⚠️ 如需验证，手动运行编译脚本
+- ⚠️ 格式化可能引入语法错误，需注意
+
+---
+
 ## 🔒 编译锁规则（多 AI 协作）
 
 **问题：** 多个 AI 同时编译会导致 `build.db` 数据库锁定冲突

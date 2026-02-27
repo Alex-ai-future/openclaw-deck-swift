@@ -301,7 +301,7 @@ class DeckViewModel {
   }
 
   /// 保存 Sessions 到 UserDefaults
-  private func saveSessionsToStorage() {
+  func saveSessionsToStorage() {
     let configs = sessionOrder.compactMap { id -> SessionConfig? in
       guard let state = sessions[id] else { return nil }
       return SessionConfig(

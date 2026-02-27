@@ -17,6 +17,7 @@ struct DeckView: View {
   @Bindable var viewModel: DeckViewModel
   @Binding var showingSettings: Bool
   @Binding var showingNewSessionSheet: Bool
+  @State private var showingSortSheet: Bool = false
   @State private var selectedSessionId: String?
 
   var body: some View {
@@ -59,7 +60,15 @@ struct DeckView: View {
           .disabled(!viewModel.gatewayConnected)
         }
         ToolbarItem {
+          // Sort button
+          Button {
+            showingSortSheet = true
+          } label: {
+            Image(systemName: "arrow.up.arrow.down")
+          }
+        }
 
+        ToolbarItem {
           // Settings button
           Button {
             showingSettings = true
@@ -69,6 +78,9 @@ struct DeckView: View {
           .accessibilityIdentifier("settingsButton")
         }
 
+      }
+      .sheet(isPresented: $showingSortSheet) {
+        SessionSortView(viewModel: viewModel)
       }
       .sheet(isPresented: $showingNewSessionSheet) {
         NewSessionSheet(

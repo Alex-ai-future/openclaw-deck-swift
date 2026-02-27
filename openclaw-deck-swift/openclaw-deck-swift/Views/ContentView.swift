@@ -50,6 +50,7 @@ struct ContentView: View {
   @State private var showingNewSessionSheet = false
   @State private var hasAttemptedAutoConnect = false
   @State private var showingWelcomeSettings = false
+  @Environment(\.scenePhase) private var scenePhase
 
   init() {
     // 从 UserDefaults 加载保存的配置
@@ -205,6 +206,22 @@ struct ContentView: View {
         await viewModel.initialize(url: savedUrl, token: savedToken)
       } else {
         print("[ContentView] No saved credentials found")
+      }
+    }
+    .onChange(of: scenePhase) { oldPhase, newPhase in
+      // 当应用从后台进入前台时，检查是否需要自动重连
+      guard newPhase == .active else { return }
+
+      // 如果已连接或正在连接，不需要重连
+      guard !viewModel.gatewayConnected && !viewModel.isInitializing else { return }
+
+      // 检查是否有保存的凭证
+      guard let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() else { return }
+
+      print("[ContentView] 应用进入前台，检测到连接断开，自动重连...")
+      let savedToken = UserDefaultsStorage.shared.loadToken()
+      Task {
+        await viewModel.initialize(url: savedUrl, token: savedToken)
       }
     }
   }

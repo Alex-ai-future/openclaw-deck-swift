@@ -13,17 +13,23 @@ final class DeckViewModelTests: XCTestCase {
 
   var viewModel: DeckViewModel!
   var mockStorage: MockUserDefaultsStorage!
+  var mockGlobalInputState: MockGlobalInputState!
 
   override func setUp() async throws {
     try await super.setUp()
-    // 使用 Mock 存储，完全隔离测试
+    // 使用 Mock 存储和 Mock GlobalInputState，完全隔离测试
     mockStorage = MockUserDefaultsStorage()
-    viewModel = DeckViewModel(storage: mockStorage)
+    mockGlobalInputState = MockGlobalInputState()
+    viewModel = DeckViewModel(
+      storage: mockStorage,
+      globalInputState: mockGlobalInputState
+    )
   }
 
   override func tearDown() async throws {
     viewModel = nil
     mockStorage = nil
+    mockGlobalInputState = nil
     try await super.tearDown()
   }
 

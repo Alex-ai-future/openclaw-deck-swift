@@ -28,7 +28,7 @@ struct DeckView: View {
       }
       .safeAreaInset(edge: .bottom, spacing: 0) {
         // 全局输入视图 - 系统自动处理键盘避让
-        GlobalInputView(state: viewModel.globalInputState) {
+        GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
           await viewModel.sendCurrentInput()
         }
       }

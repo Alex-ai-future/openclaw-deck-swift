@@ -45,7 +45,7 @@ class DeckViewModel {
   var isInitializing: Bool = false
 
   /// 全局输入状态（唯一实例）
-  let globalInputState = GlobalInputState()
+  var globalInputState: GlobalInputStateProtocol
 
   /// 是否播放消息提示音
   var playSoundOnMessage: Bool = true {
@@ -60,9 +60,15 @@ class DeckViewModel {
   // MARK: - Initialization
 
   /// 初始化
-  /// - Parameter storage: UserDefaultsStorage 实例（默认为 shared）
-  @MainActor init(storage: UserDefaultsStorageProtocol? = nil) {
+  /// - Parameters:
+  ///   - storage: UserDefaultsStorage 实例（默认为 shared）
+  ///   - globalInputState: GlobalInputState 实例（默认为新实例）
+  @MainActor init(
+    storage: UserDefaultsStorageProtocol? = nil,
+    globalInputState: GlobalInputStateProtocol? = nil
+  ) {
     self.storage = storage ?? UserDefaultsStorage.shared
+    self.globalInputState = globalInputState ?? GlobalInputState()
     setupGatewayCallbacks()
 
     // 加载配置
@@ -287,17 +293,23 @@ class DeckViewModel {
   private func loadSessionsFromStorage() {
     logger.log("📥 加载 Sessions...")
 
-    // 尝试从 Cloudflare 同步（如果已配置）
-    if CloudflareKV.shared.isConfigured {
-      logger.log("☁️ Cloudflare 已配置，开始同步...")
-      Task {
-        await loadSessionsWithCloudflareSync()
-      }
-    } else {
-      logger.log("📱 未配置 Cloudflare，使用本地数据")
-      // 没有配置 Cloudflare，使用本地数据
+    // 测试环境下跳过 Cloudflare 同步，避免网络请求
+    #if TESTING
+      logger.log("🧪 测试环境，使用本地数据")
       loadFromLocalOnly()
-    }
+    #else
+      // 尝试从 Cloudflare 同步（如果已配置）
+      if CloudflareKV.shared.isConfigured {
+        logger.log("☁️ Cloudflare 已配置，开始同步...")
+        Task {
+          await loadSessionsWithCloudflareSync()
+        }
+      } else {
+        logger.log("📱 未配置 Cloudflare，使用本地数据")
+        // 没有配置 Cloudflare，使用本地数据
+        loadFromLocalOnly()
+      }
+    #endif
   }
 
   /// 从 Cloudflare 同步加载 Sessions

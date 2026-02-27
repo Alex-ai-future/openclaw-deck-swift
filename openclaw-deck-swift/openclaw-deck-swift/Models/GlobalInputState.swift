@@ -11,9 +11,25 @@ import SwiftUI
   import UIKit
 #endif
 
+// MARK: - Protocol
+
+/// GlobalInputState 协议 - 用于依赖注入和测试
+protocol GlobalInputStateProtocol {
+  var inputText: String { get set }
+  var textHeight: CGFloat { get set }
+  var selectedSessionId: String? { get set }
+  var inputWidth: CGFloat { get set }
+  
+  func calculateTextHeight()
+  func clearInput()
+  func sendMessage(to session: SessionState, viewModel: DeckViewModel) async
+}
+
+// MARK: - Implementation
+
 /// 全局输入状态 - 管理所有输入相关状态
 @Observable
-class GlobalInputState {
+class GlobalInputState: GlobalInputStateProtocol {
   /// 当前输入文本（全局唯一）
   var inputText: String = ""
 

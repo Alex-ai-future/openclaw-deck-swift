@@ -97,18 +97,26 @@ struct DeckView: View {
                 }
               },
               onDelete: {
-                viewModel.deleteSession(sessionId: sessionId)
-                if selectedSessionId == sessionId {
-                  selectedSessionId = nil
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
+                  viewModel.deleteSession(sessionId: sessionId)
+                  if selectedSessionId == sessionId {
+                    selectedSessionId = nil
+                  }
                 }
               }
             )
             .frame(width: 400)
-            .transition(.move(edge: .trailing).combined(with: .opacity))
+            .transition(
+              .asymmetric(
+                insertion: .scale(scale: 0.75).combined(with: .opacity),
+                removal: .move(edge: .trailing).combined(with: .opacity)
+              )
+            )
           }
         }
       }
     }
+    .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
     .background(Color.adaptiveBackground)
   }
 }

@@ -208,7 +208,7 @@ class DeckViewModel {
     // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）
     let sessionIdLower = sessionId.lowercased()
     sessions[sessionIdLower] = sessionState
-    sessionOrder.append(sessionIdLower)
+    sessionOrder.insert(sessionIdLower, at: 0)  // 插入到开头，让新 Session 在最左边
 
     // 6. 保存到 UserDefaults
     saveSessionsToStorage()

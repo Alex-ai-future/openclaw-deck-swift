@@ -15,7 +15,7 @@ import Foundation
 /// 跨平台声音服务
 class SoundService {
   static let shared = SoundService()
-  
+
   /// 播放消息提示音
   func playMessageNotification() {
     #if os(macOS)
@@ -26,7 +26,7 @@ class SoundService {
       AudioServicesPlaySystemSound(1005)
     #endif
   }
-  
+
   /// 播放错误提示音
   func playErrorSound() {
     #if os(macOS)

@@ -124,6 +124,8 @@ struct SessionColumnView: View {
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()
+      // 点击整个 Session 视图时消除未读状态
+      session.hasUnreadMessage = false
     }
     .alert("Delete Session?", isPresented: $showingDeleteAlert) {
       Button("Cancel", role: .cancel) {}
@@ -181,8 +183,6 @@ struct SessionColumnView: View {
         // 点击按钮选中 Session
         Button {
           onSelect()
-          // 点击时消除未读状态（确认用户已读）
-          session.hasUnreadMessage = false
         } label: {
           Text(session.sessionId)
             .font(.body)

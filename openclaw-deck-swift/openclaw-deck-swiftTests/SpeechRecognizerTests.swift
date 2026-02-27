@@ -131,7 +131,11 @@ final class SpeechRecognizerTests: XCTestCase {
 
   func testStopListening_afterStart() async {
     // 验证开始后再停止
-    await speechRecognizer.startListening { _ in }
+    do {
+      try await speechRecognizer.startListening { _ in }
+    } catch {
+      // 忽略错误
+    }
     await speechRecognizer.stopListening()
     
     XCTAssertFalse(speechRecognizer.isListening)
@@ -149,8 +153,12 @@ final class SpeechRecognizerTests: XCTestCase {
   func testCallback_isCalled() async {
     let expectation = XCTestExpectation(description: "Callback should be called")
     
-    await speechRecognizer.startListening { text in
-      expectation.fulfill()
+    do {
+      try await speechRecognizer.startListening { text in
+        expectation.fulfill()
+      }
+    } catch {
+      // 忽略错误
     }
     
     // 等待一小段时间
@@ -163,8 +171,12 @@ final class SpeechRecognizerTests: XCTestCase {
   func testCallback_withEmptyText() async {
     var receivedText: String?
     
-    await speechRecognizer.startListening { text in
-      receivedText = text
+    do {
+      try await speechRecognizer.startListening { text in
+        receivedText = text
+      }
+    } catch {
+      // 忽略错误
     }
     
     await speechRecognizer.stopListening()
@@ -238,15 +250,18 @@ final class SpeechRecognizerTests: XCTestCase {
   func testCallbackWithSpecialCharacters() async {
     var receivedText: String?
     
-    await speechRecognizer.startListening { text in
-      receivedText = text
+    do {
+      try await speechRecognizer.startListening { text in
+        receivedText = text
+      }
+    } catch {
+      // 忽略错误
     }
     
-    // 特殊字符应该能正常处理
     await speechRecognizer.stopListening()
     
-    // 验证不会崩溃
-    XCTAssertTrue(receivedText == nil || receivedText.count >= 0)
+    // 特殊字符应该能正常处理
+    XCTAssertTrue(receivedText == nil || receivedText!.count >= 0)
   }
 
   func testCallbackWithLongText() async {

@@ -278,12 +278,16 @@ class DeckViewModel {
 
   /// 从 UserDefaults 加载 Sessions（带 Cloudflare 同步）
   private func loadSessionsFromStorage() {
+    logger.log("📥 加载 Sessions...")
+
     // 尝试从 Cloudflare 同步（如果已配置）
     if CloudflareKV.shared.isConfigured {
+      logger.log("☁️ Cloudflare 已配置，开始同步...")
       Task {
         await loadSessionsWithCloudflareSync()
       }
     } else {
+      logger.log("📱 未配置 Cloudflare，使用本地数据")
       // 没有配置 Cloudflare，使用本地数据
       loadFromLocalOnly()
     }
@@ -292,28 +296,36 @@ class DeckViewModel {
   /// 从 Cloudflare 同步加载 Sessions
   private func loadSessionsWithCloudflareSync() async {
     do {
+      logger.log("🔄 开始智能同步...")
+
       // 智能同步：自动比较本地和云端，返回最新数据
       let syncData = try await CloudflareKV.shared.syncAndGet()
+
+      logger.log("✅ 同步成功：\(syncData.sessions.count) 个 sessions")
 
       // 使用同步后的数据
       await MainActor.run {
         self.sessionOrder = syncData.sessions.map { $0.lowercased() }
-        self.loadSessionConfigs()
+        self.createSessionStates()
+
+        logger.log("📋 Session 顺序：\(self.sessionOrder)")
 
         // 默认选中第一个 Session
         if let firstSessionId = sessionOrder.first {
           globalInputState.selectedSessionId = firstSessionId
+          logger.log("🎯 选中 Session: \(firstSessionId)")
         }
 
         // 如果 Gateway 已连接，立即加载历史消息
         if gatewayConnected {
+          logger.log("🔗 Gateway 已连接，加载历史消息...")
           Task {
             await loadAllSessionHistory()
           }
         }
       }
     } catch {
-      logger.error("Cloudflare sync failed: \(error.localizedDescription)")
+      logger.error("❌ Cloudflare sync failed: \(error.localizedDescription)")
       // 同步失败，退化到本地数据
       await MainActor.run {
         self.loadFromLocalOnly()
@@ -323,11 +335,16 @@ class DeckViewModel {
 
   /// 仅从本地加载 Sessions（退化模式）
   private func loadFromLocalOnly() {
+    logger.log("📱 从本地加载 Sessions...")
+
     let configs = storage.loadSessions()
     let order = storage.loadSessionOrder()
 
+    logger.log("📋 本地 configs: \(configs.count) 个，order: \(order.count) 个")
+
     // 如果没有 session，创建 welcome session
     if configs.isEmpty {
+      logger.log("📭 本地没有 session，创建 Welcome session")
       createWelcomeSession()
       return
     }
@@ -348,33 +365,40 @@ class DeckViewModel {
       sessionOrder = order.map { $0.lowercased() }
     }
 
+    logger.log("✅ 加载完成：\(self.sessionOrder.count) 个 sessions")
+
     // 默认选中第一个 Session
     if let firstSessionId = sessionOrder.first {
       globalInputState.selectedSessionId = firstSessionId
+      logger.log("🎯 选中 Session: \(firstSessionId)")
     }
 
     // 如果 Gateway 已连接，立即加载历史消息
     if gatewayConnected {
+      logger.log("🔗 Gateway 已连接，加载历史消息...")
       Task {
         await loadAllSessionHistory()
       }
     }
   }
 
-  /// 加载 Session 配置（从 UserDefaults）
-  private func loadSessionConfigs() {
-    let configs = storage.loadSessions()
+  /// 创建 Session 状态（从 sessionOrder）
+  private func createSessionStates() {
+    logger.log("🏗️ 创建 Session 状态...")
 
-    // 使用小写 key 确保与 Gateway 一致
-    for config in configs {
-      let idLower = config.id.lowercased()
-      if sessions[idLower] == nil {
-        sessions[idLower] = SessionState(
-          sessionId: config.id,
-          sessionKey: config.sessionKey
+    // 为每个 Session ID 创建 SessionState
+    for sessionId in sessionOrder {
+      if sessions[sessionId] == nil {
+        let sessionKey = SessionConfig.generateSessionKey(sessionId: sessionId)
+        sessions[sessionId] = SessionState(
+          sessionId: sessionId,
+          sessionKey: sessionKey
         )
+        logger.log("  + \(sessionId)")
       }
     }
+
+    logger.log("✅ 创建完成：\(self.sessions.count) 个 Session 状态")
   }
 
   /// 保存 Sessions 到 UserDefaults（并同步到 Cloudflare）

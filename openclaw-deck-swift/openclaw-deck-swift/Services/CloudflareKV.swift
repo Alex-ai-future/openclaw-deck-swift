@@ -103,32 +103,41 @@ class CloudflareKV {
   /// - 对调用者透明，自动处理所有情况
   func syncAndGet() async throws -> SyncData {
     guard isConfigured else {
+      print("[CloudflareKV] ❌ 未配置，跳过同步")
       throw CloudflareError.notConfigured
     }
+
+    print("[CloudflareKV] 🔄 开始智能同步...")
 
     // 1. 同时读取本地和云端
     let localData = loadLocalData()
     let remoteData = try? await loadFromKV()
 
+    print("[CloudflareKV] 本地数据：\(localData?.sessions.count ?? 0) 个 sessions")
+    print("[CloudflareKV] 云端数据：\(remoteData?.sessions.count ?? 0) 个 sessions")
+
     // 2. 智能合并
     let merged = merge(local: localData, remote: remoteData)
+
+    print("[CloudflareKV] 合并结果：\(merged.source)")
 
     // 3. 自动保存（如果需要）
     switch merged.source {
     case .local:
       // 本地更新，同步到云端
       try await saveToKV(merged.data)
-      print("[CloudflareKV] Synced local data to cloud")
+      print("[CloudflareKV] ✅ 本地数据已同步到云端")
     case .remote:
       // 云端更新，保存到本地
       saveLocalData(merged.data)
-      print("[CloudflareKV] Synced cloud data to local")
+      print("[CloudflareKV] ✅ 云端数据已下载到本地")
     case .same:
       // 数据一致，无需操作
-      break
+      print("[CloudflareKV] ✅ 数据一致，无需同步")
     }
 
     // 4. 返回最新数据
+    print("[CloudflareKV] 🎯 同步完成，返回 \(merged.data.sessions.count) 个 sessions")
     return merged.data
   }
 
@@ -138,9 +147,10 @@ class CloudflareKV {
       throw CloudflareError.notConfigured
     }
 
+    print("[CloudflareKV] 💾 保存数据到 KV：\(data.sessions.count) 个 sessions")
     try await saveToKV(data)
     saveLocalData(data)
-    print("[CloudflareKV] Saved data to both local and cloud")
+    print("[CloudflareKV] ✅ 已保存到本地和云端")
   }
 
   // MARK: - 私有方法
@@ -150,25 +160,31 @@ class CloudflareKV {
     switch (local, remote) {
     case (.some(let l), .none):
       // 只有本地有 → 用本地
+      print("[CloudflareKV] 📤 只有本地有数据，使用本地（\(l.sessions.count) 个 sessions）")
       return MergeResult(source: .local, data: l)
 
     case (.none, .some(let r)):
       // 只有云端有 → 用云端
+      print("[CloudflareKV] 📥 只有云端有数据，使用云端（\(r.sessions.count) 个 sessions）")
       return MergeResult(source: .remote, data: r)
 
     case (.some(let l), .some(let r)):
       // 两边都有 → 比较时间戳
       if l.lastUpdated > r.lastUpdated {
+        print("[CloudflareKV] ⏰ 本地数据更新（\(l.lastUpdated) > \(r.lastUpdated)）")
         return MergeResult(source: .local, data: l)
       } else if r.lastUpdated > l.lastUpdated {
+        print("[CloudflareKV] ⏰ 云端数据更新（\(r.lastUpdated) > \(l.lastUpdated)）")
         return MergeResult(source: .remote, data: r)
       } else {
         // 时间戳相同 → 数据一致
+        print("[CloudflareKV] ⏰ 数据一致（时间戳相同）")
         return MergeResult(source: .same, data: l)
       }
 
     case (.none, .none):
       // 两边都没有 → 返回空数据
+      print("[CloudflareKV] 📭 本地和云端都没有数据")
       return MergeResult(source: .same, data: .empty)
     }
   }
@@ -182,10 +198,13 @@ class CloudflareKV {
       return nil
     }
 
-    // 使用最后更新时间（从 UserDefaults 中读取或生成）
+    // 使用最后更新时间（从 UserDefaults 中读取）
+    // ⚠️ 如果时间戳丢失（备份恢复/数据迁移/UserDefaults 被清除），使用固定旧时间
+    // 这样可以防止本地数据错误地覆盖云端数据
+    // 云端数据同步回来后会更新正确的时间戳
     let lastUpdated =
       UserDefaults.standard.string(forKey: "openclaw.deck.sessionOrder.lastUpdated")
-      ?? ISO8601DateFormatter().string(from: Date())
+      ?? "1970-01-01T00:00:00Z"
 
     return SyncData(sessions: sessions, lastUpdated: lastUpdated)
   }
@@ -198,6 +217,8 @@ class CloudflareKV {
     // 保存时间戳
     UserDefaults.standard.set(
       data.lastUpdated, forKey: "openclaw.deck.sessionOrder.lastUpdated")
+
+    print("[CloudflareKV] 💾 本地数据已保存：\(data.sessions.count) 个 sessions")
   }
 
   /// 从 KV 加载数据
@@ -220,22 +241,30 @@ class CloudflareKV {
     request.httpMethod = "GET"
     request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
 
+    print("[CloudflareKV] 🌐 GET 请求：\(urlString)")
+
     let (data, response) = try await URLSession.shared.data(for: request)
 
     guard let httpResponse = response as? HTTPURLResponse else {
       throw CloudflareError.invalidResponse
     }
 
+    print("[CloudflareKV] 📥 HTTP 状态码：\(httpResponse.statusCode)")
+
     if httpResponse.statusCode == 404 {
       // Key 不存在，返回 nil
+      print("[CloudflareKV] 📭 Key 不存在（404）")
       return nil
     }
 
     guard httpResponse.statusCode == 200 else {
+      print("[CloudflareKV] ❌ HTTP 错误：\(httpResponse.statusCode)")
       throw CloudflareError.httpError(httpResponse.statusCode)
     }
 
-    return try JSONDecoder().decode(SyncData.self, from: data)
+    let decoded = try JSONDecoder().decode(SyncData.self, from: data)
+    print("[CloudflareKV] ✅ 解析成功：\(decoded.sessions.count) 个 sessions")
+    return decoded
   }
 
   /// 保存数据到 KV
@@ -262,13 +291,24 @@ class CloudflareKV {
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = jsonData
 
+    print("[CloudflareKV] 🌐 PUT 请求：\(urlString)")
+    print("[CloudflareKV] 📦 请求数据：\(String(data: jsonData, encoding: .utf8) ?? "nil")")
+
     let (_, response) = try await URLSession.shared.data(for: request)
 
-    guard let httpResponse = response as? HTTPURLResponse,
-      httpResponse.statusCode == 200
-    else {
-      throw CloudflareError.saveFailed
+    guard let httpResponse = response as? HTTPURLResponse else {
+      print("[CloudflareKV] ❌ 响应错误：不是 HTTPURLResponse")
+      throw CloudflareError.invalidResponse
     }
+
+    print("[CloudflareKV] 📥 HTTP 状态码：\(httpResponse.statusCode)")
+
+    if httpResponse.statusCode != 200 {
+      print("[CloudflareKV] ❌ 保存失败，状态码：\(httpResponse.statusCode)")
+      throw CloudflareError.httpError(httpResponse.statusCode)
+    }
+
+    print("[CloudflareKV] ✅ 保存成功")
   }
 }
 

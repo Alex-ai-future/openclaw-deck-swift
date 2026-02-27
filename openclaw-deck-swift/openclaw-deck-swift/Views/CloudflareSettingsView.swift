@@ -41,8 +41,10 @@ struct CloudflareSettingsView: View {
               .font(.subheadline)
               .foregroundColor(.secondary)
 
-            Link("View Configuration Guide", destination: URL(string: "https://dash.cloudflare.com")!)
-              .font(.caption)
+            Link(
+              "View Configuration Guide", destination: URL(string: "https://dash.cloudflare.com")!
+            )
+            .font(.caption)
           }
           .padding(.vertical, 4)
         } footer: {

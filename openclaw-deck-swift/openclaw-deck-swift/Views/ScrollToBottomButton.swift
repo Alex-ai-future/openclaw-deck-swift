@@ -18,7 +18,6 @@ struct ScrollToBottomButton: View {
     }
     .buttonStyle(.glass)
     .frame(width: 36, height: 36)
-    .contentShape(Rectangle())
   }
 }
 

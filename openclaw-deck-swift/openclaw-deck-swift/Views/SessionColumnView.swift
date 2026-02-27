@@ -98,7 +98,6 @@ struct SessionColumnView: View {
                 }
                 .buttonStyle(.glass)
                 .frame(height: 36)
-                .contentShape(Rectangle())
 
                 // 发送按钮 - 点击发送输入框内容
                 Button {
@@ -110,7 +109,6 @@ struct SessionColumnView: View {
                 }
                 .buttonStyle(.glass)
                 .frame(width: 36, height: 36)
-                .contentShape(Rectangle())
               }
               .transition(.opacity.combined(with: .scale))
             }

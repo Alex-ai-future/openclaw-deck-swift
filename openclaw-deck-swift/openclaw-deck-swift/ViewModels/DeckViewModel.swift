@@ -120,7 +120,10 @@ class DeckViewModel {
               session.activeRunId = nil
             }
           }
+          logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
           await self?.loadAllSessionHistory()
+        } else {
+          logger.info("🔌 Gateway 已断开")
         }
       }
     }
@@ -144,8 +147,21 @@ class DeckViewModel {
 
   /// 断开 Gateway 连接
   func disconnect() {
+    // 清空所有 Session 的消息和状态
+    for session in sessions.values {
+      session.messages.removeAll()
+      session.historyLoaded = false
+      session.isHistoryLoading = false
+      session.isProcessing = false
+      session.status = .idle
+      session.activeRunId = nil
+      session.hasUnreadMessage = false
+    }
+
     gatewayClient?.disconnect()
     gatewayConnected = false
+
+    logger.info("🧹 已断开连接并清空所有 Session 消息")
   }
 
   /// 重置设备身份（清除 device identity 和 device token）
@@ -428,6 +444,7 @@ class DeckViewModel {
     }
 
     do {
+      logger.info("📥 正在加载 Session \(sessionKey) 的历史消息...")
       let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
 
       // 更新 Session 的消息（大小写不敏感匹配）
@@ -437,9 +454,10 @@ class DeckViewModel {
         session.messages = messages
         session.historyLoaded = true
         session.isHistoryLoading = false
+        logger.info("✅ Session \(sessionKey) 加载完成，共 \(messages.count) 条消息")
       }
     } catch {
-      logger.error("Failed to load history for \(sessionKey): \(error.localizedDescription)")
+      logger.error("❌ 加载 Session \(sessionKey) 历史失败：\(error.localizedDescription)")
       if let session = sessions.values.first(where: {
         $0.sessionKey.lowercased() == sessionKey.lowercased()
       }) {

@@ -172,26 +172,20 @@ struct SessionColumnView: View {
             MessageView(message: message)
               .id(message.id)
           }
-
-          // 底部锚点视图（用于滚动定位）
-          Color.clear
-            .frame(height: 80)
-            .id("bottom-anchor")
         }
         .padding()
-        // 移除 .padding(.bottom, 80)，改用锚点视图
       }
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
-        if newLastMessageId != nil {
+        if let lastId = newLastMessageId {
           withAnimation(.smooth(duration: 0.2)) {
-            proxy.scrollTo("bottom-anchor")  // 滚动到底部锚点
+            proxy.scrollTo(lastId, anchor: .bottom)  // 滚动到最后一条消息的底部
           }
         }
       }
       .onChange(of: scrollTrigger) { _, newValue in
         // 只在 trigger=1 时滚动（确保每次位置一致）
-        if newValue == 1 {
-          proxy.scrollTo("bottom-anchor")  // 滚动到底部锚点
+        if newValue == 1, let lastId = session.messages.last?.id {
+          proxy.scrollTo(lastId, anchor: .bottom)  // 滚动到最后一条消息的底部
         }
       }
     }

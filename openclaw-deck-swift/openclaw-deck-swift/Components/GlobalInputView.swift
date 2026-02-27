@@ -17,6 +17,21 @@ struct GlobalInputView: View {
       DictationButton(text: $state.inputText, speechRecognizer: state.speechRecognizer)
         .frame(width: 36, height: 36)
 
+      // 收起键盘按钮（仅 iOS 且键盘弹出时显示）
+      #if os(iOS) || os(visionOS)
+        if isInputFocused {
+          Button {
+            isInputFocused = false
+          } label: {
+            Image(systemName: "keyboard.chevron.compact.down")
+              .font(.title3)
+              .foregroundColor(.secondary)
+          }
+          .frame(width: 36, height: 36)
+          .buttonStyle(.plain)
+        }
+      #endif
+
       // 输入框
       ZStack(alignment: .trailing) {
         TextField("Message", text: $state.inputText, axis: .vertical)

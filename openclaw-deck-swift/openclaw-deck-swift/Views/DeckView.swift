@@ -31,13 +31,6 @@ struct DeckView: View {
           await viewModel.sendCurrentInput()
         }
       }
-      #if os(iOS) || os(visionOS)
-        .contentShape(Rectangle())
-        .onTapGesture {
-          // 点击空白区域收起键盘
-          hideKeyboard()
-        }
-      #endif
       .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
         // ViewModel 的选中状态变化时，同步到本地
         if let sessionId = newId {

@@ -230,71 +230,58 @@ struct WelcomeView: View {
 
   var body: some View {
     NavigationStack {
-      ScrollView {
-        VStack(spacing: 40) {
-          // Logo and title
-          VStack(spacing: 16) {
-            Image(systemName: "message.badge.filled.fill")
-              .font(.system(size: 80))
-              .foregroundColor(.blue)
+      VStack(spacing: 24) {
+        // Logo and title
+        VStack(spacing: 12) {
+          Image(systemName: "message.badge.filled.fill")
+            .font(.system(size: 64))
+            .foregroundColor(.blue)
 
-            Text("OpenClaw Deck")
-              .font(.largeTitle)
-              .fontWeight(.bold)
+          Text("OpenClaw Deck")
+            .font(.largeTitle)
+            .fontWeight(.bold)
 
-            Text("Multi-Session Chat Client")
-              .font(.title2)
-              .foregroundColor(.secondary)
-          }
-          .frame(maxWidth: .infinity)
-
-          // Settings hint
-          VStack(spacing: 12) {
-            Image(systemName: "gearshape")
-              .font(.system(size: 40))
-              .foregroundColor(.secondary)
-
-            Text("Tap Settings to Configure")
-              .font(.body)
-              .foregroundColor(.secondary)
-          }
-          .frame(maxWidth: .infinity)
-
-          // Error message
-          if let error = connectionError {
-            VStack(spacing: 8) {
-              HStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                  .foregroundColor(.red)
-                Text("Connection Failed")
-                  .fontWeight(.semibold)
-                  .foregroundColor(.red)
-                Spacer()
-                Button("Dismiss", action: onClearError)
-                  .font(.caption)
-              }
-
-              Text(error)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.leading)
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.red.opacity(0.1))
-            .cornerRadius(8)
-            .padding(.horizontal, 24)
-          }
-
-          Spacer()
+          Text("Multi-Session Chat Client")
+            .font(.title3)
+            .foregroundColor(.secondary)
         }
-        .padding(.horizontal)
-        .frame(maxWidth: .infinity)
-        #if os(macOS)
-          .frame(minHeight: NSScreen.main?.frame.height ?? 800)
-        #else
-          .frame(minHeight: 800)
-        #endif
+        .padding(.top, 60)
+
+        // Simple guide
+        Text("Tap the ⚙️ in the top right\nto get started")
+          .font(.body)
+          .foregroundColor(.secondary)
+          .multilineTextAlignment(.center)
+          .padding(.top, 40)
+
+        Spacer()
+
+        // Error message
+        if let error = connectionError {
+          VStack(spacing: 8) {
+            HStack {
+              Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.red)
+              Text("Connection Failed")
+                .fontWeight(.semibold)
+                .foregroundColor(.red)
+              Spacer()
+              Button("Dismiss", action: onClearError)
+                .font(.caption)
+            }
+
+            Text(error)
+              .font(.caption)
+              .foregroundColor(.secondary)
+              .multilineTextAlignment(.leading)
+          }
+          .padding()
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(Color.red.opacity(0.1))
+          .cornerRadius(8)
+          .padding(.horizontal, 24)
+          .padding(.bottom, 24)
+        }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background(Color.adaptiveBackground)

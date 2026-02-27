@@ -325,17 +325,17 @@ enum CloudflareError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .notConfigured:
-      return "Cloudflare KV 未配置，请先在设置中填写配置信息"
+      return "Cloudflare KV not configured. Please enter configuration in Settings."
     case .invalidURL:
-      return "无效的 URL"
+      return "Invalid URL"
     case .invalidResponse:
-      return "无效的服务器响应"
+      return "Invalid server response"
     case .httpError(let code):
-      return "HTTP 错误：\(code)"
+      return "HTTP Error: \(code)"
     case .saveFailed:
-      return "保存失败"
+      return "Save failed"
     case .decodeError:
-      return "数据解析失败"
+      return "Data parsing failed"
     }
   }
 }
@@ -410,9 +410,9 @@ enum KeychainError: LocalizedError {
   var errorDescription: String? {
     switch self {
     case .encodingFailed:
-      return "数据编码失败"
+      return "Data encoding failed"
     case .saveFailed(let status):
-      return "Keychain 保存失败：\(status)"
+      return "Keychain save failed: \(status)"
     }
   }
 }

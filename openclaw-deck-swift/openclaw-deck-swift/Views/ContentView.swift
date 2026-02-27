@@ -239,14 +239,14 @@ struct ReconnectingView: View {
       ProgressView()
         .scaleEffect(1.5)
 
-      Text("正在尝试重新连接...")
+      Text("Reconnecting...")
         .font(.headline)
 
-      Text("尝试 \(attempts)/\(maxAttempts)")
+      Text("Attempt \(attempts)/\(maxAttempts)")
         .font(.subheadline)
         .foregroundColor(.secondary)
 
-      Button("取消", action: onCancel)
+      Button("Cancel", action: onCancel)
         .buttonStyle(.bordered)
         .padding(.top, 20)
     }

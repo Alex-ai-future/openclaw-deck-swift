@@ -55,7 +55,7 @@ struct DictationButton: View {
     .frame(width: 36, height: 36)
     .contentShape(Rectangle())
     #if os(iOS) || os(visionOS)
-      .alert("麦克风权限 needed", isPresented: $showingPermissionAlert) {
+      .alert("Microphone Permission Required", isPresented: $showingPermissionAlert) {
         Button("Cancel", role: .cancel) {}
         Button("Open Settings") {
           if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
@@ -63,7 +63,7 @@ struct DictationButton: View {
           }
         }
       } message: {
-        Text("请在设置中启用麦克风权限以使用语音输入功能")
+        Text("Please enable microphone permission in Settings to use voice input")
       }
     #endif
   }

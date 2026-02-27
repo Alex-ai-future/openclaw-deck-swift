@@ -14,6 +14,9 @@ struct SettingsView: View {
   var onConnect: () -> Void
   var onResetDeviceIdentity: (() -> Void)?
   var onClose: (() -> Void)?
+  
+  // ViewModel binding for settings
+  var viewModel: DeckViewModel?
 
   @State private var hasChanges = false
   @State private var originalUrl = ""
@@ -106,6 +109,20 @@ struct SettingsView: View {
           }
         } footer: {
           Text("Disconnect from Gateway and return to welcome screen")
+        }
+        
+        // Notifications
+        if viewModel != nil {
+          Section {
+            Toggle("Play Sound on Message", isOn: .init(
+              get: { viewModel?.playSoundOnMessage ?? true },
+              set: { viewModel?.playSoundOnMessage = $0 }
+            ))
+          } header: {
+            Text("Notifications")
+          } footer: {
+            Text("Play a sound when a message is received")
+          }
         }
       }
       .navigationTitle("Settings")

@@ -41,6 +41,13 @@ class DeckViewModel {
   /// 全局输入状态（唯一实例）
   let globalInputState = GlobalInputState()
 
+  /// 是否播放消息提示音
+  var playSoundOnMessage: Bool = true {
+    didSet {
+      UserDefaults.standard.set(playSoundOnMessage, forKey: "playSoundOnMessage")
+    }
+  }
+
   /// UserDefaults 存储
   private let storage: UserDefaultsStorageProtocol
 
@@ -51,6 +58,10 @@ class DeckViewModel {
   @MainActor init(storage: UserDefaultsStorageProtocol? = nil) {
     self.storage = storage ?? UserDefaultsStorage.shared
     setupGatewayCallbacks()
+    
+    // 加载配置
+    playSoundOnMessage = UserDefaults.standard.object(forKey: "playSoundOnMessage") as? Bool ?? true
+    
     // 从 UserDefaults 加载 Session
     loadSessionsFromStorage()
   }
@@ -519,6 +530,11 @@ class DeckViewModel {
               sessionName: session.sessionId,
               messageText: lastMessage.text
             )
+            
+            // 🎵 播放提示音（如果启用）
+            if playSoundOnMessage {
+              SoundService.shared.playMessageNotification()
+            }
           }
 
           // 清除所有消息的 streaming 状态

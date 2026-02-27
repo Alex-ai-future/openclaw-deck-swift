@@ -131,7 +131,8 @@ struct ContentView: View {
         },
         onClose: {
           showingSettings = false
-        }
+        },
+        viewModel: viewModel
       )
     }
     .sheet(isPresented: $showingWelcomeSettings) {
@@ -162,7 +163,8 @@ struct ContentView: View {
         },
         onClose: {
           showingWelcomeSettings = false
-        }
+        },
+        viewModel: viewModel
       )
     }
     .task {

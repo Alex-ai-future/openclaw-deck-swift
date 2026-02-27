@@ -1,7 +1,7 @@
 # OpenClaw Deck Swift - 技术架构
 
-**版本：** 1.2  
-**最后更新：** 2026-02-27  
+**版本：** 1.4  
+**最后更新：** 2026-02-28  
 **目标读者：** 开发者、贡献者
 
 ---
@@ -49,6 +49,12 @@
 │  │  • 挑战握手认证（nonce 验证）                           │   │
 │  │  • 请求/响应关联                                        │   │
 │  │  • 事件流订阅                                          │   │
+│  └─────────────────────────┬───────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                 CloudflareKV                          │   │
+│  │  • Session 列表同步（多设备）                           │   │
+│  │  • 自动冲突解决（最新修改优先）                         │   │
+│  │  • 支持手动同步                                       │   │
 │  └─────────────────────────┬───────────────────────────┘   │
 └────────────────────────────┼────────────────────────────────┘
                              │
@@ -131,6 +137,7 @@ openclaw-deck-swift/
 │   │   └── SettingsView.swift    # 设置页面
 │   ├── Services/                 # 服务层
 │   │   ├── GatewayClient.swift   # WebSocket 客户端
+│   │   ├── CloudflareKV.swift    # Cloudflare KV 同步
 │   │   └── SpeechRecognizer.swift # 语音识别
 │   └── Utils/                    # 工具类
 │       └── UserDefaultsStorage.swift
@@ -145,6 +152,7 @@ openclaw-deck-swift/
 |------|------|------|
 | `DeckViewModel.swift` | ~750 | 核心业务逻辑，管理所有 Session |
 | `GatewayClient.swift` | ~850 | WebSocket 连接、认证、事件处理 |
+| `CloudflareKV.swift` | ~250 | Cloudflare KV 同步、冲突解决 |
 | `SessionColumnView.swift` | ~1000 | 单列聊天 UI，包含快速操作按钮 |
 | `GlobalInputView.swift` | ~90 | 全局输入框，统一管理输入状态 |
 
@@ -158,6 +166,7 @@ openclaw-deck-swift/
 - 全局唯一实例，管理所有输入状态
 - 避免每个 Session 独立的输入框
 - 简化架构，减少状态同步
+- 支持 `/new` 命令快速创建 Session
 
 **代码结构：**
 ```swift
@@ -173,7 +182,23 @@ class GlobalInputState {
 }
 ```
 
-### 4.2 SessionColumnView
+### 4.2 CloudflareKV
+
+**同步机制：**
+- 使用 Cloudflare KV 存储 Session 列表和顺序
+- 自动同步：每次 Session 变化时触发
+- 手动同步：用户点击 "Sync Now" 按钮
+- 冲突解决：基于时间戳，最新修改优先
+
+**数据格式：**
+```swift
+struct SyncData {
+  let sessions: [String]  // Session ID 列表
+  let lastUpdated: String  // ISO8601 时间戳
+}
+```
+
+### 4.3 SessionColumnView
 
 **快速操作按钮组设计：**
 
@@ -196,7 +221,7 @@ if isSelected {
 - 避免多 Session 模式下按钮重复
 - 蓝色底条 = 选中状态视觉反馈
 
-### 4.3 GatewayClient
+### 4.4 GatewayClient
 
 **认证流程：**
 ```

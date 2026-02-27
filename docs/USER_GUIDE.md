@@ -1,7 +1,7 @@
 # OpenClaw Deck Swift - 用户指南
 
-**版本：** 1.3  
-**最后更新：** 2026-02-27  
+**版本：** 1.4  
+**最后更新：** 2026-02-28  
 **适用平台：** macOS, iPadOS, iOS (iPhone, iPad, iPod touch)
 
 ---
@@ -11,8 +11,9 @@
 1. [5 分钟快速上手](#1-5-分钟快速上手)
 2. [iOS 设备连接 Gateway](#2-ios-设备连接-gateway) ⭐⭐⭐⭐⭐
 3. [核心功能](#3-核心功能)
-4. [故障排除](#4-故障排除) ⭐⭐⭐⭐⭐
-5. [常见问题](#5-常见问题)
+4. [Cloudflare 多设备同步](#4-cloudflare-多设备同步) ⭐ NEW
+5. [故障排除](#5-故障排除) ⭐⭐⭐⭐⭐
+6. [常见问题](#6-常见问题)
 
 ---
 
@@ -252,6 +253,12 @@ sudo ufw allow 18789/tcp
 2. 说话
 3. 自动转为文字并发送
 
+**方式 5：/new 快速发送** ⭐ NEW
+1. 选中 Session（底部蓝色底条）
+2. 输入 `/new 消息内容`（例如：`/new 帮我写个 Python 脚本`）
+3. 点击发送
+4. 自动创建新 Session 并发送消息
+
 ### 3.2 管理多个对话
 
 **创建 Session：**
@@ -287,9 +294,72 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 4. 故障排除 ⭐⭐⭐⭐⭐
+## 4. Cloudflare 多设备同步 ⭐ NEW
 
-### 4.1 连接问题
+**功能说明：**
+- 在多个设备间同步 Session 列表和顺序
+- 自动冲突解决（最新修改优先）
+- 支持手动同步
+
+### 4.1 配置 Cloudflare KV
+
+**前提条件：**
+- Cloudflare 账号（免费）
+- 已创建 KV Namespace
+
+**步骤：**
+
+1. **获取 Cloudflare 凭证**
+   - Account ID：Cloudflare Dashboard → 概述
+   - KV Namespace ID：Workers & Pages → KV → 命名空间 ID
+   - API Token：用户个人资料 → API 令牌 → 创建令牌（编辑 Cloudflare KV 权限）
+
+2. **在应用中配置**
+   - 打开应用 → 设置（⚙️）
+   - 滚动到 "Cloudflare 同步" 部分
+   - 输入 Account ID、Namespace ID、API Token
+   - 开启同步开关
+
+3. **验证配置**
+   - 配置后自动保存
+   - 状态显示 "已配置"
+
+---
+
+### 4.2 使用同步功能
+
+**自动同步：**
+- 每次 Session 列表变化时自动同步
+- 包括：创建、删除、排序
+
+**手动同步：**
+- 设置 → Cloudflare 同步
+- 点击 "Sync Now" 按钮
+- 等待同步完成提示
+
+**多设备使用：**
+1. 设备 A：配置 Cloudflare，创建 Session
+2. 设备 B：配置相同 Cloudflare，开启同步
+3. 自动加载设备 A 的 Session 列表
+
+---
+
+### 4.3 同步冲突解决
+
+**规则：**
+- 最新修改优先（基于时间戳）
+- 本地和云端自动合并
+- Session 内容不受影响（始终从 Gateway 加载）
+
+**注意：**
+- Cloudflare 只同步 Session 列表和顺序
+- 消息内容存储在 Gateway，不受影响
+
+---
+
+## 5. 故障排除 ⭐⭐⭐⭐⭐
+
+### 5.1 连接问题
 
 #### ❌ 无法连接 Gateway
 
@@ -469,7 +539,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 3.3 Session 问题
+### 5.4 Session 问题
 
 #### ❌ Session 不显示
 
@@ -547,7 +617,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 3.4 其他问题
+### 5.6 其他问题
 
 #### ❌ 语音输入不工作
 
@@ -602,7 +672,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 5. 常见问题
+## 6. 常见问题
 
 ### Q: Gateway 地址是什么？
 

@@ -12,7 +12,7 @@ struct ScrollToBottomButton: View {
 
   var body: some View {
     Button(action: action) {
-      Image(systemName: "arrow.down.circle")
+      Image(systemName: "arrow.trianglehead.down")
         .font(.title3)
         .foregroundColor(.blue)
     }

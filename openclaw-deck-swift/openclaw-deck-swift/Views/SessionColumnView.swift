@@ -33,12 +33,12 @@ struct SessionColumnView: View {
   private func scrollToBottom() {
     guard !isScrolling else { return }  // 防止重复点击
     isScrolling = true
-    
+
     // 使用固定值触发滚动（确保每次位置一致）
     withAnimation(.smooth(duration: 0.3)) {
       scrollTrigger = 1
     }
-    
+
     // 动画结束后重置并解锁
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
       scrollTrigger = 0  // 重置为 0
@@ -183,7 +183,7 @@ struct SessionColumnView: View {
             MessageView(message: message)
               .id(message.id)
           }
-          
+
           // 底部锚点视图（用于滚动定位）
           Color.clear
             .frame(height: 80)
@@ -1058,14 +1058,12 @@ struct HeightPreference: PreferenceKey {
 #Preview("Processing State Button") {
   struct ProcessingButtonPreview: View {
     @State private var isProcessing = true
-      
-    
-    
+
     var body: some View {
       VStack(spacing: 20) {
         Text("Processing State Button Preview")
           .font(.headline)
-    
+
         // 🆕 使用 tint 方法
         Button {
           isProcessing.toggle()
@@ -1079,17 +1077,17 @@ struct HeightPreference: PreferenceKey {
         .buttonStyle(.glass)
         // 🆕 使用 tint 改变玻璃按钮背景色
         .tint(isProcessing ? Color.orange : Color.clear)
-        
+
         Text("Tap to toggle state")
           .font(.caption)
           .foregroundColor(.secondary)
-        
+
         // 测试不同 tint 颜色
         VStack(spacing: 10) {
           Text("Tint Color Tests")
             .font(.subheadline)
             .fontWeight(.medium)
-          
+
           // 测试不同颜色
           HStack(spacing: 10) {
             Button(role: .none) {
@@ -1100,7 +1098,7 @@ struct HeightPreference: PreferenceKey {
             }
             .buttonStyle(.glass)
             .tint(Color.orange)
-            
+
             Button(role: .none) {
             } label: {
               Text("Blue")
@@ -1109,7 +1107,7 @@ struct HeightPreference: PreferenceKey {
             }
             .buttonStyle(.glass)
             .tint(Color.blue)
-            
+
             Button(role: .none) {
             } label: {
               Text("Red")
@@ -1119,7 +1117,7 @@ struct HeightPreference: PreferenceKey {
             .buttonStyle(.glass)
             .tint(Color.red)
           }
-          
+
           // 测试不同透明度
           HStack(spacing: 10) {
             Button(role: .none) {
@@ -1130,7 +1128,7 @@ struct HeightPreference: PreferenceKey {
             }
             .buttonStyle(.glass)
             .tint(Color.orange.opacity(0.3))
-            
+
             Button(role: .none) {
             } label: {
               Text("0.5")
@@ -1139,7 +1137,7 @@ struct HeightPreference: PreferenceKey {
             }
             .buttonStyle(.glass)
             .tint(Color.orange.opacity(0.5))
-            
+
             Button(role: .none) {
             } label: {
               Text("0.7")
@@ -1155,6 +1153,6 @@ struct HeightPreference: PreferenceKey {
       .padding()
     }
   }
-  
+
   return ProcessingButtonPreview()
 }

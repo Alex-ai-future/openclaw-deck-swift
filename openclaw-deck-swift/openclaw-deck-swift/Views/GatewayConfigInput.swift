@@ -15,17 +15,17 @@ struct GatewayConfigInput: View {
     // Gateway URL
     TextField("Gateway URL", text: $gatewayUrl, prompt: Text("ws://host:port"))
       .textContentType(.URL)
-    #if os(iOS) || os(visionOS)
-      .autocapitalization(.none)
-      .keyboardType(.URL)
-    #endif
+      #if os(iOS) || os(visionOS)
+        .autocapitalization(.none)
+        .keyboardType(.URL)
+      #endif
 
     // Token
     TextField("Token (optional)", text: $token)
       .textContentType(.none)
-    #if os(iOS) || os(visionOS)
-      .autocapitalization(.none)
-    #endif
+      #if os(iOS) || os(visionOS)
+        .autocapitalization(.none)
+      #endif
 
     // Connect Button (只在初始页面显示)
     if !isConnected {

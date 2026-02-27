@@ -53,9 +53,9 @@ struct SettingsView: View {
           Text("Status")
         }
 
-        // Actions
-        Section {
-          if hasChanges {
+        // Actions - Apply & Reconnect
+        if hasChanges {
+          Section {
             Button {
               onApplyAndReconnect()
             } label: {
@@ -64,12 +64,13 @@ struct SettingsView: View {
                 Text("Apply & Reconnect")
               }
             }
+          } footer: {
             Text("Save changes and reconnect to Gateway with new settings")
-              .font(.caption)
-              .foregroundColor(.secondary)
           }
+        }
 
-          // Reset Device Identity
+        // Actions - Reset Device Identity
+        Section {
           Button(role: .destructive) {
             showingResetAlert = true
           } label: {
@@ -88,13 +89,12 @@ struct SettingsView: View {
               "This will clear the stored device identity and token, then reconnect using the token you entered."
             )
           }
+        } footer: {
           Text("Clear stored device identity and token, then reconnect")
-            .font(.caption)
-            .foregroundColor(.secondary)
+        }
 
-//          Divider()
-//            .padding(.vertical, 8)
-
+        // Actions - Disconnect
+        Section {
           Button(role: .destructive) {
             onDisconnect()
           } label: {
@@ -103,15 +103,8 @@ struct SettingsView: View {
               Text("Disconnect")
             }
           }
-          Text("Disconnect from Gateway and return to welcome screen")
-            .font(.caption)
-            .foregroundColor(.secondary)
         } footer: {
-          if hasChanges {
-            Text("Apply changes and reconnect")
-          } else {
-            Text("Disconnect to return to login")
-          }
+          Text("Disconnect from Gateway and return to welcome screen")
         }
       }
       .navigationTitle("Settings")

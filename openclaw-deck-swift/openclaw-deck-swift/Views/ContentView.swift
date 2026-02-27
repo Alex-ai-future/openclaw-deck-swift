@@ -270,17 +270,30 @@ struct WelcomeView: View {
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background(Color.adaptiveBackground)
       .navigationTitle("")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .topBarTrailing) {
-          Button {
-            onShowSettings()
-          } label: {
-            Image(systemName: "gear")
+      #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) {
+            Button {
+              onShowSettings()
+            } label: {
+              Image(systemName: "gear")
               .font(.title2)
+            }
           }
         }
-      }
+      #else
+        .toolbar {
+          ToolbarItem {
+            Button {
+              onShowSettings()
+            } label: {
+              Image(systemName: "gear")
+              .font(.title2)
+            }
+          }
+        }
+      #endif
     }
   }
 }

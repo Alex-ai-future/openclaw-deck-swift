@@ -45,8 +45,8 @@ class DeckViewModel {
 
   /// 初始化
   /// - Parameter storage: UserDefaultsStorage 实例（默认为 shared）
-  @MainActor init(storage: UserDefaultsStorageProtocol = UserDefaultsStorage.shared) {
-    self.storage = storage
+  @MainActor init(storage: UserDefaultsStorageProtocol? = nil) {
+    self.storage = storage ?? UserDefaultsStorage.shared
     setupGatewayCallbacks()
     // 从 UserDefaults 加载 Session
     loadSessionsFromStorage()

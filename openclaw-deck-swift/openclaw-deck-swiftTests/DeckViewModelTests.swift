@@ -85,10 +85,10 @@ final class DeckViewModelTests: XCTestCase {
 
     // Verify session exists
     XCTAssertNotNil(viewModel.getSession(sessionId: sessionId))
-    
+
     // Delete session
     viewModel.deleteSession(sessionId: sessionId)
-    
+
     // Verify session is deleted
     XCTAssertNil(viewModel.getSession(sessionId: sessionId))
   }
@@ -174,7 +174,7 @@ final class DeckViewModelTests: XCTestCase {
   func testSessionStatusTransitions() {
     let session = viewModel.createSession(name: "Test")
     let sessionState = viewModel.getSession(sessionId: session.id)
-    
+
     XCTAssertNotNil(sessionState, "Session should exist")
     guard let state = sessionState else { return }
 

@@ -57,6 +57,23 @@ struct SessionColumnView: View {
     }
   }
 
+  // 发送 /new 消息
+  private func sendNewMessage() {
+    // 设置选中的 Session
+    viewModel.globalInputState.selectedSessionId = session.sessionId
+
+    // 设置输入内容为 "/new"
+    viewModel.globalInputState.inputText = "/new"
+
+    // 发送消息
+    Task {
+      await viewModel.globalInputState.sendMessage(
+        to: session,
+        viewModel: viewModel
+      )
+    }
+  }
+
   // 发送输入框消息
   private func sendInputMessage() {
     // 设置选中的 Session
@@ -88,6 +105,17 @@ struct SessionColumnView: View {
             // 快速操作按钮组 - 只在选中时显示
             if isSelected {
               HStack(spacing: 16) {
+                // /new 按钮 - 点击发送 "/new" 消息
+                Button {
+                  sendNewMessage()
+                } label: {
+                  Image(systemName: "plus.circle")
+                    .font(.title3)
+                    .foregroundColor(.blue)
+                }
+                .buttonStyle(.glass)
+                .frame(width: 36, height: 36)
+
                 // OK 按钮 - 点击发送 "OK" 消息
                 Button {
                   sendOKMessage()

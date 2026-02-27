@@ -4,7 +4,7 @@
 // Created by jihuihuang on 2/24/2026.
 // Copyright © 2026 OpenClaw. All rights reserved.
 
-import MarkdownView
+import MarkdownUI
 import SwiftUI
 
 #if os(macOS)
@@ -75,12 +75,13 @@ struct SessionColumnView: View {
             Button {
               sendOKMessage()
             } label: {
-              Image(systemName: "checkmark.circle.fill")
-                .font(.title3)
-                .foregroundColor(.blue)
-                .padding(12)
+              Text("OK")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .background(.ultraThinMaterial)
-                .clipShape(Circle())
+                .clipShape(Capsule())
             }
             .buttonStyle(.plain)
           }
@@ -348,20 +349,15 @@ struct SessionColumnView: View {
         }
         .foregroundColor(.secondary)
       } else if message.role == .assistant && !message.text.isEmpty {
-        // 使用 ZStack 包裹 MarkdownView 以应用 openURL 环境
-        ZStack {
-          MarkdownView(message.text)
-            .font(.body)
-            .foregroundColor(.primary)
-        }
-        .environment(
-          \.openURL,
-          OpenURLAction { url in
+        // 使用 MarkdownUI 支持链接点击
+        Markdown(message.text)
+          .font(.body)
+          .foregroundColor(.primary)
+          .onOpenURL { url in
             #if os(iOS) || os(visionOS)
               UIApplication.shared.open(url)
             #endif
-            return .handled
-          })
+          }
       } else {
         Text(message.text)
           .font(.body)
@@ -463,9 +459,14 @@ struct SessionColumnView: View {
         }
         .foregroundColor(.secondary)
       } else if message.role == .assistant && !message.text.isEmpty {
-        MarkdownView(message.text)
+        Markdown(message.text)
           .font(.body)
           .foregroundColor(.primary)
+          .onOpenURL { url in
+            #if os(iOS) || os(visionOS)
+              UIApplication.shared.open(url)
+            #endif
+          }
       } else {
         Text(message.text)
           .font(.body)

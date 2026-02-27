@@ -55,21 +55,21 @@ struct CloudflareSettingsView: View {
             .focused($focusedField, equals: .userId)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = .accountId
+              focusedField = nil  // 收起键盘
             }
 
           TextField("Account ID", text: $accountId)
             .focused($focusedField, equals: .accountId)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = .namespaceId
+              focusedField = nil  // 收起键盘
             }
 
           TextField("Namespace ID", text: $namespaceId)
             .focused($focusedField, equals: .namespaceId)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = .apiToken
+              focusedField = nil  // 收起键盘
             }
 
           SecureField("API Token", text: $apiToken)

@@ -21,6 +21,15 @@ struct SessionSortView: View {
   var body: some View {
     NavigationStack {
       List {
+        // 说明文字
+        Section {
+          Text("Drag items to reorder sessions. Tap Done to save changes.")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .padding(.vertical, 8)
+        }
+
+        // Session 列表
         ForEach(sortedOrder, id: \.self) { sessionId in
           if let session = viewModel.sessions[sessionId] {
             HStack {

@@ -134,7 +134,7 @@ struct SettingsView: View {
           } label: {
             HStack {
               Image(systemName: "icloud.and.arrow.down")
-              Text("Cloudflare KV 同步")
+              Text("Cloudflare KV Sync")
 
               Spacer()
 
@@ -145,9 +145,9 @@ struct SettingsView: View {
             }
           }
         } header: {
-          Text("多设备同步")
+          Text("Multi-Device Sync")
         } footer: {
-          Text("使用 Cloudflare KV 免费同步 Session 到多设备")
+          Text("Sync sessions to multiple devices using Cloudflare KV (free tier)")
         }
       }
       .navigationTitle("Settings")

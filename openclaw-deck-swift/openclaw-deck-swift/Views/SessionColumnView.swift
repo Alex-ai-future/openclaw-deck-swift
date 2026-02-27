@@ -57,6 +57,20 @@ struct SessionColumnView: View {
     }
   }
 
+  // 发送输入框消息
+  private func sendInputMessage() {
+    // 设置选中的 Session
+    viewModel.globalInputState.selectedSessionId = session.sessionId
+
+    // 发送消息（使用当前输入框内容）
+    Task {
+      await viewModel.globalInputState.sendMessage(
+        to: session,
+        viewModel: viewModel
+      )
+    }
+  }
+
   var body: some View {
     VStack(spacing: 0) {
       ZStack {
@@ -66,19 +80,34 @@ struct SessionColumnView: View {
         VStack {
           Spacer()
           HStack(spacing: 16) {
-            // 滚动到底部按钮
+            // 滚动到底部按钮 - 始终显示
             ScrollToBottomButton {
               scrollToBottom()
             }
 
-            // OK 按钮 - 点击发送 "OK" 消息
-            Button {
-              sendOKMessage()
-            } label: {
-              Text("OK")
-                .foregroundColor(.blue)
+            // 快速操作按钮组 - 只在选中时显示
+            if isSelected {
+              HStack(spacing: 8) {
+                // OK 按钮 - 点击发送 "OK" 消息
+                Button {
+                  sendOKMessage()
+                } label: {
+                  Text("OK")
+                    .foregroundColor(.blue)
+                }
+                .buttonStyle(.glass)
+
+                // 发送按钮 - 点击发送输入框内容
+                Button {
+                  sendInputMessage()
+                } label: {
+                  Image(systemName: "arrow.up.circle.fill")
+                    .foregroundColor(.blue)
+                }
+                .buttonStyle(.glass)
+              }
+              .transition(.opacity.combined(with: .scale))
             }
-            .buttonStyle(.glass)
           }
           .padding(12)
         }

@@ -13,6 +13,7 @@ struct SettingsView: View {
   var onApplyAndReconnect: () -> Void
   var onConnect: () -> Void
   var onResetDeviceIdentity: (() -> Void)?
+  var onClose: (() -> Void)?
 
   @State private var hasChanges = false
   @State private var originalUrl = ""
@@ -108,6 +109,13 @@ struct SettingsView: View {
         }
       }
       .navigationTitle("Settings")
+      .toolbar {
+        ToolbarItem(placement: .primaryAction) {
+          Button("Done") {
+            onClose?()
+          }
+        }
+      }
     }
     .formStyle(.grouped)
     .onAppear {

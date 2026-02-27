@@ -59,6 +59,7 @@ struct DeckView: View {
           } label: {
             Image(systemName: "gear")
           }
+          .accessibilityIdentifier("settingsButton")
         }
 
       }

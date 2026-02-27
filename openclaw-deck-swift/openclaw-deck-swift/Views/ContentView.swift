@@ -128,6 +128,9 @@ struct ContentView: View {
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
           }
+        },
+        onClose: {
+          showingSettings = false
         }
       )
     }
@@ -156,6 +159,9 @@ struct ContentView: View {
           Task {
             await viewModel.initialize(url: gatewayUrl, token: token)
           }
+        },
+        onClose: {
+          showingWelcomeSettings = false
         }
       )
     }

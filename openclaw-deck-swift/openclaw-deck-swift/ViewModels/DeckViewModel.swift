@@ -150,11 +150,11 @@ class DeckViewModel {
   /// 发送当前输入（全局入口）
   func sendCurrentInput() async {
     guard let sessionId = globalInputState.selectedSessionId,
-          let session = getSession(sessionId: sessionId)
+      let session = getSession(sessionId: sessionId)
     else {
       return
     }
-    
+
     await globalInputState.sendMessage(to: session, viewModel: self)
   }
 
@@ -467,18 +467,43 @@ class DeckViewModel {
         let delta = data["delta"] as? String
         let text = data["text"] as? String
 
-        // 调试日志
-        logger.info(
-          "Assistant event: runId=\(runId), seq=\(seq ?? -1), delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars"
-        )
-
-        // 实时接收时：只更新最后一条消息（累积文本）
-        if let text = text, !text.isEmpty {
-          updateOrCreateLastAssistantMessage(session: session, runId: runId, text: text, seq: seq)
+        // 📝 打印原始数据（调试用）
+        logger.info("📦 收到 Assistant 数据:")
+        logger.info("   runId: \(runId)")
+        logger.info("   seq: \(seq ?? -1)")
+        if let delta = delta {
+          logger.info("   delta: \"\(delta)\"")
         }
-        // 否则使用 delta 追加（流式更新）
-        else if let delta = delta, !delta.isEmpty {
+        if let text = text {
+          logger.info("   text: \"\(text)\"")
+        }
+
+        // 如果有 seq，检查是否已处理（去重）
+        if let seq = seq {
+          let alreadyProcessed = session.messages.contains { $0.seq == seq }
+          if alreadyProcessed {
+            logger.info("⚠️  跳过重复消息 - seq=\(seq)")
+            return
+          }
+        }
+
+        // 优先使用 delta 追加（流式更新）
+        if let delta = delta, !delta.isEmpty {
+          logger.info("✅ 追加 delta: \"\(delta)\" (总长度：\(delta.count) 字符)")
           appendToAssistantMessage(session: session, runId: runId, text: delta)
+        }
+        // 后备：使用 text（只在没有 delta 且没有同 runId 消息时）
+        else if let text = text, !text.isEmpty {
+          let hasExistingMessage = session.messages.contains {
+            $0.runId == runId && $0.role == .assistant
+          }
+
+          if !hasExistingMessage {
+            logger.info("✅ 创建消息：\"\(text)\" (总长度：\(text.count) 字符)")
+            createAssistantMessage(session: session, runId: runId, text: text, seq: seq)
+          } else {
+            logger.info("⚠️  忽略 text (已有消息): \"\(text)\"")
+          }
         }
       }
 

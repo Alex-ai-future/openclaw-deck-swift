@@ -109,12 +109,12 @@ struct SessionColumnView: View {
                 Button {
                   sendNewMessage()
                 } label: {
-                  Image(systemName: "plus.circle")
+                  Text("/new")
                     .font(.title3)
                     .foregroundColor(.blue)
                 }
                 .buttonStyle(.glass)
-                .frame(width: 36, height: 36)
+                .frame(height: 36)
 
                 // OK 按钮 - 点击发送 "OK" 消息
                 Button {

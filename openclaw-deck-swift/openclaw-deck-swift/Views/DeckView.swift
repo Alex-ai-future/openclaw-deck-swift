@@ -19,6 +19,8 @@ struct DeckView: View {
   @Binding var showingNewSessionSheet: Bool
   @State private var showingSortSheet: Bool = false
   @State private var selectedSessionId: String?
+  @State private var isSyncing: Bool = false
+  @State private var syncMessage: String?
 
   var body: some View {
     NavigationStack {
@@ -69,6 +71,37 @@ struct DeckView: View {
           .disabled(!viewModel.gatewayConnected)
         }
         ToolbarItem {
+          // Sync button
+          Button {
+            Task {
+              isSyncing = true
+              let result = await viewModel.syncAll()
+              isSyncing = false
+
+              switch result {
+              case .success(let message):
+                syncMessage = message
+              case .failure(let error):
+                syncMessage = error.localizedDescription
+              }
+
+              // 3 秒后清除提示
+              try? await Task.sleep(nanoseconds: 3_000_000_000)
+              syncMessage = nil
+            }
+          } label: {
+            Image(systemName: "arrow.clockwise")
+              .rotationEffect(.degrees(isSyncing ? 360 : 0))
+              .animation(
+                isSyncing
+                  ? .linear(duration: 1).repeatForever(autoreverses: false)
+                  : .default,
+                value: isSyncing
+              )
+          }
+          .disabled(!viewModel.gatewayConnected || isSyncing)
+        }
+        ToolbarItem {
           // Sort button
           Button {
             showingSortSheet = true
@@ -87,6 +120,17 @@ struct DeckView: View {
           .accessibilityIdentifier("settingsButton")
         }
 
+      }
+      .overlay {
+        if let message = syncMessage {
+          Text(message)
+            .padding()
+            .background(Color.secondary.opacity(0.8))
+            .foregroundColor(.white)
+            .cornerRadius(8)
+            .padding(.top, 8)
+            .transition(.opacity)
+        }
       }
       .sheet(isPresented: $showingSortSheet) {
         SessionSortView(viewModel: viewModel)

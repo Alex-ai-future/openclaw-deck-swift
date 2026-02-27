@@ -32,6 +32,12 @@ class DeckViewModel {
   /// 连接错误信息
   var connectionError: String?
 
+  /// 是否正在重连
+  var isReconnecting: Bool = false
+
+  /// 重连尝试次数
+  var reconnectAttempts: Int = 0
+
   /// 应用配置
   var config: AppConfig = .default
 
@@ -120,6 +126,7 @@ class DeckViewModel {
               session.activeRunId = nil
             }
           }
+          // 重置重连状态
           logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
           await self?.loadAllSessionHistory()
         } else {
@@ -441,6 +448,49 @@ class DeckViewModel {
       logger.info("Synced to Cloudflare KV")
     } catch {
       logger.error("Cloudflare sync failed: \(error.localizedDescription)")
+    }
+  }
+
+  // MARK: - Sync
+
+  /// 完整同步：Cloudflare（Session 列表）+ Gateway（对话内容）
+  /// - Returns: 同步结果（成功/失败消息）
+  @MainActor
+  func syncAll() async -> Result<String, Error> {
+    guard gatewayConnected else {
+      return .failure(NSError(domain: "DeckViewModel", code: 400, userInfo: [NSLocalizedDescriptionKey: "Gateway 未连接"]))
+    }
+
+    do {
+      logger.info("🔄 开始完整同步...")
+
+      // 1. 从 Cloudflare 同步 Session 列表
+      logger.info("📥 同步 Session 列表...")
+      let syncData = try await CloudflareKV.shared.syncAndGet()
+
+      // 更新本地 sessions
+      sessionOrder = syncData.sessions.map { $0.lowercased() }
+      createSessionStates()
+      saveSessionsToStorage()
+
+      logger.info("✅ Session 列表已更新：\(syncData.sessions.count) 个会话")
+
+      // 2. 清空所有 Session 的当前消息
+      logger.info("🧹 清空当前消息...")
+      for session in sessions.values {
+        session.messages.removeAll()
+        session.historyLoaded = false
+      }
+
+      // 3. 重新加载所有 Session 的对话内容
+      logger.info("📥 重新加载对话内容...")
+      await loadAllSessionHistory()
+
+      logger.info("✅ 同步完成：\(syncData.sessions.count) 个会话")
+      return .success("同步完成：\(syncData.sessions.count) 个会话")
+    } catch {
+      logger.error("❌ 同步失败：\(error.localizedDescription)")
+      return .failure(error)
     }
   }
 

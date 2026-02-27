@@ -73,6 +73,16 @@ struct ContentView: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+      } else if viewModel.isReconnecting {
+        // Reconnecting state - show reconnecting view
+        ReconnectingView(
+          attempts: viewModel.reconnectAttempts,
+          maxAttempts: 5,
+          onCancel: {
+            viewModel.disconnect()
+          }
+        )
+
       } else if viewModel.isInitializing {
         // Connecting state - show loading
         ConnectingView()
@@ -211,6 +221,34 @@ struct ConnectingView: View {
       Text("Connecting to Gateway...")
         .font(.headline)
         .foregroundColor(.secondary)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.adaptiveBackground)
+  }
+}
+
+// MARK: - Reconnecting View
+
+struct ReconnectingView: View {
+  let attempts: Int
+  let maxAttempts: Int
+  let onCancel: () -> Void
+
+  var body: some View {
+    VStack(spacing: 20) {
+      ProgressView()
+        .scaleEffect(1.5)
+
+      Text("正在尝试重新连接...")
+        .font(.headline)
+
+      Text("尝试 \(attempts)/\(maxAttempts)")
+        .font(.subheadline)
+        .foregroundColor(.secondary)
+
+      Button("取消", action: onCancel)
+        .buttonStyle(.bordered)
+        .padding(.top, 20)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.adaptiveBackground)

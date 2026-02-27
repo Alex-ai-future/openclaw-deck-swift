@@ -201,7 +201,8 @@ class DeckViewModel {
     // 4. 创建 SessionState
     let sessionState = SessionState(
       sessionId: sessionId,
-      sessionKey: sessionKey
+      sessionKey: sessionKey,
+      context: context
     )
 
     // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）
@@ -309,7 +310,7 @@ class DeckViewModel {
         createdAt: Date(),
         name: state.sessionId,
         icon: nil,
-        context: nil
+        context: state.context
       )
     }
 

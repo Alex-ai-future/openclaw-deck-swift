@@ -52,6 +52,9 @@ class SessionState {
   /// 🆕 是否有未完成的消息（任务完成但用户未查看）
   var hasUnreadMessage: Bool = false
 
+  /// 可选的上下文描述（备注）
+  var context: String?
+
   /// 最后一条消息的时间
   var lastMessageAt: Date? {
     messages.last?.timestamp

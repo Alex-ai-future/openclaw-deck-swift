@@ -98,6 +98,12 @@ class DeckViewModel {
       Task { @MainActor in
         self?.gatewayConnected = connected
         if connected {
+          // 重连时重置所有 session 的处理状态
+          for session in self?.sessions.values ?? [] {
+            session.isProcessing = false
+            session.status = .idle
+            session.activeRunId = nil
+          }
           await self?.loadAllSessionHistory()
         }
       }

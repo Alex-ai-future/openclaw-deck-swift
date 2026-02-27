@@ -121,11 +121,13 @@ struct NewSessionSheet: View {
   @Environment(\.dismiss) private var dismiss
 
   @State private var name = "default"
+  @State private var context = ""
   @FocusState private var isNameFieldFocused: Bool
 
   var body: some View {
     NavigationStack {
       Form {
+        // Session Name
         Section {
           TextField("Session Name", text: $name)
             .focused($isNameFieldFocused)
@@ -134,7 +136,19 @@ struct NewSessionSheet: View {
               createSession()
             }
         } footer: {
-          Text("The session key will be generated automatically.")
+          Text("A unique identifier for this session.")
+        }
+
+        // Notes (Optional)
+        Section {
+          TextEditor(text: $context)
+            .font(.body)
+            .frame(minHeight: 80)
+            .scrollContentBackground(.hidden)
+        } header: {
+          Text("Notes (Optional)")
+        } footer: {
+          Text("Additional context or description for this session.")
         }
       }
       .formStyle(.grouped)
@@ -155,7 +169,7 @@ struct NewSessionSheet: View {
       }
     }
     #if os(macOS)
-      .frame(width: 400, height: 300)
+      .frame(width: 400, height: 400)
     #endif
     .task {
       isNameFieldFocused = true
@@ -163,7 +177,7 @@ struct NewSessionSheet: View {
   }
 
   private func createSession() {
-    _ = viewModel.createSession(name: name)
+    _ = viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
     dismiss()
   }
 }

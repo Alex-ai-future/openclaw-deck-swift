@@ -201,8 +201,7 @@ class DeckViewModel {
     // 4. 创建 SessionState
     let sessionState = SessionState(
       sessionId: sessionId,
-      sessionKey: sessionKey,
-      context: context
+      sessionKey: sessionKey
     )
 
     // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）

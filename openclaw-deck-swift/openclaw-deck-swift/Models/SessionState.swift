@@ -65,9 +65,10 @@ class SessionState {
     messages.count
   }
 
-  init(sessionId: String, sessionKey: String) {
+  init(sessionId: String, sessionKey: String, context: String? = nil) {
     self.sessionId = sessionId
     self.sessionKey = sessionKey
+    self.context = context
   }
 
   // MARK: - Message Management

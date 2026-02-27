@@ -38,6 +38,7 @@ if xcodebuild test \
     -resultBundlePath "$BUILD_DIR/TestResults.xcresult" \
     -parallel-testing-enabled NO \
     CODE_SIGN_IDENTITY="-" \
+    CODE_GENERATION_INSTRUMENTATION=YES \
     2>&1 | tee "$BUILD_DIR/test_output.log"; then
     
     # Check if tests actually passed (not just build)

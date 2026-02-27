@@ -62,7 +62,11 @@ struct SessionSortView: View {
             .foregroundColor(.secondary)
         }
       }
+#if os(iOS) || os(ipadOS)
       .listStyle(.insetGrouped)
+#elseif os(macOS)
+      .listStyle(.inset)
+#endif
       .navigationTitle("Sort Sessions")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {

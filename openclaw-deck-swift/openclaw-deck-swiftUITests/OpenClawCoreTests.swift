@@ -11,11 +11,11 @@ final class OpenClawCoreTests: XCTestCase {
     try super.setUpWithError()
     continueAfterFailure = false
     app = XCUIApplication()
-    
+
     // 清除应用数据，确保测试从干净状态开始
     app.launchArguments = ["--ui-testing"]
     app.launch()
-    
+
     // 等待应用完全加载
     XCTAssertTrue(
       app.windows.firstMatch.waitForExistence(timeout: 10),
@@ -35,18 +35,18 @@ final class OpenClawCoreTests: XCTestCase {
   func testAppLaunch() throws {
     // 验证应用成功启动
     XCTAssertTrue(app.exists, "应用应该成功启动")
-    
+
     // 验证主窗口存在
     let mainWindow = app.windows.firstMatch
     XCTAssertTrue(mainWindow.exists, "主窗口应该存在")
-    
+
     // 截图验证
     let screenshot = mainWindow.screenshot()
     let attachment = XCTAttachment(screenshot: screenshot)
     attachment.name = "AppLaunched"
     attachment.lifetime = .keepAlways
     add(attachment)
-    
+
     print("✅ testAppLaunch 通过")
   }
 
@@ -54,33 +54,33 @@ final class OpenClawCoreTests: XCTestCase {
   func testSendMessage() throws {
     // 等待输入框出现（使用 firstMatch 避免 SwiftUI 多元素问题）
     let messageInput = app.textFields["messageInput"].firstMatch
-    
+
     // 等待并验证输入框存在
     let exists = messageInput.waitForExistence(timeout: 5)
     XCTAssertTrue(exists, "消息输入框应该在 5 秒内出现")
-    
+
     // 输入消息
     messageInput.tap()
     messageInput.typeText("UI Test Hello")
-    
+
     // 等待发送按钮出现
     let sendButton = app.buttons["sendButton"].firstMatch
     let buttonExists = sendButton.waitForExistence(timeout: 3)
     XCTAssertTrue(buttonExists, "发送按钮应该在 3 秒内出现")
-    
+
     // 点击发送
     sendButton.tap()
-    
+
     // 等待消息显示（最多 5 秒）
     sleep(1)  // 给 UI 一点时间更新
-    
+
     // 截图验证
     let screenshot = app.windows.firstMatch.screenshot()
     let attachment = XCTAttachment(screenshot: screenshot)
     attachment.name = "MessageSent"
     attachment.lifetime = .keepAlways
     add(attachment)
-    
+
     print("✅ testSendMessage 通过")
   }
 
@@ -88,13 +88,13 @@ final class OpenClawCoreTests: XCTestCase {
   func testConnectionFlow() throws {
     // 这个测试需要实际的 Gateway 服务器
     // 目前只验证设置按钮存在
-    
+
     let settingsButton = app.buttons["settingsButton"].firstMatch
     let settingsExists = settingsButton.waitForExistence(timeout: 5)
-    
+
     if settingsExists {
       print("✅ 设置按钮存在")
-      
+
       // 截图
       let screenshot = app.windows.firstMatch.screenshot()
       let attachment = XCTAttachment(screenshot: screenshot)

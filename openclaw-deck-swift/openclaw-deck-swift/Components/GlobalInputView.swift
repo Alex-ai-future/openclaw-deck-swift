@@ -12,7 +12,7 @@ struct GlobalInputView: View {
   @FocusState private var isInputFocused: Bool
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: 16) {
       // 语音按钮
       DictationButton(text: $state.inputText, speechRecognizer: state.speechRecognizer)
         .frame(width: 36, height: 36)
@@ -25,10 +25,9 @@ struct GlobalInputView: View {
           } label: {
             Image(systemName: "keyboard.chevron.compact.down")
               .font(.title3)
-              .foregroundColor(.secondary)
           }
+          .buttonStyle(.glass)
           .frame(width: 36, height: 36)
-          .buttonStyle(.plain)
         }
       #endif
 

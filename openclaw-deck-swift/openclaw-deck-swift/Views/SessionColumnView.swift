@@ -87,24 +87,30 @@ struct SessionColumnView: View {
 
             // 快速操作按钮组 - 只在选中时显示
             if isSelected {
-              HStack(spacing: 8) {
+              HStack(spacing: 16) {
                 // OK 按钮 - 点击发送 "OK" 消息
                 Button {
                   sendOKMessage()
                 } label: {
                   Text("OK")
+                    .font(.title3)
                     .foregroundColor(.blue)
                 }
                 .buttonStyle(.glass)
+                .frame(height: 36)
+                .contentShape(Rectangle())
 
                 // 发送按钮 - 点击发送输入框内容
                 Button {
                   sendInputMessage()
                 } label: {
                   Image(systemName: "arrow.up.circle")
+                    .font(.title3)
                     .foregroundColor(.blue)
                 }
                 .buttonStyle(.glass)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
               }
               .transition(.opacity.combined(with: .scale))
             }

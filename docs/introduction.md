@@ -63,10 +63,63 @@ OpenClaw Deck Swift 是 [openclaw-deck](../openclaw-deck) 的 Swift 原生实现
 
 ### 5. 未来功能
 
+#### 短期计划
 - [ ] iOS 设备支持（iPhone 适配）
 - [ ] macOS UI 优化（菜单栏、快捷键）
 - [ ] 自动重连机制
 - [ ] Session 归档功能
+
+#### 长期计划
+- [ ] **Session 分组管理** - 支持按组/项目组织对话
+  - 侧边栏导航
+  - 组内包含多个 Session
+  - 默认组自动管理
+  - 本地存储组信息（UserDefaults）
+  - 详见：[分组功能设计](#分组功能设计)
+
+---
+
+## 分组功能设计
+
+> **说明：** 这是未来的长期功能，尚未实现。
+
+### 需求背景
+随着 Session 数量增加，用户需要更好的组织方式来管理不同项目/主题的对话。
+
+### 功能设计
+
+**核心概念：**
+- 每个组是一个 Session 列表
+- 一个 Session 只能属于一个组
+- 默认组始终存在（"默认会话"）
+- 组信息本地存储，不同步到 Gateway
+
+**数据结构：**
+```swift
+struct SessionGroup: Codable {
+  var name: String           // 组名
+  var sessionNames: [String] // 组内 Session 名称列表
+}
+
+// 存储：UserDefaults
+var groups: [SessionGroup]
+```
+
+**基本操作：**
+- **创建组** - 添加新组到列表
+- **删除组** - 删除组，组内 Session 移到默认组
+- **移动 Session** - 将 Session 移到不同组
+- **组空处理** - 组内无 Session 时保留空组
+
+**UI 设计：**
+- 侧边栏展示组列表
+- 组可折叠/展开
+- 点击 Session 切换到对应对话
+
+**技术实现：**
+- 存储：UserDefaults + Codable
+- 预计工作量：5-7 天（MVP）
+- 优先级：低
 
 ---
 

@@ -467,29 +467,16 @@ class DeckViewModel {
         let delta = data["delta"] as? String
         let text = data["text"] as? String
 
-        // 📝 打印原始数据（调试用）
-        logger.info("📦 收到 Assistant 数据:")
-        logger.info("   runId: \(runId)")
-        logger.info("   seq: \(seq ?? -1)")
-        if let delta = delta {
-          logger.info("   delta: \"\(delta)\"")
-        }
-        if let text = text {
-          logger.info("   text: \"\(text)\"")
-        }
-
         // 如果有 seq，检查是否已处理（去重）
         if let seq = seq {
           let alreadyProcessed = session.messages.contains { $0.seq == seq }
           if alreadyProcessed {
-            logger.info("⚠️  跳过重复消息 - seq=\(seq)")
             return
           }
         }
 
         // 优先使用 delta 追加（流式更新）
         if let delta = delta, !delta.isEmpty {
-          logger.info("✅ 追加 delta: \"\(delta)\" (总长度：\(delta.count) 字符)")
           appendToAssistantMessage(session: session, runId: runId, text: delta)
         }
         // 后备：使用 text（只在没有 delta 且没有同 runId 消息时）
@@ -497,12 +484,9 @@ class DeckViewModel {
           let hasExistingMessage = session.messages.contains {
             $0.runId == runId && $0.role == .assistant
           }
-
+          
           if !hasExistingMessage {
-            logger.info("✅ 创建消息：\"\(text)\" (总长度：\(text.count) 字符)")
             createAssistantMessage(session: session, runId: runId, text: text, seq: seq)
-          } else {
-            logger.info("⚠️  忽略 text (已有消息): \"\(text)\"")
           }
         }
       }

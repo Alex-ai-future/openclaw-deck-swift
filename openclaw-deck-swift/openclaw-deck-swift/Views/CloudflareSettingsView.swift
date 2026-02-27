@@ -1,7 +1,7 @@
 // CloudflareSettingsView.swift
 // OpenClaw Deck Swift
 //
-// Cloudflare KV 配置界面
+// Cloudflare KV Configuration View
 
 import SwiftUI
 
@@ -15,6 +15,7 @@ struct CloudflareSettingsView: View {
   @State private var showingTestAlert = false
   @State private var testResult: String?
   @State private var isTesting = false
+  @State private var saveStatus: String = ""
 
   @FocusState private var focusedField: Field?
 
@@ -25,83 +26,100 @@ struct CloudflareSettingsView: View {
     case apiToken
   }
 
-  var onSave: (() -> Void)?
   var onClose: (() -> Void)?
 
   var body: some View {
     NavigationStack {
       Form {
-        // 说明
+        // Description
         Section {
           VStack(alignment: .leading, spacing: 8) {
-            Text("Cloudflare KV 同步")
+            Text("Cloudflare KV Sync")
               .font(.headline)
 
-            Text("使用 Cloudflare KV 实现多设备 Session 同步")
+            Text("Use Cloudflare KV for multi-device session synchronization")
               .font(.subheadline)
               .foregroundColor(.secondary)
 
-            Link("查看配置指南", destination: URL(string: "https://dash.cloudflare.com")!)
+            Link("View Configuration Guide", destination: URL(string: "https://dash.cloudflare.com")!)
               .font(.caption)
           }
           .padding(.vertical, 4)
         } footer: {
-          Text("免费额度：10 万次读/天，1000 次写/天，1GB 存储")
+          Text("Free tier: 100K reads/day, 1K writes/day, 1GB storage")
         }
 
-        // 配置输入
+        // Configuration Input
         Section {
-          TextField("User ID（自定义，如邮箱）", text: $userId)
+          TextField("User ID (custom, e.g., email)", text: $userId)
             .focused($focusedField, equals: .userId)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = nil  // 收起键盘
+              focusedField = nil
+            }
+            .onChange(of: userId) { _, _ in
+              autoSave()
             }
 
           TextField("Account ID", text: $accountId)
             .focused($focusedField, equals: .accountId)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = nil  // 收起键盘
+              focusedField = nil
+            }
+            .onChange(of: accountId) { _, _ in
+              autoSave()
             }
 
           TextField("Namespace ID", text: $namespaceId)
             .focused($focusedField, equals: .namespaceId)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = nil  // 收起键盘
+              focusedField = nil
+            }
+            .onChange(of: namespaceId) { _, _ in
+              autoSave()
             }
 
-          SecureField("API Token", text: $apiToken)
+          TextField("API Token", text: $apiToken)
             .focused($focusedField, equals: .apiToken)
             .submitLabel(.done)
             .onSubmit {
-              focusedField = nil  // 收起键盘
+              focusedField = nil
+            }
+            .onChange(of: apiToken) { _, _ in
+              autoSave()
             }
         } header: {
-          Text("Cloudflare 配置")
+          Text("Cloudflare Configuration")
         } footer: {
-          Text("API Token 将加密存储在 Keychain 中")
+          Text("API Token is encrypted and stored in Keychain")
         }
 
-        // 状态
+        // Status
         Section {
           HStack {
             Circle()
               .fill(isConfigured ? Color.green : Color.orange)
               .frame(width: 10, height: 10)
 
-            Text(isConfigured ? "已配置" : "未配置")
+            Text(isConfigured ? "Configured" : "Not Configured")
               .foregroundColor(.primary)
               .fontWeight(.medium)
 
             Spacer()
+
+            if !saveStatus.isEmpty {
+              Text(saveStatus)
+                .font(.caption)
+                .foregroundColor(.green)
+            }
           }
         } header: {
-          Text("状态")
+          Text("Status")
         }
 
-        // 操作
+        // Actions
         Section {
           Button {
             Task {
@@ -110,7 +128,7 @@ struct CloudflareSettingsView: View {
           } label: {
             HStack {
               Image(systemName: "antenna.radiowaves.left.and.right")
-              Text("测试连接")
+              Text("Test Connection")
             }
           }
           .disabled(isTesting || !isFormValid)
@@ -121,40 +139,25 @@ struct CloudflareSettingsView: View {
             } label: {
               HStack {
                 Image(systemName: "trash.fill")
-                Text("清除配置")
+                Text("Clear Configuration")
               }
             }
           }
         } header: {
-          Text("操作")
+          Text("Actions")
         } footer: {
           if isTesting {
-            Text("正在测试连接...")
+            Text("Testing connection...")
               .foregroundColor(.secondary)
           } else if let result = testResult {
             Text(result)
-              .foregroundColor(testResult?.contains("成功") ?? false ? .green : .red)
+              .foregroundColor(result.contains("Success") || result.contains("✓") ? .green : .red)
           }
         }
       }
-      .navigationTitle("Cloudflare 同步")
+      .navigationTitle("Cloudflare Sync")
       .toolbar {
-        ToolbarItem(placement: .cancellationAction) {
-          Button("取消") {
-            onClose?()
-          }
-        }
-
-        ToolbarItem(placement: .confirmationAction) {
-          Button("保存") {
-            saveConfig()
-            onSave?()
-            onClose?()
-          }
-          .fontWeight(.semibold)
-          .keyboardShortcut(.defaultAction)
-          .disabled(!isFormValid)
-        }
+        // No cancel button - navigation back is sufficient
       }
       .onAppear {
         loadConfig()
@@ -163,7 +166,7 @@ struct CloudflareSettingsView: View {
     .formStyle(.grouped)
   }
 
-  // MARK: - 私有方法
+  // MARK: - Private Methods
 
   private var isFormValid: Bool {
     !accountId.trimmingCharacters(in: .whitespaces).isEmpty
@@ -185,7 +188,11 @@ struct CloudflareSettingsView: View {
     isConfigured = CloudflareKV.shared.isConfigured
   }
 
-  private func saveConfig() {
+  private func autoSave() {
+    guard isFormValid else {
+      saveStatus = ""
+      return
+    }
     do {
       try CloudflareKV.shared.saveConfig(
         accountId: accountId.trimmingCharacters(in: .whitespaces),
@@ -193,9 +200,14 @@ struct CloudflareSettingsView: View {
         userId: userId.trimmingCharacters(in: .whitespaces),
         apiToken: apiToken.trimmingCharacters(in: .whitespaces))
       isConfigured = true
+      saveStatus = "Saved"
       testResult = nil
+      // Clear status after 2 seconds
+      DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        saveStatus = ""
+      }
     } catch {
-      testResult = "保存失败：\(error.localizedDescription)"
+      saveStatus = "Save failed"
     }
   }
 
@@ -206,37 +218,48 @@ struct CloudflareSettingsView: View {
     userId = ""
     apiToken = ""
     isConfigured = false
-    testResult = "配置已清除"
+    testResult = "Configuration cleared"
+    saveStatus = ""
   }
 
   private func testConnection() async {
     guard isFormValid else {
-      testResult = "请先填写完整的配置信息"
+      testResult = "Please fill in all fields"
       return
     }
 
     isTesting = true
     testResult = nil
 
-    // 先临时保存配置
+    print("[CloudflareSettings] Starting connection test...")
+    print("[CloudflareSettings] Account ID: \(accountId.prefix(10))...")
+    print("[CloudflareSettings] Namespace ID: \(namespaceId.prefix(10))...")
+    print("[CloudflareSettings] User ID: \(userId)")
+
+    // Save configuration first
     do {
       try CloudflareKV.shared.saveConfig(
         accountId: accountId.trimmingCharacters(in: .whitespaces),
         namespaceId: namespaceId.trimmingCharacters(in: .whitespaces),
         userId: userId.trimmingCharacters(in: .whitespaces),
         apiToken: apiToken.trimmingCharacters(in: .whitespaces))
+      print("[CloudflareSettings] Configuration saved")
     } catch {
-      testResult = "保存配置失败：\(error.localizedDescription)"
+      print("[CloudflareSettings] Failed to save configuration: \(error)")
+      testResult = "Failed to save: \(error.localizedDescription)"
       isTesting = false
       return
     }
 
-    // 测试连接
+    // Test connection
     do {
+      print("[CloudflareSettings] Starting sync...")
       _ = try await CloudflareKV.shared.syncAndGet()
-      testResult = "✓ 连接成功，同步完成"
+      print("[CloudflareSettings] Sync successful")
+      testResult = "✓ Connection successful"
     } catch {
-      testResult = "✗ 连接失败：\(error.localizedDescription)"
+      print("[CloudflareSettings] Sync failed: \(error)")
+      testResult = "✗ Connection failed: \(error.localizedDescription)"
     }
 
     isTesting = false

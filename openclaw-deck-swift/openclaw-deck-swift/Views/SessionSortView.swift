@@ -57,7 +57,7 @@ struct SessionSortView: View {
             sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
           }
         } footer: {
-          Text("拖拽项目重新排序")
+          Text("Drag to reorder")
             .font(.caption)
             .foregroundColor(.secondary)
         }

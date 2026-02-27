@@ -65,7 +65,7 @@ struct SessionColumnView: View {
         // 底部浮动按钮组
         VStack {
           Spacer()
-          HStack(spacing: 8) {
+          HStack(spacing: 16) {
             // 滚动到底部按钮
             ScrollToBottomButton {
               scrollToBottom()
@@ -76,14 +76,9 @@ struct SessionColumnView: View {
               sendOKMessage()
             } label: {
               Text("OK")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(.ultraThinMaterial)
-                .clipShape(Capsule())
+                .foregroundColor(.blue)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.glass)
           }
           .padding(12)
         }
@@ -462,6 +457,7 @@ struct SessionColumnView: View {
         Markdown(message.text)
           .font(.body)
           .foregroundColor(.primary)
+          .textSelection(.enabled)
           .onOpenURL { url in
             #if os(iOS) || os(visionOS)
               UIApplication.shared.open(url)

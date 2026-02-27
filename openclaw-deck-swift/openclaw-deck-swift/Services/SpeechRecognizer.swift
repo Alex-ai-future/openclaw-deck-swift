@@ -54,8 +54,12 @@ class SpeechRecognizer: ObservableObject {
     // 使用中文普通话识别器
     recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
     isAvailable = recognizer?.isAvailable ?? false
-    // Speech recognizer initialized
-    checkPermissions()
+
+    // 测试环境跳过权限检查，避免弹窗
+    #if !TEST
+      // Speech recognizer initialized
+      checkPermissions()
+    #endif
   }
 
   /// 检查语音识别权限

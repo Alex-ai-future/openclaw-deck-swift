@@ -637,13 +637,14 @@ class DeckViewModel {
 
       // 处理冲突情况
       if result.source == .conflict {
-        // 冲突时让用户选择（通过设置界面）
-        logger.info("⚠️ Conflict detected during sync, user selection required")
+        // 冲突时让用户选择（弹窗）
+        logger.info("⚠️ Conflict detected during sync, showing conflict dialog")
+        await handleSyncConflict(result: result)
         return .failure(
           NSError(
             domain: "DeckViewModel", code: 409,
             userInfo: [
-              NSLocalizedDescriptionKey: "Sync conflict: please select data source in settings"
+              NSLocalizedDescriptionKey: "Sync conflict: please select data source"
             ]))
       }
 

@@ -26,11 +26,11 @@ struct DeckToolbar: ToolbarContent {
           Image(systemName: "gear")
         }
         .accessibilityIdentifier("settingsButton")
-        
+
         Text("OpenClaw Deck")
           .font(.headline)
           .fontWeight(.semibold)
-          .frame(width: 120, alignment: .leading)  // 固定宽度，避免压缩
+          .frame(width: 160, alignment: .leading)  // 固定宽度，避免压缩
       }
     }
 

@@ -27,116 +27,119 @@ struct DeckCommonContainer<Content: View>: View {
   @ViewBuilder let content: Content
 
   var body: some View {
-    NavigationStack {
-      content
-        .navigationTitle("OpenClaw Deck")
-        .toolbar {
-          DeckToolbar(
-            viewModel: viewModel,
-            showingSettings: $showingSettings,
-            showingNewSessionSheet: $showingNewSessionSheet,
-            showingSortSheet: $showingSortSheet,
-            showingSyncAlert: $showingSyncAlert,
-            showingConflictAlert: $showingConflictAlert
+    content
+      .navigationTitle("OpenClaw Deck")
+      .toolbar {
+        DeckToolbar(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet,
+          showingSortSheet: $showingSortSheet,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        )
+      }
+
+      // Settings Sheet
+      .sheet(isPresented: $showingSettings) {
+          SettingsView(
+            gatewayUrl: gatewayUrl ?? .constant(""),
+            token: token ?? .constant(""),
+            isConnected: .constant(viewModel.gatewayConnected),
+            onDisconnect: {
+              viewModel.disconnect()
+              showingSettings = false
+            },
+            onApplyAndReconnect: {
+              // Save new config first
+              if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
+                UserDefaultsStorage.shared.saveGatewayUrl(url)
+              }
+              if let token = token?.wrappedValue {
+                UserDefaultsStorage.shared.saveToken(token)
+              }
+
+              Task {
+                await viewModel.initialize(
+                  url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl()
+                    ?? "",
+                  token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
+                )
+              }
+              showingSettings = false
+            },
+            onConnect: {
+              // Save new config first
+              if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
+                UserDefaultsStorage.shared.saveGatewayUrl(url)
+              }
+              if let token = token?.wrappedValue {
+                UserDefaultsStorage.shared.saveToken(token)
+              }
+
+              Task {
+                await viewModel.initialize(
+                  url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl()
+                    ?? "",
+                  token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
+                )
+                showingSettings = false
+              }
+            },
+            onResetDeviceIdentity: {
+              // Save new config first
+              if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
+                UserDefaultsStorage.shared.saveGatewayUrl(url)
+              }
+              if let token = token?.wrappedValue {
+                UserDefaultsStorage.shared.saveToken(token)
+              }
+
+              viewModel.resetDeviceIdentity()
+              Task {
+                await viewModel.initialize(
+                  url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl()
+                    ?? "",
+                  token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
+                )
+                showingSettings = false
+              }
+            },
+            onClose: {
+              showingSettings = false
+            },
+            viewModel: viewModel
           )
         }
 
-        // Settings Sheet
-        .sheet(isPresented: $showingSettings) {
-        SettingsView(
-          gatewayUrl: gatewayUrl ?? .constant(""),
-          token: token ?? .constant(""),
-          isConnected: .constant(viewModel.gatewayConnected),
-          onDisconnect: {
-            viewModel.disconnect()
-            showingSettings = false
-          },
-          onApplyAndReconnect: {
-            // Save new config first
-            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
-              UserDefaultsStorage.shared.saveGatewayUrl(url)
-            }
-            if let token = token?.wrappedValue {
-              UserDefaultsStorage.shared.saveToken(token)
-            }
-
-            Task {
-              await viewModel.initialize(
-                url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl() ?? "",
-                token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
-              )
-            }
-            showingSettings = false
-          },
-          onConnect: {
-            // Save new config first
-            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
-              UserDefaultsStorage.shared.saveGatewayUrl(url)
-            }
-            if let token = token?.wrappedValue {
-              UserDefaultsStorage.shared.saveToken(token)
-            }
-
-            Task {
-              await viewModel.initialize(
-                url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl() ?? "",
-                token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
-              )
-              showingSettings = false
-            }
-          },
-          onResetDeviceIdentity: {
-            // Save new config first
-            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
-              UserDefaultsStorage.shared.saveGatewayUrl(url)
-            }
-            if let token = token?.wrappedValue {
-              UserDefaultsStorage.shared.saveToken(token)
-            }
-
-            viewModel.resetDeviceIdentity()
-            Task {
-              await viewModel.initialize(
-                url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl() ?? "",
-                token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
-              )
-              showingSettings = false
-            }
-          },
-          onClose: {
-            showingSettings = false
-          },
-          viewModel: viewModel
-        )
-      }
-
-      // New Session Sheet
-      .sheet(isPresented: $showingNewSessionSheet) {
-        NewSessionSheet(
-          viewModel: viewModel,
-          isPresented: $showingNewSessionSheet
-        )
-      }
-
-      // Sort Sheet
-      .sheet(isPresented: $showingSortSheet) {
-        SessionSortView(viewModel: viewModel)
-      }
-
-      // Sync Alerts
-      .deckSyncAlerts(
-        viewModel: viewModel,
-        showingSyncAlert: $showingSyncAlert,
-        showingConflictAlert: $showingConflictAlert
-      ) { newValue in
-        if newValue {
-          showingConflictAlert = true
-          logger.info("🔔 Conflict alert triggered, showingConflictAlert = true")
-        } else {
-          showingConflictAlert = false
-          logger.info("🔔 Conflict alert dismissed, showingConflictAlert = false")
+        // New Session Sheet
+        .sheet(isPresented: $showingNewSessionSheet) {
+          NewSessionSheet(
+            viewModel: viewModel,
+            isPresented: $showingNewSessionSheet
+          )
         }
-      }
+
+        // Sort Sheet
+        .sheet(isPresented: $showingSortSheet) {
+          SessionSortView(viewModel: viewModel)
+        }
+
+        // Sync Alerts
+        .deckSyncAlerts(
+          viewModel: viewModel,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        ) { newValue in
+          if newValue {
+            showingConflictAlert = true
+            logger.info("🔔 Conflict alert triggered, showingConflictAlert = true")
+          } else {
+            showingConflictAlert = false
+            logger.info("🔔 Conflict alert dismissed, showingConflictAlert = false")
+          }
+        }
+    }
   }
 }
 

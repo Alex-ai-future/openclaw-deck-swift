@@ -23,39 +23,41 @@ struct DeckView: View {
   @State private var selectedSessionId: String?
 
   var body: some View {
-    DeckCommonContainer(
-      viewModel: viewModel,
-      showingSettings: $showingSettings,
-      showingNewSessionSheet: $showingNewSessionSheet
-    ) {
-      VStack(spacing: 0) {
-        sessionColumns
-      }
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        // 全局输入视图 - 系统自动处理键盘避让
-        GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
-          await viewModel.sendCurrentInput()
+    NavigationStack {
+      DeckCommonContainer(
+        viewModel: viewModel,
+        showingSettings: $showingSettings,
+        showingNewSessionSheet: $showingNewSessionSheet
+      ) {
+        VStack(spacing: 0) {
+          sessionColumns
         }
-      }
-      .onChange(of: selectedSessionId) { _, newId in
-        // Session 切换时通知 ViewModel
-        viewModel.selectSession(newId)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+          // 全局输入视图 - 系统自动处理键盘避让
+          GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+            await viewModel.sendCurrentInput()
+          }
+        }
+        .onChange(of: selectedSessionId) { _, newId in
+          // Session 切换时通知 ViewModel
+          viewModel.selectSession(newId)
 
-        // 新选中的 Session 标记为已读
-        if let sessionId = newId,
-          let session = viewModel.sessions[sessionId]
-        {
-          session.hasUnreadMessage = false
+          // 新选中的 Session 标记为已读
+          if let sessionId = newId,
+            let session = viewModel.sessions[sessionId]
+          {
+            session.hasUnreadMessage = false
+          }
         }
-      }
-      .task {
-        // 初始化选中状态：确保 ViewModel 有选中的 Session
-        if viewModel.globalInputState.selectedSessionId == nil,
-          let firstSessionId = viewModel.sessionOrder.first
-        {
-          viewModel.selectSession(firstSessionId)
+        .task {
+          // 初始化选中状态：确保 ViewModel 有选中的 Session
+          if viewModel.globalInputState.selectedSessionId == nil,
+            let firstSessionId = viewModel.sessionOrder.first
+          {
+            viewModel.selectSession(firstSessionId)
+          }
+          selectedSessionId = viewModel.globalInputState.selectedSessionId
         }
-        selectedSessionId = viewModel.globalInputState.selectedSessionId
       }
     }
   }

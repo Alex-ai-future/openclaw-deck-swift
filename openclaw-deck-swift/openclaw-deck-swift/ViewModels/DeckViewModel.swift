@@ -192,7 +192,8 @@ class DeckViewModel {
           // 🆕 启动会话状态轮询
           self?.startSessionPolling()
         } else {
-          logger.info("🔌 Gateway 已断开")
+          // 网络断开，保留所有数据供用户离线浏览
+          logger.info("🔌 Gateway 已断开（保留历史消息，可离线浏览）")
 
           // 🆕 停止会话状态轮询
           self?.stopSessionPolling()
@@ -218,22 +219,13 @@ class DeckViewModel {
   }
 
   /// 断开 Gateway 连接
+  /// - Note: 断开连接时保留所有历史消息，不清空数据
   func disconnect() {
-    // 清空所有 Session 的消息和状态
-    for session in sessions.values {
-      session.messages.removeAll()
-      session.historyLoaded = false
-      session.isHistoryLoading = false
-      session.isProcessing = false
-      session.status = .idle
-      session.activeRunId = nil
-      session.hasUnreadMessage = false
-    }
-
+    // 只断开连接，不清空 Session 消息（保留离线浏览能力）
     gatewayClient?.disconnect()
     gatewayConnected = false
 
-    logger.info("🧹 已断开连接并清空所有 Session 消息")
+    logger.info("🔌 Gateway 已断开（保留历史消息）")
   }
 
   /// 重置设备身份（清除 device identity 和 device token）
@@ -248,7 +240,7 @@ class DeckViewModel {
     guard !isPolling else { return }
     isPolling = true
 
-    logger.info("🔄 启动会话状态轮询（每 \(Int(sessionPollingInterval)) 秒）")
+    logger.info("🔄 启动会话状态轮询（每 \(Int(self.sessionPollingInterval)) 秒）")
 
     // 立即执行一次
     Task {

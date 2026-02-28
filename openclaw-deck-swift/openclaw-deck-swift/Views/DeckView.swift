@@ -5,6 +5,9 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckView")
 
 #if os(macOS)
   import AppKit
@@ -165,13 +168,13 @@ struct DeckView: View {
 
     switch result {
     case .success(let message):
-      print("✅ \(message)")
+      logger.info("\(message)")
     case .failure(let error):
       if error.localizedDescription.contains("conflict") {
         // 冲突，弹窗已在 .onChange 中触发
-        print("⚠️ Sync conflict detected")
+        logger.warning("Sync conflict detected")
       } else {
-        print("❌ Sync failed: \(error.localizedDescription)")
+        logger.error("Sync failed: \(error.localizedDescription)")
       }
     }
   }

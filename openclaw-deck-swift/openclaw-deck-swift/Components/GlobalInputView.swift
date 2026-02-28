@@ -4,6 +4,9 @@
 // 全局输入视图组件
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "GlobalInputView")
 
 /// 全局输入视图
 struct GlobalInputView: View {

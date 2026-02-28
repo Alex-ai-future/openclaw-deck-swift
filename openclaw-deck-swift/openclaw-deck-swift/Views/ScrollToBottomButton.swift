@@ -5,6 +5,9 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "ScrollToBottomButton")
 
 /// 滚动到底部按钮 - 点击后自动滚动到最新消息
 struct ScrollToBottomButton: View {

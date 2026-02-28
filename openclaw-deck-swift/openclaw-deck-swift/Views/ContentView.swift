@@ -5,6 +5,9 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "ContentView")
 
 #if os(macOS)
   import AppKit
@@ -72,26 +75,13 @@ struct ContentView: View {
   var body: some View {
     Group {
       if viewModel.gatewayConnected {
-        // 根据设备类型选择布局
-        if isIPad {
-          // iPad - 多列布局
-          DeckView(
-            viewModel: viewModel,
-            showingSettings: $showingSettings,
-            showingNewSessionSheet: $showingNewSessionSheet
-          )
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-          // iPhone - 单列布局
-          SessionListView(
-            viewModel: viewModel,
-            showingSettings: $showingSettings,
-            showingNewSessionSheet: $showingNewSessionSheet,
-            gatewayUrl: $gatewayUrl,
-            token: $token
-          )
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
+        // 所有设备都使用 DeckView（多列布局）
+        DeckView(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
       } else if viewModel.isReconnecting {
         // Reconnecting state - show reconnecting view
@@ -218,13 +208,13 @@ struct ContentView: View {
       guard !hasAttemptedAutoConnect && !viewModel.gatewayConnected else { return }
       hasAttemptedAutoConnect = true
 
-      print("[ContentView] Attempting auto-connect...")
+      logger.debug("Attempting auto-connect...")
       if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
         let savedToken = UserDefaultsStorage.shared.loadToken()
-        print("[ContentView] Found saved credentials: \(savedUrl)")
+        logger.debug("Found saved credentials: \(savedUrl)")
         await viewModel.initialize(url: savedUrl, token: savedToken)
       } else {
-        print("[ContentView] No saved credentials found")
+        logger.debug("No saved credentials found")
       }
     }
     .onChange(of: scenePhase) { oldPhase, newPhase in
@@ -237,7 +227,7 @@ struct ContentView: View {
       // 检查是否有保存的凭证
       guard let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() else { return }
 
-      print("[ContentView] 应用进入前台，检测到连接断开，自动重连...")
+      logger.debug("应用进入前台，检测到连接断开，自动重连...")
       let savedToken = UserDefaultsStorage.shared.loadToken()
       Task {
         await viewModel.initialize(url: savedUrl, token: savedToken)

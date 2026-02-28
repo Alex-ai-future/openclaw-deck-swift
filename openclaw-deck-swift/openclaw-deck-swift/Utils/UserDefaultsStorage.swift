@@ -5,6 +5,9 @@
 // Copyright © 2026 OpenClaw. All rights reserved.
 
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "UserDefaultsStorage")
 
 // MARK: - Protocol
 
@@ -77,7 +80,7 @@ class UserDefaultsStorage: UserDefaultsStorageProtocol {
       let data = try JSONEncoder().encode(sessions)
       defaults.set(data, forKey: StorageKeys.sessionConfigs.rawValue)
     } catch {
-      print("[UserDefaultsStorage] Failed to encode sessions: \(error)")
+      logger.error("Failed to encode sessions: \(error)")
     }
   }
 
@@ -90,7 +93,7 @@ class UserDefaultsStorage: UserDefaultsStorageProtocol {
       let sessions = try JSONDecoder().decode([SessionConfig].self, from: data)
       return sessions
     } catch {
-      print("[UserDefaultsStorage] Failed to decode sessions: \(error)")
+      logger.error("Failed to decode sessions: \(error)")
       return []
     }
   }

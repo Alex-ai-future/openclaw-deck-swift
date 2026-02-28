@@ -304,7 +304,9 @@ swift-format format --in-place --recursive .
 export MAX_BUILD_WAIT=120
 
 # 运行构建
-bash script/build_macos.sh
+bash script/build.sh macos
+bash script/build.sh ios
+bash script/build.sh ipados
 ```
 
 ### 如果超时

@@ -4,6 +4,9 @@
 // Cloudflare KV Configuration View
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "CloudflareSettingsView")
 
 struct CloudflareSettingsView: View {
   @State private var accountId: String = ""
@@ -234,10 +237,10 @@ struct CloudflareSettingsView: View {
     isTesting = true
     testResult = nil
 
-    print("[CloudflareSettings] Starting connection test...")
-    print("[CloudflareSettings] Account ID: \(accountId.prefix(10))...")
-    print("[CloudflareSettings] Namespace ID: \(namespaceId.prefix(10))...")
-    print("[CloudflareSettings] User ID: \(userId)")
+    logger.debug("Starting connection test...")
+    logger.debug("Account ID: \(accountId.prefix(10))...")
+    logger.debug("Namespace ID: \(namespaceId.prefix(10))...")
+    logger.debug("User ID: \(userId)")
 
     // Save configuration first
     do {
@@ -246,9 +249,9 @@ struct CloudflareSettingsView: View {
         namespaceId: namespaceId.trimmingCharacters(in: .whitespaces),
         userId: userId.trimmingCharacters(in: .whitespaces),
         apiToken: apiToken.trimmingCharacters(in: .whitespaces))
-      print("[CloudflareSettings] Configuration saved")
+      logger.info("Configuration saved")
     } catch {
-      print("[CloudflareSettings] Failed to save configuration: \(error)")
+      logger.error("Failed to save configuration: \(error)")
       testResult = "Failed to save: \(error.localizedDescription)"
       isTesting = false
       return
@@ -256,12 +259,12 @@ struct CloudflareSettingsView: View {
 
     // Test connection
     do {
-      print("[CloudflareSettings] Starting sync...")
+      logger.debug("Starting sync...")
       _ = try await CloudflareKV.shared.syncAndGet()
-      print("[CloudflareSettings] Sync successful")
+      logger.info("Sync successful")
       testResult = "✓ Connection successful"
     } catch {
-      print("[CloudflareSettings] Sync failed: \(error)")
+      logger.error("Sync failed: \(error)")
       testResult = "✗ Connection failed: \(error.localizedDescription)"
     }
 

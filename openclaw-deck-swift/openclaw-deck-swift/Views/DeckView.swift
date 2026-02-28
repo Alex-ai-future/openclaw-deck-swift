@@ -22,7 +22,6 @@ struct DeckView: View {
   @Binding var showingNewSessionSheet: Bool
   @State private var showingSortSheet: Bool = false
   @State private var selectedSessionId: String?
-  @State private var isSyncing: Bool = false
   @State private var showingSyncAlert: Bool = false
   @State private var showingConflictAlert: Bool = false
 
@@ -66,48 +65,14 @@ struct DeckView: View {
       .navigationTitle("OpenClaw Deck")
       .toolbarTitleDisplayMode(.inline)
       .toolbar {
-        // 左边：设置按钮
-        ToolbarItem(placement: .topBarLeading) {
-          Button {
-            showingSettings = true
-          } label: {
-            Image(systemName: "gear")
-          }
-          .accessibilityIdentifier("settingsButton")
-        }
-
-        // 右边：操作按钮
-        ToolbarItemGroup(placement: .primaryAction) {
-          // 新建 Session 按钮
-          Button {
-            showingNewSessionSheet = true
-          } label: {
-            Image(systemName: "plus")
-          }
-          .disabled(!viewModel.gatewayConnected)
-
-          // 同步按钮
-          Button {
-            showingSyncAlert = true
-          } label: {
-            Image(systemName: "arrow.clockwise")
-              .rotationEffect(.degrees(isSyncing ? 360 : 0))
-              .animation(
-                isSyncing
-                  ? .linear(duration: 1).repeatForever(autoreverses: false)
-                  : .default,
-                value: isSyncing
-              )
-          }
-          .disabled(!viewModel.gatewayConnected || isSyncing)
-
-          // 排序按钮
-          Button {
-            showingSortSheet = true
-          } label: {
-            Image(systemName: "arrow.up.arrow.down")
-          }
-        }
+        DeckToolbar(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet,
+          showingSortSheet: $showingSortSheet,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        )
       }
       .sheet(isPresented: $showingSortSheet) {
         SessionSortView(viewModel: viewModel)
@@ -157,27 +122,6 @@ struct DeckView: View {
         if newValue {
           showingConflictAlert = true
         }
-      }
-    }
-  }
-
-  /// 处理同步（检测冲突）
-  @MainActor
-  private func handleSync() async {
-    isSyncing = true
-    defer { isSyncing = false }
-
-    let result = await viewModel.syncAll()
-
-    switch result {
-    case .success(let message):
-      logger.info("\(message)")
-    case .failure(let error):
-      if error.localizedDescription.contains("conflict") {
-        // 冲突，弹窗已在 .onChange 中触发
-        logger.warning("Sync conflict detected")
-      } else {
-        logger.error("Sync failed: \(error.localizedDescription)")
       }
     }
   }

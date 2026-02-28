@@ -44,6 +44,9 @@ class DeckViewModel {
   /// 是否正在初始化
   var isInitializing: Bool = false
 
+  /// 是否正在同步
+  var isSyncing: Bool = false
+
   /// 全局输入状态（唯一实例）
   var globalInputState: GlobalInputStateProtocol
 
@@ -572,6 +575,15 @@ class DeckViewModel {
 
   // MARK: - Sync
 
+  /// 同步操作（带状态管理）
+  /// - Returns: 同步结果（成功/失败消息）
+  @MainActor
+  func handleSync() async -> Result<String, Error> {
+    isSyncing = true
+    defer { isSyncing = false }
+    return await syncAll()
+  }
+
   /// 完整同步：Cloudflare（Session 列表）+ Gateway（对话内容）
   /// - Returns: 同步结果（成功/失败消息）
   @MainActor
@@ -689,7 +701,6 @@ class DeckViewModel {
         $0.sessionId.lowercased() == sessionId.lowercased()
       })
     else {
-      logger.error("Session not found: \(sessionId)")
       return
     }
 
@@ -755,7 +766,7 @@ class DeckViewModel {
     case "tick", "health", "heartbeat":
       break
     default:
-      logger.info("Unknown event type: \(event.event)")
+      // 忽略未知事件类型
       break
     }
   }
@@ -777,7 +788,6 @@ class DeckViewModel {
         $0.sessionKey.lowercased() == sessionKey.lowercased()
       })
     else {
-      logger.error("Session not found for sessionKey: \(sessionKey)")
       return
     }
 

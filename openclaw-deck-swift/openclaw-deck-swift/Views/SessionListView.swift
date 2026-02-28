@@ -14,7 +14,6 @@ struct SessionListView: View {
   @State private var showingSortSheet = false
   @State private var showingSyncAlert = false
   @State private var showingConflictAlert = false
-  @State private var isSyncing = false
   @State private var gatewayUrl = "ws://127.0.0.1:18789"
   @State private var token = ""
   @State private var hasAttemptedAutoConnect = false
@@ -47,60 +46,14 @@ struct SessionListView: View {
       }
       .navigationTitle("Sessions")
       .toolbar {
-        // 新建 Session 按钮
-        ToolbarItem(placement: .primaryAction) {
-          Button {
-            showingNewSessionSheet = true
-          } label: {
-            Image(systemName: "plus")
-          }
-          .disabled(!viewModel.gatewayConnected)
-        }
-        
-        // 同步按钮
-        ToolbarItem(placement: .primaryAction) {
-          Button {
-            showingSyncAlert = true
-          } label: {
-            Image(systemName: "arrow.clockwise")
-              .rotationEffect(.degrees(isSyncing ? 360 : 0))
-              .animation(
-                isSyncing
-                  ? .linear(duration: 1).repeatForever(autoreverses: false)
-                  : .default,
-                value: isSyncing
-              )
-          }
-          .disabled(!viewModel.gatewayConnected || isSyncing)
-        }
-        
-        // 排序按钮
-        ToolbarItem(placement: .primaryAction) {
-          Button {
-            showingSortSheet = true
-          } label: {
-            Image(systemName: "arrow.up.arrow.down")
-          }
-        }
-        
-        // 设置按钮
-        #if os(macOS)
-        ToolbarItem(placement: .automatic) {
-          Button {
-            showingSettings = true
-          } label: {
-            Image(systemName: "gear")
-          }
-        }
-        #else
-        ToolbarItem(placement: .topBarLeading) {
-          Button {
-            showingSettings = true
-          } label: {
-            Image(systemName: "gear")
-          }
-        }
-        #endif
+        DeckToolbar(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet,
+          showingSortSheet: $showingSortSheet,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        )
       }
       .sheet(isPresented: $showingSortSheet) {
         SessionSortView(viewModel: viewModel)
@@ -227,10 +180,7 @@ struct SessionListView: View {
   
   @MainActor
   private func handleSync() async {
-    isSyncing = true
-    defer { isSyncing = false }
-    
-    let result = await viewModel.syncAll()
+    let result = await viewModel.handleSync()
     
     switch result {
     case .success(let message):

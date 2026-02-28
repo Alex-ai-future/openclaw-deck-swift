@@ -167,17 +167,31 @@ struct SessionColumnView: View {
         scrollToBottom()
       }
     }
+    // iPhone 上使用 NavigationBar 工具栏显示对话名字和菜单
     #if os(iOS)
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
-        if !DeviceUtils.isIPad {
-          GlobalInputView(
-            state: viewModel.globalInputState as! GlobalInputState
-          ) {
-            await viewModel.sendCurrentInput()
-          }
+    .toolbar {
+      if UIDevice.current.userInterfaceIdiom == .phone {
+        // 中间：对话名字按钮（玻璃按钮）
+        ToolbarItem(placement: .principal) {
+          sessionNameButton
+        }
+        
+        // 右边：菜单按钮
+        ToolbarItem(placement: .topBarTrailing) {
+          menuButton
         }
       }
+    }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
+      if !DeviceUtils.isIPad {
+        GlobalInputView(
+          state: viewModel.globalInputState as! GlobalInputState
+        ) {
+          await viewModel.sendCurrentInput()
+        }
+      }
+    }
     #endif
     .deleteSessionAlert(isPresented: $showingDeleteAlert) {
       onDelete()

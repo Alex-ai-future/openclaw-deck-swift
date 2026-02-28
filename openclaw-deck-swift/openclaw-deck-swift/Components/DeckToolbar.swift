@@ -23,7 +23,7 @@ struct DeckToolbar: ToolbarContent {
         Text("OpenClaw Deck")
           .font(.headline)
           .fontWeight(.semibold)
-        
+
         Button {
           showingSettings = true
         } label: {

@@ -113,7 +113,7 @@ enum MessageRole: String, Codable {
 }
 
 /// 工具调用信息（用于显示 tool_use 状态）
-struct ToolUseInfo: Codable {
+struct ToolUseInfo: Codable, Equatable {
   /// 工具名称（如 "search", "code_interpreter"）
   let toolName: String
 

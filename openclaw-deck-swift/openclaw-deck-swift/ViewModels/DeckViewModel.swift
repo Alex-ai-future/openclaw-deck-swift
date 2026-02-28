@@ -224,8 +224,6 @@ class DeckViewModel {
     // 只断开连接，不清空 Session 消息（保留离线浏览能力）
     gatewayClient?.disconnect()
     gatewayConnected = false
-
-    logger.info("🔌 Gateway 已断开（保留历史消息）")
   }
 
   /// 重置设备身份（清除 device identity 和 device token）
@@ -716,7 +714,6 @@ class DeckViewModel {
       logger.info("🔄 Starting full sync...")
 
       // 1. 从 Cloudflare 同步 Session 列表
-      logger.info("📥 Syncing session list...")
       let result = try await CloudflareKV.shared.syncAndGet()
 
       // 处理冲突情况
@@ -740,14 +737,12 @@ class DeckViewModel {
       logger.info("✅ Session list updated: \(result.data.sessions.count) sessions")
 
       // 2. 清空所有 Session 的当前消息
-      logger.info("🧹 Clearing current messages...")
       for session in sessions.values {
         session.messages.removeAll()
         session.historyLoaded = false
       }
 
       // 3. 重新加载所有 Session 的对话内容
-      logger.info("📥 Reloading conversation history...")
       await loadAllSessionHistory()
 
       logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
@@ -782,7 +777,6 @@ class DeckViewModel {
     }
 
     do {
-      logger.info("📥 正在加载 Session \(sessionKey) 的历史消息...")
       let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
 
       // 更新 Session 的消息（大小写不敏感匹配）
@@ -792,7 +786,6 @@ class DeckViewModel {
         session.messages = messages
         session.historyLoaded = true
         session.isHistoryLoading = false
-        logger.info("✅ Session \(sessionKey) 加载完成，共 \(messages.count) 条消息")
       }
     } catch {
       logger.error("❌ 加载 Session \(sessionKey) 历史失败：\(error.localizedDescription)")
@@ -862,11 +855,13 @@ class DeckViewModel {
   func handleGatewayEvent(_ event: GatewayEvent) {
     // 📝 聊天事件日志
     if event.event == "chat" {
+      // 保留关键错误信息
       if let payload = event.payload as? [String: Any],
-        let jsonData = try? JSONSerialization.data(withJSONObject: payload),
-        let jsonString = String(data: jsonData, encoding: .utf8)
+        let state = payload["state"] as? String,
+        state == "error",
+        let errorMessage = payload["errorMessage"] as? String
       {
-        logger.info("📡 [ChatEvent] \(jsonString)")
+        logger.error("❌ Chat event error: \(errorMessage)")
       }
     }
 
@@ -947,16 +942,11 @@ class DeckViewModel {
       if let data = payload["data"] as? [String: Any],
         let phase = data["phase"] as? String
       {
-        // 🔔 打印日志，验证是否收到 lifecycle 事件
-        logger.info("🔔 Lifecycle 事件：phase = \(phase), runId = \(runId)")
-
         switch phase {
         case "start":
-          logger.info("✅ 收到新消息开始 - 显示处理中状态")
           session.isProcessing = true
           session.status = .thinking
         case "end":
-          logger.info("✅ 消息接收完成 - 隐藏处理中状态")
           session.isProcessing = false
           session.hasUnreadMessage = true  // 总是标记为未读
           session.status = .idle

@@ -716,13 +716,6 @@ class GatewayClient {
       nonce: nonce
     )
 
-    // Device auth payload built
-    logger.info("🔐 [DeviceAuth] Built device auth payload:")
-    logger.info("🔐 [DeviceAuth]   Version: \(version)")
-    logger.info("🔐 [DeviceAuth]   Device ID: \(identity["id"] as! String)")
-    logger.info("🔐 [DeviceAuth]   Nonce: \(nonce ?? "nil")")
-    logger.info("🔐 [DeviceAuth]   Payload string: \(payload)")
-
     // Sign the payload using Ed25519
     // privateKeySeed is stored as base64Url encoded 32-byte seed
     guard let privateKeySeedBase64 = identity["privateKeySeedBase64"] as? String,
@@ -896,10 +889,6 @@ class GatewayClient {
   private func getPreferredAuthToken() -> String {
     let deviceToken = getStoredDeviceToken()
     let token = deviceToken.isEmpty ? (token ?? "") : deviceToken
-    if !token.isEmpty {
-      let source = deviceToken.isEmpty ? "user" : "device"
-      logger.info("🔑 [AuthToken] Using \(source) token: \(self.maskToken(token))")
-    }
     return token
   }
 

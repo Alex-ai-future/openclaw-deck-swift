@@ -23,7 +23,7 @@ struct DeckToolbar: ToolbarContent {
         .font(.headline)
         .fontWeight(.semibold)
     }
-    
+
     // 左边：设置按钮
     ToolbarItem(placement: .topBarLeading) {
       Button {

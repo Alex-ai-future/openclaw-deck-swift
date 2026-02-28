@@ -122,10 +122,8 @@ struct DeckCommonContainer<Content: View>: View {
       ) { newValue in
         if newValue {
           showingConflictAlert = true
-          logger.info("🔔 Conflict alert triggered, showingConflictAlert = true")
         } else {
           showingConflictAlert = false
-          logger.info("🔔 Conflict alert dismissed, showingConflictAlert = false")
         }
       }
   }

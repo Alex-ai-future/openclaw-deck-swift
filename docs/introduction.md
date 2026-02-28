@@ -1,6 +1,6 @@
 # OpenClaw Deck Swift - 技术架构
 
-**版本：** 1.4  
+**版本：** 1.5  
 **最后更新：** 2026-02-28  
 **目标读者：** 开发者、贡献者
 
@@ -12,8 +12,9 @@
 2. [技术选型](#2-技术选型)
 3. [代码结构](#3-代码结构)
 4. [核心组件](#4-核心组件)
-5. [开发指南](#5-开发指南)
-6. [测试标准](#6-测试标准)
+5. [会话状态轮询](#5-会话状态轮询) ⭐ NEW
+6. [开发指南](#6-开发指南)
+7. [测试标准](#7-测试标准)
 
 ---
 
@@ -244,7 +245,77 @@ private var pendingRequests: [String: PendingRequest] = [:]
 
 ---
 
-## 5. 开发指南
+### 4.5 会话状态轮询机制 ⭐ NEW
+
+**设计决策：**
+
+**问题：** 之前依赖生命周期事件（`lifecycle.start` / `lifecycle.end`）更新会话状态，存在以下问题：
+- ❌ 错过事件会导致状态不准确
+- ❌ 无法获取历史会话状态
+- ❌ 断线重连后状态丢失
+
+**解决方案：** 主动轮询 + 事件补充
+
+**实现：**
+```swift
+// DeckViewModel.swift
+private let sessionPollingInterval: TimeInterval = 30  // 30 秒轮询一次
+
+private func startSessionPolling() {
+  sessionPollingTimer = Timer.scheduledTimer(
+    withTimeInterval: sessionPollingInterval,
+    repeats: true
+  ) { [weak self] _ in
+    Task { @MainActor in
+      await self?.pollSessionStatus()
+    }
+  }
+}
+
+private func pollSessionStatus() async {
+  let statuses = try await client.fetchSessions(activeMinutes: 60)
+  updateSessionStates(from: statuses)
+}
+```
+
+**工作流程：**
+```
+1. Gateway 连接成功
+   ↓
+2. 启动轮询定时器（30 秒）
+   ↓
+3. 调用 GatewayClient.fetchSessions()
+   ↓
+4. Gateway 返回活跃会话列表
+   ↓
+5. 更新本地 Session 状态
+   ↓
+6. UI 自动刷新（@Observable）
+```
+
+**优势：**
+- ✅ 不依赖事件，主动获取权威状态
+- ✅ 断线重连后立即同步
+- ✅ 可以查询历史会话
+- ✅ 事件作为实时补充（双重保障）
+
+**数据模型：**
+```swift
+struct GatewaySessionStatus {
+  let key: String
+  let sessionId: String
+  let isProcessing: Bool  // 推断是否正在处理
+  let updatedAt: Date
+  let totalTokens: Int?
+  // ...
+}
+```
+
+---
+
+---
+
+## 6. 开发指南
 
 ### 5.1 添加新功能
 
@@ -313,7 +384,7 @@ A:
 
 ---
 
-## 6. 测试标准
+## 7. 测试标准
 
 ### 6.1 测试框架
 

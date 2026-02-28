@@ -240,7 +240,6 @@ class CloudflareKV {
     }
 
     let decoded = try JSONDecoder().decode(SyncData.self, from: data)
-    logger.info("解析成功：\(decoded.sessions.count) 个 sessions")
     return decoded
   }
 

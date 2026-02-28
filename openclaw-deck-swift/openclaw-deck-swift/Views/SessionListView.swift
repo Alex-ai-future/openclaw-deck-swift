@@ -4,6 +4,9 @@
 // Session 列表视图 - 用于 iPhone 单列布局
 
 import SwiftUI
+import Logging
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "SessionListView")
 
 /// Session 列表视图 - iPhone 专用
 struct SessionListView: View {

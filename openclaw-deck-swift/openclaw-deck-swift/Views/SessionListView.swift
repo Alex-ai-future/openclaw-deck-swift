@@ -58,6 +58,7 @@ struct SessionListView: View {
       }
       .listStyle(.plain)
       .navigationTitle("OpenClaw Deck")
+      .accessibilityIdentifier("SessionList")
       .toolbar {
         DeckToolbar(
           viewModel: viewModel,

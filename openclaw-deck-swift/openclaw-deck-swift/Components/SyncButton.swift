@@ -24,6 +24,7 @@ struct SyncButton: View {
         )
     }
     .disabled(!viewModel.gatewayConnected || viewModel.isSyncing)
+    .accessibilityIdentifier("SyncButton")
   }
 }
 

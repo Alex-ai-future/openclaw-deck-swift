@@ -145,7 +145,7 @@ struct SessionColumnView: View {
         }
       }
 
-      // 顶部状态条 - 所有平台统一使用
+      // 顶部状态条 - Session 名字和菜单按钮
       topStatusBar
 
       // 底部状态条 - 选中蓝色，未选中灰色
@@ -183,7 +183,7 @@ struct SessionColumnView: View {
     }
   }
 
-  // MARK: - Session Name Button (for iPad topStatusBar)
+  // MARK: - Session Name Button
 
   private var sessionNameButton: some View {
     // 点击选中，长按弹出菜单
@@ -205,10 +205,11 @@ struct SessionColumnView: View {
               ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
           )
       }
+      .buttonStyle(.glass)
     }
   }
 
-  // MARK: - Menu Button (for iPhone toolbar)
+  // MARK: - Menu Button
 
   private var menuButton: some View {
     Menu {
@@ -217,7 +218,7 @@ struct SessionColumnView: View {
     } label: {
       Image(systemName: "ellipsis")
         .font(.body)
-        .foregroundColor(.secondary)  // 改为灰色
+        .foregroundColor(.secondary)
     }
   }
 
@@ -267,7 +268,6 @@ struct SessionColumnView: View {
 
       // Center: Session name glass button
       sessionNameButton
-        .buttonStyle(.glass)
         .padding(12)
 
       // Right: Menu button

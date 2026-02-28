@@ -777,8 +777,19 @@ class DeckViewModel {
   /// 处理 Gateway 事件
   /// - Parameter event: Gateway 事件
   func handleGatewayEvent(_ event: GatewayEvent) {
-    // 调试：打印所有事件
-    // logger.info("=== Gateway Event: \(event.event) ===")
+    // 📝 聊天事件日志
+    if event.event == "chat" {
+      if let payload = event.payload as? [String: Any] {
+        let runId = payload["runId"] as? String ?? "unknown"
+        let sessionKey = payload["sessionKey"] as? String ?? "unknown"
+        let state = payload["state"] as? String ?? "unknown"
+        let errorMessage = payload["errorMessage"] as? String ?? "nil"
+        let stopReason = payload["stopReason"] as? String ?? "nil"
+        let hasMessage = payload["message"] != nil
+        
+        logger.info("📡 [ChatEvent] runId=\(runId), sessionKey=\(sessionKey), state=\(state), hasMessage=\(hasMessage), errorMessage=\(errorMessage), stopReason=\(stopReason)")
+      }
+    }
 
     switch event.event {
     case "agent":

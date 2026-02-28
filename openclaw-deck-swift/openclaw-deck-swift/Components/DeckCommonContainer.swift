@@ -27,20 +27,22 @@ struct DeckCommonContainer<Content: View>: View {
   @ViewBuilder let content: Content
 
   var body: some View {
-    content
-      .toolbar {
-        DeckToolbar(
-          viewModel: viewModel,
-          showingSettings: $showingSettings,
-          showingNewSessionSheet: $showingNewSessionSheet,
-          showingSortSheet: $showingSortSheet,
-          showingSyncAlert: $showingSyncAlert,
-          showingConflictAlert: $showingConflictAlert
-        )
-      }
+    NavigationStack {
+      content
+        .navigationTitle("OpenClaw Deck")
+        .toolbar {
+          DeckToolbar(
+            viewModel: viewModel,
+            showingSettings: $showingSettings,
+            showingNewSessionSheet: $showingNewSessionSheet,
+            showingSortSheet: $showingSortSheet,
+            showingSyncAlert: $showingSyncAlert,
+            showingConflictAlert: $showingConflictAlert
+          )
+        }
 
-      // Settings Sheet
-      .sheet(isPresented: $showingSettings) {
+        // Settings Sheet
+        .sheet(isPresented: $showingSettings) {
         SettingsView(
           gatewayUrl: gatewayUrl ?? .constant(""),
           token: token ?? .constant(""),

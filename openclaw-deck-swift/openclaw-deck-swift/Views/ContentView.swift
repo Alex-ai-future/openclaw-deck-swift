@@ -69,19 +69,30 @@ struct ContentView: View {
 
   /// 判断是否为 iPad
   var isIPad: Bool {
-    horizontalSizeClass == .regular
+    #if os(iOS)
+    return UIDevice.current.userInterfaceIdiom == .pad
+    #else
+    return true
+    #endif
   }
 
   var body: some View {
     Group {
       if viewModel.gatewayConnected {
-        // 所有设备都使用 DeckView（多列布局）
-        DeckView(
-          viewModel: viewModel,
-          showingSettings: $showingSettings,
-          showingNewSessionSheet: $showingNewSessionSheet
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // 根据设备类型选择布局
+        if isIPad {
+          // iPad - 多列布局
+          DeckView(
+            viewModel: viewModel,
+            showingSettings: $showingSettings,
+            showingNewSessionSheet: $showingNewSessionSheet
+          )
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+          // iPhone - 单列布局
+          SessionListView(viewModel: viewModel)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
 
       } else if viewModel.isReconnecting {
         // Reconnecting state - show reconnecting view

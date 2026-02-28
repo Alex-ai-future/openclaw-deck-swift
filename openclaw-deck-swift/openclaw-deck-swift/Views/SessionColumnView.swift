@@ -147,8 +147,6 @@ struct SessionColumnView: View {
         }
       }
 
-      // 顶部状态条 - Session 名字和菜单按钮
-
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
@@ -257,28 +255,6 @@ struct SessionColumnView: View {
         }
       }
     }
-  }
-
-  // MARK: - Top Status Bar
-
-  private var topStatusBar: some View {
-    HStack(spacing: 12) {
-      // Left: Empty spacer for balance
-      Spacer()
-        .frame(width: 44, height: 36)
-
-      // Center: Session name glass button
-      sessionNameButton
-        .buttonStyle(.glass)
-        .padding(12)
-
-      // Right: Menu button
-      menuButton
-        .buttonStyle(.glass)
-        .frame(width: 44, height: 36)
-    }
-    .padding(.horizontal, 16)
-    .padding(.top, 2)
   }
 
   // MARK: - Message List

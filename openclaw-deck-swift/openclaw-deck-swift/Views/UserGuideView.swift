@@ -4,7 +4,10 @@
 // 用户指南视图 - 使用 WebView 加载 GitHub 文档
 
 import SwiftUI
-import WebKit
+
+#if os(iOS)
+  import WebKit
+#endif
 
 /// 用户指南视图
 struct UserGuideView: View {
@@ -14,13 +17,19 @@ struct UserGuideView: View {
 
   var body: some View {
     NavigationStack {
-      WebView(url: URL(string: githubUrl)!)
-        .navigationTitle("用户指南")
-        .navigationBarTitleDisplayMode(.inline)
+      #if os(iOS)
+        WebView(url: URL(string: githubUrl)!)
+          .navigationTitle("用户指南")
+          .navigationBarTitleDisplayMode(.inline)
+      #else
+        Text("用户指南 (macOS 即将推出)")
+          .navigationTitle("用户指南")
+      #endif
     }
   }
 }
 
+#if os(iOS)
 // MARK: - WebView
 
 /// WebView 包装器 - 将 WKWebView 包装成 SwiftUI 视图
@@ -38,6 +47,7 @@ struct WebView: UIViewRepresentable {
     uiView.load(request)
   }
 }
+#endif
 
 #Preview {
   UserGuideView()

@@ -17,21 +17,21 @@ struct DeckToolbar: ToolbarContent {
   @Binding var showingConflictAlert: Bool
 
   var body: some ToolbarContent {
-    // 左边：App 名字（Text 显示，避免飘移）
+    // 左边：设置按钮 + App 名字（放在一起）
     ToolbarItem(placement: .topBarLeading) {
-      Text("OpenClaw Deck")
-        .font(.headline)
-        .fontWeight(.semibold)
-    }
-    
-    // 左边：设置按钮
-    ToolbarItem(placement: .topBarLeading) {
-      Button {
-        showingSettings = true
-      } label: {
-        Image(systemName: "gear")
+      HStack(spacing: 16) {
+        Button {
+          showingSettings = true
+        } label: {
+          Image(systemName: "gear")
+        }
+        .accessibilityIdentifier("settingsButton")
+        
+        Text("OpenClaw Deck")
+          .font(.headline)
+          .fontWeight(.semibold)
+          .frame(width: 120, alignment: .leading)  // 固定宽度，避免压缩
       }
-      .accessibilityIdentifier("settingsButton")
     }
 
     // 右边：操作按钮

@@ -159,6 +159,18 @@ struct SessionColumnView: View {
       // 点击整个 Session 视图时消除未读状态
       session.hasUnreadMessage = false
     }
+    #if os(iOS)
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
+      if UIDevice.current.userInterfaceIdiom != .pad {
+        GlobalInputView(
+          state: viewModel.globalInputState as! GlobalInputState
+        ) {
+          await viewModel.sendCurrentInput()
+        }
+      }
+    }
+    #endif
     .alert("Delete Session?", isPresented: $showingDeleteAlert) {
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {

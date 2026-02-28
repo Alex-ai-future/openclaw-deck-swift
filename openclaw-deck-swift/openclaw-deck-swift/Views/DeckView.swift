@@ -22,6 +22,11 @@ struct DeckView: View {
   @Binding var showingNewSessionSheet: Bool
   @State private var selectedSessionId: String?
 
+  // 内部状态管理
+  @State private var showingSortSheet = false
+  @State private var showingSyncAlert = false
+  @State private var showingConflictAlert = false
+
   var body: some View {
     NavigationStack {
       DeckCommonContainer(
@@ -58,6 +63,17 @@ struct DeckView: View {
           }
           selectedSessionId = viewModel.globalInputState.selectedSessionId
         }
+      }
+      .navigationTitle("OpenClaw Deck")
+      .toolbar {
+        DeckToolbar(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet,
+          showingSortSheet: $showingSortSheet,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        )
       }
     }
   }

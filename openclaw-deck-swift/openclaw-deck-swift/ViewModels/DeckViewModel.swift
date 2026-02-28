@@ -779,15 +779,11 @@ class DeckViewModel {
   func handleGatewayEvent(_ event: GatewayEvent) {
     // 📝 聊天事件日志
     if event.event == "chat" {
-      if let payload = event.payload as? [String: Any] {
-        let runId = payload["runId"] as? String ?? "unknown"
-        let sessionKey = payload["sessionKey"] as? String ?? "unknown"
-        let state = payload["state"] as? String ?? "unknown"
-        let errorMessage = payload["errorMessage"] as? String ?? "nil"
-        let stopReason = payload["stopReason"] as? String ?? "nil"
-        let hasMessage = payload["message"] != nil
-        
-        logger.info("📡 [ChatEvent] runId=\(runId), sessionKey=\(sessionKey), state=\(state), hasMessage=\(hasMessage), errorMessage=\(errorMessage), stopReason=\(stopReason)")
+      if let payload = event.payload as? [String: Any],
+        let jsonData = try? JSONSerialization.data(withJSONObject: payload),
+        let jsonString = String(data: jsonData, encoding: .utf8)
+      {
+        logger.info("📡 [ChatEvent] \(jsonString)")
       }
     }
 

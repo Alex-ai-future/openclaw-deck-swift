@@ -91,10 +91,14 @@ struct SessionColumnView: View {
   var body: some View {
     VStack(spacing: 0) {
       ZStack {
+        // 关键修复：messageList 固定高度，避免飘移
         messageList
+          .frame(minHeight: 700, maxHeight: .infinity)
 
         // 底部浮动按钮组
         VStack {
+          // 顶部状态条 - iPad 显示对话名字
+          topStatusBar
           Spacer()
 
           HStack(spacing: 16) {
@@ -146,16 +150,11 @@ struct SessionColumnView: View {
         }
       }
 
-      // 顶部状态条 - iPad 显示对话名字
-      topStatusBar
-
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
     }
-    // 关键修复：固定最小高度，避免飘移
-    .frame(minHeight: 700, maxHeight: .infinity)
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()
@@ -282,7 +281,6 @@ struct SessionColumnView: View {
       // 中间：对话名字按钮（只在 iPad 上显示）
       if UIDevice.current.userInterfaceIdiom == .pad {
         sessionNameButton
-          .buttonStyle(.glass)
           .padding(.horizontal, 12)
           .padding(.vertical, 8)
       }

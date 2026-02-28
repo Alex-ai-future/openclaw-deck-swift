@@ -63,17 +63,19 @@ struct DeckView: View {
           }
           selectedSessionId = viewModel.globalInputState.selectedSessionId
         }
-      }
-      .navigationTitle("OpenClaw Deck")
-      .toolbar {
-        DeckToolbar(
-          viewModel: viewModel,
-          showingSettings: $showingSettings,
-          showingNewSessionSheet: $showingNewSessionSheet,
-          showingSortSheet: $showingSortSheet,
-          showingSyncAlert: $showingSyncAlert,
-          showingConflictAlert: $showingConflictAlert
-        )
+        // 关键修复：固定 VStack 宽度为屏幕宽度，避免随 ScrollView 变化
+        .frame(maxWidth: .infinity)
+        .navigationTitle("OpenClaw Deck")
+        .toolbar {
+          DeckToolbar(
+            viewModel: viewModel,
+            showingSettings: $showingSettings,
+            showingNewSessionSheet: $showingNewSessionSheet,
+            showingSortSheet: $showingSortSheet,
+            showingSyncAlert: $showingSyncAlert,
+            showingConflictAlert: $showingConflictAlert
+          )
+        }
       }
     }
   }

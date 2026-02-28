@@ -38,12 +38,6 @@ struct DeckView: View {
             await viewModel.sendCurrentInput()
           }
         }
-        .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
-          // ViewModel 的选中状态变化时，同步到本地
-          if let sessionId = newId {
-            selectedSessionId = sessionId
-          }
-        }
         .onChange(of: selectedSessionId) { _, newId in
           // Session 切换时通知 ViewModel
           viewModel.selectSession(newId)

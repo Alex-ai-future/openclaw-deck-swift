@@ -17,13 +17,9 @@ struct DeckToolbar: ToolbarContent {
   @Binding var showingConflictAlert: Bool
 
   var body: some ToolbarContent {
-    // 左边：App 名字 + 设置按钮
-    ToolbarItem(placement: .topBarLeading) {
-      HStack(spacing: 12) {
-        Text("OpenClaw Deck")
-          .font(.headline)
-          .fontWeight(.semibold)
-        
+    // 左边：设置按钮
+    #if os(iOS)
+      ToolbarItem(placement: .topBarLeading) {
         Button {
           showingSettings = true
         } label: {
@@ -31,7 +27,16 @@ struct DeckToolbar: ToolbarContent {
         }
         .accessibilityIdentifier("settingsButton")
       }
-    }
+    #else
+      ToolbarItem(placement: .automatic) {
+        Button {
+          showingSettings = true
+        } label: {
+          Image(systemName: "gear")
+        }
+        .accessibilityIdentifier("settingsButton")
+      }
+    #endif
 
     // 右边：操作按钮
     ToolbarItemGroup(placement: .primaryAction) {

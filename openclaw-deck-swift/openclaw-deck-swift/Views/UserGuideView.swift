@@ -19,11 +19,11 @@ struct UserGuideView: View {
     NavigationStack {
       #if os(iOS)
         WebView(url: URL(string: githubUrl)!)
-          .navigationTitle("用户指南")
+          .navigationTitle("User Guide")
           .navigationBarTitleDisplayMode(.inline)
       #else
-        Text("用户指南 (macOS 即将推出)")
-          .navigationTitle("用户指南")
+        Text("User Guide (macOS coming soon)")
+          .navigationTitle("User Guide")
       #endif
     }
   }

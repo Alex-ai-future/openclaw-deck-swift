@@ -15,7 +15,7 @@ struct SessionListView: View {
   @State private var token = ""
   @State private var hasAttemptedAutoConnect = false
   @State private var showingDeleteAlert = false
-  @State private var deleteOffset: IndexSet?
+  @State private var deleteSessionId: String?
 
   init(viewModel: DeckViewModel) {
     _viewModel = State(initialValue: viewModel)
@@ -42,11 +42,17 @@ struct SessionListView: View {
         ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
           if let session = viewModel.getSession(sessionId: sessionId) {
             NavigationLink(value: session) {
-              SessionRowView(session: session)
+              SessionRowView(
+                session: session,
+                onRequestDelete: {
+                  // 请求删除：设置待删除的 sessionId，显示弹窗
+                  deleteSessionId = session.sessionId
+                  showingDeleteAlert = true
+                }
+              )
             }
           }
         }
-        .onDelete(perform: deleteSessions)
       }
       .listStyle(.plain)
       .navigationTitle("OpenClaw Deck")
@@ -173,7 +179,11 @@ struct SessionListView: View {
         }
       }
       .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-        confirmDelete()
+        // 用户确认删除
+        if let sessionId = deleteSessionId {
+          viewModel.deleteSession(sessionId: sessionId)
+          deleteSessionId = nil
+        }
       }
     }
   }
@@ -185,27 +195,6 @@ struct SessionListView: View {
     print("📊 SessionListView: sessions.count = \(viewModel.sessions.count)")
     print("📊 SessionListView: gatewayConnected = \(viewModel.gatewayConnected)")
   }
-
-  // MARK: - Delete Sessions
-
-  private func deleteSessions(at offsets: IndexSet) {
-    // 保存待删除的偏移量，等待用户确认
-    deleteOffset = offsets
-    showingDeleteAlert = true
-  }
-
-  private func confirmDelete() {
-    guard let offsets = deleteOffset else { return }
-
-    for index in offsets {
-      if index < viewModel.sessionOrder.count {
-        let sessionId = viewModel.sessionOrder[index]
-        viewModel.deleteSession(sessionId: sessionId)
-      }
-    }
-
-    deleteOffset = nil
-  }
 }
 
 // MARK: - Session Row View
@@ -213,6 +202,7 @@ struct SessionListView: View {
 /// Session 行视图 - 用于列表展示
 struct SessionRowView: View {
   @Bindable var session: SessionState
+  var onRequestDelete: () -> Void
 
   var body: some View {
     HStack(spacing: 12) {
@@ -261,22 +251,32 @@ struct SessionRowView: View {
     }
     .padding(.vertical, 4)
     .swipeActions(edge: .leading, allowsFullSwipe: false) {
-      // 左滑：标记为已读
-      Button {
-        session.hasUnreadMessage = false
-      } label: {
-        Label("已读", systemImage: "checkmark.circle")
+      // 左滑：根据当前状态显示已读/未读
+      if session.hasUnreadMessage {
+        // 当前是未读 → 显示"已读"按钮
+        Button {
+          session.hasUnreadMessage = false
+        } label: {
+          Label("已读", systemImage: "checkmark.circle")
+        }
+        .tint(.green)
+      } else {
+        // 当前是已读 → 显示"未读"按钮
+        Button {
+          session.hasUnreadMessage = true
+        } label: {
+          Label("未读", systemImage: "circle")
+        }
+        .tint(.orange)
       }
-      .tint(.green)
     }
-    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-      // 右滑：标记为未读
-      Button {
-        session.hasUnreadMessage = true
+    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+      // 右滑：删除按钮（全滑动）
+      Button(role: .destructive) {
+        onRequestDelete()
       } label: {
-        Label("未读", systemImage: "circle")
+        Label("删除", systemImage: "trash")
       }
-      .tint(.orange)
     }
   }
 }

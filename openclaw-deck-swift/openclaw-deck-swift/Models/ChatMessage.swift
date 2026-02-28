@@ -7,7 +7,7 @@
 import Foundation
 
 /// 聊天消息模型（本地管理）
-struct ChatMessage: Codable, Identifiable {
+struct ChatMessage: Codable, Identifiable, Equatable {
   /// 消息唯一标识（用于 UI 显示）
   let id: String
 

@@ -16,17 +16,6 @@ struct DeckToolbar: ToolbarContent {
   @Binding var showingSyncAlert: Bool
   @Binding var showingConflictAlert: Bool
   
-  // 可选的网关 URL 和 Token（用于 SessionListView）
-  var gatewayUrl: Binding<String>?
-  var token: Binding<String>?
-  
-  // 可选的回调（用于 SessionListView）
-  var onDisconnect: (() -> Void)?
-  var onApplyAndReconnect: (() -> Void)?
-  var onConnect: (() -> Void)?
-  var onResetDeviceIdentity: (() -> Void)?
-  var onClose: (() -> Void)?
-  
   var body: some ToolbarContent {
     // 左边：设置按钮
     ToolbarItem(placement: .topBarLeading) {
@@ -62,27 +51,68 @@ struct DeckToolbar: ToolbarContent {
       }
     }
   }
-  
 }
 
-// MARK: - Alert Helper Methods
+// MARK: - Alert Modifiers
 
-extension DeckToolbar {
-  /// 处理同步
-  @MainActor
-  func handleSync() async {
-    let result = await viewModel.handleSync()
-    
-    switch result {
-    case .success(let message):
-      print("✅ Sync: \(message)")
-    case .failure(let error):
-      if error.localizedDescription.contains("conflict") {
-        print("⚠️ Sync conflict detected")
-      } else {
-        print("❌ Sync failed: \(error.localizedDescription)")
+extension View {
+  /// 添加同步相关弹窗（同步确认 + 冲突处理）
+  /// - Parameters:
+  ///   - viewModel: ViewModel
+  ///   - showingSyncAlert: 同步确认弹窗显示状态
+  ///   - showingConflictAlert: 冲突弹窗显示状态
+  ///   - onChangeConflict: 冲突状态变化时的回调
+  /// - Returns: 添加了弹窗的视图
+  func deckSyncAlerts(
+    viewModel: DeckViewModel,
+    showingSyncAlert: Binding<Bool>,
+    showingConflictAlert: Binding<Bool>,
+    onChangeConflict: @escaping (Bool) -> Void
+  ) -> some View {
+    self
+      // 同步确认弹窗
+      .alert("Sync All Sessions?", isPresented: showingSyncAlert) {
+        Button("Cancel", role: .cancel) {}
+        Button("Sync") {
+          Task {
+            await viewModel.handleSync()
+          }
+        }
+        .tint(.blue)
+      } message: {
+        Text("This will sync all sessions with the Gateway. Continue?")
       }
-    }
+      
+      // 同步冲突弹窗
+      .alert("Sync Conflict", isPresented: showingConflictAlert) {
+        Button("Use Local", role: .destructive) {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "local")
+          }
+        }
+        Button("Use Remote", role: .cancel) {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "remote")
+          }
+        }
+        Button("Merge") {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "merge")
+          }
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
+        let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
+        Text(
+          "Local has \(localCount) sessions, Remote has \(remoteCount) sessions.\n\nChoose which data to use:"
+        )
+      }
+      
+      // 监听冲突状态变化
+      .onChange(of: viewModel.showingSyncConflict) { _, newValue in
+        onChangeConflict(newValue)
+      }
   }
 }
 

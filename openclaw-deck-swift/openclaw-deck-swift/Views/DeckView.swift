@@ -83,42 +83,11 @@ struct DeckView: View {
           isPresented: $showingNewSessionSheet
         )
       }
-      .alert("Sync All Sessions?", isPresented: $showingSyncAlert) {
-        Button("Cancel", role: .cancel) {}
-        Button("Sync") {
-          Task {
-            await handleSync()
-          }
-        }
-        .tint(.blue)
-      } message: {
-        Text("This will sync all sessions with the Gateway. Continue?")
-      }
-      .alert("Sync Conflict", isPresented: $showingConflictAlert) {
-        Button("Use Local", role: .destructive) {
-          Task {
-            await viewModel.resolveSyncConflict(choice: "local")
-          }
-        }
-        Button("Use Remote", role: .cancel) {
-          Task {
-            await viewModel.resolveSyncConflict(choice: "remote")
-          }
-        }
-        Button("Merge") {
-          Task {
-            await viewModel.resolveSyncConflict(choice: "merge")
-          }
-        }
-        Button("Cancel", role: .cancel) {}
-      } message: {
-        let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
-        let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
-        Text(
-          "Local has \(localCount) sessions, Remote has \(remoteCount) sessions.\n\nChoose which data to use:"
-        )
-      }
-      .onChange(of: viewModel.showingSyncConflict) { _, newValue in
+      .deckSyncAlerts(
+        viewModel: viewModel,
+        showingSyncAlert: $showingSyncAlert,
+        showingConflictAlert: $showingConflictAlert
+      ) { newValue in
         if newValue {
           showingConflictAlert = true
         }

@@ -479,13 +479,12 @@ class DeckViewModel {
     UserDefaults.standard.set(
       data.lastUpdated, forKey: "openclaw.deck.sessionOrder.lastUpdated")
 
-    // If selected remote or merge, save to cloud
-    if data != conflictLocalData {
-      do {
-        try await CloudflareKV.shared.save(data)
-      } catch {
-        logger.error("❌ Failed to save to cloud: \(error.localizedDescription)")
-      }
+    // Always save to cloud when resolving conflict (user explicitly chose)
+    do {
+      try await CloudflareKV.shared.save(data)
+      logger.info("✅ Saved to cloud: \(data.sessions.count) sessions")
+    } catch {
+      logger.error("❌ Failed to save to cloud: \(error.localizedDescription)")
     }
 
     logger.log("✅ Sync complete: \(data.sessions.count) sessions")

@@ -45,10 +45,10 @@ struct DeckView: View {
   var body: some View {
     NavigationStack {
       VStack(spacing: 0) {
+        // Session 列
         sessionColumns
-      }
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        // 全局输入视图 - 系统自动处理键盘避让
+        
+        // 全局输入视图 - 固定在底部
         GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
           await viewModel.sendCurrentInput()
         }
@@ -84,63 +84,63 @@ struct DeckView: View {
           showingConflictAlert: $showingConflictAlert
         )
       }
-    }
-    .sheet(isPresented: $showingSettings) {
-      SettingsView(
-        gatewayUrl: $gatewayUrl,
-        token: $token,
-        isConnected: .constant(viewModel.gatewayConnected),
-        onDisconnect: {
-          viewModel.disconnect()
-          showingSettings = false
-        },
-        onApplyAndReconnect: {
-          UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-          UserDefaultsStorage.shared.saveToken(token)
-          Task {
-            await viewModel.initialize(url: gatewayUrl, token: token)
-          }
-          showingSettings = false
-        },
-        onConnect: {
-          UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-          UserDefaultsStorage.shared.saveToken(token)
-          Task {
-            await viewModel.initialize(url: gatewayUrl, token: token)
-          }
-          showingSettings = false
-        },
-        onResetDeviceIdentity: {
-          viewModel.resetDeviceIdentity()
-          Task {
-            await viewModel.initialize(url: gatewayUrl, token: token)
-          }
-          showingSettings = false
-        },
-        onClose: {
-          showingSettings = false
-        },
-        viewModel: viewModel
-      )
-    }
-    .sheet(isPresented: $showingNewSessionSheet) {
-      NewSessionSheet(
+      .sheet(isPresented: $showingSettings) {
+        SettingsView(
+          gatewayUrl: $gatewayUrl,
+          token: $token,
+          isConnected: .constant(viewModel.gatewayConnected),
+          onDisconnect: {
+            viewModel.disconnect()
+            showingSettings = false
+          },
+          onApplyAndReconnect: {
+            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+            UserDefaultsStorage.shared.saveToken(token)
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+            }
+            showingSettings = false
+          },
+          onConnect: {
+            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+            UserDefaultsStorage.shared.saveToken(token)
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+            }
+            showingSettings = false
+          },
+          onResetDeviceIdentity: {
+            viewModel.resetDeviceIdentity()
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+            }
+            showingSettings = false
+          },
+          onClose: {
+            showingSettings = false
+          },
+          viewModel: viewModel
+        )
+      }
+      .sheet(isPresented: $showingNewSessionSheet) {
+        NewSessionSheet(
+          viewModel: viewModel,
+          isPresented: $showingNewSessionSheet
+        )
+      }
+      .sheet(isPresented: $showingSortSheet) {
+        SessionSortView(viewModel: viewModel)
+      }
+      .deckSyncAlerts(
         viewModel: viewModel,
-        isPresented: $showingNewSessionSheet
-      )
-    }
-    .sheet(isPresented: $showingSortSheet) {
-      SessionSortView(viewModel: viewModel)
-    }
-    .deckSyncAlerts(
-      viewModel: viewModel,
-      showingSyncAlert: $showingSyncAlert,
-      showingConflictAlert: $showingConflictAlert
-    ) { newValue in
-      if newValue {
-        showingConflictAlert = true
-      } else {
-        showingConflictAlert = false
+        showingSyncAlert: $showingSyncAlert,
+        showingConflictAlert: $showingConflictAlert
+      ) { newValue in
+        if newValue {
+          showingConflictAlert = true
+        } else {
+          showingConflictAlert = false
+        }
       }
     }
   }

@@ -4,8 +4,8 @@
 // Created by jihuihuang on 2/27/26.
 // Copyright © 2026 OpenClaw. All rights reserved.
 
-import XCTest
 import UserNotifications
+import XCTest
 
 @testable import openclaw_deck_swift
 
@@ -113,7 +113,7 @@ final class NotificationServiceTests: XCTestCase {
   func testNotificationContent_truncatesLongBody() {
     // 验证通知内容会截断长文本到 200 字符
     let longText = String(repeating: "A", count: 500)
-    
+
     // 这个测试主要验证不会崩溃，实际截断逻辑在 sendNewMessageNotification 中
     XCTAssertNoThrow(
       notificationService.sendNewMessageNotification(
@@ -128,15 +128,15 @@ final class NotificationServiceTests: XCTestCase {
   func testNotificationService_fullWorkflow() async {
     // 验证完整工作流程
     let service = NotificationService.shared
-    
+
     // 1. 请求权限
     XCTAssertNoThrow(service.requestPermission())
-    
+
     // 2. 检查权限
     let hasPermission = await service.checkPermission()
     // 验证返回的是有效的布尔值
     XCTAssertTrue(hasPermission == true || hasPermission == false)
-    
+
     // 3. 发送通知
     XCTAssertNoThrow(
       service.sendNewMessageNotification(
@@ -149,7 +149,7 @@ final class NotificationServiceTests: XCTestCase {
   func testNotificationService_differentSessionNames() {
     // 验证不同 Session 名称都能正常工作
     let names = ["Session 1", "测试会话", "Session with emoji 🚀", ""]
-    
+
     for name in names {
       XCTAssertNoThrow(
         notificationService.sendNewMessageNotification(
@@ -164,13 +164,13 @@ final class NotificationServiceTests: XCTestCase {
     // 验证权限流程
     // 1. 检查权限（初始状态）
     let initialPermission = await notificationService.checkPermission()
-    
+
     // 2. 请求权限
     notificationService.requestPermission()
-    
+
     // 3. 再次检查权限
     let afterRequestPermission = await notificationService.checkPermission()
-    
+
     // 验证返回的是有效的布尔值
     XCTAssertTrue(initialPermission == true || initialPermission == false)
     XCTAssertTrue(afterRequestPermission == true || afterRequestPermission == false)

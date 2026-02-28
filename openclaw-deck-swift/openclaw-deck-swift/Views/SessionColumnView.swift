@@ -139,6 +139,8 @@ struct SessionColumnView: View {
                 .frame(width: 36, height: 36)
               }
               .transition(.opacity.combined(with: .scale))
+            } else {
+              sessionNameButton
             }
           }
           .padding(12)
@@ -146,7 +148,6 @@ struct SessionColumnView: View {
       }
 
       // 顶部状态条 - Session 名字和菜单按钮
-      topStatusBar
 
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
@@ -205,6 +206,7 @@ struct SessionColumnView: View {
               ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
           )
       }
+      .buttonStyle(.glass)
     }
   }
 

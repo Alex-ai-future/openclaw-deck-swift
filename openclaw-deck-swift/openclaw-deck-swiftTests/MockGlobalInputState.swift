@@ -14,23 +14,23 @@ final class MockGlobalInputState: GlobalInputStateProtocol {
   var textHeight: CGFloat = 36
   var selectedSessionId: String?
   var inputWidth: CGFloat = 300
-  
+
   var calculateTextHeightCalled = false
   var clearInputCalled = false
   var sendMessageCalled = false
-  
+
   init() {}
-  
+
   func calculateTextHeight() {
     calculateTextHeightCalled = true
   }
-  
+
   func clearInput() {
     clearInputCalled = true
     inputText = ""
     textHeight = 36
   }
-  
+
   func sendMessage(to session: SessionState, viewModel: DeckViewModel) async {
     sendMessageCalled = true
     // Mock 实现：不真正发送消息

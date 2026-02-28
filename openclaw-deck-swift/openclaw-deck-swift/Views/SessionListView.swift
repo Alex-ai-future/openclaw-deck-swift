@@ -19,7 +19,7 @@ struct SessionListView: View {
 
   init(viewModel: DeckViewModel) {
     _viewModel = State(initialValue: viewModel)
-    
+
     // 从 UserDefaults 加载配置
     let storage = UserDefaultsStorage.shared
     if let savedUrl = storage.loadGatewayUrl() {

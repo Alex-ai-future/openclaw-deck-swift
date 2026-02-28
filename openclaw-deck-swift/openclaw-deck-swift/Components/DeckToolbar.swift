@@ -17,9 +17,9 @@ struct DeckToolbar: ToolbarContent {
   @Binding var showingConflictAlert: Bool
 
   var body: some ToolbarContent {
-    // 左边：设置按钮 + App 名字（iPad 专用）
-    ToolbarItem(placement: .topBarLeading) {
-      #if os(iOS)
+    // 左边：设置按钮
+    #if os(iOS)
+      ToolbarItem(placement: .topBarLeading) {
         if UIDevice.current.userInterfaceIdiom == .pad {
           // iPad：显示设置按钮 + App 名字
           HStack(spacing: 16) {
@@ -44,7 +44,9 @@ struct DeckToolbar: ToolbarContent {
           }
           .accessibilityIdentifier("settingsButton")
         }
-      #else
+      }
+    #else
+      ToolbarItem(placement: .automatic) {
         // macOS：显示设置按钮 + App 名字
         HStack(spacing: 16) {
           Button {
@@ -59,8 +61,8 @@ struct DeckToolbar: ToolbarContent {
             .fontWeight(.semibold)
             .frame(width: 160, alignment: .leading)
         }
-      #endif
-    }
+      }
+    #endif
 
     // 右边：操作按钮
     ToolbarItemGroup(placement: .primaryAction) {

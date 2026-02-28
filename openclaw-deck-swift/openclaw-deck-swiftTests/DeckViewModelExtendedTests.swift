@@ -243,28 +243,33 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testConfig_defaultValues() {
     let config = viewModel.config
-
+    
     // 验证默认配置
-    XCTAssertFalse(config.isComplete)
-    XCTAssertTrue(config.isDefault)
+    XCTAssertEqual(config.gatewayUrl, "ws://127.0.0.1:18789")
+    XCTAssertEqual(config.mainAgentId, "main")
   }
 
   func testConfig_isValidGatewayUrl() {
-    let config = AppConfig(gatewayUrl: "ws://localhost:18789", token: "test-token")
+    let config = AppConfig(
+      gatewayUrl: "ws://localhost:18789", token: "test-token", mainAgentId: "main"
+    )
 
     XCTAssertTrue(config.isValidGatewayUrl)
     XCTAssertTrue(config.isValidToken)
     XCTAssertTrue(config.isComplete)
-    XCTAssertFalse(config.isDefault)
   }
 
   func testConfig_invalidGatewayUrl() {
-    let config = AppConfig(gatewayUrl: "invalid-url", token: "test-token")
+    let config = AppConfig(
+      gatewayUrl: "invalid-url", token: "test-token", mainAgentId: "main"
+    )
     XCTAssertFalse(config.isValidGatewayUrl)
   }
 
   func testConfig_invalidToken() {
-    let config = AppConfig(gatewayUrl: "ws://localhost:18789", token: "")
+    let config = AppConfig(
+      gatewayUrl: "ws://localhost:18789", token: "", mainAgentId: "main"
+    )
     XCTAssertFalse(config.isValidToken)
   }
 

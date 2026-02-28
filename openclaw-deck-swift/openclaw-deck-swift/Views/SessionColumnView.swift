@@ -191,6 +191,8 @@ struct SessionColumnView: View {
           }
         }
       }
+      // 🆕 键盘弹出时忽略底部 safe area，让视图向上移动避免输入框被遮挡
+      .ignoresSafeArea(.keyboard, edges: .bottom)
     #endif
     .deleteSessionAlert(isPresented: $showingDeleteAlert) {
       onDelete()

@@ -8,7 +8,7 @@ import SwiftUI
 /// Session 列表视图 - iPhone 专用
 struct SessionListView: View {
   @State private var viewModel: DeckViewModel
-  @State private var selectedSession: SessionState?
+  @State private var navigationPath = NavigationPath()
   @State private var showingNewSessionSheet = false
   @State private var showingSettings = false
   @State private var showingSortSheet = false
@@ -32,15 +32,14 @@ struct SessionListView: View {
   }
   
   var body: some View {
-    NavigationStack {
-      List(selection: $selectedSession) {
+    NavigationStack(path: $navigationPath) {
+      List {
         // Session 列表
         ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
           if let session = viewModel.getSession(sessionId: sessionId) {
             NavigationLink(value: session) {
               SessionRowView(session: session)
             }
-            .tag(session)  // 添加 tag 使选择正确工作
           }
         }
         .onDelete(perform: deleteSessions)
@@ -82,6 +81,7 @@ struct SessionListView: View {
           }
         )
         .navigationTitle(session.sessionId)
+        .navigationBarTitleDisplayMode(.inline)
       }
       .task {
         // Auto-connect on first launch if credentials exist

@@ -11,8 +11,12 @@ struct SessionListView: View {
   @State private var selectedSession: SessionState?
   @State private var showingNewSessionSheet = false
   @State private var showingSettings = false
+  @State private var showingSortSheet = false
+  @State private var showingSyncAlert = false
+  @State private var isSyncing = false
   @State private var gatewayUrl = "ws://127.0.0.1:18789"
   @State private var token = ""
+  @State private var hasAttemptedAutoConnect = false
   
   init(viewModel: DeckViewModel) {
     _viewModel = State(initialValue: viewModel)
@@ -49,6 +53,33 @@ struct SessionListView: View {
           } label: {
             Image(systemName: "plus")
           }
+          .disabled(!viewModel.gatewayConnected)
+        }
+        
+        // 同步按钮
+        ToolbarItem(placement: .primaryAction) {
+          Button {
+            showingSyncAlert = true
+          } label: {
+            Image(systemName: "arrow.clockwise")
+              .rotationEffect(.degrees(isSyncing ? 360 : 0))
+              .animation(
+                isSyncing
+                  ? .linear(duration: 1).repeatForever(autoreverses: false)
+                  : .default,
+                value: isSyncing
+              )
+          }
+          .disabled(!viewModel.gatewayConnected || isSyncing)
+        }
+        
+        // 排序按钮
+        ToolbarItem(placement: .primaryAction) {
+          Button {
+            showingSortSheet = true
+          } label: {
+            Image(systemName: "arrow.up.arrow.down")
+          }
         }
         
         // 设置按钮
@@ -70,6 +101,20 @@ struct SessionListView: View {
         }
         #endif
       }
+      .sheet(isPresented: $showingSortSheet) {
+        SessionSortView(viewModel: viewModel)
+      }
+      .alert("Sync All Sessions?", isPresented: $showingSyncAlert) {
+        Button("Cancel", role: .cancel) {}
+        Button("Sync") {
+          Task {
+            await handleSync()
+          }
+        }
+        .tint(.blue)
+      } message: {
+        Text("This will sync all sessions with the Gateway. Continue?")
+      }
       .navigationDestination(for: SessionState.self) { session in
         // 跳转到聊天详情页面（使用现有的 SessionColumnView）
         SessionColumnView(
@@ -84,6 +129,16 @@ struct SessionListView: View {
           }
         )
       }
+      .task {
+        // Auto-connect on first launch if credentials exist
+        guard !hasAttemptedAutoConnect && !viewModel.gatewayConnected else { return }
+        hasAttemptedAutoConnect = true
+        
+        if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
+          let savedToken = UserDefaultsStorage.shared.loadToken()
+          await viewModel.initialize(url: savedUrl, token: savedToken)
+        }
+      }
       .sheet(isPresented: $showingNewSessionSheet) {
         NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
       }
@@ -91,25 +146,60 @@ struct SessionListView: View {
         SettingsView(
           gatewayUrl: $gatewayUrl,
           token: $token,
-          isConnected: $viewModel.gatewayConnected,
+          isConnected: .init(
+            get: { viewModel.gatewayConnected },
+            set: { _ in }
+          ),
           onDisconnect: {
             viewModel.disconnect()
+            showingSettings = false
           },
           onApplyAndReconnect: {
             Task {
               await viewModel.initialize(url: gatewayUrl, token: token)
             }
+            showingSettings = false
           },
           onConnect: {
             Task {
               await viewModel.initialize(url: gatewayUrl, token: token)
+              await MainActor.run {
+                showingSettings = false
+              }
             }
           },
           onResetDeviceIdentity: {
             viewModel.resetDeviceIdentity()
-          }
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+              await MainActor.run {
+                showingSettings = false
+              }
+            }
+          },
+          onClose: {
+            showingSettings = false
+          },
+          viewModel: viewModel
         )
       }
+    }
+  }
+  
+  // MARK: - Sync
+  
+  @MainActor
+  private func handleSync() async {
+    isSyncing = true
+    defer { isSyncing = false }
+    
+    let result = await viewModel.syncAll()
+    
+    switch result {
+    case .success(let message):
+      print("✅ Sync: \(message)")
+    case .failure(let error):
+      print("❌ Sync failed: \(error.localizedDescription)")
     }
   }
   

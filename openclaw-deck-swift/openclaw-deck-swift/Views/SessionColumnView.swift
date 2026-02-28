@@ -161,30 +161,35 @@ struct SessionColumnView: View {
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
     }
-#if os(iOS)
     // iPhone 上在 NavigationBar 显示 Session 名字和菜单按钮
     .toolbar {
-      if UIDevice.current.userInterfaceIdiom == .phone {
-        // 中间：Session 名字（纯文本）
-        ToolbarItem(placement: .principal) {
-          Text(session.sessionId)
-            .font(.body)
-            .fontWeight(.medium)
-            .lineLimit(1)
-            // 工作中橘黄，完成未读绿色，其他蓝色
-            .foregroundColor(
-              session.isProcessing
-                ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
-            )
-        }
+      #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+          // 中间：Session 名字（纯文本）
+          ToolbarItem(placement: .principal) {
+            Text(session.sessionId)
+              .font(.body)
+              .fontWeight(.medium)
+              .lineLimit(1)
+              // 工作中橘黄，完成未读绿色，其他蓝色
+              .foregroundColor(
+                session.isProcessing
+                  ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
+              )
+          }
 
-        // 右边：菜单按钮（打开 iPad 版本的菜单）
-        ToolbarItem(placement: .topBarTrailing) {
-          menuButton
+          // 右边：菜单按钮（打开 iPad 版本的菜单）
+          ToolbarItem(placement: .topBarTrailing) {
+            menuButton
+          }
+        } else {
+          // iPad 上添加空的 ToolbarItem 避免与 DeckCommonContainer 冲突
+          ToolbarItem(placement: .principal) {
+            EmptyView()
+          }
         }
-      }
+      #endif
     }
-#endif
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()

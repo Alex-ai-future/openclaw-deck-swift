@@ -155,7 +155,7 @@ class CloudflareKV {
     }
 
     // 4. 返回合并结果
-    logger.debug("同步完成，返回 \(merged.source)")
+    logger.debug("同步完成，返回 \(merged.source.description)")
     return merged
   }
 

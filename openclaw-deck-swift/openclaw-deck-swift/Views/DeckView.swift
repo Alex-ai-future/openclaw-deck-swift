@@ -21,11 +21,26 @@ struct DeckView: View {
   @Binding var showingSettings: Bool
   @Binding var showingNewSessionSheet: Bool
   @State private var selectedSessionId: String?
+  @State private var gatewayUrl: String
+  @State private var token: String
 
   // 内部状态管理
   @State private var showingSortSheet = false
   @State private var showingSyncAlert = false
   @State private var showingConflictAlert = false
+
+  init(
+    viewModel: DeckViewModel, showingSettings: Binding<Bool>, showingNewSessionSheet: Binding<Bool>
+  ) {
+    self.viewModel = viewModel
+    self._showingSettings = showingSettings
+    self._showingNewSessionSheet = showingNewSessionSheet
+
+    // 从 UserDefaults 加载配置
+    let storage = UserDefaultsStorage.shared
+    _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
+    _token = State(initialValue: storage.loadToken() ?? "")
+  }
 
   var body: some View {
     NavigationStack {

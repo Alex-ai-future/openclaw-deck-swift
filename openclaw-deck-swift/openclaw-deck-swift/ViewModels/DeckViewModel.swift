@@ -586,12 +586,17 @@ class DeckViewModel {
       forKey: "openclaw.deck.sessionOrder.lastUpdated"
     )
 
-    // 如果配置了 Cloudflare，异步同步到云端
-    if CloudflareKV.shared.isConfigured {
-      Task {
-        await syncToCloudflare()
+    // 测试环境下跳过 Cloudflare 同步，避免修改云端数据
+    #if TEST
+      logger.log("🧪 测试环境，跳过云端同步")
+    #else
+      // 如果配置了 Cloudflare，异步同步到云端
+      if CloudflareKV.shared.isConfigured {
+        Task {
+          await syncToCloudflare()
+        }
       }
-    }
+    #endif
   }
 
   /// 同步到 Cloudflare KV

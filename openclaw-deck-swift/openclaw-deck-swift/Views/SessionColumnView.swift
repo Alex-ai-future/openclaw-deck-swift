@@ -171,7 +171,7 @@ struct SessionColumnView: View {
     #if os(iOS)
       .safeAreaInset(edge: .bottom, spacing: 0) {
         // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
-        if UIDevice.current.userInterfaceIdiom != .pad {
+        if !DeviceUtils.isIPad {
           GlobalInputView(
             state: viewModel.globalInputState as! GlobalInputState
           ) {

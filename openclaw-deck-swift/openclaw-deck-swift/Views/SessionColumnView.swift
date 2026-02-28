@@ -280,11 +280,11 @@ struct SessionColumnView: View {
 
       // 中间：对话名字按钮（只在 iPad 上显示）
       #if os(iOS)
-      if UIDevice.current.userInterfaceIdiom == .pad {
-        sessionNameButton
-          .padding(.horizontal, 12)
-          .padding(.vertical, 8)
-      }
+        if UIDevice.current.userInterfaceIdiom == .pad {
+          sessionNameButton
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
       #endif
 
       Spacer()

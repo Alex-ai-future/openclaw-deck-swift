@@ -49,7 +49,7 @@ struct DeckView: View {
           // Session 列 - 固定高度，避免飘移
           sessionColumns
             .frame(height: geometry.height - 80)  // 减去输入框高度
-          
+
           // 全局输入视图 - 固定在底部
           GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
             await viewModel.sendCurrentInput()

@@ -99,6 +99,17 @@ class DeckViewModel {
   /// UserDefaults 存储
   private let storage: UserDefaultsStorageProtocol
 
+  // MARK: - Session Polling
+
+  /// 会话状态轮询定时器
+  private var sessionPollingTimer: Timer?
+
+  /// 轮询间隔（秒）
+  private let sessionPollingInterval: TimeInterval = 30
+
+  /// 是否正在轮询
+  private var isPolling: Bool = false
+
   // MARK: - Initialization
 
   /// 初始化
@@ -177,8 +188,14 @@ class DeckViewModel {
           // 重置重连状态
           logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
           await self?.loadAllSessionHistory()
+          
+          // 🆕 启动会话状态轮询
+          self?.startSessionPolling()
         } else {
           logger.info("🔌 Gateway 已断开")
+          
+          // 🆕 停止会话状态轮询
+          self?.stopSessionPolling()
         }
       }
     }
@@ -222,6 +239,75 @@ class DeckViewModel {
   /// 重置设备身份（清除 device identity 和 device token）
   func resetDeviceIdentity() {
     gatewayClient?.resetDeviceIdentity()
+  }
+
+  // MARK: - Session Polling
+
+  /// 启动会话状态轮询
+  private func startSessionPolling() {
+    guard !isPolling else { return }
+    isPolling = true
+
+    logger.info("🔄 启动会话状态轮询（每 \(Int(sessionPollingInterval)) 秒）")
+
+    // 立即执行一次
+    Task {
+      await pollSessionStatus()
+    }
+
+    // 定时轮询
+    sessionPollingTimer = Timer.scheduledTimer(withTimeInterval: sessionPollingInterval, repeats: true) { [weak self] _ in
+      Task { @MainActor in
+        await self?.pollSessionStatus()
+      }
+    }
+  }
+
+  /// 停止会话状态轮询
+  private func stopSessionPolling() {
+    guard isPolling else { return }
+    isPolling = false
+
+    sessionPollingTimer?.invalidate()
+    sessionPollingTimer = nil
+
+    logger.info("⏹️ 停止会话状态轮询")
+  }
+
+  /// 轮询会话状态
+  private func pollSessionStatus() async {
+    guard let client = gatewayClient, client.connected else { return }
+
+    do {
+      let statuses = try await client.fetchSessions(activeMinutes: 60)
+      await MainActor.run {
+        updateSessionStates(from: statuses)
+      }
+    } catch {
+      logger.error("❌ 轮询会话状态失败：\(error.localizedDescription)")
+    }
+  }
+
+  /// 更新会话状态（从轮询结果）
+  private func updateSessionStates(from statuses: [SessionStatus]) {
+    for status in statuses {
+      // 查找对应的 session
+      if let session = sessions[status.key.lowercased()] {
+        // 更新状态（轮询结果作为权威状态）
+        session.isProcessing = status.isProcessing
+
+        // 如果正在处理中，设置为 thinking 状态
+        if status.isProcessing {
+          session.status = .thinking
+        } else if session.status == .thinking || session.status == .streaming {
+          // 如果之前是处理状态，现在变为 idle
+          session.status = .idle
+        }
+
+        logger.debug(
+          "📊 更新会话状态：\(status.key) - 处理中：\(status.isProcessing)")
+      }
+    }
   }
 
   /// 设置当前选中的 Session

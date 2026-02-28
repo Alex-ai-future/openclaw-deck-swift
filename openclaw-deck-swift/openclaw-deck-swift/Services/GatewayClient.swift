@@ -18,6 +18,55 @@ struct PendingRequest {
   let timeout: Task<Void, Never>
 }
 
+// MARK: - Session Status
+
+/// 会话状态（从网关查询）
+struct SessionStatus: Identifiable, Hashable {
+  let key: String
+  let sessionId: String
+  let kind: String
+  let updatedAt: Date
+  let totalTokens: Int?
+  let totalTokensFresh: Bool
+  let model: String
+  let contextTokens: Int
+  let abortedLastRun: Bool
+  let systemSent: Bool
+  
+  /// 会话 ID（用于 Identifiable）
+  var id: String { sessionId }
+  
+  /// 是否正在处理中（推断）
+  var isProcessing: Bool {
+    // 如果最近有活动且没有系统发送，可能正在处理
+    !systemSent && !abortedLastRun
+  }
+  
+  /// 从网关返回的 JSON 创建
+  init?(from json: [String: Any]) {
+    guard let key = json["key"] as? String,
+          let sessionId = json["sessionId"] as? String,
+          let kind = json["kind"] as? String,
+          let updatedAtMs = json["updatedAt"] as? Double,
+          let model = json["model"] as? String,
+          let contextTokens = json["contextTokens"] as? Int
+    else {
+      return nil
+    }
+    
+    self.key = key
+    self.sessionId = sessionId
+    self.kind = kind
+    self.updatedAt = Date(timeIntervalSince1970: updatedAtMs / 1000)
+    self.totalTokens = json["totalTokens"] as? Int
+    self.totalTokensFresh = json["totalTokensFresh"] as? Bool ?? false
+    self.model = model
+    self.contextTokens = contextTokens
+    self.abortedLastRun = json["abortedLastRun"] as? Bool ?? false
+    self.systemSent = json["systemSent"] as? Bool ?? false
+  }
+}
+
 // MARK: - GatewayClient
 
 /// Gateway 客户端（WebSocket 连接管理）
@@ -389,6 +438,29 @@ class GatewayClient {
     }
 
     return sessions
+  }
+
+  // MARK: - Session Status Query
+
+  /// 主动查询会话状态列表
+  /// - Parameter activeMinutes: 只返回最近活跃的会话（默认 60 分钟）
+  /// - Returns: 会话状态列表
+  func fetchSessions(activeMinutes: Int = 60) async throws -> [SessionStatus] {
+    var params: [String: Any] = [:]
+    params["activeMinutes"] = activeMinutes
+
+    let result = try await request(method: "sessions.list", params: params)
+
+    guard let payload = result.payload as? [String: Any],
+      let sessions = payload["sessions"] as? [[String: Any]]
+    else {
+      return []
+    }
+
+    // 解析会话状态
+    let statuses = sessions.compactMap { SessionStatus(from: $0) }
+    logger.debug("查询到 \(statuses.count) 个活跃会话")
+    return statuses
   }
 
   // MARK: - Private Methods

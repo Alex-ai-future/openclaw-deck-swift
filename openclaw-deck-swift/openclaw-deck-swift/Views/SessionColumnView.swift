@@ -159,6 +159,10 @@ struct SessionColumnView: View {
       // 点击整个 Session 视图时消除未读状态
       session.hasUnreadMessage = false
     }
+    .onAppear {
+      // 进入视图时自动选中当前 session，确保输入框发送到正确的会话
+      viewModel.selectSession(session.sessionId)
+    }
     #if os(iOS)
     .safeAreaInset(edge: .bottom, spacing: 0) {
       // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）

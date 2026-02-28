@@ -13,6 +13,7 @@ struct SessionListView: View {
   @State private var showingSettings = false
   @State private var showingSortSheet = false
   @State private var showingSyncAlert = false
+  @State private var showingConflictAlert = false
   @State private var isSyncing = false
   @State private var gatewayUrl = "ws://127.0.0.1:18789"
   @State private var token = ""
@@ -115,6 +116,35 @@ struct SessionListView: View {
       } message: {
         Text("This will sync all sessions with the Gateway. Continue?")
       }
+      .alert("Sync Conflict", isPresented: $showingConflictAlert) {
+        Button("Use Local", role: .destructive) {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "local")
+          }
+        }
+        Button("Use Remote", role: .cancel) {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "remote")
+          }
+        }
+        Button("Merge") {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "merge")
+          }
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
+        let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
+        Text(
+          "Local has \(localCount) sessions, Remote has \(remoteCount) sessions.\n\nChoose which data to use:"
+        )
+      }
+      .onChange(of: viewModel.showingSyncConflict) { _, newValue in
+        if newValue {
+          showingConflictAlert = true
+        }
+      }
       .navigationDestination(for: SessionState.self) { session in
         // 跳转到聊天详情页面（使用现有的 SessionColumnView）
         SessionColumnView(
@@ -138,6 +168,13 @@ struct SessionListView: View {
           let savedToken = UserDefaultsStorage.shared.loadToken()
           await viewModel.initialize(url: savedUrl, token: savedToken)
         }
+        
+        // 调试：打印会话数据
+        logSessionData()
+      }
+      .onAppear {
+        // 调试：每次视图出现时打印会话数据
+        logSessionData()
       }
       .sheet(isPresented: $showingNewSessionSheet) {
         NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
@@ -199,8 +236,21 @@ struct SessionListView: View {
     case .success(let message):
       print("✅ Sync: \(message)")
     case .failure(let error):
-      print("❌ Sync failed: \(error.localizedDescription)")
+      if error.localizedDescription.contains("conflict") {
+        // 冲突，弹窗已在 .onChange 中触发
+        print("⚠️ Sync conflict detected")
+      } else {
+        print("❌ Sync failed: \(error.localizedDescription)")
+      }
     }
+  }
+  
+  // MARK: - Debug
+  
+  private func logSessionData() {
+    print("📊 SessionListView: sessionOrder.count = \(viewModel.sessionOrder.count)")
+    print("📊 SessionListView: sessions.count = \(viewModel.sessions.count)")
+    print("📊 SessionListView: gatewayConnected = \(viewModel.gatewayConnected)")
   }
   
   // MARK: - Delete Sessions

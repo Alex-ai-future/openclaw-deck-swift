@@ -273,8 +273,6 @@ class CloudflareKV {
       logger.error("保存失败，状态码：\(httpResponse.statusCode)")
       throw CloudflareError.httpError(httpResponse.statusCode)
     }
-
-    logger.info("保存成功")
   }
 }
 

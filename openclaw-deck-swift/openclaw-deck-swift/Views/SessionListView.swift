@@ -2,9 +2,8 @@
 // OpenClaw Deck Swift
 //
 // Session 列表视图 - 用于 iPhone 单列布局
-
+import os.log
 import SwiftUI
-import Logging
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "SessionListView")
 
@@ -194,9 +193,7 @@ struct SessionListView: View {
   // MARK: - Debug
 
   private func logSessionData() {
-    print("📊 SessionListView: sessionOrder.count = \(viewModel.sessionOrder.count)")
-    print("📊 SessionListView: sessions.count = \(viewModel.sessions.count)")
-    print("📊 SessionListView: gatewayConnected = \(viewModel.gatewayConnected)")
+    logger.debug("📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)")
   }
 }
 

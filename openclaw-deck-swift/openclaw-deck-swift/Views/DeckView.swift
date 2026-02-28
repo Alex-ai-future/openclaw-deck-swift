@@ -48,15 +48,15 @@ struct DeckView: View {
         VStack(spacing: 0) {
           // Session 列 - 固定高度，避免飘移
           sessionColumns
-            .frame(height: geometry.height - 80)  // 减去输入框高度
-
+            .frame(height: geometry.size.height - 80)  // 减去输入框高度
+          
           // 全局输入视图 - 固定在底部
           GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
             await viewModel.sendCurrentInput()
           }
           .frame(height: 80)
         }
-        .frame(width: geometry.width, height: geometry.height)
+        .frame(width: geometry.size.width, height: geometry.size.height)
         .onChange(of: selectedSessionId) { _, newId in
           // Session 切换时通知 ViewModel
           viewModel.selectSession(newId)

@@ -22,74 +22,75 @@ struct DeckCommonContainer<Content: View>: View {
   @State private var showingSortSheet = false
   @State private var showingSyncAlert = false
   @State private var showingConflictAlert = false
+  
+  // 本地配置状态（当没有外部传入时使用）
+  @State private var localGatewayUrl: String = ""
+  @State private var localToken: String = ""
 
   // 平台特定的内容
   @ViewBuilder let content: Content
 
   var body: some View {
     content
+      .onAppear {
+        // 初始化本地配置（如果没有外部传入）
+        if gatewayUrl == nil {
+          localGatewayUrl = UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
+        }
+        if token == nil {
+          localToken = UserDefaultsStorage.shared.loadToken() ?? ""
+        }
+      }
       // Settings Sheet
       .sheet(isPresented: $showingSettings) {
         SettingsView(
-          gatewayUrl: gatewayUrl ?? .constant(""),
-          token: token ?? .constant(""),
+          gatewayUrl: gatewayUrl ?? $localGatewayUrl,
+          token: token ?? $localToken,
           isConnected: .constant(viewModel.gatewayConnected),
           onDisconnect: {
             viewModel.disconnect()
             showingSettings = false
           },
           onApplyAndReconnect: {
+            // 使用当前配置（外部传入或本地状态）
+            let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
+            let tokenToUse = token?.wrappedValue ?? localToken
+            
             // Save new config first
-            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
-              UserDefaultsStorage.shared.saveGatewayUrl(url)
-            }
-            if let token = token?.wrappedValue {
-              UserDefaultsStorage.shared.saveToken(token)
-            }
+            UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
+            UserDefaultsStorage.shared.saveToken(tokenToUse)
 
             Task {
-              await viewModel.initialize(
-                url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl()
-                  ?? "",
-                token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
-              )
+              await viewModel.initialize(url: urlToUse, token: tokenToUse)
             }
             showingSettings = false
           },
           onConnect: {
+            // 使用当前配置（外部传入或本地状态）
+            let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
+            let tokenToUse = token?.wrappedValue ?? localToken
+            
             // Save new config first
-            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
-              UserDefaultsStorage.shared.saveGatewayUrl(url)
-            }
-            if let token = token?.wrappedValue {
-              UserDefaultsStorage.shared.saveToken(token)
-            }
+            UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
+            UserDefaultsStorage.shared.saveToken(tokenToUse)
 
             Task {
-              await viewModel.initialize(
-                url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl()
-                  ?? "",
-                token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
-              )
+              await viewModel.initialize(url: urlToUse, token: tokenToUse)
               showingSettings = false
             }
           },
           onResetDeviceIdentity: {
+            // 使用当前配置（外部传入或本地状态）
+            let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
+            let tokenToUse = token?.wrappedValue ?? localToken
+            
             // Save new config first
-            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
-              UserDefaultsStorage.shared.saveGatewayUrl(url)
-            }
-            if let token = token?.wrappedValue {
-              UserDefaultsStorage.shared.saveToken(token)
-            }
+            UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
+            UserDefaultsStorage.shared.saveToken(tokenToUse)
 
             viewModel.resetDeviceIdentity()
             Task {
-              await viewModel.initialize(
-                url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl()
-                  ?? "",
-                token: token?.wrappedValue ?? UserDefaultsStorage.shared.loadToken()
-              )
+              await viewModel.initialize(url: urlToUse, token: tokenToUse)
               showingSettings = false
             }
           },

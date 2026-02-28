@@ -768,9 +768,7 @@ class GatewayClient {
     let privateKeySeed = privateKey.rawRepresentation
 
     // Debug: log key sizes
-    print(
-      "[GatewayClient] Creating new identity - publicKey: \(publicKeyData.count) bytes, privateKeySeed: \(privateKeySeed.count) bytes"
-    )
+    logger.debug("Creating new identity - publicKey: \(publicKeyData.count) bytes, privateKeySeed: \(privateKeySeed.count) bytes")
 
     // Generate device ID from public key hash (SHA-256, then hex)
     let digest = SHA256.hash(data: publicKeyData)

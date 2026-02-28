@@ -145,8 +145,12 @@ struct SessionRowView: View {
 
       Spacer()
 
-      // 未读消息标记
-      if session.hasUnreadMessage {
+      // 状态标记：进行中（黄色）优先于未读消息（绿色）
+      if session.isProcessing {
+        Circle()
+          .fill(Color.orange)
+          .frame(width: 8, height: 8)
+      } else if session.hasUnreadMessage {
         Circle()
           .fill(Color.green)
           .frame(width: 8, height: 8)

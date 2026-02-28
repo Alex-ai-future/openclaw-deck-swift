@@ -15,81 +15,54 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckView"
   import UIKit
 #endif
 
-/// Deck 视图 - 多列布局容器
+/// Deck 视图 - 多列布局容器（iPad）
 struct DeckView: View {
   @Bindable var viewModel: DeckViewModel
   @Binding var showingSettings: Bool
   @Binding var showingNewSessionSheet: Bool
-  @State private var showingSortSheet: Bool = false
   @State private var selectedSessionId: String?
-  @State private var showingSyncAlert: Bool = false
-  @State private var showingConflictAlert: Bool = false
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 0) {
-        sessionColumns
-      }
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        // 全局输入视图 - 系统自动处理键盘避让
-        GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
-          await viewModel.sendCurrentInput()
-        }
-      }
-      .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
-        // ViewModel 的选中状态变化时，同步到本地
-        if let sessionId = newId {
-          selectedSessionId = sessionId
-        }
-      }
-      .onChange(of: selectedSessionId) { _, newId in
-        // Session 切换时通知 ViewModel
-        viewModel.selectSession(newId)
-
-        // 新选中的 Session 标记为已读
-        if let sessionId = newId,
-          let session = viewModel.sessions[sessionId]
-        {
-          session.hasUnreadMessage = false
-        }
-      }
-      .task {
-        // 初始化选中状态：确保 ViewModel 有选中的 Session
-        if viewModel.globalInputState.selectedSessionId == nil,
-          let firstSessionId = viewModel.sessionOrder.first
-        {
-          viewModel.selectSession(firstSessionId)
-        }
-        selectedSessionId = viewModel.globalInputState.selectedSessionId
-      }
-      .navigationTitle("OpenClaw Deck")
-      .toolbarTitleDisplayMode(.inline)
-      .toolbar {
-        DeckToolbar(
-          viewModel: viewModel,
-          showingSettings: $showingSettings,
-          showingNewSessionSheet: $showingNewSessionSheet,
-          showingSortSheet: $showingSortSheet,
-          showingSyncAlert: $showingSyncAlert,
-          showingConflictAlert: $showingConflictAlert
-        )
-      }
-      .sheet(isPresented: $showingSortSheet) {
-        SessionSortView(viewModel: viewModel)
-      }
-      .sheet(isPresented: $showingNewSessionSheet) {
-        NewSessionSheet(
-          viewModel: viewModel,
-          isPresented: $showingNewSessionSheet
-        )
-      }
-      .deckSyncAlerts(
+      DeckCommonContainer(
         viewModel: viewModel,
-        showingSyncAlert: $showingSyncAlert,
-        showingConflictAlert: $showingConflictAlert
-      ) { newValue in
-        if newValue {
-          showingConflictAlert = true
+        showingSettings: $showingSettings,
+        showingNewSessionSheet: $showingNewSessionSheet
+      ) {
+        VStack(spacing: 0) {
+          sessionColumns
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+          // 全局输入视图 - 系统自动处理键盘避让
+          GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+            await viewModel.sendCurrentInput()
+          }
+        }
+        .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
+          // ViewModel 的选中状态变化时，同步到本地
+          if let sessionId = newId {
+            selectedSessionId = sessionId
+          }
+        }
+        .onChange(of: selectedSessionId) { _, newId in
+          // Session 切换时通知 ViewModel
+          viewModel.selectSession(newId)
+
+          // 新选中的 Session 标记为已读
+          if let sessionId = newId,
+            let session = viewModel.sessions[sessionId]
+          {
+            session.hasUnreadMessage = false
+          }
+        }
+        .task {
+          // 初始化选中状态：确保 ViewModel 有选中的 Session
+          if viewModel.globalInputState.selectedSessionId == nil,
+            let firstSessionId = viewModel.sessionOrder.first
+          {
+            viewModel.selectSession(firstSessionId)
+          }
+          selectedSessionId = viewModel.globalInputState.selectedSessionId
         }
       }
     }

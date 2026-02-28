@@ -9,11 +9,8 @@ import SwiftUI
 struct SessionListView: View {
   @State private var viewModel: DeckViewModel
   @State private var navigationPath = NavigationPath()
-  @State private var showingNewSessionSheet = false
   @State private var showingSettings = false
-  @State private var showingSortSheet = false
-  @State private var showingSyncAlert = false
-  @State private var showingConflictAlert = false
+  @State private var showingNewSessionSheet = false
   @State private var gatewayUrl = "ws://127.0.0.1:18789"
   @State private var token = ""
   @State private var hasAttemptedAutoConnect = false
@@ -33,38 +30,23 @@ struct SessionListView: View {
   
   var body: some View {
     NavigationStack(path: $navigationPath) {
-      List {
-        // Session 列表
-        ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-          if let session = viewModel.getSession(sessionId: sessionId) {
-            NavigationLink(value: session) {
-              SessionRowView(session: session)
+      DeckCommonContainer(
+        viewModel: viewModel,
+        showingSettings: $showingSettings,
+        showingNewSessionSheet: $showingNewSessionSheet,
+        gatewayUrl: $gatewayUrl,
+        token: $token
+      ) {
+        List {
+          // Session 列表
+          ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+            if let session = viewModel.getSession(sessionId: sessionId) {
+              NavigationLink(value: session) {
+                SessionRowView(session: session)
+              }
             }
           }
-        }
-        .onDelete(perform: deleteSessions)
-      }
-      .navigationTitle("OpenClaw Deck")
-      .toolbar {
-        DeckToolbar(
-          viewModel: viewModel,
-          showingSettings: $showingSettings,
-          showingNewSessionSheet: $showingNewSessionSheet,
-          showingSortSheet: $showingSortSheet,
-          showingSyncAlert: $showingSyncAlert,
-          showingConflictAlert: $showingConflictAlert
-        )
-      }
-      .sheet(isPresented: $showingSortSheet) {
-        SessionSortView(viewModel: viewModel)
-      }
-      .deckSyncAlerts(
-        viewModel: viewModel,
-        showingSyncAlert: $showingSyncAlert,
-        showingConflictAlert: $showingConflictAlert
-      ) { newValue in
-        if newValue {
-          showingConflictAlert = true
+          .onDelete(perform: deleteSessions)
         }
       }
       .navigationDestination(for: SessionState.self) { session in
@@ -80,7 +62,6 @@ struct SessionListView: View {
             viewModel.deleteSession(sessionId: session.sessionId)
           }
         )
-        .navigationTitle(session.sessionId)
         .navigationBarTitleDisplayMode(.inline)
       }
       .task {
@@ -99,50 +80,6 @@ struct SessionListView: View {
       .onAppear {
         // 调试：每次视图出现时打印会话数据
         logSessionData()
-      }
-      .sheet(isPresented: $showingNewSessionSheet) {
-        NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
-      }
-      .sheet(isPresented: $showingSettings) {
-        SettingsView(
-          gatewayUrl: $gatewayUrl,
-          token: $token,
-          isConnected: .init(
-            get: { viewModel.gatewayConnected },
-            set: { _ in }
-          ),
-          onDisconnect: {
-            viewModel.disconnect()
-            showingSettings = false
-          },
-          onApplyAndReconnect: {
-            Task {
-              await viewModel.initialize(url: gatewayUrl, token: token)
-            }
-            showingSettings = false
-          },
-          onConnect: {
-            Task {
-              await viewModel.initialize(url: gatewayUrl, token: token)
-              await MainActor.run {
-                showingSettings = false
-              }
-            }
-          },
-          onResetDeviceIdentity: {
-            viewModel.resetDeviceIdentity()
-            Task {
-              await viewModel.initialize(url: gatewayUrl, token: token)
-              await MainActor.run {
-                showingSettings = false
-              }
-            }
-          },
-          onClose: {
-            showingSettings = false
-          },
-          viewModel: viewModel
-        )
       }
     }
   }
@@ -217,8 +154,6 @@ struct SessionRowView: View {
     .padding(.vertical, 4)
   }
 }
-
-// MARK: - Preview
 
 #Preview {
   SessionListView(viewModel: DeckViewModel())

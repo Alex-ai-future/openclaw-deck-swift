@@ -75,7 +75,7 @@ struct DeckView: View {
         }
         selectedSessionId = viewModel.globalInputState.selectedSessionId
       }
-      .navigationTitle("OpenClaw Deck")
+      //      .navigationTitle("OpenClaw Deck")
       .toolbar {
         DeckToolbar(
           viewModel: viewModel,

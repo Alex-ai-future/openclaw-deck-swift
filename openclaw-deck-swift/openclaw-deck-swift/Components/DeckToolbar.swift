@@ -29,7 +29,7 @@ struct DeckToolbar: ToolbarContent {
               Image(systemName: "gear")
             }
             .accessibilityIdentifier("settingsButton")
-            
+
             Text("OpenClaw Deck")
               .font(.headline)
               .fontWeight(.semibold)
@@ -53,7 +53,7 @@ struct DeckToolbar: ToolbarContent {
             Image(systemName: "gear")
           }
           .accessibilityIdentifier("settingsButton")
-          
+
           Text("OpenClaw Deck")
             .font(.headline)
             .fontWeight(.semibold)

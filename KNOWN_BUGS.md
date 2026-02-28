@@ -1,86 +1,182 @@
-# Known Bugs
+# 已知 Bug 列表
 
-This document tracks known issues and bugs in the OpenClaw Deck Swift project.
+本文档追踪 OpenClaw Deck Swift 项目中的已知问题。
 
-## Purpose
+## 文档目的
 
-This file serves as a central reference for:
-- **Documenting known issues** that have been identified but not yet fixed
-- **Tracking workarounds** for temporary solutions
-- **Providing visibility** into current limitations of the application
-- **Helping prioritize** bug fixes during development
-
-## Format
-
-Each bug entry should include:
-- **ID**: Unique identifier (e.g., BUG-001)
-- **Title**: Brief description of the issue
-- **Severity**: Critical / High / Medium / Low
-- **Status**: Open / In Progress / Resolved
-- **Description**: Detailed explanation of the bug
-- **Reproduction Steps**: How to reproduce the issue
-- **Workaround**: Any temporary solutions (if available)
-- **Date Reported**: When the bug was discovered
+- **记录已知问题** - 已发现但尚未修复的 bug
+- **追踪处理进度** - 通过状态字段了解每个 bug 的处理情况
+- **分配负责人** - 避免多个代理同时处理同一个 bug
+- **提供复现步骤** - 帮助开发者快速定位问题
 
 ---
 
-## Current Known Issues
+## Bug 状态说明
 
-### BUG-001: Session List Not Displaying on iPhone
+| 状态 | 说明 |
+|------|------|
+| 📋 待处理 | Bug 已记录，等待认领 |
+| 🔧 处理中 | 已有代理认领并正在修复 |
+| ✅ 已完成 | Bug 已修复，待验证 |
+| ❌ 已关闭 | Bug 已验证修复或确认为非问题 |
+
+## 字段说明
+
+| 字段 | 说明 | 格式示例 |
+|------|------|----------|
+| 会话标识 | 区分哪个会话在处理（多会话协作时使用） | `session-1`、`webchat-A` |
+| 认领时间 | 会话开始处理的时间 | `2026-02-28 10:30` |
+| 最后更新 | 最后状态变更的时间 | `2026-02-28 10:35` |
+
+---
+
+## Bug 认领流程
+
+**代理在开始修复 bug 前必须执行以下步骤：**
+
+```
+1. 读取 KNOWN_BUGS.md → 2. 选择一个"待处理"状态的 bug → 3. 更新该 bug 的状态为"处理中" → 4. 将"分配给"字段改为自己 → 5. 开始修复
+```
+
+### 具体规则：
+
+1. **认领前检查**
+   - 确认 bug 状态是"待处理"
+   - 确认没有其他代理正在处理（状态不是"处理中"）
+
+2. **认领操作**
+   - 修改 bug 条目：
+     - `状态`: 待处理 → 🔧 处理中
+     - `会话标识`: [空] → [当前会话标识]（用于区分哪个会话在处理）
+     - `认领时间`: 添加当前时间
+     - `最后更新`: 添加当前时间
+
+3. **修复完成后**
+   - 更新 bug 状态：🔧 处理中 → ✅ 已完成
+   - 添加 `修复说明` 字段
+   - 添加 `修复时间`
+   - 更新 `最后更新` 为当前时间
+
+4. **验证关闭**
+   - 用户验证修复后
+   - 状态更新为：✅ 已完成 → ❌ 已关闭
+   - 更新 `最后更新` 为当前时间
+
+### 示例
+
+```markdown
+### BUG-001: 问题标题
+
+- **状态**: 🔧 处理中
+- **会话标识**: session-1
+- **认领时间**: 2026-02-28 10:30
+- **最后更新**: 2026-02-28 10:30
+```
+
+---
+
+## 当前 Bug 列表
+
+### BUG-001: iPhone 会话列表不显示
 
 - **ID**: BUG-001
-- **Title**: Session list does not display in iPhone app
-- **Severity**: High
-- **Status**: Open
-- **Description**: The session list view fails to render or display any session records when running the app on iPhone. The list appears empty or does not load at all.
-- **Reproduction Steps**:
-  1. Build and run the app on iPhone device or simulator
-  2. Navigate to the session list view
-  3. Observe that no sessions are displayed
-- **Workaround**: None currently available
-- **Date Reported**: 2026-02-28
-- **Platform**: iOS (iPhone)
-- **Notes**: This issue appears to be specific to the iOS build. Further investigation needed to determine if it's a data fetching issue, UI rendering problem, or platform-specific bug.
-
-### BUG-002: Settings Buttons Not Responding on iPhone
-
-- **ID**: BUG-002
-- **Title**: Settings cancel and confirm buttons not responding on iPhone
-- **Severity**: High
-- **Status**: Open
-- **Description**: When tapping the Cancel or Confirm buttons in the settings view within the session list on iPhone, the buttons do not respond to touch events. No action is taken when tapped.
-- **Reproduction Steps**:
-  1. Build and run the app on iPhone device or simulator
-  2. Navigate to the session list view
-  3. Tap on the settings button/icon for a session
-  4. Tap either Cancel or Confirm button in the settings dialog
-  5. Observe that buttons do not respond
-- **Workaround**: None currently available
-- **Date Reported**: 2026-02-28
-- **Platform**: iOS (iPhone)
-- **Notes**: This may be related to button action binding issues, gesture recognizer conflicts, or UI event handling problems specific to iOS.
-
-### BUG-003: Session Navigation Not Working After Manual Add
-
-- **ID**: BUG-003
-- **Title**: Cannot navigate to session detail after manually adding a session
-- **Severity**: High
-- **Status**: Open
-- **Description**: After manually adding a new session to the session list, the session appears in the list but tapping on it does not navigate to the corresponding session detail page. The tap action has no effect.
-- **Reproduction Steps**:
-  1. Build and run the app
-  2. Manually add a new session to the session list
-  3. Observe that the new session appears in the list
-  4. Tap on the newly added session
-  5. Observe that navigation to the session detail page does not occur
-- **Workaround**: None currently available
-- **Date Reported**: 2026-02-28
-- **Platform**: iOS (iPhone)
-- **Notes**: This suggests the manually added session may be missing required navigation data, binding, or the tap gesture handler is not properly configured for dynamically added items.
+- **标题**: iPhone 会话列表不显示
+- **状态**: 📋 待处理
+- **会话标识**: 
+- **认领时间**: 
+- **最后更新**: 2026-02-28 10:35
+- **严重程度**: 高
+- **描述**: 在 iPhone 上运行时，会话列表视图无法渲染或显示任何会话记录。列表显示为空或完全不加载。
+- **复现步骤**:
+  1. 在 iPhone 设备或模拟器上构建并运行应用
+  2. 导航到会话列表视图
+  3. 观察到没有会话显示
+- **临时方案**: 暂无
+- **报告日期**: 2026-02-28
+- **平台**: iOS (iPhone)
+- **备注**: 此问题似乎是 iOS 构建特有的。需要进一步调查是数据获取问题、UI 渲染问题还是平台特定 bug。
 
 ---
 
-## Resolved Issues
+### BUG-002: iPhone 设置按钮无响应
 
-*Resolved bugs will be moved here with a note about the fix.*
+- **ID**: BUG-002
+- **标题**: iPhone 设置取消和确定按钮点击无反应
+- **状态**: 📋 待处理
+- **会话标识**: 
+- **认领时间**: 
+- **最后更新**: 2026-02-28 10:35
+- **严重程度**: 高
+- **描述**: 在 iPhone 的会话列表设置视图中，点击取消或确定按钮时，按钮不响应触摸事件。点击后没有任何操作。
+- **复现步骤**:
+  1. 在 iPhone 设备或模拟器上构建并运行应用
+  2. 导航到会话列表视图
+  3. 点击会话的设置按钮/图标
+  4. 在设置对话框中点击取消或确定按钮
+  5. 观察到按钮无响应
+- **临时方案**: 暂无
+- **报告日期**: 2026-02-28
+- **平台**: iOS (iPhone)
+- **备注**: 这可能与按钮动作绑定问题、手势识别器冲突或 iOS 特定的 UI 事件处理问题有关。
 
+---
+
+### BUG-003: 手动添加会话后无法导航
+
+- **ID**: BUG-003
+- **标题**: 手动添加会话后无法跳转到详情页
+- **状态**: 📋 待处理
+- **会话标识**: 
+- **认领时间**: 
+- **最后更新**: 2026-02-28 10:35
+- **严重程度**: 高
+- **描述**: 手动添加新会话到列表后，会话显示在列表中但点击它无法导航到对应的会话详情页面。点击操作无效。
+- **复现步骤**:
+  1. 构建并运行应用
+  2. 手动添加一个新会话到会话列表
+  3. 观察到新会话显示在列表中
+  4. 点击新添加的会话
+  5. 观察到无法导航到会话详情页
+- **临时方案**: 暂无
+- **报告日期**: 2026-02-28
+- **平台**: iOS (iPhone)
+- **备注**: 这表明手动添加的会话可能缺少必要的导航数据、绑定，或者点击手势处理器没有正确配置动态添加的项目。
+
+---
+
+### BUG-004: 工具栏显示不完整
+
+- **ID**: BUG-004
+- **标题**: 会话列表工具栏只显示 2 个工具
+- **状态**: 📋 待处理
+- **会话标识**: 
+- **认领时间**: 
+- **最后更新**: 2026-02-28 10:35
+- **严重程度**: 中
+- **描述**: 会话列表视图只显示 2 个工具栏项目，但应该有更多可用工具。工具栏没有显示所有应该可从会话列表访问的操作/按钮。
+- **复现步骤**:
+  1. 构建并运行应用
+  2. 导航到会话列表视图
+  3. 观察列表顶部/底部的工具栏
+  4. 计算可见工具栏项目的数量
+  5. 预期：应显示所有可用工具
+  6. 实际：只显示 2 个工具栏项目
+- **临时方案**: 暂无
+- **报告日期**: 2026-02-28
+- **平台**: iOS (iPhone)
+- **备注**: 这可能是布局约束问题、工具栏项目配置问题，或工具栏项目因空间限制被隐藏。需要调查工具栏设置代码。
+
+---
+
+## 已修复 Bug
+
+*已修复的 bug 将移到这里，并附带修复说明。*
+
+---
+
+## 备注
+
+- 发现新 bug 时立即添加到"当前 Bug 列表"
+- 开始修复前必须更新状态和分配字段
+- 修复完成后更新状态并添加修复说明
+- 用户验证后移到"已修复 Bug"区域

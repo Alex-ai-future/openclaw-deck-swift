@@ -166,12 +166,12 @@ struct SettingsView: View {
           NavigationLink {
             UserGuideView()
           } label: {
-            Label("用户指南", systemImage: "book")
+            Label("User Guide", systemImage: "book")
           }
         } header: {
           Label("HELP", systemImage: "questionmark.circle")
         } footer: {
-          Text("查看完整的使用说明和故障排除指南")
+          Text("View complete usage instructions and troubleshooting guide")
         }
 
         // MARK: - 7. ABOUT

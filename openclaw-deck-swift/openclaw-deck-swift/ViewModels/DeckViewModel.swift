@@ -405,6 +405,7 @@ class DeckViewModel {
   @MainActor
   private func handleSyncConflict(result: MergeResult) async {
     guard let localData = result.localData, let remoteData = result.remoteData else {
+      logger.error("❌ handleSyncConflict: missing localData or remoteData")
       return
     }
 
@@ -418,7 +419,7 @@ class DeckViewModel {
     conflictInfo = ConflictInfo.create(local: localData, remote: remoteData)
     showingSyncConflict = true
 
-    // 等待用户选择
+    logger.log("✅ showingSyncConflict set to TRUE, UI should show conflict alert")
     logger.log("⏳ Waiting for user selection...")
   }
 

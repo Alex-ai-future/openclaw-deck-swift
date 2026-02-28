@@ -4,6 +4,9 @@
 // 共用的容器组件 - 提取 DeckView 和 SessionListView 的共同逻辑
 
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckCommonContainer")
 
 /// Deck 共用容器 - 管理共同的状态和 UI 组件
 struct DeckCommonContainer<Content: View>: View {
@@ -127,6 +130,10 @@ struct DeckCommonContainer<Content: View>: View {
       ) { newValue in
         if newValue {
           showingConflictAlert = true
+          logger.info("🔔 Conflict alert triggered, showingConflictAlert = true")
+        } else {
+          showingConflictAlert = false
+          logger.info("🔔 Conflict alert dismissed, showingConflictAlert = false")
         }
       }
   }

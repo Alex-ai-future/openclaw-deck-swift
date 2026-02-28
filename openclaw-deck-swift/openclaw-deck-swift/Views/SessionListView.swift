@@ -19,7 +19,7 @@ struct SessionListView: View {
 
   init(viewModel: DeckViewModel) {
     _viewModel = State(initialValue: viewModel)
-
+    
     // 从 UserDefaults 加载配置
     let storage = UserDefaultsStorage.shared
     if let savedUrl = storage.loadGatewayUrl() {
@@ -54,18 +54,32 @@ struct SessionListView: View {
       }
       .navigationDestination(for: SessionState.self) { session in
         // 跳转到聊天详情页面（使用现有的 SessionColumnView）
-        SessionColumnView(
-          session: session,
-          viewModel: viewModel,
-          isSelected: true,
-          onSelect: {
-            viewModel.selectSession(session.sessionId)
-          },
-          onDelete: {
-            viewModel.deleteSession(sessionId: session.sessionId)
-          }
-        )
-        .navigationBarTitleDisplayMode(.inline)
+        #if os(iOS)
+          SessionColumnView(
+            session: session,
+            viewModel: viewModel,
+            isSelected: true,
+            onSelect: {
+              viewModel.selectSession(session.sessionId)
+            },
+            onDelete: {
+              viewModel.deleteSession(sessionId: session.sessionId)
+            }
+          )
+          .navigationBarTitleDisplayMode(.inline)
+        #else
+          SessionColumnView(
+            session: session,
+            viewModel: viewModel,
+            isSelected: true,
+            onSelect: {
+              viewModel.selectSession(session.sessionId)
+            },
+            onDelete: {
+              viewModel.deleteSession(sessionId: session.sessionId)
+            }
+          )
+        #endif
       }
       .task {
         // Auto-connect on first launch if credentials exist

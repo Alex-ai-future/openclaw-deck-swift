@@ -21,6 +21,7 @@ struct DeckView: View {
   @State private var selectedSessionId: String?
   @State private var isSyncing: Bool = false
   @State private var showingSyncAlert: Bool = false
+  @State private var showingConflictAlert: Bool = false
 
   var body: some View {
     NavigationStack {
@@ -115,12 +116,62 @@ struct DeckView: View {
         Button("Cancel", role: .cancel) {}
         Button("Sync") {
           Task {
-            await viewModel.syncAll()
+            await handleSync()
           }
         }
         .tint(.blue)
       } message: {
         Text("This will sync all sessions with the Gateway. Continue?")
+      }
+      .alert("Sync Conflict", isPresented: $showingConflictAlert) {
+        Button("Use Local", role: .destructive) {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "local")
+          }
+        }
+        Button("Use Remote", role: .cancel) {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "remote")
+          }
+        }
+        Button("Merge") {
+          Task {
+            await viewModel.resolveSyncConflict(choice: "merge")
+          }
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
+        let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
+        Text(
+          "Local has \(localCount) sessions, Remote has \(remoteCount) sessions.\n\nChoose which data to use:"
+        )
+      }
+      .onChange(of: viewModel.showingSyncConflict) { _, newValue in
+        if newValue {
+          showingConflictAlert = true
+        }
+      }
+    }
+  }
+
+  /// 处理同步（检测冲突）
+  @MainActor
+  private func handleSync() async {
+    isSyncing = true
+    defer { isSyncing = false }
+
+    let result = await viewModel.syncAll()
+
+    switch result {
+    case .success(let message):
+      print("✅ \(message)")
+    case .failure(let error):
+      if error.localizedDescription.contains("conflict") {
+        // 冲突，弹窗已在 .onChange 中触发
+        print("⚠️ Sync conflict detected")
+      } else {
+        print("❌ Sync failed: \(error.localizedDescription)")
       }
     }
   }

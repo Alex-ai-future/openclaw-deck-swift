@@ -51,6 +51,7 @@ struct ContentView: View {
   @State private var hasAttemptedAutoConnect = false
   @State private var showingWelcomeSettings = false
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
   init() {
     // 从 UserDefaults 加载保存的配置
@@ -63,16 +64,34 @@ struct ContentView: View {
     }
   }
 
+  /// 判断是否为 iPad
+  var isIPad: Bool {
+    horizontalSizeClass == .regular
+  }
+
   var body: some View {
     Group {
       if viewModel.gatewayConnected {
-        // Main deck view
-        DeckView(
-          viewModel: viewModel,
-          showingSettings: $showingSettings,
-          showingNewSessionSheet: $showingNewSessionSheet
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // 根据设备类型选择布局
+        if isIPad {
+          // iPad - 多列布局
+          DeckView(
+            viewModel: viewModel,
+            showingSettings: $showingSettings,
+            showingNewSessionSheet: $showingNewSessionSheet
+          )
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+          // iPhone - 单列布局
+          SessionListView(
+            viewModel: viewModel,
+            showingSettings: $showingSettings,
+            showingNewSessionSheet: $showingNewSessionSheet,
+            gatewayUrl: $gatewayUrl,
+            token: $token
+          )
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
 
       } else if viewModel.isReconnecting {
         // Reconnecting state - show reconnecting view

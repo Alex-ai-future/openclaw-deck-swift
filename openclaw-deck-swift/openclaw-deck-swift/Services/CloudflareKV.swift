@@ -8,7 +8,7 @@ import Foundation
 // MARK: - 同步数据结构
 
 /// Cloudflare KV 中存储的同步数据
-struct SyncData: Codable {
+struct SyncData: Codable, Equatable {
   /// Session ID 列表（有序）
   var sessions: [String]
 
@@ -30,12 +30,15 @@ enum MergeSource {
   case local  // 本地数据更新
   case remote  // 云端数据更新
   case same  // 数据一致
+  case conflict  // 数据冲突，需要用户选择
 }
 
 /// 合并结果
 struct MergeResult {
   let source: MergeSource
   let data: SyncData
+  let localData: SyncData?
+  let remoteData: SyncData?
 }
 
 // MARK: - Cloudflare KV 客户端
@@ -96,12 +99,12 @@ class CloudflareKV {
 
   // MARK: - 核心同步方法
 
-  /// 智能同步：自动比较本地和云端数据，返回最新结果
+  /// 智能同步：自动比较本地和云端数据，返回合并结果
   /// - 如果只有本地有数据 → 上传到云端
   /// - 如果只有云端有数据 → 下载到本地
-  /// - 如果两边都有 → 比较时间戳，保留新的，并同步到另一边
+  /// - 如果两边都有 → 比较数据，一致则自动通过，冲突时返回让用户选择
   /// - 对调用者透明，自动处理所有情况
-  func syncAndGet() async throws -> SyncData {
+  func syncAndGet() async throws -> MergeResult {
     guard isConfigured else {
       print("[CloudflareKV] ❌ 未配置，跳过同步")
       throw CloudflareError.notConfigured
@@ -134,11 +137,14 @@ class CloudflareKV {
     case .same:
       // 数据一致，无需操作
       print("[CloudflareKV] ✅ 数据一致，无需同步")
+    case .conflict:
+      // 数据冲突，不自动保存，由用户选择
+      print("[CloudflareKV] ⚠️ 数据冲突，等待用户选择")
     }
 
-    // 4. 返回最新数据
-    print("[CloudflareKV] 🎯 同步完成，返回 \(merged.data.sessions.count) 个 sessions")
-    return merged.data
+    // 4. 返回合并结果
+    print("[CloudflareKV] 🎯 同步完成，返回 \(merged.source)")
+    return merged
   }
 
   /// 保存数据到 KV（用于本地修改后主动同步）
@@ -161,31 +167,34 @@ class CloudflareKV {
     case (.some(let l), .none):
       // 只有本地有 → 用本地
       print("[CloudflareKV] 📤 只有本地有数据，使用本地（\(l.sessions.count) 个 sessions）")
-      return MergeResult(source: .local, data: l)
+      return MergeResult(source: .local, data: l, localData: l, remoteData: nil)
 
     case (.none, .some(let r)):
       // 只有云端有 → 用云端
       print("[CloudflareKV] 📥 只有云端有数据，使用云端（\(r.sessions.count) 个 sessions）")
-      return MergeResult(source: .remote, data: r)
+      return MergeResult(source: .remote, data: r, localData: nil, remoteData: r)
 
     case (.some(let l), .some(let r)):
-      // 两边都有 → 比较时间戳
-      if l.lastUpdated > r.lastUpdated {
-        print("[CloudflareKV] ⏰ 本地数据更新（\(l.lastUpdated) > \(r.lastUpdated)）")
-        return MergeResult(source: .local, data: l)
-      } else if r.lastUpdated > l.lastUpdated {
-        print("[CloudflareKV] ⏰ 云端数据更新（\(r.lastUpdated) > \(l.lastUpdated)）")
-        return MergeResult(source: .remote, data: r)
+      // 两边都有 → 比较数据是否一致
+      if l.sessions == r.sessions {
+        // 数据一致 → 自动通过
+        print("[CloudflareKV] ✅ 数据一致（\(l.sessions.count) 个 sessions），自动同步")
+        return MergeResult(source: .same, data: l, localData: l, remoteData: r)
       } else {
-        // 时间戳相同 → 数据一致
-        print("[CloudflareKV] ⏰ 数据一致（时间戳相同）")
-        return MergeResult(source: .same, data: l)
+        // 数据不一致 → 需要用户选择
+        print("[CloudflareKV] ⚠️ 数据冲突：本地 \(l.sessions.count) 个，云端 \(r.sessions.count) 个")
+        return MergeResult(
+          source: .conflict,
+          data: l,  // 临时返回本地，实际由用户选择
+          localData: l,
+          remoteData: r
+        )
       }
 
     case (.none, .none):
       // 两边都没有 → 返回空数据
       print("[CloudflareKV] 📭 本地和云端都没有数据")
-      return MergeResult(source: .same, data: .empty)
+      return MergeResult(source: .same, data: .empty, localData: nil, remoteData: nil)
     }
   }
 

@@ -27,6 +27,7 @@ struct CloudflareSettingsView: View {
   }
 
   var onClose: (() -> Void)?
+  var viewModel: DeckViewModel?
 
   var body: some View {
     NavigationStack {
@@ -37,12 +38,12 @@ struct CloudflareSettingsView: View {
             Text("Cloudflare KV Sync")
               .font(.headline)
 
-            Text("Use Cloudflare KV for multi-device session synchronization")
+            Text("Sync sessions across multiple devices using Cloudflare KV")
               .font(.subheadline)
               .foregroundColor(.secondary)
 
             Link(
-              "View Configuration Guide", destination: URL(string: "https://dash.cloudflare.com")!
+              "Setup Guide", destination: URL(string: "https://dash.cloudflare.com")!
             )
             .font(.caption)
           }
@@ -93,9 +94,9 @@ struct CloudflareSettingsView: View {
               autoSave()
             }
         } header: {
-          Text("Cloudflare Configuration")
+          Text("Configuration")
         } footer: {
-          Text("API Token is encrypted and stored in Keychain")
+          Text("API Token is encrypted in Keychain")
         }
 
         // Status
@@ -149,7 +150,7 @@ struct CloudflareSettingsView: View {
           Text("Actions")
         } footer: {
           if isTesting {
-            Text("Testing connection...")
+            Text("Testing...")
               .foregroundColor(.secondary)
           } else if let result = testResult {
             Text(result)

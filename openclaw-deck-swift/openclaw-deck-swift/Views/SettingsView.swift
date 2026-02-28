@@ -130,7 +130,7 @@ struct SettingsView: View {
         // Cloudflare KV Sync
         Section {
           NavigationLink {
-            CloudflareSettingsView(onClose: onClose)
+            CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
           } label: {
             HStack {
               Image(systemName: "icloud.and.arrow.down")

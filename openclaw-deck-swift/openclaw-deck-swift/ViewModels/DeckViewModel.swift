@@ -317,14 +317,21 @@ class DeckViewModel {
     do {
       logger.log("🔄 开始智能同步...")
 
-      // 智能同步：自动比较本地和云端，返回最新数据
-      let syncData = try await CloudflareKV.shared.syncAndGet()
+      // 智能同步：返回本地和云端数据，自动处理一致情况，冲突时弹窗
+      let result = try await CloudflareKV.shared.syncAndGet()
 
-      logger.log("✅ 同步成功：\(syncData.sessions.count) 个 sessions")
+      // 检测是否需要用户选择
+      if result.source == .conflict {
+        // 数据冲突，需要用户选择
+        await handleSyncConflict(result: result)
+        return
+      }
+
+      logger.log("✅ 同步成功：\(result.data.sessions.count) 个 sessions")
 
       // 使用同步后的数据
       await MainActor.run {
-        self.sessionOrder = syncData.sessions.map { $0.lowercased() }
+        self.sessionOrder = result.data.sessions.map { $0.lowercased() }
         self.createSessionStates()
 
         logger.log("📋 Session 顺序：\(self.sessionOrder)")
@@ -349,6 +356,106 @@ class DeckViewModel {
       await MainActor.run {
         self.loadFromLocalOnly()
       }
+    }
+  }
+
+  /// 处理同步冲突（弹窗让用户选择）
+  @MainActor
+  private func handleSyncConflict(result: MergeResult) async {
+    guard let localData = result.localData, let remoteData = result.remoteData else {
+      return
+    }
+
+    logger.log("⚠️ Data conflict detected: local \(localData.sessions.count) sessions, remote \(remoteData.sessions.count) sessions")
+
+    // 设置冲突数据，供 UI 层显示
+    conflictLocalData = localData
+    conflictRemoteData = remoteData
+    showingSyncConflict = true
+
+    // 等待用户选择（由 CloudflareSettingsView 处理）
+    logger.log("⏳ Waiting for user selection...")
+  }
+
+  /// 冲突时的本地数据（用于弹窗显示）
+  var conflictLocalData: SyncData?
+
+  /// 冲突时的云端数据（用于弹窗显示）
+  var conflictRemoteData: SyncData?
+
+  /// 是否显示同步冲突弹窗
+  var showingSyncConflict: Bool = false
+
+  /// 用户选择同步方案
+  @MainActor
+  func resolveSyncConflict(choice: String) async {
+    showingSyncConflict = false
+
+    guard let localData = conflictLocalData, let remoteData = conflictRemoteData else {
+      return
+    }
+
+    switch choice {
+    case "local":
+      // Use local data
+      logger.log("✅ User selected: local data (\(localData.sessions.count) sessions)")
+      await applySyncData(localData)
+
+    case "remote":
+      // Use remote data
+      logger.log("✅ User selected: remote data (\(remoteData.sessions.count) sessions)")
+      await applySyncData(remoteData)
+
+    case "merge":
+      // Merge data (union)
+      var mergedSessions = localData.sessions
+      for session in remoteData.sessions where !mergedSessions.contains(session) {
+        mergedSessions.append(session)
+      }
+      let mergedData = SyncData(
+        sessions: mergedSessions,
+        lastUpdated: ISO8601DateFormatter().string(from: Date())
+      )
+      logger.log("✅ User selected: merged data (\(mergedSessions.count) sessions)")
+      await applySyncData(mergedData)
+
+    default:
+      // Cancel, do nothing
+      logger.log("⚠️ User cancelled sync")
+      return
+    }
+
+    // Clear conflict data
+    conflictLocalData = nil
+    conflictRemoteData = nil
+  }
+
+  /// 应用同步数据
+  @MainActor
+  private func applySyncData(_ data: SyncData) async {
+    sessionOrder = data.sessions.map { $0.lowercased() }
+    createSessionStates()
+
+    // Save to local
+    let storage = UserDefaultsStorage.shared
+    storage.saveSessionOrder(data.sessions)
+    UserDefaults.standard.set(
+      data.lastUpdated, forKey: "openclaw.deck.sessionOrder.lastUpdated")
+
+    // If selected remote or merge, save to cloud
+    if data != conflictLocalData {
+      do {
+        try await CloudflareKV.shared.save(data)
+      } catch {
+        logger.error("❌ Failed to save to cloud: \(error.localizedDescription)")
+      }
+    }
+
+    logger.log("✅ Sync complete: \(data.sessions.count) sessions")
+
+    // If Gateway connected, load history
+    if gatewayConnected {
+      await loadAllSessionHistory()
     }
   }
 
@@ -477,34 +584,44 @@ class DeckViewModel {
     }
 
     do {
-      logger.info("🔄 开始完整同步...")
+      logger.info("🔄 Starting full sync...")
 
       // 1. 从 Cloudflare 同步 Session 列表
-      logger.info("📥 同步 Session 列表...")
-      let syncData = try await CloudflareKV.shared.syncAndGet()
+      logger.info("📥 Syncing session list...")
+      let result = try await CloudflareKV.shared.syncAndGet()
+
+      // 处理冲突情况
+      if result.source == .conflict {
+        // 冲突时让用户选择（通过设置界面）
+        logger.info("⚠️ Conflict detected during sync, user selection required")
+        return .failure(
+          NSError(
+            domain: "DeckViewModel", code: 409,
+            userInfo: [NSLocalizedDescriptionKey: "Sync conflict: please select data source in settings"]))
+      }
 
       // 更新本地 sessions
-      sessionOrder = syncData.sessions.map { $0.lowercased() }
+      sessionOrder = result.data.sessions.map { $0.lowercased() }
       createSessionStates()
       saveSessionsToStorage()
 
-      logger.info("✅ Session 列表已更新：\(syncData.sessions.count) 个会话")
+      logger.info("✅ Session list updated: \(result.data.sessions.count) sessions")
 
       // 2. 清空所有 Session 的当前消息
-      logger.info("🧹 清空当前消息...")
+      logger.info("🧹 Clearing current messages...")
       for session in sessions.values {
         session.messages.removeAll()
         session.historyLoaded = false
       }
 
       // 3. 重新加载所有 Session 的对话内容
-      logger.info("📥 重新加载对话内容...")
+      logger.info("📥 Reloading conversation history...")
       await loadAllSessionHistory()
 
-      logger.info("✅ 同步完成：\(syncData.sessions.count) 个会话")
-      return .success("同步完成：\(syncData.sessions.count) 个会话")
+      logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
+      return .success("Sync complete: \(result.data.sessions.count) sessions")
     } catch {
-      logger.error("❌ 同步失败：\(error.localizedDescription)")
+      logger.error("❌ Sync failed: \(error.localizedDescription)")
       return .failure(error)
     }
   }

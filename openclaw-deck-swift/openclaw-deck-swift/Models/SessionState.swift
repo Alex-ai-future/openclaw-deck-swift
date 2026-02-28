@@ -20,7 +20,7 @@ enum SessionStatus: Equatable {
 
 /// Session 运行时状态（内存缓存，不持久化）
 @Observable
-class SessionState {
+class SessionState: Hashable {
   /// Session ID
   let sessionId: String
 
@@ -30,6 +30,17 @@ class SessionState {
   // Fix for Swift 6 @Observable + @MainActor crash in XCTest
   // See: https://github.com/swiftlang/swift/issues/87316
   nonisolated deinit {}
+
+  // MARK: - Hashable
+
+  static func == (lhs: SessionState, rhs: SessionState) -> Bool {
+    lhs.sessionId == rhs.sessionId && lhs.sessionKey == rhs.sessionKey
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine(sessionId)
+    hasher.combine(sessionKey)
+  }
 
   /// 消息列表
   var messages: [ChatMessage] = []

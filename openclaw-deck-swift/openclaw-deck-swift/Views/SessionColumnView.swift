@@ -152,6 +152,8 @@ struct SessionColumnView: View {
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
     }
+    // 关键修复：固定 SessionColumnView 高度，避免飘移
+    .frame(height: 650)
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()

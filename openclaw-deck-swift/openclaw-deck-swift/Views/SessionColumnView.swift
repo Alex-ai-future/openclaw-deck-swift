@@ -360,8 +360,6 @@ struct SessionColumnView: View {
   struct MessageView: View {
     let message: ChatMessage
     @State private var showFullContent = false
-    @State private var showingCopyToast = false
-    @State private var copyText = ""
 
     var body: some View {
       // 只显示 user 和 assistant 消息
@@ -391,13 +389,7 @@ struct SessionColumnView: View {
             .cornerRadius(18, corners: cornerMask)
             .contextMenu {
               Button {
-                copyText = message.text
                 UIPasteboard.general.string = message.text
-                showingCopyToast = true
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                  showingCopyToast = false
-                }
 
                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                 impactFeedback.impactOccurred()
@@ -409,20 +401,6 @@ struct SessionColumnView: View {
           // Timestamp outside the bubble
           timestamp
             .padding(.horizontal, 4)
-        }
-        .overlay(alignment: .bottom) {
-          if showingCopyToast {
-            Text("Copied!")
-              .font(.caption)
-              .fontWeight(.medium)
-              .foregroundColor(.white)
-              .padding(.horizontal, 12)
-              .padding(.vertical, 6)
-              .background(Color.black.opacity(0.7))
-              .cornerRadius(8)
-              .transition(.opacity.combined(with: .scale))
-              .animation(.easeInOut(duration: 0.2), value: showingCopyToast)
-          }
         }
 
         if message.role == .assistant {

@@ -96,7 +96,7 @@ struct SessionColumnView: View {
         // 底部浮动按钮组
         VStack {
           Spacer()
-          
+
           HStack(spacing: 16) {
             // 滚动到底部按钮 - 始终显示
             ScrollToBottomButton {
@@ -145,14 +145,12 @@ struct SessionColumnView: View {
           .padding(12)
         }
       }
-      
+
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
     }
-    // 关键修复：固定 SessionColumnView 高度，避免飘移
-    .frame(height: 650)
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()

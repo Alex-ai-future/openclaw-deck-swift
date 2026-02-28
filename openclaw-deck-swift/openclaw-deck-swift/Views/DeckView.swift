@@ -47,12 +47,14 @@ struct DeckView: View {
       VStack(spacing: 0) {
         // Session 列 - 占据剩余空间
         sessionColumns
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         // 全局输入视图 - 固定在底部
         GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
           await viewModel.sendCurrentInput()
         }
       }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
       .onChange(of: selectedSessionId) { _, newId in
         // Session 切换时通知 ViewModel
         viewModel.selectSession(newId)
@@ -73,7 +75,6 @@ struct DeckView: View {
         }
         selectedSessionId = viewModel.globalInputState.selectedSessionId
       }
-      .navigationTitle("OpenClaw Deck")
       .toolbar {
         DeckToolbar(
           viewModel: viewModel,

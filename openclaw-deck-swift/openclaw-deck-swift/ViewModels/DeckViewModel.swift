@@ -9,6 +9,45 @@ import os
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewModel")
 
+// MARK: - Conflict Info
+
+/// 冲突信息
+struct ConflictInfo {
+  let localCount: Int
+  let remoteCount: Int
+  let isOrderOnly: Bool
+  let description: String
+
+  static func create(local: SyncData, remote: SyncData) -> ConflictInfo {
+    let localCount = local.sessions.count
+    let remoteCount = remote.sessions.count
+
+    // 检查是否只是顺序差异（内容相同但顺序不同）
+    let localSet = Set(local.sessions)
+    let remoteSet = Set(remote.sessions)
+    let isOrderOnly = localSet == remoteSet && local.sessions != remote.sessions
+
+    let description: String
+    if isOrderOnly {
+      description =
+        "Local and remote have the same \(localCount) sessions but in different order.\n\n• Use Local: Keep your order (overwrite cloud)\n• Use Cloud: Merge cloud order with local"
+    } else if localCount == remoteCount {
+      description =
+        "Local and remote both have \(localCount) sessions but with different content.\n\n• Use Local: Keep local sessions (overwrite cloud)\n• Use Cloud: Merge cloud sessions with local"
+    } else {
+      description =
+        "Local has \(localCount) sessions, Cloud has \(remoteCount) sessions.\n\n• Use Local: Keep local sessions (overwrite cloud)\n• Use Cloud: Merge cloud sessions with local"
+    }
+
+    return ConflictInfo(
+      localCount: localCount,
+      remoteCount: remoteCount,
+      isOrderOnly: isOrderOnly,
+      description: description
+    )
+  }
+}
+
 /// Deck ViewModel - 管理多个 Session
 @MainActor
 @Observable
@@ -376,9 +415,10 @@ class DeckViewModel {
     // 设置冲突数据，供 UI 层显示
     conflictLocalData = localData
     conflictRemoteData = remoteData
+    conflictInfo = ConflictInfo.create(local: localData, remote: remoteData)
     showingSyncConflict = true
 
-    // 等待用户选择（由 CloudflareSettingsView 处理）
+    // 等待用户选择
     logger.log("⏳ Waiting for user selection...")
   }
 
@@ -391,6 +431,9 @@ class DeckViewModel {
   /// 是否显示同步冲突弹窗
   var showingSyncConflict: Bool = false
 
+  /// 冲突信息（用于弹窗说明）
+  var conflictInfo: ConflictInfo?
+
   /// 用户选择同步方案
   @MainActor
   func resolveSyncConflict(choice: String) async {
@@ -402,27 +445,14 @@ class DeckViewModel {
 
     switch choice {
     case "local":
-      // Use local data
+      // Use local data (overwrite cloud)
       logger.log("✅ User selected: local data (\(localData.sessions.count) sessions)")
       await applySyncData(localData)
 
     case "remote":
-      // Use remote data
-      logger.log("✅ User selected: remote data (\(remoteData.sessions.count) sessions)")
+      // Use cloud data (merge with local)
+      logger.log("✅ User selected: cloud data (\(remoteData.sessions.count) sessions)")
       await applySyncData(remoteData)
-
-    case "merge":
-      // Merge data (union)
-      var mergedSessions = localData.sessions
-      for session in remoteData.sessions where !mergedSessions.contains(session) {
-        mergedSessions.append(session)
-      }
-      let mergedData = SyncData(
-        sessions: mergedSessions,
-        lastUpdated: ISO8601DateFormatter().string(from: Date())
-      )
-      logger.log("✅ User selected: merged data (\(mergedSessions.count) sessions)")
-      await applySyncData(mergedData)
 
     default:
       // Cancel, do nothing
@@ -433,6 +463,7 @@ class DeckViewModel {
     // Clear conflict data
     conflictLocalData = nil
     conflictRemoteData = nil
+    conflictInfo = nil
   }
 
   /// 应用同步数据

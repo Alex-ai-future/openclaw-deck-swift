@@ -162,6 +162,9 @@ struct SessionColumnView: View {
     .onAppear {
       // 进入视图时自动选中当前 session，确保输入框发送到正确的会话
       viewModel.selectSession(session.sessionId)
+      
+      // 滚动到最底部（显示最新消息）
+      scrollTrigger = 1
     }
     #if os(iOS)
     .safeAreaInset(edge: .bottom, spacing: 0) {

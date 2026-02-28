@@ -13,7 +13,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
 
   func testGatewayEvent_initialization() {
     let event = GatewayEvent(event: "test.event", payload: nil)
-    
+
     XCTAssertEqual(event.event, "test.event")
     XCTAssertEqual(event.type, "event")
     XCTAssertNil(event.payload)
@@ -22,7 +22,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
   func testGatewayEvent_withPayload() {
     let payload: [String: Any] = ["key": "value", "number": 42]
     let event = GatewayEvent(event: "test.event", payload: payload)
-    
+
     XCTAssertEqual(event.event, "test.event")
     XCTAssertNotNil(event.payload)
   }
@@ -31,11 +31,11 @@ final class GatewayFrameExtendedTests: XCTestCase {
     let json: [String: Any] = [
       "type": "event",
       "event": "agent",
-      "payload": ["text": "Hello"]
+      "payload": ["text": "Hello"],
     ]
-    
+
     let event = GatewayEvent.fromJSON(json)
-    
+
     XCTAssertEqual(event.event, "agent")
     XCTAssertNotNil(event.payload)
   }
@@ -44,7 +44,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
     let event1 = GatewayEvent(event: "agent.start", payload: nil)
     let event2 = GatewayEvent(event: "agent.stop", payload: nil)
     let event3 = GatewayEvent(event: "other.event", payload: nil)
-    
+
     XCTAssertTrue(event1.event.contains("agent"))
     XCTAssertTrue(event2.event.contains("agent"))
     XCTAssertFalse(event3.event.contains("agent"))
@@ -58,7 +58,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       method: "run_agent",
       params: ["session_key": "test-key"]
     )
-    
+
     XCTAssertEqual(request.id, "req-123")
     XCTAssertEqual(request.method, "run_agent")
     XCTAssertEqual(request.type, "req")
@@ -69,7 +69,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       id: "req-123",
       method: "run_agent"
     )
-    
+
     XCTAssertNil(request.params)
   }
 
@@ -79,10 +79,10 @@ final class GatewayFrameExtendedTests: XCTestCase {
       method: "run_agent",
       params: ["key": "value"]
     )
-    
+
     let data = try request.toJSON()
     XCTAssertGreaterThan(data.count, 0)
-    
+
     // 验证可以解析
     let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
     XCTAssertEqual(json?["id"] as? String, "req-123")
@@ -94,12 +94,12 @@ final class GatewayFrameExtendedTests: XCTestCase {
       "type": "req",
       "id": "req-123",
       "method": "run_agent",
-      "params": ["key": "value"]
+      "params": ["key": "value"],
     ]
-    
+
     let data = try JSONSerialization.data(withJSONObject: json)
     let request = try GatewayRequest.fromJSON(data)
-    
+
     XCTAssertEqual(request.id, "req-123")
     XCTAssertEqual(request.method, "run_agent")
   }
@@ -112,7 +112,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       ok: true,
       payload: ["status": "success"]
     )
-    
+
     XCTAssertEqual(response.id, "resp-123")
     XCTAssertTrue(response.ok)
     XCTAssertNotNil(response.payload)
@@ -127,7 +127,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       payload: nil,
       error: error
     )
-    
+
     XCTAssertFalse(response.ok)
     XCTAssertNotNil(response.error)
     XCTAssertEqual(response.error?.code, 500)
@@ -139,11 +139,11 @@ final class GatewayFrameExtendedTests: XCTestCase {
       "type": "res",
       "id": "resp-123",
       "ok": true,
-      "payload": ["status": "success"]
+      "payload": ["status": "success"],
     ]
-    
+
     let response = GatewayResponse.fromJSON(json)
-    
+
     XCTAssertEqual(response.id, "resp-123")
     XCTAssertTrue(response.ok)
   }
@@ -153,11 +153,11 @@ final class GatewayFrameExtendedTests: XCTestCase {
       "type": "res",
       "id": "resp-123",
       "ok": false,
-      "error": ["code": 500, "message": "Error"]
+      "error": ["code": 500, "message": "Error"],
     ]
-    
+
     let response = GatewayResponse.fromJSON(json)
-    
+
     XCTAssertFalse(response.ok)
     XCTAssertNotNil(response.error)
     XCTAssertEqual(response.error?.code, 500)
@@ -167,7 +167,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
 
   func testGatewayError_initialization() {
     let error = GatewayError(code: 404, message: "Not found")
-    
+
     XCTAssertEqual(error.code, 404)
     XCTAssertEqual(error.message, "Not found")
   }
@@ -175,11 +175,11 @@ final class GatewayFrameExtendedTests: XCTestCase {
   func testGatewayError_fromJSON() {
     let json: [String: Any] = [
       "code": 500,
-      "message": "Internal server error"
+      "message": "Internal server error",
     ]
-    
+
     let error = GatewayError.fromJSON(json)
-    
+
     XCTAssertEqual(error.code, 500)
     XCTAssertEqual(error.message, "Internal server error")
   }
@@ -192,7 +192,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       (404, "Not Found"),
       (500, "Internal Server Error"),
     ]
-    
+
     for (code, message) in errors {
       let error = GatewayError(code: code, message: message)
       XCTAssertEqual(error.code, code)
@@ -208,7 +208,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       method: "test",
       params: [:]
     )
-    
+
     XCTAssertNotNil(request.params)
     XCTAssertTrue(request.params!.isEmpty)
   }
@@ -219,14 +219,14 @@ final class GatewayFrameExtendedTests: XCTestCase {
       ok: true,
       payload: nil
     )
-    
+
     XCTAssertNil(response.payload)
     XCTAssertTrue(response.ok)
   }
 
   func testGatewayEvent_withNilPayload() {
     let event = GatewayEvent(event: "test", payload: nil)
-    
+
     XCTAssertNil(event.payload)
   }
 
@@ -239,21 +239,21 @@ final class GatewayFrameExtendedTests: XCTestCase {
       method: "run_agent",
       params: ["session_key": "test-key"]
     )
-    
+
     // 编码
     let requestData = try request.toJSON()
-    
+
     // 解码
     let decodedRequest = try GatewayRequest.fromJSON(requestData)
     XCTAssertEqual(decodedRequest.id, "req-123")
-    
+
     // 创建响应
     let response = GatewayResponse(
       id: "resp-123",
       ok: true,
       payload: ["status": "success"]
     )
-    
+
     // 验证响应
     XCTAssertTrue(response.ok)
     XCTAssertEqual(response.id, "resp-123")
@@ -267,7 +267,7 @@ final class GatewayFrameExtendedTests: XCTestCase {
       method: "run_agent",
       params: ["session_key": "test-key"]
     )
-    
+
     self.measure {
       _ = try? request.toJSON()
     }
@@ -278,9 +278,9 @@ final class GatewayFrameExtendedTests: XCTestCase {
       "type": "res",
       "id": "resp-123",
       "ok": true,
-      "payload": ["status": "success"]
+      "payload": ["status": "success"],
     ]
-    
+
     self.measure {
       _ = GatewayResponse.fromJSON(json)
     }

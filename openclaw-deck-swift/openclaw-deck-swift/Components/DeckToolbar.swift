@@ -17,21 +17,49 @@ struct DeckToolbar: ToolbarContent {
   @Binding var showingConflictAlert: Bool
 
   var body: some ToolbarContent {
-    // 左边：设置按钮 + App 名字（放在一起）
+    // 左边：设置按钮 + App 名字（iPad 专用）
     ToolbarItem(placement: .topBarLeading) {
-      HStack(spacing: 16) {
-        Button {
-          showingSettings = true
-        } label: {
-          Image(systemName: "gear")
+      #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+          // iPad：显示设置按钮 + App 名字
+          HStack(spacing: 16) {
+            Button {
+              showingSettings = true
+            } label: {
+              Image(systemName: "gear")
+            }
+            .accessibilityIdentifier("settingsButton")
+            
+            Text("OpenClaw Deck")
+              .font(.headline)
+              .fontWeight(.semibold)
+              .frame(width: 160, alignment: .leading)
+          }
+        } else {
+          // iPhone：只显示设置按钮
+          Button {
+            showingSettings = true
+          } label: {
+            Image(systemName: "gear")
+          }
+          .accessibilityIdentifier("settingsButton")
         }
-        .accessibilityIdentifier("settingsButton")
-
-        Text("OpenClaw Deck")
-          .font(.headline)
-          .fontWeight(.semibold)
-          .frame(width: 160, alignment: .leading)  // 固定宽度，避免压缩
-      }
+      #else
+        // macOS：显示设置按钮 + App 名字
+        HStack(spacing: 16) {
+          Button {
+            showingSettings = true
+          } label: {
+            Image(systemName: "gear")
+          }
+          .accessibilityIdentifier("settingsButton")
+          
+          Text("OpenClaw Deck")
+            .font(.headline)
+            .fontWeight(.semibold)
+            .frame(width: 160, alignment: .leading)
+        }
+      #endif
     }
 
     // 右边：操作按钮

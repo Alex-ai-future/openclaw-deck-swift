@@ -44,7 +44,7 @@ struct SessionListView: View {
         }
         .onDelete(perform: deleteSessions)
       }
-      .navigationTitle("Sessions")
+      .navigationTitle("OpenClaw Deck")
       .toolbar {
         DeckToolbar(
           viewModel: viewModel,

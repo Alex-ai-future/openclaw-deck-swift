@@ -75,6 +75,10 @@ struct SessionListView: View {
             }
           )
           .navigationBarTitleDisplayMode(.inline)
+          .onAppear {
+            // 进入对话时自动标记为已读
+            session.hasUnreadMessage = false
+          }
         #else
           SessionColumnView(
             session: session,
@@ -87,6 +91,10 @@ struct SessionListView: View {
               viewModel.deleteSession(sessionId: session.sessionId)
             }
           )
+          .onAppear {
+            // 进入对话时自动标记为已读
+            session.hasUnreadMessage = false
+          }
         #endif
       }
       .task {
@@ -252,6 +260,24 @@ struct SessionRowView: View {
       }
     }
     .padding(.vertical, 4)
+    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+      // 左滑：标记为已读
+      Button {
+        session.hasUnreadMessage = false
+      } label: {
+        Label("已读", systemImage: "checkmark.circle")
+      }
+      .tint(.green)
+    }
+    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+      // 右滑：标记为未读
+      Button {
+        session.hasUnreadMessage = true
+      } label: {
+        Label("未读", systemImage: "circle")
+      }
+      .tint(.orange)
+    }
   }
 }
 

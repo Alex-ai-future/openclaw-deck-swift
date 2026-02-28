@@ -18,10 +18,10 @@ struct PendingRequest {
   let timeout: Task<Void, Never>
 }
 
-// MARK: - Session Status
+// MARK: - Gateway Session Status
 
-/// 会话状态（从网关查询）
-struct SessionStatus: Identifiable, Hashable {
+/// 网关会话状态（从网关查询）
+struct GatewaySessionStatus: Identifiable, Hashable {
   let key: String
   let sessionId: String
   let kind: String
@@ -445,7 +445,7 @@ class GatewayClient {
   /// 主动查询会话状态列表
   /// - Parameter activeMinutes: 只返回最近活跃的会话（默认 60 分钟）
   /// - Returns: 会话状态列表
-  func fetchSessions(activeMinutes: Int = 60) async throws -> [SessionStatus] {
+  func fetchSessions(activeMinutes: Int = 60) async throws -> [GatewaySessionStatus] {
     var params: [String: Any] = [:]
     params["activeMinutes"] = activeMinutes
 
@@ -458,7 +458,7 @@ class GatewayClient {
     }
 
     // 解析会话状态
-    let statuses = sessions.compactMap { SessionStatus(from: $0) }
+    let statuses = sessions.compactMap { GatewaySessionStatus(from: $0) }
     logger.debug("查询到 \(statuses.count) 个活跃会话")
     return statuses
   }

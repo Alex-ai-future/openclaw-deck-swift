@@ -291,7 +291,7 @@ class DeckViewModel {
   }
 
   /// 更新会话状态（从轮询结果）
-  private func updateSessionStates(from statuses: [SessionStatus]) {
+  private func updateSessionStates(from statuses: [GatewaySessionStatus]) {
     for status in statuses {
       // 查找对应的 session
       if let session = sessions[status.key.lowercased()] {

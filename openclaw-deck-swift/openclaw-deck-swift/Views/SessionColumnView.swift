@@ -220,40 +220,13 @@ struct SessionColumnView: View {
     }
   }
 
-  // MARK: - Session Name Button (for NavigationBar toolbar)
+  // MARK: - Session Name Button (for iPad topStatusBar)
 
   private var sessionNameButton: some View {
     // 点击选中，长按弹出菜单
     Menu {
-      // 会话详细信息（仅 4 项）
-      Section {
-        // 消息数量
-        Label("\(session.messages.count) messages", systemImage: "message")
-
-        // 最后活动时间
-        if let lastActivity = session.lastMessageAt {
-          Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
-        }
-
-        // 上下文（如果有，限制 100 字符）
-        if let context = session.context, !context.isEmpty {
-          Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
-        }
-
-        // Session Key
-        Label("Key: \(session.sessionKey)", systemImage: "tag")
-      }
-
-      Divider()
-
-      // 删除按钮
-      Section {
-        Button(role: .destructive) {
-          showingDeleteAlert = true
-        } label: {
-          Label("Delete Session", systemImage: "trash")
-        }
-      }
+      // 使用共用的菜单内容
+      sessionMenuContent
     } label: {
       // 点击按钮选中 Session
       Button {
@@ -276,6 +249,19 @@ struct SessionColumnView: View {
 
   private var menuButton: some View {
     Menu {
+      // 使用共用的菜单内容
+      sessionMenuContent
+    } label: {
+      Image(systemName: "ellipsis")
+        .font(.body)
+        .foregroundColor(.secondary)  // 改为灰色
+    }
+  }
+
+  // MARK: - Session Menu Content (共用)
+
+  private var sessionMenuContent: some View {
+    Group {
       // 会话详细信息（仅 4 项）
       Section {
         // 消息数量
@@ -305,10 +291,6 @@ struct SessionColumnView: View {
           Label("Delete Session", systemImage: "trash")
         }
       }
-    } label: {
-      Image(systemName: "ellipsis")
-        .font(.body)
-        .foregroundColor(.blue)
     }
   }
 

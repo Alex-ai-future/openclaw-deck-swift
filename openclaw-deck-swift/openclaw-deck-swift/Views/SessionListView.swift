@@ -40,6 +40,7 @@ struct SessionListView: View {
             NavigationLink(value: session) {
               SessionRowView(session: session)
             }
+            .tag(session)  // 添加 tag 使选择正确工作
           }
         }
         .onDelete(perform: deleteSessions)
@@ -111,6 +112,7 @@ struct SessionListView: View {
             viewModel.deleteSession(sessionId: session.sessionId)
           }
         )
+        .navigationTitle(session.sessionId)
       }
       .task {
         // Auto-connect on first launch if credentials exist

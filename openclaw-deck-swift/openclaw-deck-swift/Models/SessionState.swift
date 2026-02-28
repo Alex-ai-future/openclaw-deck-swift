@@ -20,12 +20,15 @@ enum SessionStatus: Equatable {
 
 /// Session 运行时状态（内存缓存，不持久化）
 @Observable
-class SessionState: Hashable {
-  /// Session ID
+class SessionState: Hashable, Identifiable {
+  /// Session ID（也是 Identifiable 的 id）
   let sessionId: String
 
   /// Session Key（用于 Gateway 通信）
   let sessionKey: String
+  
+  /// Identifiable 的 id（使用 sessionId）
+  var id: String { sessionId }
 
   // Fix for Swift 6 @Observable + @MainActor crash in XCTest
   // See: https://github.com/swiftlang/swift/issues/87316

@@ -52,6 +52,8 @@ struct SessionListView: View {
         }
         .listStyle(.plain)
       }
+      // iPhone 主界面标题
+      .navigationTitle("OpenClaw Deck")
       .navigationDestination(for: SessionState.self) { session in
         // 跳转到聊天详情页面（使用现有的 SessionColumnView）
         #if os(iOS)

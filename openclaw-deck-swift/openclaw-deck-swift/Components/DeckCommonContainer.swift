@@ -28,7 +28,6 @@ struct DeckCommonContainer<Content: View>: View {
 
   var body: some View {
     content
-      .navigationTitle("OpenClaw Deck")
       .toolbar {
         DeckToolbar(
           viewModel: viewModel,

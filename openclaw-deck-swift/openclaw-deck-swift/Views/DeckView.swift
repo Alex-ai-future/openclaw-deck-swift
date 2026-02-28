@@ -59,6 +59,8 @@ struct DeckView: View {
           selectedSessionId = viewModel.globalInputState.selectedSessionId
         }
       }
+      // iPad 主界面标题
+      .navigationTitle("OpenClaw Deck")
     }
   }
 

@@ -265,7 +265,7 @@ struct SessionColumnView: View {
   private var messageList: some View {
     ScrollViewReader { proxy in
       ScrollView {
-        LazyVStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
           // Loading indicator
           if session.isHistoryLoading {
             HStack {
@@ -287,6 +287,7 @@ struct SessionColumnView: View {
           }
         }
         .padding()
+        .id("messages-container-\(session.messages.count)")  // 强制在消息变化时重新布局
       }
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {

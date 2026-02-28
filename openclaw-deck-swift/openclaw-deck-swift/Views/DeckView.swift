@@ -78,8 +78,6 @@ struct DeckView: View {
           }
           selectedSessionId = viewModel.globalInputState.selectedSessionId
         }
-        // 关键修复：固定 VStack 宽度为屏幕宽度，避免随 ScrollView 变化
-        .frame(maxWidth: .infinity)
         .navigationTitle("OpenClaw Deck")
         .toolbar {
           DeckToolbar(
@@ -133,6 +131,8 @@ struct DeckView: View {
         }
       }
     }
+    // 关键修复：固定 ScrollView 宽度为屏幕宽度
+    .frame(maxWidth: .infinity, alignment: .leading)
     .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
     .background(Color.adaptiveBackground)
   }

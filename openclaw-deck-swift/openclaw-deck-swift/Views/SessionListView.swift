@@ -14,6 +14,8 @@ struct SessionListView: View {
   @State private var gatewayUrl = "ws://127.0.0.1:18789"
   @State private var token = ""
   @State private var hasAttemptedAutoConnect = false
+  @State private var showingDeleteAlert = false
+  @State private var deleteOffset: IndexSet?
 
   init(viewModel: DeckViewModel) {
     _viewModel = State(initialValue: viewModel)
@@ -82,6 +84,9 @@ struct SessionListView: View {
         // 调试：每次视图出现时打印会话数据
         logSessionData()
       }
+      .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+        confirmDelete()
+      }
     }
   }
 
@@ -96,12 +101,22 @@ struct SessionListView: View {
   // MARK: - Delete Sessions
 
   private func deleteSessions(at offsets: IndexSet) {
+    // 保存待删除的偏移量，等待用户确认
+    deleteOffset = offsets
+    showingDeleteAlert = true
+  }
+
+  private func confirmDelete() {
+    guard let offsets = deleteOffset else { return }
+    
     for index in offsets {
       if index < viewModel.sessionOrder.count {
         let sessionId = viewModel.sessionOrder[index]
         viewModel.deleteSession(sessionId: sessionId)
       }
     }
+    
+    deleteOffset = nil
   }
 }
 

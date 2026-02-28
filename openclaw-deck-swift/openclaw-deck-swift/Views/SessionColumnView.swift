@@ -144,14 +144,32 @@ struct SessionColumnView: View {
           .padding(12)
         }
       }
+      // iPhone 上隐藏顶部状态条（使用 NavigationBar 工具栏）
+      // iPad/macOS 保留顶部状态条
       .overlay(alignment: .top) {
-        topStatusBar
+        #if os(iOS)
+          if UIDevice.current.userInterfaceIdiom != .phone {
+            topStatusBar
+          }
+        #else
+          topStatusBar
+        #endif
       }
 
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
+    }
+    // iPhone 上在 NavigationBar 工具栏中显示 Session 名字
+    .toolbar {
+      #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+          ToolbarItem(placement: .principal) {
+            sessionNameButton
+          }
+        }
+      #endif
     }
     .contentShape(Rectangle())
     .onTapGesture {
@@ -178,15 +196,60 @@ struct SessionColumnView: View {
       }
     }
     #endif
-    .alert("Delete Session?", isPresented: $showingDeleteAlert) {
-      Button("Cancel", role: .cancel) {}
-      Button("Delete", role: .destructive) {
+      .deleteSessionAlert(isPresented: $showingDeleteAlert) {
         onDelete()
       }
-    } message: {
-      Text(
-        "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded."
-      )
+  }
+
+  // MARK: - Session Name Button (for NavigationBar toolbar)
+
+  private var sessionNameButton: some View {
+    // 点击选中，长按弹出菜单
+    Menu {
+      // 会话详细信息（仅 4 项）
+      Section {
+        // 消息数量
+        Label("\(session.messages.count) messages", systemImage: "message")
+
+        // 最后活动时间
+        if let lastActivity = session.lastMessageAt {
+          Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
+        }
+
+        // 上下文（如果有，限制 100 字符）
+        if let context = session.context, !context.isEmpty {
+          Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
+        }
+
+        // Session Key
+        Label("Key: \(session.sessionKey)", systemImage: "tag")
+      }
+
+      Divider()
+
+      // 删除按钮
+      Section {
+        Button(role: .destructive) {
+          showingDeleteAlert = true
+        } label: {
+          Label("Delete Session", systemImage: "trash")
+        }
+      }
+    } label: {
+      // 点击按钮选中 Session
+      Button {
+        onSelect()
+      } label: {
+        Text(session.sessionId)
+          .font(.body)
+          .fontWeight(.medium)
+          .lineLimit(1)
+        // 工作中橘黄，完成未读绿色，其他蓝色
+          .foregroundColor(
+            session.isProcessing
+              ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
+          )
+      }
     }
   }
 
@@ -199,55 +262,9 @@ struct SessionColumnView: View {
         .frame(width: 44, height: 36)
 
       // Center: Session name glass button
-      // 点击选中，长按弹出菜单
-      Menu {
-        // 会话详细信息（仅 4 项）
-        Section {
-          // 消息数量
-          Label("\(session.messages.count) messages", systemImage: "message")
-
-          // 最后活动时间
-          if let lastActivity = session.lastMessageAt {
-            Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
-          }
-
-          // 上下文（如果有，限制 100 字符）
-          if let context = session.context, !context.isEmpty {
-            Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
-          }
-
-          // Session Key
-          Label("Key: \(session.sessionKey)", systemImage: "tag")
-        }
-
-        Divider()
-
-        // 删除按钮
-        Section {
-          Button(role: .destructive) {
-            showingDeleteAlert = true
-          } label: {
-            Label("Delete Session", systemImage: "trash")
-          }
-        }
-      } label: {
-        // 点击按钮选中 Session
-        Button {
-          onSelect()
-        } label: {
-          Text(session.sessionId)
-            .font(.body)
-            .fontWeight(.medium)
-            .lineLimit(1)
-            .padding(12)
-            // 工作中橘黄，完成未读绿色，其他蓝色
-            .foregroundColor(
-              session.isProcessing
-                ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
-            )
-        }
+      sessionNameButton
         .buttonStyle(.glass)
-      }
+        .padding(12)
 
       // Right: Spacer
       Spacer()

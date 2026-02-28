@@ -188,12 +188,12 @@ class DeckViewModel {
           // 重置重连状态
           logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
           await self?.loadAllSessionHistory()
-          
+
           // 🆕 启动会话状态轮询
           self?.startSessionPolling()
         } else {
           logger.info("🔌 Gateway 已断开")
-          
+
           // 🆕 停止会话状态轮询
           self?.stopSessionPolling()
         }
@@ -256,7 +256,9 @@ class DeckViewModel {
     }
 
     // 定时轮询
-    sessionPollingTimer = Timer.scheduledTimer(withTimeInterval: sessionPollingInterval, repeats: true) { [weak self] _ in
+    sessionPollingTimer = Timer.scheduledTimer(
+      withTimeInterval: sessionPollingInterval, repeats: true
+    ) { [weak self] _ in
       Task { @MainActor in
         await self?.pollSessionStatus()
       }
@@ -421,10 +423,9 @@ class DeckViewModel {
   private func loadSessionsFromStorage() {
     logger.log("📥 加载 Sessions...")
 
-    // 检查是否是 Mock 存储（测试环境）
-    let storageTypeName = String(reflecting: type(of: storage))
-    if storageTypeName.contains("MockUserDefaultsStorage") {
-      logger.log("🧪 测试环境（Mock Storage），使用本地数据")
+    // 测试环境跳过云端同步
+    if storage.isTesting {
+      logger.log("🧪 测试环境，使用本地数据")
       loadFromLocalOnly()
       return
     }
@@ -674,12 +675,11 @@ class DeckViewModel {
       forKey: "openclaw.deck.sessionOrder.lastUpdated"
     )
 
-    // 如果配置了 Cloudflare，异步同步到云端
-    // 检查是否是 Mock 存储（测试环境）
-    let storageTypeName = String(reflecting: type(of: storage))
-    if storageTypeName.contains("MockUserDefaultsStorage") {
-      logger.log("🧪 测试环境（Mock Storage），跳过云端同步")
+    // 测试环境跳过云端同步
+    if storage.isTesting {
+      logger.log("🧪 测试环境，跳过云端同步")
     } else if CloudflareKV.shared.isConfigured {
+      // 生产环境，同步到云端
       Task {
         await syncToCloudflare()
       }

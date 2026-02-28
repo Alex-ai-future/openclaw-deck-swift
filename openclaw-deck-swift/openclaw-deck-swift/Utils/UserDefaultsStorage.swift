@@ -13,6 +13,9 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "UserDefau
 
 /// UserDefaults 存储协议
 protocol UserDefaultsStorageProtocol {
+  /// 是否是测试环境（用于跳过云端同步）
+  var isTesting: Bool { get }
+  
   func saveGatewayUrl(_ url: String)
   func loadGatewayUrl() -> String?
   func saveToken(_ token: String)
@@ -41,6 +44,9 @@ class UserDefaultsStorage: UserDefaultsStorageProtocol {
   static let shared = UserDefaultsStorage()
 
   private let defaults: UserDefaults
+  
+  /// 是否是测试环境（默认 false）
+  var isTesting: Bool { false }
 
   /// 初始化
   /// - Parameter defaults: UserDefaults 实例（默认为 .standard）

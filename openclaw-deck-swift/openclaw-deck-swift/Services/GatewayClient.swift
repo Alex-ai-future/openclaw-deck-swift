@@ -32,28 +32,28 @@ struct SessionStatus: Identifiable, Hashable {
   let contextTokens: Int
   let abortedLastRun: Bool
   let systemSent: Bool
-  
+
   /// 会话 ID（用于 Identifiable）
   var id: String { sessionId }
-  
+
   /// 是否正在处理中（推断）
   var isProcessing: Bool {
     // 如果最近有活动且没有系统发送，可能正在处理
     !systemSent && !abortedLastRun
   }
-  
+
   /// 从网关返回的 JSON 创建
   init?(from json: [String: Any]) {
     guard let key = json["key"] as? String,
-          let sessionId = json["sessionId"] as? String,
-          let kind = json["kind"] as? String,
-          let updatedAtMs = json["updatedAt"] as? Double,
-          let model = json["model"] as? String,
-          let contextTokens = json["contextTokens"] as? Int
+      let sessionId = json["sessionId"] as? String,
+      let kind = json["kind"] as? String,
+      let updatedAtMs = json["updatedAt"] as? Double,
+      let model = json["model"] as? String,
+      let contextTokens = json["contextTokens"] as? Int
     else {
       return nil
     }
-    
+
     self.key = key
     self.sessionId = sessionId
     self.kind = kind

@@ -30,30 +30,36 @@ struct SessionListView: View {
     }
   }
 
+  // 内部状态管理
+  @State private var showingSortSheet = false
+  @State private var showingSyncAlert = false
+  @State private var showingConflictAlert = false
+
   var body: some View {
     NavigationStack(path: $navigationPath) {
-      DeckCommonContainer(
-        viewModel: viewModel,
-        showingSettings: $showingSettings,
-        showingNewSessionSheet: $showingNewSessionSheet,
-        gatewayUrl: $gatewayUrl,
-        token: $token
-      ) {
-        List {
-          // Session 列表
-          ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-            if let session = viewModel.getSession(sessionId: sessionId) {
-              NavigationLink(value: session) {
-                SessionRowView(session: session)
-              }
+      List {
+        // Session 列表
+        ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+          if let session = viewModel.getSession(sessionId: sessionId) {
+            NavigationLink(value: session) {
+              SessionRowView(session: session)
             }
           }
-          .onDelete(perform: deleteSessions)
         }
-        .listStyle(.plain)
+        .onDelete(perform: deleteSessions)
       }
-      // iPhone 主界面标题
+      .listStyle(.plain)
       .navigationTitle("OpenClaw Deck")
+      .toolbar {
+        DeckToolbar(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet,
+          showingSortSheet: $showingSortSheet,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        )
+      }
       .navigationDestination(for: SessionState.self) { session in
         // 跳转到聊天详情页面（使用现有的 SessionColumnView）
         #if os(iOS)
@@ -99,6 +105,64 @@ struct SessionListView: View {
       .onAppear {
         // 调试：每次视图出现时打印会话数据
         logSessionData()
+      }
+      .sheet(isPresented: $showingSettings) {
+        SettingsView(
+          gatewayUrl: $gatewayUrl,
+          token: $token,
+          isConnected: .constant(viewModel.gatewayConnected),
+          onDisconnect: {
+            viewModel.disconnect()
+            showingSettings = false
+          },
+          onApplyAndReconnect: {
+            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+            UserDefaultsStorage.shared.saveToken(token)
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+            }
+            showingSettings = false
+          },
+          onConnect: {
+            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+            UserDefaultsStorage.shared.saveToken(token)
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+            }
+            showingSettings = false
+          },
+          onResetDeviceIdentity: {
+            viewModel.resetDeviceIdentity()
+            Task {
+              await viewModel.initialize(url: gatewayUrl, token: token)
+            }
+            showingSettings = false
+          },
+          onClose: {
+            showingSettings = false
+          },
+          viewModel: viewModel
+        )
+      }
+      .sheet(isPresented: $showingNewSessionSheet) {
+        NewSessionSheet(
+          viewModel: viewModel,
+          isPresented: $showingNewSessionSheet
+        )
+      }
+      .sheet(isPresented: $showingSortSheet) {
+        SessionSortView(viewModel: viewModel)
+      }
+      .deckSyncAlerts(
+        viewModel: viewModel,
+        showingSyncAlert: $showingSyncAlert,
+        showingConflictAlert: $showingConflictAlert
+      ) { newValue in
+        if newValue {
+          showingConflictAlert = true
+        } else {
+          showingConflictAlert = false
+        }
       }
       .deleteSessionAlert(isPresented: $showingDeleteAlert) {
         confirmDelete()

@@ -369,7 +369,9 @@ class DeckViewModel {
       return
     }
 
-    logger.log("⚠️ Data conflict detected: local \(localData.sessions.count) sessions, remote \(remoteData.sessions.count) sessions")
+    logger.log(
+      "⚠️ Data conflict detected: local \(localData.sessions.count) sessions, remote \(remoteData.sessions.count) sessions"
+    )
 
     // 设置冲突数据，供 UI 层显示
     conflictLocalData = localData
@@ -609,7 +611,9 @@ class DeckViewModel {
         return .failure(
           NSError(
             domain: "DeckViewModel", code: 409,
-            userInfo: [NSLocalizedDescriptionKey: "Sync conflict: please select data source in settings"]))
+            userInfo: [
+              NSLocalizedDescriptionKey: "Sync conflict: please select data source in settings"
+            ]))
       }
 
       // 更新本地 sessions
@@ -696,11 +700,7 @@ class DeckViewModel {
     }
 
     // Find session by sessionId (case-insensitive)
-    guard
-      let session = sessions.values.first(where: {
-        $0.sessionId.lowercased() == sessionId.lowercased()
-      })
-    else {
+    guard let session = findSession(sessionId: sessionId) else {
       return
     }
 
@@ -783,11 +783,7 @@ class DeckViewModel {
     }
 
     // Find session by sessionKey (case-insensitive)
-    guard
-      let session = sessions.values.first(where: {
-        $0.sessionKey.lowercased() == sessionKey.lowercased()
-      })
-    else {
+    guard let session = findSession(sessionKey: sessionKey) else {
       return
     }
 
@@ -1167,6 +1163,19 @@ class DeckViewModel {
     session.messages.append(errorMsg)
   }
 
+  // MARK: - Session 查找
+
+  /// 查找 Session（支持 sessionId 或 sessionKey）
+  private func findSession(sessionId: String? = nil, sessionKey: String? = nil) -> SessionState? {
+    if let sessionId = sessionId {
+      return sessions.values.first { $0.sessionId.lowercased() == sessionId.lowercased() }
+    }
+    if let sessionKey = sessionKey {
+      return sessions.values.first { $0.sessionKey.lowercased() == sessionKey.lowercased() }
+    }
+    return nil
+  }
+
   /// 从事件中提取 sessionId（通过 sessionKey）
   private func sessionFromEvent(_ event: GatewayEvent) -> SessionState? {
     guard let payload = event.payload as? [String: Any],
@@ -1175,8 +1184,7 @@ class DeckViewModel {
       return nil
     }
 
-    // Find session by sessionKey (case-insensitive)
-    return sessions.values.first(where: { $0.sessionKey.lowercased() == sessionKey.lowercased() })
+    return findSession(sessionKey: sessionKey)
   }
 
   /// 根据事件找到对应的 Session

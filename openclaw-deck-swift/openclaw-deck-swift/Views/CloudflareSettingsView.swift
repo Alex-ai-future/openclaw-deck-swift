@@ -182,14 +182,17 @@ struct CloudflareSettingsView: View {
   }
 
   private func loadConfig() {
-    accountId =
-      UserDefaults.standard.string(
-        forKey: "openclaw.deck.cloudflare.accountId") ?? ""
-    namespaceId =
-      UserDefaults.standard.string(
-        forKey: "openclaw.deck.cloudflare.namespaceId") ?? ""
-    userId = UserDefaults.standard.string(forKey: "openclaw.deck.cloudflare.userId") ?? ""
-    apiToken = KeychainWrapper.shared.string(forKey: "openclaw.deck.cloudflare.apiToken") ?? ""
+    if let config = CloudflareConfig.load() {
+      accountId = config.accountId
+      namespaceId = config.namespaceId
+      userId = config.userId
+      apiToken = config.apiToken
+    } else {
+      accountId = ""
+      namespaceId = ""
+      userId = ""
+      apiToken = ""
+    }
 
     isConfigured = CloudflareKV.shared.isConfigured
   }
@@ -201,14 +204,13 @@ struct CloudflareSettingsView: View {
     }
     do {
       try CloudflareKV.shared.saveConfig(
-        accountId: accountId.trimmingCharacters(in: .whitespaces),
-        namespaceId: namespaceId.trimmingCharacters(in: .whitespaces),
-        userId: userId.trimmingCharacters(in: .whitespaces),
-        apiToken: apiToken.trimmingCharacters(in: .whitespaces))
+        accountId: accountId,
+        namespaceId: namespaceId,
+        userId: userId,
+        apiToken: apiToken)
       isConfigured = true
       saveStatus = "Saved"
       testResult = nil
-      // Clear status after 2 seconds
       DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
         saveStatus = ""
       }
@@ -237,21 +239,14 @@ struct CloudflareSettingsView: View {
     isTesting = true
     testResult = nil
 
-    logger.debug("Starting connection test...")
-    logger.debug("Account ID: \(accountId.prefix(10))...")
-    logger.debug("Namespace ID: \(namespaceId.prefix(10))...")
-    logger.debug("User ID: \(userId)")
-
     // Save configuration first
     do {
       try CloudflareKV.shared.saveConfig(
-        accountId: accountId.trimmingCharacters(in: .whitespaces),
-        namespaceId: namespaceId.trimmingCharacters(in: .whitespaces),
-        userId: userId.trimmingCharacters(in: .whitespaces),
-        apiToken: apiToken.trimmingCharacters(in: .whitespaces))
-      logger.info("Configuration saved")
+        accountId: accountId,
+        namespaceId: namespaceId,
+        userId: userId,
+        apiToken: apiToken)
     } catch {
-      logger.error("Failed to save configuration: \(error)")
       testResult = "Failed to save: \(error.localizedDescription)"
       isTesting = false
       return
@@ -259,12 +254,9 @@ struct CloudflareSettingsView: View {
 
     // Test connection
     do {
-      logger.debug("Starting sync...")
       _ = try await CloudflareKV.shared.syncAndGet()
-      logger.info("Sync successful")
       testResult = "✓ Connection successful"
     } catch {
-      logger.error("Sync failed: \(error)")
       testResult = "✗ Connection failed: \(error.localizedDescription)"
     }
 

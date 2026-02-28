@@ -10,6 +10,8 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "Cloudflar
 
 // MARK: - 同步数据结构
 
+// MARK: - 同步数据结构
+
 /// Cloudflare KV 中存储的同步数据
 struct SyncData: Codable, Equatable {
   /// Session ID 列表（有序）
@@ -34,7 +36,7 @@ enum MergeSource: CustomStringConvertible {
   case remote  // 云端数据更新
   case same  // 数据一致
   case conflict  // 数据冲突，需要用户选择
-  
+
   var description: String {
     switch self {
     case .local: return "local"
@@ -62,62 +64,32 @@ class CloudflareKV {
 
   /// 配置是否已设置
   var isConfigured: Bool {
-    guard let accountId = loadAccountId(),
-      let namespaceId = loadNamespaceId(),
-      let userId = loadUserId(),
-      loadApiToken() != nil
-    else {
-      return false
-    }
-    return !accountId.isEmpty && !namespaceId.isEmpty && !userId.isEmpty
+    return CloudflareConfig.load()?.isValid ?? false
   }
 
-  // MARK: - 配置加载（UserDefaults）
+  // MARK: - 配置管理
 
-  private func loadAccountId() -> String? {
-    return UserDefaults.standard.string(forKey: "openclaw.deck.cloudflare.accountId")
-  }
-
-  private func loadNamespaceId() -> String? {
-    return UserDefaults.standard.string(forKey: "openclaw.deck.cloudflare.namespaceId")
-  }
-
-  private func loadUserId() -> String? {
-    return UserDefaults.standard.string(forKey: "openclaw.deck.cloudflare.userId")
-  }
-
-  private func loadApiToken() -> String? {
-    // API Token 存储在 Keychain 中（加密）
-    return KeychainWrapper.shared.string(forKey: "openclaw.deck.cloudflare.apiToken")
-  }
-
-  // MARK: - 配置保存
-
+  /// 保存配置
   func saveConfig(accountId: String, namespaceId: String, userId: String, apiToken: String) throws {
-    UserDefaults.standard.set(accountId, forKey: "openclaw.deck.cloudflare.accountId")
-    UserDefaults.standard.set(namespaceId, forKey: "openclaw.deck.cloudflare.namespaceId")
-    UserDefaults.standard.set(userId, forKey: "openclaw.deck.cloudflare.userId")
-
-    // API Token 存入 Keychain
-    try KeychainWrapper.shared.set(apiToken, forKey: "openclaw.deck.cloudflare.apiToken")
+    let config = CloudflareConfig(
+      accountId: accountId.trimmingCharacters(in: .whitespaces),
+      namespaceId: namespaceId.trimmingCharacters(in: .whitespaces),
+      userId: userId.trimmingCharacters(in: .whitespaces),
+      apiToken: apiToken.trimmingCharacters(in: .whitespaces)
+    )
+    try config.save()
   }
 
+  /// 清除配置
   func clearConfig() {
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.cloudflare.accountId")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.cloudflare.namespaceId")
-    UserDefaults.standard.removeObject(forKey: "openclaw.deck.cloudflare.userId")
-    KeychainWrapper.shared.delete(forKey: "openclaw.deck.cloudflare.apiToken")
+    CloudflareConfig.clear()
   }
 
   // MARK: - 核心同步方法
 
   /// 智能同步：自动比较本地和云端数据，返回合并结果
-  /// - 如果只有本地有数据 → 上传到云端
-  /// - 如果只有云端有数据 → 下载到本地
-  /// - 如果两边都有 → 比较数据，一致则自动通过，冲突时返回让用户选择
-  /// - 对调用者透明，自动处理所有情况
   func syncAndGet() async throws -> MergeResult {
-    guard isConfigured else {
+    guard let config = CloudflareConfig.load(), config.isValid else {
       logger.error("未配置，跳过同步")
       throw CloudflareError.notConfigured
     }
@@ -126,7 +98,7 @@ class CloudflareKV {
 
     // 1. 同时读取本地和云端
     let localData = loadLocalData()
-    let remoteData = try? await loadFromKV()
+    let remoteData = try? await loadFromKV(config: config)
 
     logger.debug("本地数据：\(localData?.sessions.count ?? 0) 个 sessions")
     logger.debug("云端数据：\(remoteData?.sessions.count ?? 0) 个 sessions")
@@ -139,34 +111,29 @@ class CloudflareKV {
     // 3. 自动保存（如果需要）
     switch merged.source {
     case .local:
-      // 本地更新，同步到云端
-      try await saveToKV(merged.data)
+      try await saveToKV(merged.data, config: config)
       logger.info("本地数据已同步到云端")
     case .remote:
-      // 云端更新，保存到本地
       saveLocalData(merged.data)
       logger.info("云端数据已下载到本地")
     case .same:
-      // 数据一致，无需操作
       logger.info("数据一致，无需同步")
     case .conflict:
-      // 数据冲突，不自动保存，由用户选择
       logger.warning("数据冲突，等待用户选择")
     }
 
-    // 4. 返回合并结果
     logger.debug("同步完成，返回 \(merged.source.description)")
     return merged
   }
 
-  /// 保存数据到 KV（用于本地修改后主动同步）
+  /// 保存数据到 KV
   func save(_ data: SyncData) async throws {
-    guard isConfigured else {
+    guard let config = CloudflareConfig.load(), config.isValid else {
       throw CloudflareError.notConfigured
     }
 
     logger.debug("保存数据到 KV：\(data.sessions.count) 个 sessions")
-    try await saveToKV(data)
+    try await saveToKV(data, config: config)
     saveLocalData(data)
     logger.info("已保存到本地和云端")
   }
@@ -243,26 +210,16 @@ class CloudflareKV {
   }
 
   /// 从 KV 加载数据
-  private func loadFromKV() async throws -> SyncData? {
-    guard let accountId = loadAccountId(),
-      let namespaceId = loadNamespaceId(),
-      let userId = loadUserId(),
-      let apiToken = loadApiToken()
-    else {
-      throw CloudflareError.notConfigured
-    }
-
-    let urlString =
-      "https://api.cloudflare.com/client/v4/accounts/\(accountId)/storage/kv/namespaces/\(namespaceId)/values/\(userId)"
-    guard let url = URL(string: urlString) else {
+  private func loadFromKV(config: CloudflareConfig) async throws -> SyncData? {
+    guard let url = URL(string: config.buildKVURL()!) else {
       throw CloudflareError.invalidURL
     }
 
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
-    request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
+    request.setValue("Bearer \(config.apiToken)", forHTTPHeaderField: "Authorization")
 
-    logger.debug("GET 请求：\(urlString)")
+    logger.debug("GET 请求：\(config.buildKVURL()!)")
 
     let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -273,7 +230,6 @@ class CloudflareKV {
     logger.debug("HTTP 状态码：\(httpResponse.statusCode)")
 
     if httpResponse.statusCode == 404 {
-      // Key 不存在，返回 nil
       logger.debug("Key 不存在（404）")
       return nil
     }
@@ -289,18 +245,8 @@ class CloudflareKV {
   }
 
   /// 保存数据到 KV
-  private func saveToKV(_ data: SyncData) async throws {
-    guard let accountId = loadAccountId(),
-      let namespaceId = loadNamespaceId(),
-      let userId = loadUserId(),
-      let apiToken = loadApiToken()
-    else {
-      throw CloudflareError.notConfigured
-    }
-
-    let urlString =
-      "https://api.cloudflare.com/client/v4/accounts/\(accountId)/storage/kv/namespaces/\(namespaceId)/values/\(userId)"
-    guard let url = URL(string: urlString) else {
+  private func saveToKV(_ data: SyncData, config: CloudflareConfig) async throws {
+    guard let url = URL(string: config.buildKVURL()!) else {
       throw CloudflareError.invalidURL
     }
 
@@ -308,11 +254,11 @@ class CloudflareKV {
 
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
-    request.setValue("Bearer \(apiToken)", forHTTPHeaderField: "Authorization")
+    request.setValue("Bearer \(config.apiToken)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = jsonData
 
-    logger.debug("PUT 请求：\(urlString)")
+    logger.debug("PUT 请求：\(config.buildKVURL()!)")
     logger.debug("请求数据：\(String(data: jsonData, encoding: .utf8) ?? "nil")")
 
     let (_, response) = try await URLSession.shared.data(for: request)
@@ -340,8 +286,6 @@ enum CloudflareError: LocalizedError {
   case invalidURL
   case invalidResponse
   case httpError(Int)
-  case saveFailed
-  case decodeError
 
   var errorDescription: String? {
     switch self {
@@ -353,10 +297,6 @@ enum CloudflareError: LocalizedError {
       return "Invalid server response"
     case .httpError(let code):
       return "HTTP Error: \(code)"
-    case .saveFailed:
-      return "Save failed"
-    case .decodeError:
-      return "Data parsing failed"
     }
   }
 }

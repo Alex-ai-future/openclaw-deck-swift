@@ -91,7 +91,9 @@ struct SessionColumnView: View {
   var body: some View {
     VStack(spacing: 0) {
       ZStack {
+        // 关键修复：messageList 固定高度，避免飘移
         messageList
+          .frame(minHeight: 700, maxHeight: .infinity)
 
         // 底部浮动按钮组
         VStack {
@@ -153,8 +155,6 @@ struct SessionColumnView: View {
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
     }
-    // 关键修复：固定最小高度，避免飘移
-    .frame(minHeight: 700, maxHeight: .infinity)
     .contentShape(Rectangle())
     .onTapGesture {
       onSelect()

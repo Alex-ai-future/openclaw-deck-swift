@@ -10,19 +10,19 @@ struct DeckCommonContainer<Content: View>: View {
   @Bindable var viewModel: DeckViewModel
   @Binding var showingSettings: Bool
   @Binding var showingNewSessionSheet: Bool
-  
+
   // 可选的配置（用于 SessionListView）
   var gatewayUrl: Binding<String>?
   var token: Binding<String>?
-  
+
   // 内部状态管理
   @State private var showingSortSheet = false
   @State private var showingSyncAlert = false
   @State private var showingConflictAlert = false
-  
+
   // 平台特定的内容
   @ViewBuilder let content: Content
-  
+
   var body: some View {
     content
       .navigationTitle("OpenClaw Deck")
@@ -36,7 +36,7 @@ struct DeckCommonContainer<Content: View>: View {
           showingConflictAlert: $showingConflictAlert
         )
       }
-      
+
       // Settings Sheet
       .sheet(isPresented: $showingSettings) {
         SettingsView(
@@ -48,6 +48,14 @@ struct DeckCommonContainer<Content: View>: View {
             showingSettings = false
           },
           onApplyAndReconnect: {
+            // Save new config first
+            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
+              UserDefaultsStorage.shared.saveGatewayUrl(url)
+            }
+            if let token = token?.wrappedValue {
+              UserDefaultsStorage.shared.saveToken(token)
+            }
+
             Task {
               await viewModel.initialize(
                 url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl() ?? "",
@@ -57,6 +65,14 @@ struct DeckCommonContainer<Content: View>: View {
             showingSettings = false
           },
           onConnect: {
+            // Save new config first
+            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
+              UserDefaultsStorage.shared.saveGatewayUrl(url)
+            }
+            if let token = token?.wrappedValue {
+              UserDefaultsStorage.shared.saveToken(token)
+            }
+
             Task {
               await viewModel.initialize(
                 url: gatewayUrl?.wrappedValue ?? UserDefaultsStorage.shared.loadGatewayUrl() ?? "",
@@ -66,6 +82,14 @@ struct DeckCommonContainer<Content: View>: View {
             }
           },
           onResetDeviceIdentity: {
+            // Save new config first
+            if let url = gatewayUrl?.wrappedValue, !url.isEmpty {
+              UserDefaultsStorage.shared.saveGatewayUrl(url)
+            }
+            if let token = token?.wrappedValue {
+              UserDefaultsStorage.shared.saveToken(token)
+            }
+
             viewModel.resetDeviceIdentity()
             Task {
               await viewModel.initialize(
@@ -81,7 +105,7 @@ struct DeckCommonContainer<Content: View>: View {
           viewModel: viewModel
         )
       }
-      
+
       // New Session Sheet
       .sheet(isPresented: $showingNewSessionSheet) {
         NewSessionSheet(
@@ -89,12 +113,12 @@ struct DeckCommonContainer<Content: View>: View {
           isPresented: $showingNewSessionSheet
         )
       }
-      
+
       // Sort Sheet
       .sheet(isPresented: $showingSortSheet) {
         SessionSortView(viewModel: viewModel)
       }
-      
+
       // Sync Alerts
       .deckSyncAlerts(
         viewModel: viewModel,

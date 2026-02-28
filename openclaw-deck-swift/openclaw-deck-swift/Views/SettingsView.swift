@@ -160,7 +160,21 @@ struct SettingsView: View {
           Text("Disconnect from Gateway and return to welcome screen")
         }
 
-        // MARK: - 6. ABOUT
+        // MARK: - 6. HELP
+
+        Section {
+          NavigationLink {
+            UserGuideView()
+          } label: {
+            Label("用户指南", systemImage: "book")
+          }
+        } header: {
+          Label("HELP", systemImage: "questionmark.circle")
+        } footer: {
+          Text("查看完整的使用说明和故障排除指南")
+        }
+
+        // MARK: - 7. ABOUT
 
         Section {
           HStack {

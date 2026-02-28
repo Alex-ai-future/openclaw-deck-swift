@@ -36,10 +36,10 @@ final class DeckViewModelExtendedTests: XCTestCase {
   func testLoadSessionsFromStorage_withMockStorage() {
     // 验证使用 Mock Storage 时不会访问云端
     XCTAssertTrue(mockStorage.isTesting)
-    
+
     // 创建一些测试数据
     let session = viewModel.createSession(name: "Test")
-    
+
     // 验证数据保存在 Mock 中
     let savedSessions = mockStorage.loadSessions()
     XCTAssertTrue(savedSessions.contains { $0.id == session.id })
@@ -49,18 +49,18 @@ final class DeckViewModelExtendedTests: XCTestCase {
     // 创建 session
     _ = viewModel.createSession(name: "Test1")
     _ = viewModel.createSession(name: "Test2")
-    
+
     // 验证保存到了 Mock
     let savedSessions = mockStorage.loadSessions()
     XCTAssertEqual(savedSessions.count, 2)
-    
+
     let savedOrder = mockStorage.loadSessionOrder()
     XCTAssertEqual(savedOrder.count, 2)
   }
 
   func testSaveSessionsToStorage_updatesLastUpdated() {
     _ = viewModel.createSession(name: "Test")
-    
+
     // 验证最后更新时间被设置
     let lastUpdated = UserDefaults.standard.string(forKey: "openclaw.deck.sessionOrder.lastUpdated")
     XCTAssertNotNil(lastUpdated)
@@ -70,14 +70,14 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testDeleteSession_removesFromStorage() {
     let session = viewModel.createSession(name: "To Delete")
-    
+
     // 验证已保存
     var savedSessions = mockStorage.loadSessions()
     XCTAssertTrue(savedSessions.contains { $0.id == session.id })
-    
+
     // 删除
     viewModel.deleteSession(sessionId: session.id)
-    
+
     // 验证从 Mock 中移除
     savedSessions = mockStorage.loadSessions()
     XCTAssertFalse(savedSessions.contains { $0.id == session.id })
@@ -85,14 +85,14 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testDeleteSession_removesFromOrder() {
     let session = viewModel.createSession(name: "To Delete")
-    
+
     // 验证在顺序列表中
     var savedOrder = mockStorage.loadSessionOrder()
     XCTAssertTrue(savedOrder.contains(session.id.lowercased()))
-    
+
     // 删除
     viewModel.deleteSession(sessionId: session.id)
-    
+
     // 验证从顺序列表中移除
     savedOrder = mockStorage.loadSessionOrder()
     XCTAssertFalse(savedOrder.contains(session.id.lowercased()))
@@ -104,19 +104,19 @@ final class DeckViewModelExtendedTests: XCTestCase {
     for id in sessionIds {
       viewModel.deleteSession(sessionId: id)
     }
-    
+
     // 验证创建了 welcome session
     XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 1)
   }
 
   func testGetSession_caseInsensitive() {
     let session = viewModel.createSession(name: "Test")
-    
+
     // 大小写不敏感查找
     let found1 = viewModel.getSession(sessionId: session.id)
     let found2 = viewModel.getSession(sessionId: session.id.uppercased())
     let found3 = viewModel.getSession(sessionId: session.id.lowercased())
-    
+
     XCTAssertNotNil(found1)
     XCTAssertNotNil(found2)
     XCTAssertNotNil(found3)
@@ -128,14 +128,14 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testSessionOrder_newSessionInsertedAtBeginning() {
     let initialCount = viewModel.sessionOrder.count
-    
+
     let session1 = viewModel.createSession(name: "First")
     XCTAssertEqual(viewModel.sessionOrder[0], session1.id.lowercased())
-    
+
     let session2 = viewModel.createSession(name: "Second")
     XCTAssertEqual(viewModel.sessionOrder[0], session2.id.lowercased())
     XCTAssertEqual(viewModel.sessionOrder[1], session1.id.lowercased())
-    
+
     let session3 = viewModel.createSession(name: "Third")
     XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased())
     XCTAssertEqual(viewModel.sessionOrder[1], session2.id.lowercased())
@@ -146,13 +146,13 @@ final class DeckViewModelExtendedTests: XCTestCase {
     let session1 = viewModel.createSession(name: "First")
     let session2 = viewModel.createSession(name: "Second")
     let session3 = viewModel.createSession(name: "Third")
-    
+
     // 顺序：[third, second, first]
     XCTAssertEqual(viewModel.sessionOrder.count, 3)
-    
+
     // 删除中间的
     viewModel.deleteSession(sessionId: session2.id)
-    
+
     // 顺序应该是：[third, first]
     XCTAssertEqual(viewModel.sessionOrder.count, 2)
     XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased())
@@ -166,7 +166,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
     Task {
       await viewModel.initialize(url: "ws://test.com", token: "test-token")
     }
-    
+
     // 验证正在初始化标志被设置
     XCTAssertTrue(viewModel.isInitializing)
   }
@@ -174,7 +174,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
   func testDisconnect_clearsGatewayClient() {
     // 断开连接
     viewModel.disconnect()
-    
+
     // 验证连接状态
     XCTAssertFalse(viewModel.gatewayConnected)
   }
@@ -183,7 +183,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
     // 设置错误
     viewModel.connectionError = "Test error"
     XCTAssertNotNil(viewModel.connectionError)
-    
+
     // 清除错误
     viewModel.clearConnectionError()
     XCTAssertNil(viewModel.connectionError)
@@ -199,7 +199,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
       GatewayEvent(event: "unknown.event", payload: nil),
       GatewayEvent(event: "agent", payload: nil),
     ]
-    
+
     // 验证所有事件类型都不会导致崩溃
     for event in events {
       viewModel.handleGatewayEvent(event)
@@ -214,27 +214,27 @@ final class DeckViewModelExtendedTests: XCTestCase {
         "sessionKey": "test-key",
         "runId": "run-123",
         "stream": "assistant",
-        "text": "Hello"
+        "text": "Hello",
       ]
     )
-    
+
     // 不应该崩溃
     viewModel.handleGatewayEvent(event)
   }
 
   func testHandleAgentEvent_withDifferentStreamTypes() {
     let streamTypes = ["assistant", "user", "system", "thinking"]
-    
+
     for streamType in streamTypes {
       let event = GatewayEvent(
         event: "agent",
         payload: [
           "sessionKey": "test-key",
           "runId": "run-123",
-          "stream": streamType
+          "stream": streamType,
         ]
       )
-      
+
       viewModel.handleGatewayEvent(event)
     }
   }
@@ -243,7 +243,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testConfig_defaultValues() {
     let config = viewModel.config
-    
+
     // 验证默认配置
     XCTAssertFalse(config.isComplete)
     XCTAssertTrue(config.isDefault)
@@ -251,7 +251,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testConfig_isValidGatewayUrl() {
     let config = AppConfig(gatewayUrl: "ws://localhost:18789", token: "test-token")
-    
+
     XCTAssertTrue(config.isValidGatewayUrl)
     XCTAssertTrue(config.isValidToken)
     XCTAssertTrue(config.isComplete)
@@ -277,14 +277,14 @@ final class DeckViewModelExtendedTests: XCTestCase {
   func testPlaySoundOnMessage_setValue() {
     viewModel.playSoundOnMessage = false
     XCTAssertFalse(viewModel.playSoundOnMessage)
-    
+
     viewModel.playSoundOnMessage = true
     XCTAssertTrue(viewModel.playSoundOnMessage)
   }
 
   func testPlaySoundOnMessage_persistsToUserDefaults() {
     viewModel.playSoundOnMessage = false
-    
+
     let saved = UserDefaults.standard.bool(forKey: "playSoundOnMessage")
     XCTAssertFalse(saved)
   }
@@ -308,28 +308,28 @@ final class DeckViewModelExtendedTests: XCTestCase {
   func testCreateSession_withVeryLongName() {
     let longName = String(repeating: "A", count: 1000)
     let session = viewModel.createSession(name: longName)
-    
+
     XCTAssertNotNil(session)
     XCTAssertEqual(session.name, longName)
   }
 
   func testCreateSession_withEmojiName() {
     let session = viewModel.createSession(name: "🎉 Test 🚀 Session 🎊")
-    
+
     XCTAssertNotNil(session)
     XCTAssertEqual(session.name, "🎉 Test 🚀 Session 🎊")
   }
 
   func testCreateSession_withUnicodeName() {
     let session = viewModel.createSession(name: "测试会话 - テスト - 테스트")
-    
+
     XCTAssertNotNil(session)
     XCTAssertEqual(session.name, "测试会话 - テスト - 테스트")
   }
 
   func testDeleteSession_withCaseVariations() {
     let session = viewModel.createSession(name: "Test")
-    
+
     // 用不同大小写删除
     viewModel.deleteSession(sessionId: session.id.uppercased())
     XCTAssertNil(viewModel.getSession(sessionId: session.id))
@@ -337,7 +337,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testMultipleDeleteCalls_sameSession() {
     let session = viewModel.createSession(name: "Test")
-    
+
     // 多次删除同一个 session 不应该崩溃
     viewModel.deleteSession(sessionId: session.id)
     viewModel.deleteSession(sessionId: session.id)
@@ -349,10 +349,10 @@ final class DeckViewModelExtendedTests: XCTestCase {
   func testSessionState_messageManagement() {
     let session = viewModel.createSession(name: "Test")
     let sessionState = viewModel.getSession(sessionId: session.id)
-    
+
     XCTAssertNotNil(sessionState)
     guard let state = sessionState else { return }
-    
+
     // 初始状态
     XCTAssertEqual(state.messages.count, 0)
     XCTAssertFalse(state.historyLoaded)
@@ -365,9 +365,9 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testSessionState_contextManagement() {
     let session = viewModel.createSession(name: "Test", context: "Test context")
-    
+
     XCTAssertEqual(session.context, "Test context")
-    
+
     let sessionState = viewModel.getSession(sessionId: session.id)
     XCTAssertEqual(sessionState?.context, "Test context")
   }
@@ -376,7 +376,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testConcurrentSessionCreation() {
     let expectation = XCTestExpectation(description: "Concurrent creation")
-    
+
     // 并发创建多个 session
     for i in 0..<10 {
       Task {
@@ -386,9 +386,9 @@ final class DeckViewModelExtendedTests: XCTestCase {
         }
       }
     }
-    
+
     wait(for: [expectation], timeout: 5.0)
-    
+
     // 验证所有 session 都创建了
     XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 10)
   }
@@ -400,9 +400,9 @@ final class DeckViewModelExtendedTests: XCTestCase {
       let session = viewModel.createSession(name: "Test-\(i)")
       sessions.append(session.id)
     }
-    
+
     let expectation = XCTestExpectation(description: "Concurrent deletion")
-    
+
     // 并发删除
     for (index, sessionId) in sessions.enumerated() {
       Task {
@@ -412,7 +412,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
         }
       }
     }
-    
+
     wait(for: [expectation], timeout: 5.0)
   }
 }

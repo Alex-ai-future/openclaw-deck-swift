@@ -39,7 +39,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: Date()
     )
-    
+
     XCTAssertEqual(message.id, "msg-1")
     XCTAssertEqual(message.role, .user)
     XCTAssertEqual(message.text, "Hello")
@@ -63,7 +63,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       runId: "run-123",
       isLoaded: true
     )
-    
+
     XCTAssertEqual(message.id, "msg-1")
     XCTAssertEqual(message.role, .assistant)
     XCTAssertEqual(message.text, "Response")
@@ -83,7 +83,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: Date()
     )
-    
+
     let description = message.description
     XCTAssertTrue(description.contains("user"))
     XCTAssertTrue(description.contains("Hello"))
@@ -96,7 +96,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Response",
       timestamp: Date()
     )
-    
+
     let description = message.description
     XCTAssertTrue(description.contains("assistant"))
     XCTAssertTrue(description.contains("Response"))
@@ -109,7 +109,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "System message",
       timestamp: Date()
     )
-    
+
     let description = message.description
     XCTAssertTrue(description.contains("system"))
     XCTAssertTrue(description.contains("System message"))
@@ -123,7 +123,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       timestamp: Date(),
       streaming: true
     )
-    
+
     let description = message.description
     XCTAssertTrue(description.contains("streaming"))
   }
@@ -136,7 +136,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       timestamp: Date(),
       thinking: true
     )
-    
+
     let description = message.description
     XCTAssertTrue(description.contains("thinking"))
   }
@@ -150,7 +150,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       timestamp: Date(),
       toolUse: toolUse
     )
-    
+
     let description = message.description
     XCTAssertTrue(description.contains("tool"))
   }
@@ -164,13 +164,13 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: Date()
     )
-    
+
     let encoder = JSONEncoder()
     let jsonData = try encoder.encode(message)
-    
+
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(ChatMessage.self, from: jsonData)
-    
+
     XCTAssertEqual(decoded.id, "msg-1")
     XCTAssertEqual(decoded.role, .user)
     XCTAssertEqual(decoded.text, "Hello")
@@ -178,24 +178,24 @@ final class ChatMessageExtendedTests: XCTestCase {
 
   func testChatMessage_decoding_withAllFields() throws {
     let json = """
-    {
-      "id": "msg-1",
-      "role": "assistant",
-      "text": "Response",
-      "timestamp": "2024-01-01T00:00:00Z",
-      "streaming": true,
-      "thinking": false,
-      "runId": "run-123",
-      "isLoaded": true
-    }
-    """
-    
+      {
+        "id": "msg-1",
+        "role": "assistant",
+        "text": "Response",
+        "timestamp": "2024-01-01T00:00:00Z",
+        "streaming": true,
+        "thinking": false,
+        "runId": "run-123",
+        "isLoaded": true
+      }
+      """
+
     let data = Data(json.utf8)
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
-    
+
     let message = try decoder.decode(ChatMessage.self, from: data)
-    
+
     XCTAssertEqual(message.id, "msg-1")
     XCTAssertEqual(message.role, .assistant)
     XCTAssertEqual(message.text, "Response")
@@ -207,20 +207,20 @@ final class ChatMessageExtendedTests: XCTestCase {
 
   func testChatMessage_decoding_withMinimalFields() throws {
     let json = """
-    {
-      "id": "msg-1",
-      "role": "user",
-      "text": "Hello",
-      "timestamp": "2024-01-01T00:00:00Z"
-    }
-    """
-    
+      {
+        "id": "msg-1",
+        "role": "user",
+        "text": "Hello",
+        "timestamp": "2024-01-01T00:00:00Z"
+      }
+      """
+
     let data = Data(json.utf8)
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
-    
+
     let message = try decoder.decode(ChatMessage.self, from: data)
-    
+
     XCTAssertEqual(message.id, "msg-1")
     XCTAssertEqual(message.role, .user)
     XCTAssertEqual(message.text, "Hello")
@@ -240,14 +240,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     let message2 = ChatMessage(
       id: "msg-1",
       role: .user,
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     XCTAssertEqual(message1, message2)
   }
 
@@ -259,14 +259,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     let message2 = ChatMessage(
       id: "msg-2",
       role: .user,
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     XCTAssertNotEqual(message1, message2)
   }
 
@@ -278,14 +278,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     let message2 = ChatMessage(
       id: "msg-1",
       role: .assistant,
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     XCTAssertNotEqual(message1, message2)
   }
 
@@ -297,14 +297,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: timestamp
     )
-    
+
     let message2 = ChatMessage(
       id: "msg-1",
       role: .user,
       text: "Hi",
       timestamp: timestamp
     )
-    
+
     XCTAssertNotEqual(message1, message2)
   }
 
@@ -317,14 +317,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: Date()
     )
-    
+
     let assistantMessage = ChatMessage(
       id: "msg-2",
       role: .assistant,
       text: "Response",
       timestamp: Date()
     )
-    
+
     XCTAssertTrue(userMessage.isUserMessage)
     XCTAssertFalse(assistantMessage.isUserMessage)
   }
@@ -336,14 +336,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Hello",
       timestamp: Date()
     )
-    
+
     let assistantMessage = ChatMessage(
       id: "msg-2",
       role: .assistant,
       text: "Response",
       timestamp: Date()
     )
-    
+
     XCTAssertFalse(userMessage.isAssistantMessage)
     XCTAssertTrue(assistantMessage.isAssistantMessage)
   }
@@ -355,14 +355,14 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "System",
       timestamp: Date()
     )
-    
+
     let userMessage = ChatMessage(
       id: "msg-2",
       role: .user,
       text: "Hello",
       timestamp: Date()
     )
-    
+
     XCTAssertTrue(systemMessage.isSystemMessage)
     XCTAssertFalse(userMessage.isSystemMessage)
   }
@@ -375,7 +375,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       timestamp: Date(),
       streaming: true
     )
-    
+
     let normalMessage = ChatMessage(
       id: "msg-2",
       role: .assistant,
@@ -383,7 +383,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       timestamp: Date(),
       streaming: false
     )
-    
+
     XCTAssertTrue(streamingMessage.isStreaming)
     XCTAssertFalse(normalMessage.isStreaming)
   }
@@ -397,7 +397,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "",
       timestamp: Date()
     )
-    
+
     XCTAssertEqual(message.text, "")
     XCTAssertFalse(message.text.isEmpty)  // 空字符串
   }
@@ -410,7 +410,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: longText,
       timestamp: Date()
     )
-    
+
     XCTAssertEqual(message.text.count, 10000)
   }
 
@@ -422,7 +422,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: specialText,
       timestamp: Date()
     )
-    
+
     XCTAssertEqual(message.text, specialText)
   }
 
@@ -434,7 +434,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: textWithNewlines,
       timestamp: Date()
     )
-    
+
     XCTAssertEqual(message.text, textWithNewlines)
   }
 
@@ -442,33 +442,33 @@ final class ChatMessageExtendedTests: XCTestCase {
 
   func testToolUse_initialization() {
     let toolUse = ToolUse(name: "test_tool", input: ["key": "value"])
-    
+
     XCTAssertEqual(toolUse.name, "test_tool")
     XCTAssertEqual(toolUse.input["key"] as? String, "value")
   }
 
   func testToolUse_encoding() throws {
     let toolUse = ToolUse(name: "test_tool", input: ["key": "value"])
-    
+
     let encoder = JSONEncoder()
     let jsonData = try encoder.encode(toolUse)
-    
+
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(ToolUse.self, from: jsonData)
-    
+
     XCTAssertEqual(decoded.name, "test_tool")
     XCTAssertEqual(decoded.input["key"] as? String, "value")
   }
 
   func testToolUse_emptyInput() throws {
     let toolUse = ToolUse(name: "test_tool", input: [:])
-    
+
     let encoder = JSONEncoder()
     let jsonData = try encoder.encode(toolUse)
-    
+
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(ToolUse.self, from: jsonData)
-    
+
     XCTAssertEqual(decoded.name, "test_tool")
     XCTAssertTrue(decoded.input.isEmpty)
   }
@@ -482,7 +482,7 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Test message",
       timestamp: Date()
     )
-    
+
     self.measure {
       _ = try? JSONEncoder().encode(message)
     }
@@ -495,10 +495,10 @@ final class ChatMessageExtendedTests: XCTestCase {
       text: "Test message",
       timestamp: Date()
     )
-    
+
     let encoder = JSONEncoder()
     let jsonData = try encoder.encode(message)
-    
+
     self.measure {
       _ = try? JSONDecoder().decode(ChatMessage.self, from: jsonData)
     }

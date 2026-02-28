@@ -146,6 +146,9 @@ struct SessionColumnView: View {
         }
       }
 
+      // 顶部状态条 - iPad 显示对话名字
+      topStatusBar
+
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
@@ -167,18 +170,13 @@ struct SessionColumnView: View {
         scrollToBottom()
       }
     }
-    // iPhone 上使用 NavigationBar 工具栏显示对话名字和菜单
+    // iPhone 上使用 NavigationBar 工具栏显示对话名字
     #if os(iOS)
       .toolbar {
         if UIDevice.current.userInterfaceIdiom == .phone {
-          // 中间：对话名字按钮（玻璃按钮）
+          // 中间：对话名字按钮（玻璃按钮，本身是 Menu）
           ToolbarItem(placement: .principal) {
             sessionNameButton
-          }
-
-          // 右边：菜单按钮
-          ToolbarItem(placement: .topBarTrailing) {
-            menuButton
           }
         }
       }

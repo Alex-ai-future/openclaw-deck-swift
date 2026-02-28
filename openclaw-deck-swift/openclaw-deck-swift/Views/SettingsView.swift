@@ -97,13 +97,14 @@ struct SettingsView: View {
           NavigationLink {
             CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
           } label: {
-            Label("Multi-Device Sync", systemImage: "icloud.and.arrow.down")
-
-            Spacer()
-
-            if CloudflareKV.shared.isConfigured {
-              Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(.green)
+            HStack {
+              Label("Multi-Device Sync", systemImage: "icloud.and.arrow.down")
+              Spacer()
+              if CloudflareKV.shared.isConfigured {
+                Circle()
+                  .fill(Color.green)
+                  .frame(width: 8, height: 8)
+              }
             }
           }
         } header: {

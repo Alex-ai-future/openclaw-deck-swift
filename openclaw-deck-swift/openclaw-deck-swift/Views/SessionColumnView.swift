@@ -271,6 +271,26 @@ struct SessionColumnView: View {
     }
   }
 
+  // MARK: - Top Status Bar (iPad)
+
+  private var topStatusBar: some View {
+    HStack {
+      Spacer()
+
+      // 中间：对话名字按钮（只在 iPad 上显示）
+      if UIDevice.current.userInterfaceIdiom == .pad {
+        sessionNameButton
+          .buttonStyle(.glass)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 8)
+      }
+
+      Spacer()
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 2)
+  }
+
   // MARK: - Message List
 
   private var messageList: some View {

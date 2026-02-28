@@ -20,6 +20,7 @@ struct DeckView: View {
   @State private var showingSortSheet: Bool = false
   @State private var selectedSessionId: String?
   @State private var isSyncing: Bool = false
+  @State private var showingSyncAlert: Bool = false
 
   var body: some View {
     NavigationStack {
@@ -72,9 +73,7 @@ struct DeckView: View {
 
           // 同步按钮
           Button {
-            Task {
-              await viewModel.syncAll()
-            }
+            showingSyncAlert = true
           } label: {
             Image(systemName: "arrow.clockwise")
               .rotationEffect(.degrees(isSyncing ? 360 : 0))
@@ -111,6 +110,17 @@ struct DeckView: View {
           viewModel: viewModel,
           isPresented: $showingNewSessionSheet
         )
+      }
+      .alert("Sync All Sessions?", isPresented: $showingSyncAlert) {
+        Button("Cancel", role: .cancel) {}
+        Button("Sync") {
+          Task {
+            await viewModel.syncAll()
+          }
+        }
+        .tint(.blue)
+      } message: {
+        Text("This will sync all sessions with the Gateway. Continue?")
       }
     }
   }

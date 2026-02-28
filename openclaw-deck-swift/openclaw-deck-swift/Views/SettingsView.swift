@@ -86,9 +86,10 @@ struct SettingsView: View {
 
         Section {
           // Notifications
-          if let viewModel = viewModel {
-            Toggle("Sound on Message", systemImage: "speaker.wave.2", isOn: $viewModel.playSoundOnMessage)
-          }
+          Toggle("Sound on Message", systemImage: "speaker.wave.2", isOn: .init(
+            get: { viewModel?.playSoundOnMessage ?? true },
+            set: { viewModel?.playSoundOnMessage = $0 }
+          ))
 
           // Cloudflare KV Sync
           NavigationLink {

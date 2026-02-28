@@ -22,7 +22,7 @@ struct DeckCommonContainer<Content: View>: View {
   @State private var showingSortSheet = false
   @State private var showingSyncAlert = false
   @State private var showingConflictAlert = false
-  
+
   // 本地配置状态（当没有外部传入时使用）
   @State private var localGatewayUrl: String = ""
   @State private var localToken: String = ""
@@ -55,7 +55,7 @@ struct DeckCommonContainer<Content: View>: View {
             // 使用当前配置（外部传入或本地状态）
             let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
             let tokenToUse = token?.wrappedValue ?? localToken
-            
+
             // Save new config first
             UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
             UserDefaultsStorage.shared.saveToken(tokenToUse)
@@ -69,7 +69,7 @@ struct DeckCommonContainer<Content: View>: View {
             // 使用当前配置（外部传入或本地状态）
             let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
             let tokenToUse = token?.wrappedValue ?? localToken
-            
+
             // Save new config first
             UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
             UserDefaultsStorage.shared.saveToken(tokenToUse)
@@ -83,7 +83,7 @@ struct DeckCommonContainer<Content: View>: View {
             // 使用当前配置（外部传入或本地状态）
             let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
             let tokenToUse = token?.wrappedValue ?? localToken
-            
+
             // Save new config first
             UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
             UserDefaultsStorage.shared.saveToken(tokenToUse)

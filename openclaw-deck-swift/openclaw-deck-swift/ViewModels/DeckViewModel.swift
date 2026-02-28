@@ -335,23 +335,25 @@ class DeckViewModel {
   private func loadSessionsFromStorage() {
     logger.log("📥 加载 Sessions...")
 
-    // 测试环境下跳过 Cloudflare 同步，避免网络请求
-    #if TEST
-      logger.log("🧪 测试环境，使用本地数据")
+    // 检查是否是 Mock 存储（测试环境）
+    let storageTypeName = String(reflecting: type(of: storage))
+    if storageTypeName.contains("MockUserDefaultsStorage") {
+      logger.log("🧪 测试环境（Mock Storage），使用本地数据")
       loadFromLocalOnly()
-    #else
-      // 尝试从 Cloudflare 同步（如果已配置）
-      if CloudflareKV.shared.isConfigured {
-        logger.log("☁️ Cloudflare 已配置，开始同步...")
-        Task {
-          await loadSessionsWithCloudflareSync()
-        }
-      } else {
-        logger.log("📱 未配置 Cloudflare，使用本地数据")
-        // 没有配置 Cloudflare，使用本地数据
-        loadFromLocalOnly()
+      return
+    }
+
+    // 尝试从 Cloudflare 同步（如果已配置）
+    if CloudflareKV.shared.isConfigured {
+      logger.log("☁️ Cloudflare 已配置，开始同步...")
+      Task {
+        await loadSessionsWithCloudflareSync()
       }
-    #endif
+    } else {
+      logger.log("📱 未配置 Cloudflare，使用本地数据")
+      // 没有配置 Cloudflare，使用本地数据
+      loadFromLocalOnly()
+    }
   }
 
   /// 从 Cloudflare 同步加载 Sessions
@@ -586,17 +588,16 @@ class DeckViewModel {
       forKey: "openclaw.deck.sessionOrder.lastUpdated"
     )
 
-    // 测试环境下跳过 Cloudflare 同步，避免修改云端数据
-    #if TEST
-      logger.log("🧪 测试环境，跳过云端同步")
-    #else
-      // 如果配置了 Cloudflare，异步同步到云端
-      if CloudflareKV.shared.isConfigured {
-        Task {
-          await syncToCloudflare()
-        }
+    // 如果配置了 Cloudflare，异步同步到云端
+    // 检查是否是 Mock 存储（测试环境）
+    let storageTypeName = String(reflecting: type(of: storage))
+    if storageTypeName.contains("MockUserDefaultsStorage") {
+      logger.log("🧪 测试环境（Mock Storage），跳过云端同步")
+    } else if CloudflareKV.shared.isConfigured {
+      Task {
+        await syncToCloudflare()
       }
-    #endif
+    }
   }
 
   /// 同步到 Cloudflare KV

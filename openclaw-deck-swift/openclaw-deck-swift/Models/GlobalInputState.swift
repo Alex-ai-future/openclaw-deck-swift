@@ -19,7 +19,7 @@ protocol GlobalInputStateProtocol {
   var textHeight: CGFloat { get set }
   var selectedSessionId: String? { get set }
   var inputWidth: CGFloat { get set }
-  
+
   func calculateTextHeight()
   func clearInput()
   func sendMessage(to session: SessionState, viewModel: DeckViewModel) async

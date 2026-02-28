@@ -9,7 +9,7 @@ import SwiftUI
 struct SyncButton: View {
   @Bindable var viewModel: DeckViewModel
   @Binding var showingSyncAlert: Bool
-  
+
   var body: some View {
     Button {
       showingSyncAlert = true

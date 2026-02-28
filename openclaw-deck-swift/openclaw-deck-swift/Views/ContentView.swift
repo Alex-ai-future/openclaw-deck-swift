@@ -70,9 +70,9 @@ struct ContentView: View {
   /// 判断是否为 iPad
   var isIPad: Bool {
     #if os(iOS)
-    return UIDevice.current.userInterfaceIdiom == .pad
+      return UIDevice.current.userInterfaceIdiom == .pad
     #else
-    return true
+      return true
     #endif
   }
 

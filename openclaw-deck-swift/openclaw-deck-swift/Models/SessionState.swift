@@ -26,7 +26,7 @@ class SessionState: Hashable, Identifiable {
 
   /// Session Key（用于 Gateway 通信）
   let sessionKey: String
-  
+
   /// Identifiable 的 id（使用 sessionId）
   var id: String { sessionId }
 

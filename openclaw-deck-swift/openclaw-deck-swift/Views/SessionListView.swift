@@ -108,14 +108,14 @@ struct SessionListView: View {
 
   private func confirmDelete() {
     guard let offsets = deleteOffset else { return }
-    
+
     for index in offsets {
       if index < viewModel.sessionOrder.count {
         let sessionId = viewModel.sessionOrder[index]
         viewModel.deleteSession(sessionId: sessionId)
       }
     }
-    
+
     deleteOffset = nil
   }
 }

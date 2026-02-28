@@ -86,10 +86,12 @@ struct SettingsView: View {
 
         Section {
           // Notifications
-          Toggle("Sound on Message", systemImage: "speaker.wave.2", isOn: .init(
-            get: { viewModel?.playSoundOnMessage ?? true },
-            set: { viewModel?.playSoundOnMessage = $0 }
-          ))
+          Toggle(
+            "Sound on Message", systemImage: "speaker.wave.2",
+            isOn: .init(
+              get: { viewModel?.playSoundOnMessage ?? true },
+              set: { viewModel?.playSoundOnMessage = $0 }
+            ))
 
           // Cloudflare KV Sync
           NavigationLink {
@@ -129,7 +131,9 @@ struct SettingsView: View {
               onResetDeviceIdentity?()
             }
           } message: {
-            Text("This will clear the stored device identity and token, then reconnect using the token you entered.")
+            Text(
+              "This will clear the stored device identity and token, then reconnect using the token you entered."
+            )
           }
         } header: {
           Label("DEVICE", systemImage: "iphone")

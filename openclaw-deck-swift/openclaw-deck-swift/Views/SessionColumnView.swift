@@ -180,25 +180,25 @@ struct SessionColumnView: View {
     .onAppear {
       // 进入视图时自动选中当前 session，确保输入框发送到正确的会话
       viewModel.selectSession(session.sessionId)
-      
+
       // 滚动到最底部（显示最新消息）
       scrollTrigger = 1
     }
     #if os(iOS)
-    .safeAreaInset(edge: .bottom, spacing: 0) {
-      // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
-      if UIDevice.current.userInterfaceIdiom != .pad {
-        GlobalInputView(
-          state: viewModel.globalInputState as! GlobalInputState
-        ) {
-          await viewModel.sendCurrentInput()
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
+        if UIDevice.current.userInterfaceIdiom != .pad {
+          GlobalInputView(
+            state: viewModel.globalInputState as! GlobalInputState
+          ) {
+            await viewModel.sendCurrentInput()
+          }
         }
       }
-    }
     #endif
-      .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-        onDelete()
-      }
+    .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+      onDelete()
+    }
   }
 
   // MARK: - Session Name Button (for NavigationBar toolbar)
@@ -244,7 +244,7 @@ struct SessionColumnView: View {
           .font(.body)
           .fontWeight(.medium)
           .lineLimit(1)
-        // 工作中橘黄，完成未读绿色，其他蓝色
+          // 工作中橘黄，完成未读绿色，其他蓝色
           .foregroundColor(
             session.isProcessing
               ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue

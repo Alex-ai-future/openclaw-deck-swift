@@ -336,7 +336,7 @@ class DeckViewModel {
     logger.log("📥 加载 Sessions...")
 
     // 测试环境下跳过 Cloudflare 同步，避免网络请求
-    #if TESTING
+    #if TEST
       logger.log("🧪 测试环境，使用本地数据")
       loadFromLocalOnly()
     #else

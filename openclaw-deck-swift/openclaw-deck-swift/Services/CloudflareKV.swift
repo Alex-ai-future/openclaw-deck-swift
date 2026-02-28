@@ -134,7 +134,7 @@ class CloudflareKV {
     // 2. 智能合并
     let merged = merge(local: localData, remote: remoteData)
 
-    logger.debug("合并结果：\(merged.source)")
+    logger.debug("合并结果：\(merged.source.description)")
 
     // 3. 自动保存（如果需要）
     switch merged.source {

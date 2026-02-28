@@ -205,7 +205,6 @@ struct SessionColumnView: View {
               ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
           )
       }
-      .buttonStyle(.glass)
     }
   }
 
@@ -268,6 +267,7 @@ struct SessionColumnView: View {
 
       // Center: Session name glass button
       sessionNameButton
+        .buttonStyle(.glass)
         .padding(12)
 
       // Right: Menu button

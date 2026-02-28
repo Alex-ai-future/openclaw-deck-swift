@@ -161,12 +161,26 @@ struct SessionColumnView: View {
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
     }
-    // iPhone 上在 NavigationBar 工具栏中显示 Session 名字
+    // iPhone 上在 NavigationBar 显示 Session 名字和菜单按钮
     .toolbar {
       #if os(iOS)
         if UIDevice.current.userInterfaceIdiom == .phone {
+          // 中间：Session 名字（纯文本）
           ToolbarItem(placement: .principal) {
-            sessionNameButton
+            Text(session.sessionId)
+              .font(.body)
+              .fontWeight(.medium)
+              .lineLimit(1)
+              // 工作中橘黄，完成未读绿色，其他蓝色
+              .foregroundColor(
+                session.isProcessing
+                  ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
+              )
+          }
+
+          // 右边：菜单按钮（打开 iPad 版本的菜单）
+          ToolbarItem(placement: .topBarTrailing) {
+            menuButton
           }
         }
       #endif
@@ -250,6 +264,46 @@ struct SessionColumnView: View {
               ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
           )
       }
+    }
+  }
+
+  // MARK: - Menu Button (for iPhone toolbar)
+
+  private var menuButton: some View {
+    Menu {
+      // 会话详细信息（仅 4 项）
+      Section {
+        // 消息数量
+        Label("\(session.messages.count) messages", systemImage: "message")
+
+        // 最后活动时间
+        if let lastActivity = session.lastMessageAt {
+          Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
+        }
+
+        // 上下文（如果有，限制 100 字符）
+        if let context = session.context, !context.isEmpty {
+          Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
+        }
+
+        // Session Key
+        Label("Key: \(session.sessionKey)", systemImage: "tag")
+      }
+
+      Divider()
+
+      // 删除按钮
+      Section {
+        Button(role: .destructive) {
+          showingDeleteAlert = true
+        } label: {
+          Label("Delete Session", systemImage: "trash")
+        }
+      }
+    } label: {
+      Image(systemName: "ellipsis")
+        .font(.body)
+        .foregroundColor(.blue)
     }
   }
 

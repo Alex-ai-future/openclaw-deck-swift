@@ -1,7 +1,7 @@
 // SettingsView.swift
 // OpenClaw Deck Swift
 //
-// 设置页面 - 已连接时显示
+// Settings view - organized by functional groups
 
 import SwiftUI
 
@@ -26,21 +26,8 @@ struct SettingsView: View {
   var body: some View {
     NavigationStack {
       Form {
-        // Gateway Config Input (公用组件)
-        Section {
-          GatewayConfigInput(
-            gatewayUrl: $gatewayUrl,
-            token: $token,
-            onConnect: onConnect,
-            isConnected: isConnected
-          )
-        } header: {
-          Text("Configuration")
-        } footer: {
-          Text("Modify and apply to reconnect with new settings")
-        }
+        // MARK: - 1. CONNECTION STATUS (Read-only)
 
-        // Status
         Section {
           HStack {
             Circle()
@@ -54,10 +41,31 @@ struct SettingsView: View {
             Spacer()
           }
         } header: {
-          Text("Status")
+          Label("CONNECTION", systemImage: "network")
+        } footer: {
+          if isConnected {
+            Text("Gateway: \(gatewayUrl)")
+              .font(.caption)
+              .foregroundColor(.secondary)
+          }
         }
 
-        // Actions - Apply & Reconnect
+        // MARK: - 2. GATEWAY CONFIG (Editable)
+
+        Section {
+          GatewayConfigInput(
+            gatewayUrl: $gatewayUrl,
+            token: $token,
+            onConnect: onConnect,
+            isConnected: isConnected
+          )
+        } header: {
+          Label("GATEWAY", systemImage: "server.rack")
+        } footer: {
+          Text("Modify and apply to reconnect with new settings")
+        }
+
+        // Apply & Reconnect button (only when changes exist)
         if hasChanges {
           Section {
             Button {
@@ -66,88 +74,106 @@ struct SettingsView: View {
               HStack {
                 Image(systemName: "arrow.triangle.2.circlepath")
                 Text("Apply & Reconnect")
+                  .fontWeight(.medium)
               }
             }
           } footer: {
-            Text("Save changes and reconnect to Gateway with new settings")
+            Text("Save changes and reconnect to Gateway")
           }
         }
 
-        // Actions - Reset Device Identity
+        // MARK: - 3. APP SETTINGS
+
         Section {
-          Button(role: .destructive) {
+          // Notifications
+          if viewModel != nil {
+            Toggle {
+              viewModel?.playSoundOnMessage.toggle()
+            } label: {
+              Label("Sound on Message", systemImage: "speaker.wave.2")
+            }
+          }
+
+          // Cloudflare KV Sync
+          NavigationLink {
+            CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
+          } label: {
+            Label("Multi-Device Sync", systemImage: "icloud.and.arrow.down")
+
+            Spacer()
+
+            if CloudflareKV.shared.isConfigured {
+              Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+            }
+          }
+        } header: {
+          Label("APP", systemImage: "app.badge")
+        } footer: {
+          Text("Notifications and cloud sync settings")
+        }
+
+        // MARK: - 4. DEVICE MANAGEMENT
+
+        Section {
+          Button {
             showingResetAlert = true
           } label: {
             HStack {
               Image(systemName: "trash.fill")
               Text("Reset Device Identity")
+                .fontWeight(.medium)
             }
           }
+          .tint(.orange)
           .alert("Reset Device Identity?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) {
               onResetDeviceIdentity?()
             }
           } message: {
-            Text(
-              "This will clear the stored device identity and token, then reconnect using the token you entered."
-            )
+            Text("This will clear the stored device identity and token, then reconnect using the token you entered.")
           }
+        } header: {
+          Label("DEVICE", systemImage: "iphone")
         } footer: {
-          Text("Clear stored device identity and token, then reconnect")
+          Text("Clear stored device identity and token")
         }
 
-        // Actions - Disconnect
+        // MARK: - 5. DISCONNECT (Separate section for safety)
+
         Section {
-          Button(role: .destructive) {
+          Button {
             onDisconnect()
           } label: {
             HStack {
               Image(systemName: "xmark.square.fill")
               Text("Disconnect")
+                .fontWeight(.medium)
             }
           }
+          .tint(.red)
+        } header: {
+          Label("DISCONNECT", systemImage: "slash.circle")
         } footer: {
           Text("Disconnect from Gateway and return to welcome screen")
         }
 
-        // Notifications
-        if viewModel != nil {
-          Section {
-            Toggle(
-              "Play Sound on Message",
-              isOn: .init(
-                get: { viewModel?.playSoundOnMessage ?? true },
-                set: { viewModel?.playSoundOnMessage = $0 }
-              ))
-          } header: {
-            Text("Notifications")
-          } footer: {
-            Text("Play a sound when a message is received")
-          }
-        }
+        // MARK: - 6. ABOUT
 
-        // Cloudflare KV Sync
         Section {
-          NavigationLink {
-            CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
-          } label: {
-            HStack {
-              Image(systemName: "icloud.and.arrow.down")
-              Text("Cloudflare KV Sync")
-
-              Spacer()
-
-              if CloudflareKV.shared.isConfigured {
-                Image(systemName: "checkmark.circle.fill")
-                  .foregroundColor(.green)
-              }
-            }
+          HStack {
+            Text("Version")
+            Spacer()
+            Text("1.0.0")
+              .foregroundColor(.secondary)
           }
+          .font(.caption)
+
+          Link("OpenClaw Documentation", destination: URL(string: "https://docs.openclaw.ai")!)
+            .font(.caption)
         } header: {
-          Text("Multi-Device Sync")
-        } footer: {
-          Text("Sync sessions to multiple devices using Cloudflare KV (free tier)")
+          Label("ABOUT", systemImage: "info.circle")
         }
       }
       .navigationTitle("Settings")
@@ -192,6 +218,7 @@ struct SettingsView: View {
     token: .constant(""),
     isConnected: .constant(true),
     onDisconnect: {},
-    onApplyAndReconnect: {}, onConnect: {}
+    onApplyAndReconnect: {},
+    onConnect: {}
   )
 }

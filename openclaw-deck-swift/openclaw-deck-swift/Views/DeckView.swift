@@ -44,51 +44,103 @@ struct DeckView: View {
 
   var body: some View {
     NavigationStack {
-      DeckCommonContainer(
-        viewModel: viewModel,
-        showingSettings: $showingSettings,
-        showingNewSessionSheet: $showingNewSessionSheet
-      ) {
-        VStack(spacing: 0) {
-          sessionColumns
+      VStack(spacing: 0) {
+        sessionColumns
+      }
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        // 全局输入视图 - 系统自动处理键盘避让
+        GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+          await viewModel.sendCurrentInput()
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-          // 全局输入视图 - 系统自动处理键盘避让
-          GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
-            await viewModel.sendCurrentInput()
-          }
-        }
-        .onChange(of: selectedSessionId) { _, newId in
-          // Session 切换时通知 ViewModel
-          viewModel.selectSession(newId)
+      }
+      .onChange(of: selectedSessionId) { _, newId in
+        // Session 切换时通知 ViewModel
+        viewModel.selectSession(newId)
 
-          // 新选中的 Session 标记为已读
-          if let sessionId = newId,
-            let session = viewModel.sessions[sessionId]
-          {
-            session.hasUnreadMessage = false
+        // 新选中的 Session 标记为已读
+        if let sessionId = newId,
+          let session = viewModel.sessions[sessionId]
+        {
+          session.hasUnreadMessage = false
+        }
+      }
+      .task {
+        // 初始化选中状态：确保 ViewModel 有选中的 Session
+        if viewModel.globalInputState.selectedSessionId == nil,
+          let firstSessionId = viewModel.sessionOrder.first
+        {
+          viewModel.selectSession(firstSessionId)
+        }
+        selectedSessionId = viewModel.globalInputState.selectedSessionId
+      }
+      .navigationTitle("OpenClaw Deck")
+      .toolbar {
+        DeckToolbar(
+          viewModel: viewModel,
+          showingSettings: $showingSettings,
+          showingNewSessionSheet: $showingNewSessionSheet,
+          showingSortSheet: $showingSortSheet,
+          showingSyncAlert: $showingSyncAlert,
+          showingConflictAlert: $showingConflictAlert
+        )
+      }
+    }
+    .sheet(isPresented: $showingSettings) {
+      SettingsView(
+        gatewayUrl: $gatewayUrl,
+        token: $token,
+        isConnected: .constant(viewModel.gatewayConnected),
+        onDisconnect: {
+          viewModel.disconnect()
+          showingSettings = false
+        },
+        onApplyAndReconnect: {
+          UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+          UserDefaultsStorage.shared.saveToken(token)
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
           }
-        }
-        .task {
-          // 初始化选中状态：确保 ViewModel 有选中的 Session
-          if viewModel.globalInputState.selectedSessionId == nil,
-            let firstSessionId = viewModel.sessionOrder.first
-          {
-            viewModel.selectSession(firstSessionId)
+          showingSettings = false
+        },
+        onConnect: {
+          UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+          UserDefaultsStorage.shared.saveToken(token)
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
           }
-          selectedSessionId = viewModel.globalInputState.selectedSessionId
-        }
-        .navigationTitle("OpenClaw Deck")
-        .toolbar {
-          DeckToolbar(
-            viewModel: viewModel,
-            showingSettings: $showingSettings,
-            showingNewSessionSheet: $showingNewSessionSheet,
-            showingSortSheet: $showingSortSheet,
-            showingSyncAlert: $showingSyncAlert,
-            showingConflictAlert: $showingConflictAlert
-          )
-        }
+          showingSettings = false
+        },
+        onResetDeviceIdentity: {
+          viewModel.resetDeviceIdentity()
+          Task {
+            await viewModel.initialize(url: gatewayUrl, token: token)
+          }
+          showingSettings = false
+        },
+        onClose: {
+          showingSettings = false
+        },
+        viewModel: viewModel
+      )
+    }
+    .sheet(isPresented: $showingNewSessionSheet) {
+      NewSessionSheet(
+        viewModel: viewModel,
+        isPresented: $showingNewSessionSheet
+      )
+    }
+    .sheet(isPresented: $showingSortSheet) {
+      SessionSortView(viewModel: viewModel)
+    }
+    .deckSyncAlerts(
+      viewModel: viewModel,
+      showingSyncAlert: $showingSyncAlert,
+      showingConflictAlert: $showingConflictAlert
+    ) { newValue in
+      if newValue {
+        showingConflictAlert = true
+      } else {
+        showingConflictAlert = false
       }
     }
   }

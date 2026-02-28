@@ -144,51 +144,14 @@ struct SessionColumnView: View {
           .padding(12)
         }
       }
-      // iPhone 上隐藏顶部状态条（使用 NavigationBar 工具栏）
-      // iPad/macOS 保留顶部状态条
-      .overlay(alignment: .top) {
-        #if os(iOS)
-          if UIDevice.current.userInterfaceIdiom != .phone {
-            topStatusBar
-          }
-        #else
-          topStatusBar
-        #endif
-      }
+
+      // 顶部状态条 - 所有平台统一使用
+      topStatusBar
 
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
-    }
-    // iPhone 上在 NavigationBar 显示 Session 名字和菜单按钮
-    .toolbar {
-      #if os(iOS)
-        if UIDevice.current.userInterfaceIdiom == .phone {
-          // 中间：Session 名字（纯文本）
-          ToolbarItem(placement: .principal) {
-            Text(session.sessionId)
-              .font(.body)
-              .fontWeight(.medium)
-              .lineLimit(1)
-              // 工作中橘黄，完成未读绿色，其他蓝色
-              .foregroundColor(
-                session.isProcessing
-                  ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
-              )
-          }
-
-          // 右边：菜单按钮（打开 iPad 版本的菜单）
-          ToolbarItem(placement: .topBarTrailing) {
-            menuButton
-          }
-        } else {
-          // iPad 上添加空的 ToolbarItem 避免与 DeckCommonContainer 冲突
-          ToolbarItem(placement: .principal) {
-            EmptyView()
-          }
-        }
-      #endif
     }
     .contentShape(Rectangle())
     .onTapGesture {
@@ -297,7 +260,7 @@ struct SessionColumnView: View {
   // MARK: - Top Status Bar
 
   private var topStatusBar: some View {
-    HStack {
+    HStack(spacing: 12) {
       // Left: Empty spacer for balance
       Spacer()
         .frame(width: 44, height: 36)
@@ -307,10 +270,10 @@ struct SessionColumnView: View {
         .buttonStyle(.glass)
         .padding(12)
 
-      // Right: Spacer
-      Spacer()
+      // Right: Menu button
+      menuButton
+        .buttonStyle(.glass)
         .frame(width: 44, height: 36)
-
     }
     .padding(.horizontal, 16)
     .padding(.top, 2)

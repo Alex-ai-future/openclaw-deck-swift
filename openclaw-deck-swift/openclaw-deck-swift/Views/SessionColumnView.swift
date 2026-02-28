@@ -163,7 +163,10 @@ struct SessionColumnView: View {
       viewModel.selectSession(session.sessionId)
 
       // 滚动到最底部（显示最新消息）
-      scrollTrigger = 1
+      // 延迟执行确保消息已经加载完成，避免滚动到空白位置
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        scrollToBottom()
+      }
     }
     #if os(iOS)
       .safeAreaInset(edge: .bottom, spacing: 0) {

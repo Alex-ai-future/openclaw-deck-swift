@@ -97,8 +97,6 @@ struct SessionColumnView: View {
 
         // 底部浮动按钮组
         VStack {
-          // 顶部状态条 - iPad 显示对话名字
-          topStatusBar
           Spacer()
 
           HStack(spacing: 16) {
@@ -149,6 +147,9 @@ struct SessionColumnView: View {
           .padding(12)
         }
       }
+
+      // 顶部状态条 - iPad 显示对话名字
+      topStatusBar
 
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
@@ -281,6 +282,7 @@ struct SessionColumnView: View {
       // 中间：对话名字按钮（只在 iPad 上显示）
       if UIDevice.current.userInterfaceIdiom == .pad {
         sessionNameButton
+          .buttonStyle(.glass)
           .padding(.horizontal, 12)
           .padding(.vertical, 8)
       }

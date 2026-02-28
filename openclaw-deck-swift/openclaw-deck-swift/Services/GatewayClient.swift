@@ -353,6 +353,13 @@ class GatewayClient {
         text = data["text"] as? String ?? ""
       }
 
+      // 跳过 Gateway 注入的消息（子代理通知、系统消息等）
+      if let model = data["model"] as? String,
+        model == "gateway-injected"
+      {
+        continue
+      }
+
       // 只处理 user 和 assistant 角色
       let roleLower = roleString.lowercased()
       if roleLower == "user" || roleLower == "assistant" {

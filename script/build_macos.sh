@@ -87,6 +87,12 @@ else
     echo "❌ macOS Build Failed"
     echo "========================================"
     echo ""
-    echo "Check build log: $BUILD_DIR/build.log"
+    
+    # 显示所有 error: 行
+    echo "编译错误："
+    grep -i "error:" "$BUILD_DIR/build.log"
+    
+    echo ""
+    echo "完整日志：$BUILD_DIR/build.log"
     exit 1
 fi

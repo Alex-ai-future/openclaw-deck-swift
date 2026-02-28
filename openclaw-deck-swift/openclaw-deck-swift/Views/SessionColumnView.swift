@@ -95,7 +95,9 @@ struct SessionColumnView: View {
 
         // 底部浮动按钮组
         VStack {
+
           Spacer()
+          sessionNameButton
           HStack(spacing: 16) {
             // 滚动到底部按钮 - 始终显示
             ScrollToBottomButton {
@@ -139,8 +141,6 @@ struct SessionColumnView: View {
                 .frame(width: 36, height: 36)
               }
               .transition(.opacity.combined(with: .scale))
-            } else {
-              sessionNameButton
             }
           }
           .padding(12)

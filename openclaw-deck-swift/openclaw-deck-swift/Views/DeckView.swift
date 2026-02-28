@@ -66,6 +66,17 @@ struct DeckView: View {
       .navigationTitle("OpenClaw Deck")
       .toolbarTitleDisplayMode(.inline)
       .toolbar {
+        // 左边：设置按钮
+        ToolbarItem(placement: .topBarLeading) {
+          Button {
+            showingSettings = true
+          } label: {
+            Image(systemName: "gear")
+          }
+          .accessibilityIdentifier("settingsButton")
+        }
+
+        // 右边：操作按钮
         ToolbarItemGroup(placement: .primaryAction) {
           // 新建 Session 按钮
           Button {
@@ -96,14 +107,6 @@ struct DeckView: View {
           } label: {
             Image(systemName: "arrow.up.arrow.down")
           }
-
-          // 设置按钮
-          Button {
-            showingSettings = true
-          } label: {
-            Image(systemName: "gear")
-          }
-          .accessibilityIdentifier("settingsButton")
         }
       }
       .sheet(isPresented: $showingSortSheet) {

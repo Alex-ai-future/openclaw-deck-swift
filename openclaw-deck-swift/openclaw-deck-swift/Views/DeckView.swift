@@ -61,16 +61,16 @@ struct DeckView: View {
       .navigationTitle("OpenClaw Deck")
       .toolbarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem {
+        ToolbarItemGroup(placement: .primaryAction) {
+          // 新建 Session 按钮
           Button {
             showingNewSessionSheet = true
           } label: {
             Image(systemName: "plus")
           }
           .disabled(!viewModel.gatewayConnected)
-        }
-        ToolbarItem {
-          // Sync button
+
+          // 同步按钮
           Button {
             Task {
               await viewModel.syncAll()
@@ -86,18 +86,15 @@ struct DeckView: View {
               )
           }
           .disabled(!viewModel.gatewayConnected || isSyncing)
-        }
-        ToolbarItem {
-          // Sort button
+
+          // 排序按钮
           Button {
             showingSortSheet = true
           } label: {
             Image(systemName: "arrow.up.arrow.down")
           }
-        }
 
-        ToolbarItem {
-          // Settings button
+          // 设置按钮
           Button {
             showingSettings = true
           } label: {
@@ -105,7 +102,6 @@ struct DeckView: View {
           }
           .accessibilityIdentifier("settingsButton")
         }
-
       }
       .sheet(isPresented: $showingSortSheet) {
         SessionSortView(viewModel: viewModel)

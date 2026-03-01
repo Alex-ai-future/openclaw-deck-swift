@@ -9,6 +9,32 @@ import os
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewModel")
 
+// MARK: - Loading Stage
+
+/// 加载阶段枚举
+enum LoadingStage: Equatable {
+    case idle // 无加载
+    case connecting // 连接 Gateway
+    case fetchingSessions // 从云端获取会话列表
+    case fetchingMessages // 从后端获取消息历史
+    case syncingLocal // 同步到本地存储
+
+    var description: String {
+        switch self {
+        case .idle:
+            ""
+        case .connecting:
+            "正在连接 Gateway..."
+        case .fetchingSessions:
+            "正在从云端获取会话列表..."
+        case .fetchingMessages:
+            "正在加载消息历史..."
+        case .syncingLocal:
+            "正在同步到本地..."
+        }
+    }
+}
+
 // MARK: - Conflict Info
 
 /// 冲突信息
@@ -79,6 +105,12 @@ class DeckViewModel {
     /// 是否正在初始化
     var isInitializing: Bool = false
 
+    /// 当前加载阶段
+    var loadingStage: LoadingStage = .idle
+
+    /// 加载进度（0.0 - 1.0）
+    var loadingProgress: Double = 0.0
+
     /// 是否正在同步
     var isSyncing: Bool = false
 
@@ -139,6 +171,9 @@ class DeckViewModel {
         guard !isInitializing else { return }
         isInitializing = true
 
+        loadingStage = .connecting
+        loadingProgress = 0.0
+
         // Clear previous error
         connectionError = nil
 
@@ -183,7 +218,21 @@ class DeckViewModel {
                     }
                     // 重置重连状态
                     logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
+
+                    // 获取会话列表成功
+                    self?.loadingStage = .fetchingSessions
+                    self?.loadingProgress = 0.5
+
                     await self?.loadAllSessionHistory()
+
+                    // 获取消息完成
+                    self?.loadingStage = .fetchingMessages
+                    self?.loadingProgress = 0.8
+
+                    // 同步本地完成
+                    self?.loadingStage = .syncingLocal
+                    self?.loadingProgress = 1.0
+                    self?.loadingStage = .idle
 
                     // 🆕 启动会话状态轮询
                     self?.startSessionPolling()
@@ -201,6 +250,8 @@ class DeckViewModel {
 
         // 连接 Gateway
         await client.connect()
+
+        loadingProgress = 0.2
 
         // Sync error state from client
         connectionError = client.connectionError
@@ -643,7 +694,7 @@ class DeckViewModel {
     /// 保存 Sessions 到 UserDefaults（并同步到 Cloudflare）
     func saveSessionsToStorage() {
         let configs = sessionOrder.compactMap { id -> SessionConfig? in
-            guard let state = sessions[id] else { return nil }
+            guard let state = self.sessions[id] else { return nil }
             return SessionConfig(
                 id: state.sessionId,
                 sessionKey: state.sessionKey,

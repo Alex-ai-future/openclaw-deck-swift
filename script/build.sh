@@ -30,13 +30,18 @@ fi
 
 PLATFORM="$1"
 
+# CI 环境跳过编译锁检查
+if [ -n "$CI" ]; then
+  echo "🔧 CI 环境，跳过编译锁检查"
+fi
+
 # 根据平台设置变量
 case $PLATFORM in
   macos)
     BUILD_DIR="${PROJECT_DIR}/build/macos"
     DESTINATION="platform=macOS"
     PLATFORM_NAME="macOS"
-    NEEDS_BUILD_LOCK=true
+    NEEDS_BUILD_LOCK=$([ -n "$CI" ] && echo "false" || echo "true")
     ;;
   ios)
     BUILD_DIR="${PROJECT_DIR}/build/ios"
@@ -47,7 +52,7 @@ case $PLATFORM in
   ipados)
     BUILD_DIR="${PROJECT_DIR}/build/ipados"
     PLATFORM_NAME="iPadOS"
-    NEEDS_BUILD_LOCK=true
+    NEEDS_BUILD_LOCK=$([ -n "$CI" ] && echo "false" || echo "true")
     
     # 动态检测 iPad 模拟器
     echo "Finding available iPad simulator..."

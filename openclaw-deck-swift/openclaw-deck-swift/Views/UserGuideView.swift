@@ -17,6 +17,7 @@ struct UserGuideView: View {
             MarkdownView(url: URL(string: rawUrl)!)
                 .navigationTitle("User Guide")
                 .navigationBarTitleDisplayMode(.inline)
+                .markdownTheme(.default)
         }
     }
 }

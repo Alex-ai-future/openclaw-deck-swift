@@ -495,9 +495,6 @@ struct SessionColumnView: View {
       // 只显示 user 和 assistant 消息
       if message.role != .user && message.role != .assistant {
         EmptyView()
-      } else if message.text.isEmpty && !shouldShowEmptyMessage {
-        // 对于 assistant 空消息，只有在 streaming 时显示占位
-        EmptyView()
       } else {
         messageBody
       }

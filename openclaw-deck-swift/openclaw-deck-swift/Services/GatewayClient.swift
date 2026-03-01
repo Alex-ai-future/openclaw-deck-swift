@@ -412,6 +412,12 @@ class GatewayClient {
       // 只处理 user 和 assistant 角色
       let roleLower = roleString.lowercased()
       if roleLower == "user" || roleLower == "assistant" {
+        // 过滤 assistant 空消息（user 消息即使是空也保留）
+        if roleLower == "assistant" && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+          continue
+        }
+
         let role = MessageRole(rawValue: roleLower) ?? .assistant
         let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
 

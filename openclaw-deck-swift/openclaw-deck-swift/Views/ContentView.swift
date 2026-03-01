@@ -319,7 +319,7 @@ struct WelcomeView: View {
                 .padding(.top, 60)
 
                 // Simple guide
-                Text("tap_the_in_the_top_rightnto_get_started_1".localized)
+                Text("tap_the_in_the_top_rightnto_get_started".localized)
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

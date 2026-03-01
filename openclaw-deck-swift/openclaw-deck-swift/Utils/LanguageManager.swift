@@ -80,11 +80,33 @@ extension Notification.Name {
 extension String {
     /// 本地化字符串（使用当前选择的语言）
     var localized: String {
-        NSLocalizedString(self, bundle: .main, comment: "")
+        guard let languageCode = LanguageManager.shared.selectedLanguage.rawValue as String? else {
+            return NSLocalizedString(self, bundle: .main, comment: "")
+        }
+
+        // 查找对应的 .lproj 文件夹
+        if let path = Bundle.main.path(forResource: languageCode, ofType: "lproj"),
+           let bundle = Bundle(path: path)
+        {
+            return NSLocalizedString(self, bundle: bundle, comment: "")
+        }
+
+        //  fallback 到主 bundle
+        return NSLocalizedString(self, bundle: .main, comment: "")
     }
 
     /// 本地化字符串（带参数）
     func localizedWithArgs(_ args: CVarArg...) -> String {
-        String(format: NSLocalizedString(self, bundle: .main, comment: ""), arguments: args)
+        guard let languageCode = LanguageManager.shared.selectedLanguage.rawValue as String? else {
+            return String(format: NSLocalizedString(self, bundle: .main, comment: ""), arguments: args)
+        }
+
+        if let path = Bundle.main.path(forResource: languageCode, ofType: "lproj"),
+           let bundle = Bundle(path: path)
+        {
+            return String(format: NSLocalizedString(self, bundle: bundle, comment: ""), arguments: args)
+        }
+
+        return String(format: NSLocalizedString(self, bundle: .main, comment: ""), arguments: args)
     }
 }

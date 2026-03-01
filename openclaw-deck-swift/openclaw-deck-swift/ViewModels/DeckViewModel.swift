@@ -18,7 +18,25 @@ enum LoadingStage: Equatable {
     case fetchingSessions // 从云端获取会话列表
     case fetchingMessages // 从后端获取消息历史
     case syncingLocal // 同步到本地存储
+}
 
+// MARK: - LoadingStage: CustomStringConvertible
+
+extension LoadingStage: CustomStringConvertible {
+    var description: String {
+        switch self {
+        case .idle: "idle"
+        case .connecting: "connecting"
+        case .fetchingSessions: "fetchingSessions"
+        case .fetchingMessages: "fetchingMessages"
+        case .syncingLocal: "syncingLocal"
+        }
+    }
+}
+
+// MARK: - LoadingStage: Title & Subtitle
+
+extension LoadingStage {
     var title: String {
         switch self {
         case .idle:
@@ -219,73 +237,55 @@ class DeckViewModel {
         // 设置连接状态回调
         client.onConnection = { [weak self] connected in
             Task { @MainActor in
+                guard let self else { return }
+
                 if connected {
                     // 重连时重置所有 session 的处理状态
-                    if let sessions = self?.sessions {
-                        for session in sessions.values {
-                            session.isProcessing = false
-                            session.status = .idle
-                            session.activeRunId = nil
-                        }
+                    for session in self.sessions.values {
+                        session.isProcessing = false
+                        session.status = .idle
+                        session.activeRunId = nil
                     }
-                    // 重置重连状态
-                    logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
 
-                    // 连接成功，更新进度到 20%
-                    self?.loadingStage = .connecting
-                    self?.loadingProgress = 0.2
+                    // 连接成功，更新进度
+                    self.loadingStage = .connecting
+                    self.loadingProgress = 0.2
 
-                    // 获取会话列表并同步
-                    self?.loadingStage = .fetchingSessions
-                    self?.loadingProgress = 0.5
+                    self.loadingStage = .fetchingSessions
+                    self.loadingProgress = 0.5
 
-                    // 先加载会话列表（填充 sessionOrder）
-                    // 注意：这里不调用 loadSessionsWithCloudflareSync()，因为那会触发冲突处理
-                    // 而是直接从 Gateway 获取会话列表
-                    await self?.loadSessionsFromGateway()
+                    // 加载会话列表
+                    await self.loadSessionsFromGateway()
 
                     // 检查是否有会话列表
-                    if self?.sessionOrder.isEmpty == true {
-                        logger.warning("⚠️ 没有会话列表，跳过消息加载")
-                        self?.loadingStage = .syncingLocal
-                        self?.loadingProgress = 1.0
+                    if self.sessionOrder.isEmpty {
+                        self.loadingStage = .syncingLocal
+                        self.loadingProgress = 1.0
                     } else {
-                        // 再加载所有消息
-                        await self?.loadAllSessionHistory()
+                        self.loadingStage = .fetchingMessages
+                        self.loadingProgress = 0.8
+                        await self.loadAllSessionHistory()
 
-                        // 获取消息完成
-                        self?.loadingStage = .fetchingMessages
-                        self?.loadingProgress = 0.8
-
-                        // 同步本地完成
-                        self?.loadingStage = .syncingLocal
-                        self?.loadingProgress = 1.0
+                        self.loadingStage = .syncingLocal
+                        self.loadingProgress = 1.0
                     }
 
-                    // 同步本地完成
-                    self?.loadingStage = .syncingLocal
-                    self?.loadingProgress = 1.0
-
                     // 初始化完成
-                    self?.isInitializing = false
+                    self.isInitializing = false
+                    self.gatewayConnected = true
+                    self.loadingStage = .idle
 
-                    // 所有数据加载完成，现在才设置 gatewayConnected
-                    // 注意：先设置 gatewayConnected，再设置 loadingStage = .idle，避免 UI 闪烁
-                    self?.gatewayConnected = true
-                    self?.loadingStage = .idle
-
-                    // 🆕 启动会话状态轮询
-                    self?.startSessionPolling()
+                    // 启动会话状态轮询
+                    self.startSessionPolling()
                 } else {
                     // 网络断开，保留所有数据供用户离线浏览
-                    logger.info("🔌 Gateway 已断开（保留历史消息，可离线浏览）")
-
-                    // 🆕 停止会话状态轮询
-                    self?.stopSessionPolling()
+                    self.stopSessionPolling()
 
                     // 连接失败，结束初始化
-                    self?.isInitializing = false
-                    self?.gatewayConnected = false
+                    self.isInitializing = false
+                    self.gatewayConnected = false
+                    self.loadingStage = .idle
+                    self.loadingProgress = 0.0
                 }
             }
         }
@@ -297,10 +297,6 @@ class DeckViewModel {
 
         // Sync error state from client
         connectionError = client.connectionError
-
-        // 注意：isInitializing 保持为 true，等待 onConnection 回调中设置 gatewayConnected
-        // 这样可以确保 LoadingView 一直显示到所有数据加载完成
-        // onConnection 回调中会设置 gatewayConnected = true，从而结束加载状态
     }
 
     /// 清除连接错误
@@ -888,8 +884,11 @@ class DeckViewModel {
     /// - Parameter sessionKey: Session Key
     func loadSessionHistory(sessionKey: String) async {
         guard let client = gatewayClient, client.connected else {
+            logger.warning("⚠️ loadSessionHistory: Gateway 未连接，跳过")
             return
         }
+
+        logger.debug("📥 开始加载 Session 历史：\(sessionKey)")
 
         // 设置加载状态（大小写不敏感匹配）
         if let session = sessions.values.first(where: {
@@ -900,6 +899,7 @@ class DeckViewModel {
 
         do {
             let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
+            logger.debug("✅ 加载完成：\(sessionKey), \(messages.count) 条消息")
 
             // 更新 Session 的消息（大小写不敏感匹配）
             if let session = sessions.values.first(where: {

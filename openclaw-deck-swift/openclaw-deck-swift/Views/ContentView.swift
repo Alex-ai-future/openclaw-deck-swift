@@ -74,8 +74,26 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if viewModel.gatewayConnected {
-                // 根据设备类型选择布局
+            // ✅ 优先检查加载状态，确保加载完成前不显示主界面
+            if viewModel.loadingStage != .idle {
+                // 加载中 - 显示详细加载状态
+                LoadingView(
+                    stage: viewModel.loadingStage,
+                    progress: viewModel.loadingProgress
+                )
+
+            } else if viewModel.isReconnecting {
+                // Reconnecting state - show reconnecting view
+                ReconnectingView(
+                    attempts: viewModel.reconnectAttempts,
+                    maxAttempts: 5,
+                    onCancel: {
+                        viewModel.disconnect()
+                    }
+                )
+
+            } else if viewModel.gatewayConnected {
+                // 根据设备类型选择布局（加载完成后才显示）
                 if isIPad {
                     // iPad - 多列布局
                     DeckView(
@@ -90,22 +108,6 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
 
-            } else if viewModel.isReconnecting {
-                // Reconnecting state - show reconnecting view
-                ReconnectingView(
-                    attempts: viewModel.reconnectAttempts,
-                    maxAttempts: 5,
-                    onCancel: {
-                        viewModel.disconnect()
-                    }
-                )
-
-            } else if viewModel.loadingStage != .idle {
-                // 加载中 - 显示详细加载状态
-                LoadingView(
-                    stage: viewModel.loadingStage,
-                    progress: viewModel.loadingProgress
-                )
             } else {
                 // Welcome screen - show settings
                 WelcomeView(

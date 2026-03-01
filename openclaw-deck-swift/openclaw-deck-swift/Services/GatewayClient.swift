@@ -137,7 +137,7 @@ class GatewayClient {
 
     private let requestTimeout: TimeInterval = 30
     private let connectChallengeTimeout: TimeInterval = 6
-    private let operatorScopes = ["operator.read", "operator.write"]
+    private let operatorScopes = ["operator.read", "operator.write", "operator.admin"]
     private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
     private let deviceTokenStorageKeyPrefix = "openclaw.deck.deviceToken.v1:"
 
@@ -190,6 +190,7 @@ class GatewayClient {
             logger.error("Failed to receive connect challenge: \(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
+            onConnection?(false)
             disconnect()
             return
         }
@@ -590,12 +591,9 @@ class GatewayClient {
             connectNonce = nonce
             connectSent = false
 
-            // Send connect request with nonce after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-                Task { @MainActor in
-                    await self?.sendConnect()
-                }
-            }
+            // ⚠️ 注意：不再自动调用 sendConnect()
+            // connect() 方法中会在 waitForChallenge() 返回后显式调用
+
             return
         }
 
@@ -648,7 +646,6 @@ class GatewayClient {
             return
         }
         connectSent = true
-        // Sending connect request
 
         do {
             // Build device identity with nonce if available
@@ -699,8 +696,10 @@ class GatewayClient {
             onConnection?(true)
 
         } catch {
+            logger.error("❌ connect 握手失败：\(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
+            onConnection?(false)
             disconnect()
         }
     }
@@ -897,7 +896,10 @@ class GatewayClient {
     /// Get preferred auth token (device token or user token)
     private func getPreferredAuthToken() -> String {
         let deviceToken = getStoredDeviceToken()
-        return deviceToken.isEmpty ? (token ?? "") : deviceToken
+        if !deviceToken.isEmpty {
+            return deviceToken
+        }
+        return token ?? ""
     }
 
     /// Get stored device token

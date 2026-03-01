@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, ai/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  format:
+    name: Code Format
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Install SwiftFormat
+      run: brew install swiftformat
+    
+    - name: Check Format
+      run: bash script/format.sh --check
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    needs: format
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Cache DerivedData
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Developer/Xcode/DerivedData
+        key: derived-data-${{ github.sha }}
+        restore-keys: |
+          derived-data-
+    
+    - name: Build
+      run: bash script/build.sh macos
+    
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-app
+        path: build/macos/DerivedData/Build/Products/Release/*.app
+        if-no-files-found: warn
+
+  test:
+    name: Unit Tests
+    runs-on: macos-latest
+    needs: build-macos
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Run Unit Tests
+      run: bash script/run_unit_tests.sh
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: build/tests/TestResults.xcresult
+        if-no-files-found: warn

@@ -11,6 +11,11 @@ import SwiftUI
 struct openclaw_deck_swiftApp: App {
     @StateObject private var languageManager = LanguageManager.shared
 
+    init() {
+        // 请求通知权限
+        NotificationService.shared.requestPermission()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

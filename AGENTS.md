@@ -365,6 +365,44 @@ killall Xcode
    - [ ] 提交信息清晰描述了修改内容
    - [ ] **已获得用户明确批准**
 
+### 使用 `script/committer` 脚本（**必须**）
+
+**⚠️ AI 禁止直接使用 `git add` / `git commit` 命令！**
+
+**项目提供了安全的提交脚本，AI 必须使用该脚本执行提交：**
+
+```bash
+# 用法
+./script/committer "<提交信息>" <文件 1> [文件 2] [文件 3...]
+
+# 示例 - 提交单个文件
+./script/committer "[feature] 添加搜索功能" Sources/Views/SearchView.swift
+
+# 示例 - 提交多个文件
+./script/committer "[fix] 修复崩溃问题" Sources/AppDelegate.swift Sources/Managers/SessionManager.swift
+```
+
+**脚本特性：**
+- ✅ 自动检查文件是否存在
+- ✅ 自动跳过无修改的文件
+- ✅ 只显示提交指定的文件
+- ✅ 彩色输出，清晰的状态提示
+- ✅ **防止误操作**（不能提交未指定的文件）
+
+**为什么必须用脚本？**
+- ❌ `git add/commit` 容易误加其他文件
+- ❌ `git add .` 可能包含构建产物
+- ✅ `script/committer` 只提交明确指定的文件
+
+**提交类型：**
+| 类型 | 用途 | 示例 |
+|------|------|------|
+| `[feature]` | 新功能 | `[feature] 添加消息搜索` |
+| `[fix]` | 修复 bug | `[fix] 修复空指针崩溃` |
+| `[ui]` | UI 改进 | `[ui] 优化按钮样式` |
+| `[refactor]` | 重构 | `[refactor] 简化状态管理` |
+| `[docs]` | 文档更新 | `[docs] 更新 README` |
+
 ### 示例对话
 
 #### ❌ 错误做法
@@ -395,17 +433,21 @@ killall Xcode
 ### 提交命令参考
 
 ```bash
-# 查看修改的文件
+# AI 必须使用脚本
+./script/committer "[类型] 描述" 文件 1 文件 2...
+
+# 查看修改的文件（AI 可以用）
 git status
 
-# 添加指定文件
-git add <文件路径>
-
-# 提交
-git commit -m "[类型] 描述"
-
-# 推送（如果需要）
+# 推送（如果需要，用户明确指令时）
 git push
+```
+
+**⚠️ AI 禁止使用的命令：**
+```bash
+git add <文件>      # ❌ 只能用 script/committer
+git commit -m "..." # ❌ 只能用 script/committer
+git add .           # ❌ 绝对禁止
 ```
 
 ---

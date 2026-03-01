@@ -438,19 +438,6 @@ class GatewayClient {
         return messages
     }
 
-    /// 列出所有活跃 Sessions
-    func listSessions() async throws -> [String] {
-        let result = try await request(method: "list", params: [:])
-
-        guard let payload = result.payload as? [String: Any],
-              let sessions = payload["sessions"] as? [String]
-        else {
-            return []
-        }
-
-        return sessions
-    }
-
     // MARK: - Session Status Query
 
     /// 主动查询会话状态列表

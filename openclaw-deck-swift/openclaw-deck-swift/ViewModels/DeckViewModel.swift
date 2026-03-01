@@ -247,36 +247,8 @@ class DeckViewModel {
                         session.activeRunId = nil
                     }
 
-                    // 连接成功，更新进度
-                    self.loadingStage = .connecting
-                    self.loadingProgress = 0.2
-
-                    self.loadingStage = .fetchingSessions
-                    self.loadingProgress = 0.5
-
-                    // 加载会话列表
-                    await self.loadSessionsFromGateway()
-
-                    // 检查是否有会话列表
-                    if self.sessionOrder.isEmpty {
-                        self.loadingStage = .syncingLocal
-                        self.loadingProgress = 1.0
-                    } else {
-                        self.loadingStage = .fetchingMessages
-                        self.loadingProgress = 0.8
-                        await self.loadAllSessionHistory()
-
-                        self.loadingStage = .syncingLocal
-                        self.loadingProgress = 1.0
-                    }
-
-                    // 初始化完成
-                    self.isInitializing = false
-                    self.gatewayConnected = true
-                    self.loadingStage = .idle
-
-                    // 启动会话状态轮询
-                    self.startSessionPolling()
+                    // 连接成功，开始加载流程
+                    await self.initializeAfterConnect()
                 } else {
                     // 网络断开，保留所有数据供用户离线浏览
                     self.stopSessionPolling()
@@ -297,6 +269,44 @@ class DeckViewModel {
 
         // Sync error state from client
         connectionError = client.connectionError
+    }
+
+    /// 连接成功后初始化（加载会话列表和消息历史）
+    private func initializeAfterConnect() async {
+        // 连接成功，更新进度
+        loadingStage = .connecting
+        loadingProgress = 0.2
+
+        do {
+            // 加载会话列表（内部更新状态到 .fetchingSessions）
+            try await loadSessionsFromGateway()
+
+            // 检查是否有会话列表
+            if sessionOrder.isEmpty {
+                logger.warning("⚠️ 没有会话列表，跳过消息加载")
+                loadingStage = .syncingLocal
+                loadingProgress = 1.0
+            } else {
+                // 加载所有历史（内部更新状态到 .fetchingMessages → .syncingLocal）
+                await loadAllSessionHistory()
+            }
+
+            // 初始化完成
+            isInitializing = false
+            gatewayConnected = true
+            loadingStage = .idle
+
+            // 启动会话状态轮询
+            startSessionPolling()
+        } catch {
+            logger.error("❌ 初始化失败：\(error.localizedDescription)")
+            // 初始化失败，重置状态
+            isInitializing = false
+            gatewayConnected = false
+            loadingStage = .idle
+            loadingProgress = 0.0
+            connectionError = error.localizedDescription
+        }
     }
 
     /// 清除连接错误
@@ -844,30 +854,36 @@ class DeckViewModel {
     // MARK: - Load Sessions
 
     /// 从 Gateway 加载会话列表（填充 sessionOrder）
-    private func loadSessionsFromGateway() async {
+    private func loadSessionsFromGateway() async throws {
         guard let client = gatewayClient, client.connected else {
             logger.error("❌ Gateway 未连接，无法加载会话列表")
-            return
+            throw NSError(domain: "DeckViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"])
         }
 
+        // 开始加载
+        loadingStage = .fetchingSessions
+        loadingProgress = 0.5
+
         do {
-            let sessionIds = try await client.listSessions()
-            logger.log("📋 从 Gateway 获取到 \(sessionIds.count) 个会话")
+            // 使用 fetchSessions 获取活跃会话列表
+            // activeMinutes: 1000000 = 约 694 天，基本等于获取所有会话
+            let statuses = try await client.fetchSessions(activeMinutes: 1_000_000)
+            let sessionIds = statuses.map(\.key)
+            logger.info("📋 从 Gateway 获取到 \(sessionIds.count) 个会话")
 
-            await MainActor.run {
-                self.sessionOrder = sessionIds.map { $0.lowercased() }
-                self.createSessionStates()
+            sessionOrder = sessionIds.map { $0.lowercased() }
+            createSessionStates()
 
-                logger.log("📋 Session 顺序：\(self.sessionOrder)")
+            logger.info("📋 Session 顺序：\(sessionOrder)")
 
-                // 默认选中第一个 Session
-                if let firstSessionId = sessionOrder.first {
-                    globalInputState.selectedSessionId = firstSessionId
-                    logger.log("🎯 选中 Session: \(firstSessionId)")
-                }
+            // 默认选中第一个 Session
+            if let firstSessionId = sessionOrder.first {
+                globalInputState.selectedSessionId = firstSessionId
+                logger.info("🎯 选中 Session: \(firstSessionId)")
             }
         } catch {
             logger.error("❌ 加载会话列表失败：\(error.localizedDescription)")
+            throw error
         }
     }
 
@@ -875,20 +891,34 @@ class DeckViewModel {
 
     /// 加载所有 Session 的历史消息
     func loadAllSessionHistory() async {
-        for session in sessionOrder.compactMap({ self.sessions[$0] }) {
+        // 开始加载
+        loadingStage = .fetchingMessages
+        loadingProgress = 0.8
+
+        let totalCount = sessionOrder.count
+        var loadedCount = 0
+
+        for session in sessionOrder.compactMap({ sessions[$0] }) {
             await loadSessionHistory(sessionKey: session.sessionKey)
+            loadedCount += 1
+
+            // 更新进度（按会话数量）
+            if totalCount > 0 {
+                loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
+            }
         }
+
+        // 所有历史加载完成
+        loadingStage = .syncingLocal
+        loadingProgress = 1.0
     }
 
     /// 加载单个 Session 的历史消息
     /// - Parameter sessionKey: Session Key
     func loadSessionHistory(sessionKey: String) async {
         guard let client = gatewayClient, client.connected else {
-            logger.warning("⚠️ loadSessionHistory: Gateway 未连接，跳过")
             return
         }
-
-        logger.debug("📥 开始加载 Session 历史：\(sessionKey)")
 
         // 设置加载状态（大小写不敏感匹配）
         if let session = sessions.values.first(where: {
@@ -899,7 +929,6 @@ class DeckViewModel {
 
         do {
             let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
-            logger.debug("✅ 加载完成：\(sessionKey), \(messages.count) 条消息")
 
             // 更新 Session 的消息（大小写不敏感匹配）
             if let session = sessions.values.first(where: {

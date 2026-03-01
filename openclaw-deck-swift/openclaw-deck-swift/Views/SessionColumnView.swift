@@ -296,25 +296,42 @@ struct SessionColumnView: View {
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Loading indicator
-                    if session.isHistoryLoading {
-                        HStack {
-                            Spacer()
+                Group {
+                    if session.isLoadingMessages {
+                        // 消息加载中
+                        VStack {
                             ProgressView()
-                                .scaleEffect(0.8)
-                            Text("Loading history...")
+                            Text("正在加载消息历史...")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Spacer()
                         }
-                        .padding(.vertical, 8)
-                    }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if session.messages.isEmpty {
+                        // 空会话
+                        EmptySessionView()
+                    } else {
+                        // 显示消息列表
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Loading indicator
+                            if session.isHistoryLoading {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                    Text("Loading history...")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                            }
 
-                    // Messages
-                    ForEach(session.messages) { message in
-                        MessageView(message: message)
-                            .id(message.id)
+                            // Messages
+                            ForEach(session.messages) { message in
+                                MessageView(message: message)
+                                    .id(message.id)
+                            }
+                        }
                     }
                 }
                 .padding()

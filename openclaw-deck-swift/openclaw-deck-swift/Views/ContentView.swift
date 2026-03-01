@@ -100,12 +100,12 @@ struct ContentView: View {
                     }
                 )
 
-            } else if viewModel.isInitializing {
-                // Connecting state - show loading
-                ConnectingView()
-
-                // Spacer to push content to top when empty
-                Spacer()
+            } else if viewModel.loadingStage != .idle {
+                // 加载中 - 显示详细加载状态
+                LoadingView(
+                    stage: viewModel.loadingStage,
+                    progress: viewModel.loadingProgress
+                )
             } else {
                 // Welcome screen - show settings
                 WelcomeView(

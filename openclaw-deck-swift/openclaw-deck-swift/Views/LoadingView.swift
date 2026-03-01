@@ -5,43 +5,6 @@
 
 import SwiftUI
 
-/// 加载阶段枚举
-public enum LoadingStage: Equatable {
-    case idle
-    case connecting
-    case fetchingSessions
-    case fetchingMessages
-    case syncingLocal
-
-    public var title: String {
-        switch self {
-        case .idle:
-            ""
-        case .connecting:
-            "connecting_to_gateway".localized
-        case .fetchingSessions:
-            "fetching_sessions".localized
-        case .fetchingMessages:
-            "fetching_messages".localized
-        case .syncingLocal:
-            "syncing_to_local".localized
-        }
-    }
-
-    public var subtitle: String? {
-        switch self {
-        case .fetchingSessions:
-            "from_cloudflare_kv".localized
-        case .fetchingMessages:
-            "from_gateway".localized
-        case .syncingLocal:
-            "saving_to_local".localized
-        default:
-            nil
-        }
-    }
-}
-
 /// 通用加载视图组件
 public struct LoadingView: View {
     public let stage: LoadingStage

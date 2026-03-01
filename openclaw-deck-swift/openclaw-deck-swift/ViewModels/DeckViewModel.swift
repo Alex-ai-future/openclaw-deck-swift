@@ -19,18 +19,31 @@ enum LoadingStage: Equatable {
     case fetchingMessages // 从后端获取消息历史
     case syncingLocal // 同步到本地存储
 
-    var description: String {
+    var title: String {
         switch self {
         case .idle:
             ""
         case .connecting:
-            "正在连接 Gateway..."
+            "connecting_to_gateway".localized
         case .fetchingSessions:
-            "正在从云端获取会话列表..."
+            "fetching_sessions".localized
         case .fetchingMessages:
-            "正在加载消息历史..."
+            "fetching_messages".localized
         case .syncingLocal:
-            "正在同步到本地..."
+            "syncing_to_local".localized
+        }
+    }
+
+    var subtitle: String? {
+        switch self {
+        case .fetchingSessions:
+            "from_cloudflare_kv".localized
+        case .fetchingMessages:
+            "from_gateway".localized
+        case .syncingLocal:
+            "saving_to_local".localized
+        default:
+            nil
         }
     }
 }

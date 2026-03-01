@@ -387,6 +387,266 @@ https://github.com/Alex-ai-future/openclaw-deck-swift/actions
 
 ---
 
+## 📋 提交 PR 完整流程
+
+### 前提条件
+
+**确保完成以下检查：**
+
+### 1️⃣ 代码格式化
+
+```bash
+# 格式化所有修改的文件
+bash script/format.sh
+
+# 或者检查格式（不修改）
+bash script/format.sh --check
+```
+
+**预期输出：**
+```
+✅ 格式检查通过
+```
+
+---
+
+### 2️⃣ 本地编译检查（三个平台）
+
+**macOS 编译：**
+```bash
+bash script/build.sh macos
+```
+
+**iOS 编译：**
+```bash
+bash script/build.sh ios
+```
+
+**iPadOS 编译：**
+```bash
+bash script/build.sh ipados
+```
+
+**预期输出：**
+```
+========================================
+✅ macOS Build Succeeded
+========================================
+```
+
+**如果失败：**
+- 查看编译日志：`build/macos/build.log`
+- 修复错误后重新编译
+
+---
+
+### 3️⃣ 单元测试
+
+```bash
+bash script/run_unit_tests.sh
+```
+
+**预期输出：**
+```
+========================================
+✅ Unit Tests Completed Successfully!
+========================================
+```
+
+**如果失败：**
+- 查看测试日志：`build/tests/test_output.log`
+- 修复失败的测试
+- 重新运行测试
+
+---
+
+### 4️⃣ 查看分支差别
+
+**查看提交历史差别：**
+```bash
+# 查看本地分支比远程 main 多出的提交
+git log --oneline origin/main..HEAD
+
+# 查看远程 main 比本地分支多出的提交
+git log --oneline HEAD..origin/main
+```
+
+**查看文件改动统计：**
+```bash
+# 查看文件改动统计
+git diff --stat origin/main..HEAD
+
+# 查看具体文件改动
+git diff origin/main..HEAD -- <文件路径>
+```
+
+**示例输出：**
+```
+commit 45aa924 [fix] 修复加载进度状态管理和线程问题
+commit d70aeae [refactor] 删除未使用的 listSessions() 方法
+commit d7eadf9 [fix] 修复加载动画显示逻辑和连接回调问题
+...
+
+64 files changed, 12286 insertions(+), 6276 deletions(-)
+```
+
+---
+
+### 5️⃣ 提交代码
+
+**使用 committer 脚本提交：**
+```bash
+# 单个文件
+./script/committer "[类型] 描述" 文件路径
+
+# 多个文件
+./script/committer "[类型] 描述" 文件 1 文件 2 文件 3
+```
+
+**提交类型：**
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| `[feature]` | 新功能 | `[feature] 添加会话搜索功能` |
+| `[fix]` | 修复 bug | `[fix] 修复空指针异常` |
+| `[ui]` | UI 改进 | `[ui] 优化按钮样式` |
+| `[refactor]` | 重构 | `[refactor] 简化会话加载逻辑` |
+| `[docs]` | 文档更新 | `[docs] 更新 README 安装说明` |
+| `[style]` | 代码格式化 | `[style] 统一代码缩进` |
+| `[ci]` | CI/CD 配置 | `[ci] 添加 iOS 编译任务` |
+| `[test]` | 测试相关 | `[test] 添加会话管理单元测试` |
+
+**自动执行：**
+1. ✅ git add 文件
+2. ✅ 格式化 Swift 代码
+3. ✅ 重新 add 格式化后的文件
+4. ✅ git commit
+
+---
+
+### 6️⃣ 推送到 GitHub
+
+```bash
+# 推送到当前分支
+git push origin <分支名>
+
+# 示例
+git push origin ai/dev-1
+```
+
+**推送后：**
+- GitHub Actions 自动运行 CI
+- 在 Actions 页面查看进度
+- 等待所有检查通过
+
+---
+
+### 7️⃣ 创建 Pull Request
+
+**访问：** https://github.com/Alex-ai-future/openclaw-deck-swift/pulls
+
+**步骤：**
+1. 点击 "New pull request"
+2. 选择分支：
+   - **base:** `main`
+   - **compare:** `<你的分支>`
+3. 填写 PR 信息（自动加载模板）
+
+---
+
+### 8️⃣ 填写 PR 模板
+
+**PR 模板位置：** `docs/PULL_REQUEST_TEMPLATE.md`
+
+**必填内容：**
+
+```markdown
+## 改动说明
+<!-- 详细描述本次 PR 的目的和改动内容 -->
+<!-- 说明解决了什么问题，为什么需要这个改动 -->
+
+## 测试
+- [x] 本地编译通过（macOS + iOS + iPadOS）
+  - `bash script/build.sh macos` ✅
+  - `bash script/build.sh ios` ✅
+  - `bash script/build.sh ipados` ✅
+- [x] 本地测试通过
+  - `bash script/run_unit_tests.sh` ✅
+- [x] 代码已格式化
+  - `bash script/format.sh` ✅
+- [ ] CI 检查通过
+  - 等待 GitHub Actions 完成
+
+## 相关 Issue
+<!-- 关联的 Issue 编号，如：Fixes #123 -->
+<!-- 如果没有关联 Issue，说明原因 -->
+
+## 分支差别
+<!-- 使用 git log --oneline origin/main..HEAD 查看 -->
+<!-- 列出主要提交记录 -->
+
+<details>
+<summary>提交历史（点击展开）</summary>
+
+```
+commit 45aa924 [fix] 修复加载进度状态管理和线程问题
+commit d70aeae [refactor] 删除未使用的 listSessions() 方法
+commit d7eadf9 [fix] 修复加载动画显示逻辑和连接回调问题
+...
+```
+
+</details>
+
+## 文件改动统计
+<!-- 使用 git diff --stat origin/main..HEAD 查看 -->
+
+```
+64 files changed, 12286 insertions(+), 6276 deletions(-)
+```
+
+## 截图（可选）
+<!-- 如果有 UI 改动，添加截图 -->
+
+## 注意事项
+- [ ] 已阅读 [AGENTS.md](AGENTS.md) 项目规则
+- [ ] 已确认不包含敏感信息
+- [ ] 已确认不包含构建产物
+```
+
+---
+
+### 9️⃣ 等待 CI 通过
+
+**查看 CI 状态：**
+- PR 页面底部显示检查状态
+- 绿色勾 ✅ = 通过
+- 红色叉 ❌ = 失败
+
+**如果 CI 失败：**
+1. 点击 "Details" 查看详细日志
+2. 定位失败的步骤（Format/Build/Test）
+3. 本地修复后重新推送
+4. CI 会自动重新运行
+
+---
+
+### 🔟 合并 PR
+
+**合并条件：**
+- ✅ 所有 CI 检查通过
+- ✅ 至少 1 人审查通过
+- ✅ 无冲突
+
+**合并方式：**
+- **Squash and merge** - 压缩提交为一个（推荐）
+- **Merge commit** - 保留所有提交
+- **Rebase and merge** - 变基合并
+
+**合并后：**
+- 删除分支（可选）
+- 验证 main 分支 CI 状态
+
+---
+
 ## 📝 PR 模板
 
 **位置：** `docs/PULL_REQUEST_TEMPLATE.md`

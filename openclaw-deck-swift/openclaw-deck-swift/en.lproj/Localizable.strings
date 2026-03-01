@@ -8,6 +8,11 @@
 // MARK: - App Name
 "app_name" = "OpenClaw Deck";
 
+// MARK: - Loading States
+"fetching_sessions" = "Fetching Sessions";
+"fetching_messages" = "Loading Messages";
+"syncing_to_local" = "Syncing to Local";
+
 // MARK: - Common
 "preview" = "Preview";
 "loading" = "Loading...";

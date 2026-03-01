@@ -55,11 +55,11 @@ extension LoadingStage {
     var subtitle: String? {
         switch self {
         case .fetchingSessions:
-            "from_cloudflare_kv".localized
+            "fetching_sessions_from_cloudflare_kv".localized
         case .fetchingMessages:
-            "from_gateway".localized
+            "fetching_messages_from_gateway".localized
         case .syncingLocal:
-            "saving_to_local".localized
+            "saving_to_local_storage".localized
         default:
             nil
         }
@@ -158,19 +158,6 @@ class DeckViewModel {
     /// UserDefaults 存储
     private let storage: UserDefaultsStorageProtocol
 
-    // MARK: - Session Polling
-
-    /// 会话状态轮询定时器
-    private var sessionPollingTimer: Timer?
-
-    /// 轮询间隔（秒）
-    private let sessionPollingInterval: TimeInterval = 30
-
-    /// 是否正在轮询
-    private var isPolling: Bool = false
-
-    // MARK: - Initialization
-
     /// 初始化
     /// - Parameters:
     ///   - storage: UserDefaultsStorage 实例（默认为 shared）
@@ -250,9 +237,13 @@ class DeckViewModel {
                     // 连接成功，开始加载流程
                     await self.initializeAfterConnect()
                 } else {
-                    // 网络断开，保留所有数据供用户离线浏览
-                    self.stopSessionPolling()
+                    // ⚠️ 如果已经完成初始化，忽略断开连接回调（避免网络波动导致 UI 重置）
+                    guard self.isInitializing || !self.gatewayConnected else {
+                        logger.info("⚠️ 忽略断开连接回调（已完成初始化）")
+                        return
+                    }
 
+                    // 网络断开，保留所有数据供用户离线浏览
                     // 连接失败，结束初始化
                     self.isInitializing = false
                     self.gatewayConnected = false
@@ -305,9 +296,6 @@ class DeckViewModel {
             isInitializing = false
             gatewayConnected = true
             loadingStage = .idle
-
-            // 启动会话状态轮询
-            startSessionPolling()
         } catch {
             logger.error("❌ 初始化失败：\(error.localizedDescription)")
             // 初始化失败，重置状态
@@ -336,76 +324,6 @@ class DeckViewModel {
     /// 重置设备身份（清除 device identity 和 device token）
     func resetDeviceIdentity() {
         gatewayClient?.resetDeviceIdentity()
-    }
-
-    // MARK: - Session Polling
-
-    /// 启动会话状态轮询
-    private func startSessionPolling() {
-        guard !isPolling else { return }
-        isPolling = true
-
-        // 立即执行一次
-        Task {
-            await pollSessionStatus()
-        }
-
-        // 定时轮询
-        sessionPollingTimer = Timer.scheduledTimer(
-            withTimeInterval: sessionPollingInterval, repeats: true
-        ) { [weak self] _ in
-            Task { @MainActor in
-                await self?.pollSessionStatus()
-            }
-        }
-    }
-
-    /// 停止会话状态轮询
-    private func stopSessionPolling() {
-        guard isPolling else { return }
-        isPolling = false
-
-        sessionPollingTimer?.invalidate()
-        sessionPollingTimer = nil
-
-        logger.info("⏹️ 停止会话状态轮询")
-    }
-
-    /// 轮询会话状态
-    private func pollSessionStatus() async {
-        guard let client = gatewayClient, client.connected else { return }
-
-        do {
-            let statuses = try await client.fetchSessions(activeMinutes: 60)
-            await MainActor.run {
-                updateSessionStates(from: statuses)
-            }
-        } catch {
-            logger.error("❌ 轮询会话状态失败：\(error.localizedDescription)")
-        }
-    }
-
-    /// 更新会话状态（从轮询结果）
-    private func updateSessionStates(from statuses: [GatewaySessionStatus]) {
-        for status in statuses {
-            // 查找对应的 session
-            if let session = sessions[status.key.lowercased()] {
-                // 更新状态（轮询结果作为权威状态）
-                session.isProcessing = status.isProcessing
-
-                // 如果正在处理中，设置为 thinking 状态
-                if status.isProcessing {
-                    session.status = .thinking
-                } else if session.status == .thinking || session.status == .streaming {
-                    // 如果之前是处理状态，现在变为 idle
-                    session.status = .idle
-                }
-
-                logger.debug(
-                    "📊 更新会话状态：\(status.key) - 处理中：\(status.isProcessing)"
-                )
-            }
-        }
     }
 
     /// 设置当前选中的 Session

@@ -8,6 +8,11 @@
 // MARK: - App Name
 "app_name" = "OpenClaw Deck";
 
+// MARK: - Loading States
+"fetching_sessions" = "获取会话列表";
+"fetching_messages" = "加载消息历史";
+"syncing_to_local" = "同步到本地";
+
 // MARK: - Common
 "preview" = "预览";
 "loading" = "加载中...";

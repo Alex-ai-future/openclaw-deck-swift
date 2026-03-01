@@ -29,13 +29,13 @@ struct LoadingView: View {
                 .foregroundColor(.primary)
 
             // 进度条（如果有进度）
-            if stage != .idle, stage != .connecting {
+            if stage != .idle {
                 ProgressView(value: progress)
                     .progressViewStyle(LinearProgressViewStyle())
                     .frame(width: 200)
                     .tint(.accentColor)
 
-                Text("intprogress_100".localized)
+                Text("\(Int(progress * 100))%")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -43,15 +43,15 @@ struct LoadingView: View {
             // 提示信息
             switch stage {
             case .fetchingSessions:
-                Text("从_cloudflare_kv_获取会话数据".localized)
+                Text("fetching_sessions_from_cloudflare_kv".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
             case .fetchingMessages:
-                Text("从_gateway_获取消息历史".localized)
+                Text("fetching_messages_from_gateway".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
             case .syncingLocal:
-                Text("保存到本地存储".localized)
+                Text("saving_to_local_storage".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
             default:

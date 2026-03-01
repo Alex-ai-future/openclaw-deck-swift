@@ -251,6 +251,7 @@ class DeckViewModel {
         // 连接 Gateway
         await client.connect()
 
+        // 连接成功，更新进度到 20%
         loadingProgress = 0.2
 
         // Sync error state from client
@@ -284,8 +285,6 @@ class DeckViewModel {
     private func startSessionPolling() {
         guard !isPolling else { return }
         isPolling = true
-
-        logger.info("🔄 启动会话状态轮询（每 \(Int(sessionPollingInterval)) 秒）")
 
         // 立即执行一次
         Task {
@@ -655,8 +654,6 @@ class DeckViewModel {
             sessionOrder = order.map { $0.lowercased() }
         }
 
-        logger.log("✅ 加载完成：\(sessionOrder.count) 个 sessions")
-
         // 默认选中第一个 Session
         if let firstSessionId = sessionOrder.first {
             globalInputState.selectedSessionId = firstSessionId
@@ -687,8 +684,6 @@ class DeckViewModel {
                 logger.log("  + \(sessionId)")
             }
         }
-
-        logger.log("✅ 创建完成：\(sessions.count) 个 Session 状态")
     }
 
     /// 保存 Sessions 到 UserDefaults（并同步到 Cloudflare）

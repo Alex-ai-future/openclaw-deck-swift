@@ -22,18 +22,13 @@ struct SessionColumnView: View {
   let onDelete: () -> Void
 
   @State private var showingDeleteAlert = false
-  @State private var scrollTrigger = 0  // 用于触发滚动到底部（使用唯一值避免合并）
+  @State private var scrollTargetId: String?  // 待滚动的目标消息 ID
 
-  // 滚动到底部
+  // 滚动到底部（手动点击按钮）
   private func scrollToBottom() {
     guard let lastId = session.messages.last?.id else { return }
-
-    print("lastId\(lastId)")
-
-    // 每次点击都使用新的唯一值触发 onChange，避免 SwiftUI 合并变化
-    withAnimation(.smooth(duration: 0.3)) {
-      scrollTrigger = Int.random(in: 1000...9999)
-    }
+    // 设置目标 ID，触发滚动
+    scrollTargetId = lastId
   }
 
   // 发送 OK 消息
@@ -319,10 +314,17 @@ struct SessionColumnView: View {
         .padding()
         .id("messages-container-\(session.messages.count)")  // 强制在消息变化时重新布局
       }
+      // 监听最新消息 ID 变化，更新滚动目标
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {
+          scrollTargetId = lastId  // 保存目标 ID
+        }
+      }
+      // 监听滚动目标，执行滚动
+      .onChange(of: scrollTargetId) { _, newTargetId in
+        if let lastId = newTargetId {
           withAnimation(.smooth(duration: 0.2)) {
-            proxy.scrollTo(lastId, anchor: .bottom)  // 滚动到最后一条消息的底部
+            proxy.scrollTo(lastId, anchor: .bottom)
           }
         }
       }

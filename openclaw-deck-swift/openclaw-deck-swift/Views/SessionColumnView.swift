@@ -306,9 +306,6 @@ struct SessionColumnView: View {
                                 .foregroundColor(.secondary)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if session.messages.isEmpty {
-                        // 空会话
-                        EmptySessionView()
                     } else {
                         // 显示消息列表
                         VStack(alignment: .leading, spacing: 12) {

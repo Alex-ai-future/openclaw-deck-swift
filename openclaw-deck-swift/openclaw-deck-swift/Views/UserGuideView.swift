@@ -20,13 +20,13 @@ struct UserGuideView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("加载用户指南...")
+                    ProgressView("Loading User Guide...")
                 } else if let error {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.largeTitle)
                             .foregroundColor(.orange)
-                        Text("加载失败")
+                        Text("Failed to Load")
                             .font(.headline)
                         Text(error)
                             .font(.caption)
@@ -37,6 +37,7 @@ struct UserGuideView: View {
                 } else {
                     ScrollView {
                         MarkdownView(markdownContent)
+                            .padding(.horizontal)
                     }
                 }
             }

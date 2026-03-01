@@ -120,7 +120,7 @@
 "no_messages" = "无消息";
 "notes_optional" = "备注（可选）";
 "notifications_and_cloud_sync_settings" = "通知和云同步设置";
-"ok" = "确定";
+"ok" = "OK";
 "open_settings" = "打开设置";
 "orange" = "橙色";
 "please_enable_microphone_permission_in_settings_to_use_voice_input" = "请在设置中启用麦克风权限以使用语音输入";

@@ -186,7 +186,7 @@ struct SessionColumnView: View {
           }
         }
       }
-      
+
     #endif
     .deleteSessionAlert(isPresented: $showingDeleteAlert) {
       onDelete()

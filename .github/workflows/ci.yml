@@ -40,10 +40,34 @@ jobs:
         path: build/macos/DerivedData/Build/Products/Release/*.app
         if-no-files-found: warn
 
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    needs: format
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Build
+      run: bash script/build.sh ios
+
+  build-ipados:
+    name: Build iPadOS
+    runs-on: macos-latest
+    needs: format
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Build
+      run: bash script/build.sh ipados
+
   test:
     name: Unit Tests
     runs-on: macos-latest
-    needs: build-macos
+    needs: [build-macos, build-ios, build-ipados]
     
     steps:
     - name: Checkout

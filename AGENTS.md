@@ -295,6 +295,117 @@ bash script/format.sh --check
 
 ---
 
+## 🔧 Git Hooks 使用说明
+
+### 自动格式化（pre-commit）
+
+**工作原理：**
+```
+git commit
+    ↓
+.git/hooks/pre-commit 触发
+    ↓
+调用 script/pre-commit
+    ↓
+调用 script/format.sh --staged
+    ↓
+格式化暂存的 Swift 文件
+    ↓
+提交继续
+```
+
+**职责分工：**
+| 组件 | 职责 |
+|------|------|
+| `script/format.sh` | 格式化 Swift 代码 |
+| `script/pre-commit` | pre-commit hook 逻辑 |
+| `script/committer` | 安全提交（自动格式化 + add + commit） |
+
+### 提交脚本
+
+**使用 `script/committer` 提交：**
+```bash
+./script/committer "[类型] 描述" 文件 1 文件 2...
+```
+
+**自动执行：**
+1. git add 文件
+2. 格式化 Swift 代码
+3. 重新 add 格式化后的文件
+4. git commit
+
+**提交类型：**
+- `[feature]` - 新功能
+- `[fix]` - 修复 bug
+- `[ui]` - UI 改进
+- `[refactor]` - 重构
+- `[docs]` - 文档更新
+- `[style]` - 代码格式化
+- `[ci]` - CI/CD 配置
+- `[test]` - 测试相关
+
+---
+
+## 🚀 CI/CD 流程
+
+### GitHub Actions
+
+**配置文件：** `.github/workflows/ci.yml`
+
+**检查流程：**
+```
+push / PR
+    ↓
+1️⃣ Format Check (swiftformat)
+    ↓
+2️⃣ Build macOS
+    ↓
+3️⃣ Build iOS
+    ↓
+4️⃣ Build iPadOS
+    ↓
+5️⃣ Unit Tests
+    ↓
+✅ 全部通过 → PR 显示绿色勾
+❌ 任何失败 → PR 显示红色叉
+```
+
+**运行平台：**
+- ✅ macOS（macOS 应用编译）
+- ✅ iOS（iOS 模拟器编译）
+- ✅ iPadOS（iPadOS 模拟器编译）
+
+**预计耗时：** 10-20 分钟
+
+### 查看 CI 状态
+
+**GitHub Actions 页面：**
+https://github.com/Alex-ai-future/openclaw-deck-swift/actions
+
+**PR 检查状态：**
+在 Pull Request 页面底部查看
+
+---
+
+## 📝 PR 模板
+
+**位置：** `docs/PULL_REQUEST_TEMPLATE.md`
+
+**创建 PR 时自动加载**
+
+**包含内容：**
+- 改动说明
+- 测试清单（编译 + 测试 + 格式化 + CI）
+- 相关 Issue
+- 截图（可选）
+- 注意事项
+
+**参考文档：**
+- [AGENTS.md](AGENTS.md) - 项目工作规则
+- [USER_GUIDE.md](docs/USER_GUIDE.md) - 用户使用指南
+
+---
+
 ## 🔒 编译锁规则（多 AI 协作）
 
 **问题：** 多个 AI 同时编译会导致 `build.db` 数据库锁定冲突

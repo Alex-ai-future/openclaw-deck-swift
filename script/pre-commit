@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# script/pre-commit
+# Pre-commit hook 脚本（可分享版本）
+# 用法：在 .git/hooks/pre-commit 中调用此脚本
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# 获取暂存的 Swift 文件
+SWIFT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.swift$' || true)
+
+if [ -z "$SWIFT_FILES" ]; then
+  exit 0
+fi
+
+# 调用格式化脚本（只格式化，不 add）
+"$PROJECT_DIR/script/format.sh" --staged
+
+# 重新添加格式化后的文件到暂存区（只 add 原本暂存的文件）
+git add $SWIFT_FILES

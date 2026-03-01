@@ -261,7 +261,7 @@ struct SessionRowView: View {
                 Button {
                     session.hasUnreadMessage = false
                 } label: {
-                    Label("已读".localized, systemImage: "checkmark.circle")
+                    Label("mark_as_read".localized, systemImage: "checkmark.circle")
                 }
                 .tint(.green)
             } else {
@@ -269,7 +269,7 @@ struct SessionRowView: View {
                 Button {
                     session.hasUnreadMessage = true
                 } label: {
-                    Label("未读".localized, systemImage: "circle")
+                    Label("mark_as_unread".localized, systemImage: "circle")
                 }
                 .tint(.orange)
             }
@@ -279,7 +279,7 @@ struct SessionRowView: View {
             Button(role: .destructive) {
                 onRequestDelete()
             } label: {
-                Label("删除".localized, systemImage: "trash")
+                Label("delete_session_action".localized, systemImage: "trash")
             }
         }
     }

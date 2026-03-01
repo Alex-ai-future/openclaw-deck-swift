@@ -152,3 +152,6 @@
 "fetching_sessions_from_cloudflare_kv" = "Fetching sessions from Cloudflare KV";
 "fetching_messages_from_gateway" = "Fetching messages from Gateway";
 "saving_to_local_storage" = "Saving to local storage";
+"mark_as_read" = "Mark as Read";
+"mark_as_unread" = "Mark as Unread";
+"delete_session_action" = "Delete";

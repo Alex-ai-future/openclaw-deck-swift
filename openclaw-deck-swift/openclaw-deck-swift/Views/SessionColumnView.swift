@@ -421,16 +421,7 @@ struct SessionColumnView: View {
 
     @ViewBuilder
     private var messageContent: some View {
-      if message.role == .assistant && message.text.isEmpty && (message.streaming ?? false) {
-        // 正在传输中但内容为空时，显示 Thinking 占位
-        HStack {
-          ProgressView()
-            .scaleEffect(0.8)
-          Text("Thinking...")
-            .font(.body)
-        }
-        .foregroundColor(.secondary)
-      } else if message.role == .assistant && !message.text.isEmpty {
+      if message.role == .assistant {
         // 使用 MarkdownUI 支持链接点击
         Markdown(message.text)
           .font(.body)
@@ -445,11 +436,6 @@ struct SessionColumnView: View {
           .font(.body)
           .foregroundColor(.white)
       }
-    }
-
-    /// 是否应该显示空消息（只有 assistant streaming 时显示占位）
-    private var shouldShowEmptyMessage: Bool {
-      message.role == .assistant && (message.streaming ?? false)
     }
 
     private var timestamp: some View {
@@ -528,16 +514,7 @@ struct SessionColumnView: View {
 
     @ViewBuilder
     private var messageContent: some View {
-      if message.role == .assistant && message.text.isEmpty && (message.streaming ?? false) {
-        // 正在传输中但内容为空时，显示 Thinking 占位
-        HStack {
-          ProgressView()
-            .scaleEffect(0.8)
-          Text("Thinking...")
-            .font(.body)
-        }
-        .foregroundColor(.secondary)
-      } else if message.role == .assistant && !message.text.isEmpty {
+      if message.role == .assistant {
         Markdown(message.text)
           .font(.body)
           .foregroundColor(.primary)
@@ -552,11 +529,6 @@ struct SessionColumnView: View {
           .font(.body)
           .foregroundColor(.white)
       }
-    }
-
-    /// 是否应该显示空消息（只有 assistant streaming 时显示占位）
-    private var shouldShowEmptyMessage: Bool {
-      message.role == .assistant && (message.streaming ?? false)
     }
 
     private var timestamp: some View {

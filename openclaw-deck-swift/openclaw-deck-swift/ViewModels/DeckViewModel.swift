@@ -219,6 +219,10 @@ class DeckViewModel {
                     // 重置重连状态
                     logger.info("🔗 Gateway 已连接，开始下载所有 Session 消息...")
 
+                    // 连接成功，更新进度到 20%
+                    self?.loadingStage = .connecting
+                    self?.loadingProgress = 0.2
+
                     // 获取会话列表成功
                     self?.loadingStage = .fetchingSessions
                     self?.loadingProgress = 0.5
@@ -234,6 +238,9 @@ class DeckViewModel {
                     self?.loadingProgress = 1.0
                     self?.loadingStage = .idle
 
+                    // 初始化完成
+                    self?.isInitializing = false
+
                     // 🆕 启动会话状态轮询
                     self?.startSessionPolling()
                 } else {
@@ -242,22 +249,24 @@ class DeckViewModel {
 
                     // 🆕 停止会话状态轮询
                     self?.stopSessionPolling()
+
+                    // 连接失败，结束初始化
+                    self?.isInitializing = false
                 }
             }
         }
 
         gatewayClient = client
 
-        // 连接 Gateway
+        // 连接 Gateway（异步，不等待连接成功）
         await client.connect()
-
-        // 连接成功，更新进度到 20%
-        loadingProgress = 0.2
 
         // Sync error state from client
         connectionError = client.connectionError
 
-        isInitializing = false
+        // 注意：isInitializing 保持为 true，等待 onConnection 回调中设置 gatewayConnected
+        // 这样可以确保 LoadingView 一直显示到所有数据加载完成
+        // onConnection 回调中会设置 gatewayConnected = true，从而结束加载状态
     }
 
     /// 清除连接错误

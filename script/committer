@@ -75,9 +75,22 @@ echo ""
 echo -e "${GREEN}提交信息：${NC}$COMMIT_MSG"
 echo ""
 
-# 执行 git add
+# 执行 git add（先 add，让 format.sh 可以检测到暂存的文件）
 echo -e "${YELLOW}添加文件到暂存区...${NC}"
 git add "${VALID_FILES[@]}"
+
+# 格式化暂存的 Swift 文件
+echo -e "${YELLOW}格式化 Swift 代码...${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+"$SCRIPT_DIR/format.sh" --staged
+
+# 重新添加格式化后的文件
+SWIFT_FILES=$(git diff --name-only --cached | grep '\.swift$' || true)
+if [ -n "$SWIFT_FILES" ]; then
+    echo -e "${GREEN}✅ 已格式化：${NC}"
+    echo "$SWIFT_FILES" | sed 's/^/  /'
+    git add $SWIFT_FILES
+fi
 
 # 执行 git commit
 echo -e "${YELLOW}提交代码...${NC}"

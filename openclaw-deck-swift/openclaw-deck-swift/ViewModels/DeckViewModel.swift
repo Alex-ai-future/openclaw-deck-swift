@@ -231,12 +231,23 @@ class DeckViewModel {
                     // 而是直接从 Gateway 获取会话列表
                     await self?.loadSessionsFromGateway()
 
-                    // 再加载所有消息
-                    await self?.loadAllSessionHistory()
+                    // 检查是否有会话列表
+                    if self?.sessionOrder.isEmpty == true {
+                        logger.warning("⚠️ 没有会话列表，跳过消息加载")
+                        self?.loadingStage = .syncingLocal
+                        self?.loadingProgress = 1.0
+                    } else {
+                        // 再加载所有消息
+                        await self?.loadAllSessionHistory()
 
-                    // 获取消息完成
-                    self?.loadingStage = .fetchingMessages
-                    self?.loadingProgress = 0.8
+                        // 获取消息完成
+                        self?.loadingStage = .fetchingMessages
+                        self?.loadingProgress = 0.8
+
+                        // 同步本地完成
+                        self?.loadingStage = .syncingLocal
+                        self?.loadingProgress = 1.0
+                    }
 
                     // 同步本地完成
                     self?.loadingStage = .syncingLocal

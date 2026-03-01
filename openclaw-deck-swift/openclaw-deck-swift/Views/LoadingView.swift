@@ -1,15 +1,58 @@
 // LoadingView.swift
 // OpenClaw Deck Swift
 //
-// 加载状态视图 - 显示详细的加载进度和阶段
+// 通用加载状态视图 - 支持 iOS 和 macOS
 
 import SwiftUI
 
-struct LoadingView: View {
-    let stage: LoadingStage
-    let progress: Double
+/// 加载阶段枚举
+public enum LoadingStage: Equatable {
+    case idle
+    case connecting
+    case fetchingSessions
+    case fetchingMessages
+    case syncingLocal
 
-    var body: some View {
+    public var title: String {
+        switch self {
+        case .idle:
+            ""
+        case .connecting:
+            "connecting_to_gateway".localized
+        case .fetchingSessions:
+            "fetching_sessions".localized
+        case .fetchingMessages:
+            "fetching_messages".localized
+        case .syncingLocal:
+            "syncing_to_local".localized
+        }
+    }
+
+    public var subtitle: String? {
+        switch self {
+        case .fetchingSessions:
+            "from_cloudflare_kv".localized
+        case .fetchingMessages:
+            "from_gateway".localized
+        case .syncingLocal:
+            "saving_to_local".localized
+        default:
+            nil
+        }
+    }
+}
+
+/// 通用加载视图组件
+public struct LoadingView: View {
+    public let stage: LoadingStage
+    public let progress: Double
+
+    public init(stage: LoadingStage, progress: Double) {
+        self.stage = stage
+        self.progress = progress
+    }
+
+    public var body: some View {
         VStack(spacing: 24) {
             // 进度指示器
             Group {
@@ -17,53 +60,61 @@ struct LoadingView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.green)
+                        .transition(.scale.combined(with: .opacity))
                 } else {
                     ProgressView()
                         .scaleEffect(1.5)
+                        .transition(.opacity)
                 }
             }
 
-            // 状态文本
-            Text(stage.description)
+            // 主标题
+            Text(stage.title)
                 .font(.headline)
                 .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+                .animation(.easeInOut(duration: 0.3), value: stage.title)
 
-            // 进度条（如果有进度）
+            // 进度条（非 idle 状态都显示）
             if stage != .idle {
-                ProgressView(value: progress)
-                    .progressViewStyle(LinearProgressViewStyle())
-                    .frame(width: 200)
-                    .tint(.accentColor)
+                VStack(spacing: 8) {
+                    ProgressView(value: progress)
+                        .progressViewStyle(LinearProgressViewStyle())
+                        .frame(width: 200)
+                        .tint(.accentColor)
 
-                Text("\(Int(progress * 100))%")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    Text("\(Int(progress * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .monospacedDigit()
+                }
+                .transition(.opacity)
             }
 
-            // 提示信息
-            switch stage {
-            case .fetchingSessions:
-                Text("fetching_sessions_from_cloudflare_kv".localized)
+            // 副标题（详细说明）
+            if let subtitle = stage.subtitle {
+                Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.secondary)
-            case .fetchingMessages:
-                Text("fetching_messages_from_gateway".localized)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            case .syncingLocal:
-                Text("saving_to_local_storage".localized)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            default:
-                EmptyView()
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
             }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.adaptiveBackground)
+        .animation(.easeInOut(duration: 0.3), value: stage)
+        .animation(.easeInOut(duration: 0.3), value: progress)
     }
 }
 
-#Preview {
-    LoadingView(stage: .fetchingSessions, progress: 0.5)
-}
+#if DEBUG
+    #Preview {
+        Group {
+            LoadingView(stage: .connecting, progress: 0.2)
+            LoadingView(stage: .fetchingSessions, progress: 0.5)
+            LoadingView(stage: .fetchingMessages, progress: 0.8)
+            LoadingView(stage: .syncingLocal, progress: 1.0)
+        }
+    }
+#endif

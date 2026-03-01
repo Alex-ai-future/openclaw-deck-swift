@@ -343,89 +343,138 @@ sudo ufw allow 18789/tcp
 
 **功能说明：**
 - 在多个设备间同步 Session 列表和顺序
+- 完全免费，不需要 Apple 开发者账号
 - 自动冲突解决（最新修改优先）
-- 支持手动同步
 
-### 4.1 配置 Cloudflare KV
+### 免费额度
 
-**前提条件：**
-- Cloudflare 账号（免费）
-- 已创建 KV Namespace
+| 操作 | 免费额度 | 实际使用 |
+|------|---------|---------|
+| 读取 | 10 万次/天 | 每天打开 10 次 = 够用 27 年 |
+| 写入 | 1000 次/天 | 每天修改 100 次 = 够用 10 天 |
+| 存储 | 1GB | 可存 50 万个 Session |
 
-**步骤：**
+---
 
-1. **获取 Cloudflare 凭证**
-   - Account ID：Cloudflare Dashboard → 概述
-   - KV Namespace ID：Workers & Pages → KV → 命名空间 ID
-   - API Token：用户个人资料 → API 令牌 → 创建令牌（编辑 Cloudflare KV 权限）
+### 4.1 配置 Cloudflare（5 分钟搞定）
 
-2. **在应用中配置**
-   - 打开应用 → 设置（⚙️）
-   - 滚动到 "Cloudflare 同步" 部分
-   - 输入 Account ID、Namespace ID、API Token
-   - 开启同步开关
+**步骤 1：注册 Cloudflare 账号**
+1. 访问 https://dash.cloudflare.com/sign-up
+2. 免费注册（不需要信用卡）
+3. 验证邮箱
 
-3. **验证配置**
-   - 配置后自动保存
-   - 状态显示 "已配置"
+---
+
+**步骤 2：创建 KV Namespace**
+1. 登录 Cloudflare Dashboard
+2. 左侧菜单：**Workers & Pages** → **KV**
+3. 点击 **Create a namespace**
+4. 命名：`openclaw-sessions`
+5. 点击 **Add**
+
+---
+
+**步骤 3：获取 3 个关键信息**
+
+| 信息 | 获取位置 | 示例 |
+|------|---------|------|
+| **Account ID** | Dashboard 首页右侧 | `abc123xyz...`（32 位） |
+| **Namespace ID** | Workers & Pages → KV → 点击你的 namespace | `ns_xyz789...`（32 位） |
+| **API Token** | 头像 → My Profile → API Tokens → Create Token | 见下方 |
+
+**创建 API Token：**
+1. 点击右上角头像 → **My Profile** → **API Tokens**
+2. 点击 **Create Token**
+3. 选择 **Edit Cloudflare Workers** 模板
+4. 点击 **Continue to summary** → **Create Token**
+5. **立即复制 Token**（只显示一次！）
+
+---
+
+**步骤 4：在 App 中配置**
+1. 打开 OpenClaw Deck Swift
+2. 进入 **设置**（⚙️）→ 滚动到 **Cloudflare KV 同步**
+3. 填写配置：
+
+| 字段 | 填写内容 |
+|------|---------|
+| **User ID** | 自定义唯一标识（推荐用邮箱） |
+| **Account ID** | 步骤 3 获取 |
+| **Namespace ID** | 步骤 3 获取 |
+| **API Token** | 步骤 3 获取 |
+
+4. 点击 **保存**（自动验证）
 
 ---
 
 ### 4.2 使用同步功能
 
 **自动同步：**
-- 每次 Session 列表变化时自动同步
+- 每次 Session 列表变化时自动同步到云端
 - 包括：创建、删除、排序
 
 **手动同步：**
 - 设置 → Cloudflare 同步
 - 点击 "Sync Now" 按钮
-- 等待同步完成提示
 
 **多设备使用：**
-1. 设备 A：配置 Cloudflare，创建 Session
-2. 设备 B：配置相同 Cloudflare，开启同步
-3. 自动加载设备 A 的 Session 列表
+1. **设备 A**（例如 iPhone）：配置 Cloudflare，创建 Session
+2. **设备 B**（例如 iPad）：配置**相同的 User ID**
+3. 设备 B 启动时自动从云端加载 Session 列表
+
+⚠️ **关键：** 多设备必须使用**相同的 User ID** 才能同步！
 
 ---
 
-### 4.3 同步冲突解决
+### 4.3 常见问题
 
-**什么是同步冲突？**
+#### Q: 测试连接失败？
 
-当多个设备同时修改 Session 列表时，会产生冲突。例如：
-- 设备 A 创建了新 Session
-- 设备 B 同时删除了另一个 Session
-- 两个设备几乎同时同步到 Cloudflare
+**检查清单：**
+- [ ] Account ID 是否正确（32 位字符）
+- [ ] Namespace ID 是否正确（32 位字符）
+- [ ] API Token 是否完整复制
+- [ ] 网络连接是否正常
 
-**冲突解决原理：**
+---
 
-1. **自动合并（大多数情况）**
-   - 系统会比较本地和云端的时间戳
-   - 最新修改优先
-   - Session 列表自动合并（不会丢失任何 Session）
+#### Q: 多设备不同步？
 
-2. **冲突弹窗（无法自动解决时）**
-   - 当系统无法确定哪个版本更新
-   - 会显示同步冲突弹窗
-   - 你可以选择：
-     - **保留本地版本** - 使用当前设备的 Session 列表
-     - **使用云端版本** - 从 Cloudflare 下载其他设备的列表
-     - **手动合并** - 稍后手动调整
+**解决方法：**
+1. 检查多设备是否使用**相同的 User ID**
+2. 在每个设备上点击 **测试连接**
+3. 等待几秒让同步完成
+4. 重启 App
 
-3. **Session 内容不受影响**
-   - Cloudflare 只同步 Session 列表和顺序
-   - 消息内容始终存储在 Gateway
-   - 无论选择哪个版本，聊天记录都不会丢失
+---
+
+#### Q: 同步冲突怎么办？
+
+**什么是冲突：** 多个设备同时修改 Session 列表
+
+**系统自动处理：**
+- 大多数情况：自动合并，保留最新版本
+- 无法自动解决时：弹窗让你选择（保留本地/使用云端）
 
 **最佳实践：**
 - ✅ 避免在多个设备上同时管理 Session
 - ✅ 在一台设备上完成批量操作后再切换设备
-- ✅ 定期手动同步确保一致性
 
-**注意：**
-- Cloudflare 只同步 Session 列表和顺序
-- 消息内容存储在 Gateway，不受影响
+---
+
+#### Q: 如何清除配置？
+
+**方法：**
+1. 设置 → Cloudflare KV 同步
+2. 点击 **清除配置**
+3. 或者删除 App 重装
+
+---
+
+**安全说明：**
+- 🔒 API Token 存储在系统 Keychain（加密）
+- 🔒 只同步 Session 列表，不同步聊天内容
+- 🔒 聊天内容存储在 Gateway/本地
 
 ---
 

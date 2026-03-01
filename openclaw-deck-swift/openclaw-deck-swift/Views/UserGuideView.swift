@@ -6,49 +6,50 @@
 import SwiftUI
 
 #if os(iOS)
-  import WebKit
+    import WebKit
 #endif
 
 /// 用户指南视图
 struct UserGuideView: View {
-  // GitHub 文档地址（使用 GitHub 渲染页面，不是 raw 链接）
-  let githubUrl =
-    "https://github.com/Alex-ai-future/openclaw-deck-swift/blob/main/docs/USER_GUIDE.md"
+    /// GitHub 文档地址（使用 GitHub 渲染页面，不是 raw 链接）
+    let githubUrl =
+        "https://github.com/Alex-ai-future/openclaw-deck-swift/blob/main/docs/USER_GUIDE.md"
 
-  var body: some View {
-    NavigationStack {
-      #if os(iOS)
-        WebView(url: URL(string: githubUrl)!)
-          .navigationTitle("User Guide")
-          .navigationBarTitleDisplayMode(.inline)
-      #else
-        Text("User Guide (macOS coming soon)")
-          .navigationTitle("User Guide")
-      #endif
+    var body: some View {
+        NavigationStack {
+            #if os(iOS)
+                WebView(url: URL(string: githubUrl)!)
+                    .navigationTitle("User Guide")
+                    .navigationBarTitleDisplayMode(.inline)
+            #else
+                Text("User Guide (macOS coming soon)")
+                    .navigationTitle("User Guide")
+            #endif
+        }
     }
-  }
 }
 
 #if os(iOS)
-  // MARK: - WebView
 
-  /// WebView 包装器 - 将 WKWebView 包装成 SwiftUI 视图
-  struct WebView: UIViewRepresentable {
-    let url: URL
+    // MARK: - WebView
 
-    func makeUIView(context: Context) -> WKWebView {
-      let webView = WKWebView()
-      webView.allowsBackForwardNavigationGestures = true
-      return webView
+    /// WebView 包装器 - 将 WKWebView 包装成 SwiftUI 视图
+    struct WebView: UIViewRepresentable {
+        let url: URL
+
+        func makeUIView(context _: Context) -> WKWebView {
+            let webView = WKWebView()
+            webView.allowsBackForwardNavigationGestures = true
+            return webView
+        }
+
+        func updateUIView(_ uiView: WKWebView, context _: Context) {
+            let request = URLRequest(url: url)
+            uiView.load(request)
+        }
     }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {
-      let request = URLRequest(url: url)
-      uiView.load(request)
-    }
-  }
 #endif
 
 #Preview {
-  UserGuideView()
+    UserGuideView()
 }

@@ -8,92 +8,92 @@ import AVFoundation
 import SwiftUI
 
 #if os(iOS) || os(visionOS)
-  import UIKit
+    import UIKit
 #endif
 
 /// 语音输入按钮 - 点击后开始听写，不弹出键盘
 struct DictationButton: View {
-  @Binding var text: String
-  @ObservedObject var speechRecognizer: SpeechRecognizer
-  @State private var errorMessage: String?
-  @State private var showingPermissionAlert = false
+    @Binding var text: String
+    @ObservedObject var speechRecognizer: SpeechRecognizer
+    @State private var errorMessage: String?
+    @State private var showingPermissionAlert = false
 
-  var body: some View {
-    Button {
-      if speechRecognizer.isListening {
-        speechRecognizer.stopListening()
-      } else {
-        // Check availability first
-        guard speechRecognizer.isAvailable else {
-          errorMessage = "Speech recognizer is not available on this device"
-          return
-        }
-        Task {
-          do {
-            try await speechRecognizer.startListening { newText in
-              text = newText
+    var body: some View {
+        Button {
+            if speechRecognizer.isListening {
+                speechRecognizer.stopListening()
+            } else {
+                // Check availability first
+                guard speechRecognizer.isAvailable else {
+                    errorMessage = "Speech recognizer is not available on this device"
+                    return
+                }
+                Task {
+                    do {
+                        try await speechRecognizer.startListening { newText in
+                            text = newText
+                        }
+                        errorMessage = nil
+                    } catch let error as SpeechRecognizer.RecognizerError {
+                        errorMessage = error.message
+                        #if os(iOS) || os(visionOS)
+                            if error == .notPermittedToRecord {
+                                showingPermissionAlert = true
+                            }
+                        #endif
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                }
             }
-            errorMessage = nil
-          } catch let error as SpeechRecognizer.RecognizerError {
-            errorMessage = error.message
-            #if os(iOS) || os(visionOS)
-              if error == .notPermittedToRecord {
-                showingPermissionAlert = true
-              }
-            #endif
-          } catch {
-            errorMessage = error.localizedDescription
-          }
+        } label: {
+            Image(systemName: speechRecognizer.isListening ? "mic.fill" : "mic")
+                .font(.title3)
+                .foregroundStyle(speechRecognizer.isListening ? .red : .accentColor)
         }
-      }
-    } label: {
-      Image(systemName: speechRecognizer.isListening ? "mic.fill" : "mic")
-        .font(.title3)
-        .foregroundStyle(speechRecognizer.isListening ? .red : .accentColor)
+        .buttonStyle(.glass)
+        .frame(width: 36, height: 36)
+        .contentShape(Rectangle())
+        #if os(iOS) || os(visionOS)
+            .alert("Microphone Permission Required", isPresented: $showingPermissionAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Open Settings") {
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
+                }
+            } message: {
+                Text("Please enable microphone permission in Settings to use voice input")
+            }
+        #endif
     }
-    .buttonStyle(.glass)
-    .frame(width: 36, height: 36)
-    .contentShape(Rectangle())
-    #if os(iOS) || os(visionOS)
-      .alert("Microphone Permission Required", isPresented: $showingPermissionAlert) {
-        Button("Cancel", role: .cancel) {}
-        Button("Open Settings") {
-          if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(settingsUrl)
-          }
-        }
-      } message: {
-        Text("Please enable microphone permission in Settings to use voice input")
-      }
-    #endif
-  }
 }
 
 #Preview {
-  struct DictationButtonPreview: View {
-    @State private var text = ""
-    @StateObject private var speechRecognizer = SpeechRecognizer()
+    struct DictationButtonPreview: View {
+        @State private var text = ""
+        @StateObject private var speechRecognizer = SpeechRecognizer()
 
-    var body: some View {
-      VStack(spacing: 20) {
-        Text("Dictation Button Preview")
-          .font(.headline)
+        var body: some View {
+            VStack(spacing: 20) {
+                Text("Dictation Button Preview")
+                    .font(.headline)
 
-        HStack {
-          DictationButton(text: $text, speechRecognizer: speechRecognizer)
-            .frame(width: 36, height: 36)
+                HStack {
+                    DictationButton(text: $text, speechRecognizer: speechRecognizer)
+                        .frame(width: 36, height: 36)
 
-          TextField("Text", text: $text)
-            .textFieldStyle(.roundedBorder)
+                    TextField("Text", text: $text)
+                        .textFieldStyle(.roundedBorder)
+                }
+                .padding()
+
+                Text("Dictated: \(text)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
-        .padding()
-
-        Text("Dictated: \(text)")
-          .font(.caption)
-          .foregroundColor(.secondary)
-      }
     }
-  }
 
-  return DictationButtonPreview()
+    return DictationButtonPreview()
 }

@@ -9,9 +9,9 @@ import SwiftUI
 
 @main
 struct openclaw_deck_swiftApp: App {
-  var body: some Scene {
-    WindowGroup {
-      ContentView()
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
     }
-  }
 }

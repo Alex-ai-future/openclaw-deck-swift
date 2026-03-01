@@ -41,7 +41,6 @@ struct GlobalInputView: View {
           .padding(.horizontal, 14)
           .padding(.vertical, 4)
           .padding(.trailing, 40)
-          .lineLimit(..., reservesSpace: false)
           .textFieldStyle(.plain)
           .tint(.accentColor)
           .accessibilityIdentifier("messageInput")

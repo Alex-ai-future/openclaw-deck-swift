@@ -226,8 +226,10 @@ class DeckViewModel {
                     self?.loadingStage = .fetchingSessions
                     self?.loadingProgress = 0.5
 
-                    // 先同步会话列表（填充 sessionOrder）
-                    await self?.syncWithGateway()
+                    // 先加载会话列表（填充 sessionOrder）
+                    // 注意：这里不调用 loadSessionsWithCloudflareSync()，因为那会触发冲突处理
+                    // 而是直接从 Gateway 获取会话列表
+                    await self?.loadSessionsFromGateway()
 
                     // 再加载所有消息
                     await self?.loadAllSessionHistory()
@@ -816,6 +818,36 @@ class DeckViewModel {
         } catch {
             logger.error("❌ Sync failed: \(error.localizedDescription)")
             return .failure(error)
+        }
+    }
+
+    // MARK: - Load Sessions
+
+    /// 从 Gateway 加载会话列表（填充 sessionOrder）
+    private func loadSessionsFromGateway() async {
+        guard let client = gatewayClient, client.connected else {
+            logger.error("❌ Gateway 未连接，无法加载会话列表")
+            return
+        }
+
+        do {
+            let sessionIds = try await client.listSessions()
+            logger.log("📋 从 Gateway 获取到 \(sessionIds.count) 个会话")
+
+            await MainActor.run {
+                self.sessionOrder = sessionIds.map { $0.lowercased() }
+                self.createSessionStates()
+
+                logger.log("📋 Session 顺序：\(self.sessionOrder)")
+
+                // 默认选中第一个 Session
+                if let firstSessionId = sessionOrder.first {
+                    globalInputState.selectedSessionId = firstSessionId
+                    logger.log("🎯 选中 Session: \(firstSessionId)")
+                }
+            }
+        } catch {
+            logger.error("❌ 加载会话列表失败：\(error.localizedDescription)")
         }
     }
 

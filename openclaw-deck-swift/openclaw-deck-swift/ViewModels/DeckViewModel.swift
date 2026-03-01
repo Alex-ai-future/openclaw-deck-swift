@@ -799,7 +799,7 @@ class DeckViewModel {
             // 更新进度（按会话数量）
             if totalCount > 0 {
                 loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
-                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(loadingProgress * 100))%")
+                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.loadingProgress * 100))%")
             }
         }
 

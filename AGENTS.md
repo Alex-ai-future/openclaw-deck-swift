@@ -332,6 +332,84 @@ killall Xcode
 
 ---
 
+## 🔒 多代理安全规则
+
+**背景：** 当多个 AI 同时工作时，某些操作可能互相干扰。
+
+### ❌ 禁止的操作（除非用户明确指令）
+
+**1. 禁止 git stash**
+```bash
+# ❌ 禁止
+git stash
+git stash save "temp"
+git stash pop
+```
+**原因：** 可能隐藏其他 AI 的改动
+
+**2. 禁止切换分支**
+```bash
+# ❌ 禁止
+git checkout <分支>
+git switch <分支>
+```
+**原因：** 可能打断其他 AI 的工作
+
+**3. 禁止修改 worktree**
+```bash
+# ❌ 禁止
+git worktree add ...
+git worktree remove ...
+```
+**原因：** 改变项目结构
+
+**4. 禁止自动 rebase**
+```bash
+# ❌ 禁止
+git pull --rebase --autostash
+```
+**原因：** autostash 可能丢失改动
+
+### ✅ 允许的操作
+
+**1. 查看状态（只读）**
+```bash
+git status
+git diff
+git log --oneline -5
+```
+
+**2. 提交自己的改动**
+```bash
+./script/committer "[类型] 描述" 文件 1 文件 2...
+```
+
+**3. 用户明确指令时**
+```bash
+# 用户说"pull" → 可以执行
+git pull --rebase
+
+# 用户说"切换到 xx 分支" → 可以执行
+git checkout <分支>
+```
+
+### 🤝 多代理协作建议
+
+**1. 编译前询问**
+```
+AI: "现在可以编译吗？有没有其他 AI 在编译？"
+```
+
+**2. 避免同时编译**
+- 编译锁规则已实现（build.db 检查）
+- 等待另一个 AI 完成
+
+**3. 只提交自己的改动**
+- 不提交其他 AI 修改的文件
+- 不确定时先问用户
+
+---
+
 ## 🔒 Git 提交规则
 
 **⚠️ 绝对禁止：AI 不能自行提交代码！**

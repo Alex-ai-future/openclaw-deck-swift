@@ -18,7 +18,7 @@ struct SettingsView: View {
     /// ViewModel binding for settings
     var viewModel: DeckViewModel?
 
-    @StateObject private var languageManager = LanguageManager.shared
+    private let languageManager = LanguageManager.shared
 
     @State private var hasChanges = false
     @State private var originalUrl = ""
@@ -88,7 +88,10 @@ struct SettingsView: View {
 
                 Section {
                     // Language Selector
-                    Picker("language".localized, selection: $languageManager.selectedLanguage) {
+                    Picker("language".localized, selection: Binding(
+                        get: { languageManager.selectedLanguage },
+                        set: { languageManager.setLanguage($0) }
+                    )) {
                         ForEach(LanguageManager.Language.allCases) { language in
                             Text(language.displayName).tag(language)
                         }

@@ -6,16 +6,11 @@
 import SwiftUI
 
 /// 通用加载视图组件
-public struct LoadingView: View {
-    public let stage: LoadingStage
-    public let progress: Double
+struct LoadingView: View {
+    let stage: LoadingStage
+    let progress: Double
 
-    public init(stage: LoadingStage, progress: Double) {
-        self.stage = stage
-        self.progress = progress
-    }
-
-    public var body: some View {
+    var body: some View {
         VStack(spacing: 24) {
             // 进度指示器
             Group {

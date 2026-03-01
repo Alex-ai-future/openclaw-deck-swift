@@ -272,24 +272,34 @@ class DeckViewModel {
     }
 
     /// 连接成功后初始化（加载会话列表和消息历史）
+    @MainActor
     private func initializeAfterConnect() async {
-        // 连接成功，更新进度
-        loadingStage = .connecting
-        loadingProgress = 0.2
-
         do {
-            // 加载会话列表（内部更新状态到 .fetchingSessions）
+            // 连接成功，更新进度
+            loadingStage = .connecting
+            loadingProgress = 0.2
+
+            // 加载会话列表
+            loadingStage = .fetchingSessions
+            loadingProgress = 0.5
             try await loadSessionsFromGateway()
 
             // 检查是否有会话列表
             if sessionOrder.isEmpty {
                 logger.warning("⚠️ 没有会话列表，跳过消息加载")
-                loadingStage = .syncingLocal
-                loadingProgress = 1.0
             } else {
-                // 加载所有历史（内部更新状态到 .fetchingMessages → .syncingLocal）
+                // 加载所有历史
+                loadingStage = .fetchingMessages
+                loadingProgress = 0.8
                 await loadAllSessionHistory()
             }
+
+            // 所有数据加载完成，设置 100%
+            loadingStage = .syncingLocal
+            loadingProgress = 1.0
+
+            // 稍作延迟，让用户看到 100% 进度（避免闪动）
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 
             // 初始化完成
             isInitializing = false
@@ -854,15 +864,12 @@ class DeckViewModel {
     // MARK: - Load Sessions
 
     /// 从 Gateway 加载会话列表（填充 sessionOrder）
+    @MainActor
     private func loadSessionsFromGateway() async throws {
         guard let client = gatewayClient, client.connected else {
             logger.error("❌ Gateway 未连接，无法加载会话列表")
             throw NSError(domain: "DeckViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"])
         }
-
-        // 开始加载
-        loadingStage = .fetchingSessions
-        loadingProgress = 0.5
 
         do {
             // 使用 fetchSessions 获取活跃会话列表
@@ -890,6 +897,7 @@ class DeckViewModel {
     // MARK: - Load History
 
     /// 加载所有 Session 的历史消息
+    @MainActor
     func loadAllSessionHistory() async {
         // 开始加载
         loadingStage = .fetchingMessages
@@ -898,23 +906,27 @@ class DeckViewModel {
         let totalCount = sessionOrder.count
         var loadedCount = 0
 
+        logger.info("📥 开始加载所有会话历史，共 \(totalCount) 个会话...")
+
         for session in sessionOrder.compactMap({ sessions[$0] }) {
+            logger.info("📥 [\(loadedCount + 1)/\(totalCount)] 加载会话：\(session.sessionId)")
             await loadSessionHistory(sessionKey: session.sessionKey)
             loadedCount += 1
 
             // 更新进度（按会话数量）
             if totalCount > 0 {
                 loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
+                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(loadingProgress * 100))%")
             }
         }
 
-        // 所有历史加载完成
-        loadingStage = .syncingLocal
-        loadingProgress = 1.0
+        // 所有历史加载完成（不设置 100%，由调用方统一设置）
+        logger.info("✅ 所有会话历史加载完成")
     }
 
     /// 加载单个 Session 的历史消息
     /// - Parameter sessionKey: Session Key
+    @MainActor
     func loadSessionHistory(sessionKey: String) async {
         guard let client = gatewayClient, client.connected else {
             return
@@ -937,6 +949,7 @@ class DeckViewModel {
                 session.messages = messages
                 session.historyLoaded = true
                 session.isHistoryLoading = false
+                logger.info("  ↳ 加载 \(messages.count) 条消息")
             }
         } catch {
             logger.error("❌ 加载 Session \(sessionKey) 历史失败：\(error.localizedDescription)")

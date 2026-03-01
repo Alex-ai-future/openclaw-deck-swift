@@ -737,6 +737,10 @@ class DeckViewModel {
         do {
             logger.info("🔄 Starting full sync...")
 
+            // ✅ 立即显示加载动画
+            loadingStage = .fetchingSessions
+            loadingProgress = 0.5
+
             // 1. 从 Cloudflare 同步 Session 列表
             let result = try await CloudflareKV.shared.syncAndGet()
 

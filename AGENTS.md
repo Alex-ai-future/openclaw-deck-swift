@@ -227,34 +227,36 @@
 
 ## 🧹 代码清理规则
 
-### 使用 swift-format 格式化代码
+### 使用 swiftformat 格式化代码
+
+**工具：** [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
+
+**安装：**
+```bash
+brew install swiftformat
+```
 
 **命令：**
 ```bash
-swift-format format --in-place --recursive .
-```
+# 格式化整个项目
+bash script/format.sh --all
 
-**参数说明：**
-- `format` - 格式化命令
-- `--in-place` - 直接修改文件（不输出到新文件）
-- `--recursive` - 递归处理所有子目录
-- `.` - 当前目录
+# 格式化修改的文件
+bash script/format.sh
+
+# 只检查不修改（CI 用）
+bash script/format.sh --check
+```
 
 **使用场景：**
 - 提交代码前统一格式
 - 清理他人贡献的代码
 - 保持代码风格一致
 
-**执行位置：**
-```bash
-cd ~/Projects/openclaw-deck-swift/openclaw-deck-swift/openclaw-deck-swift
-swift-format format --in-place --recursive .
-```
-
 **注意事项：**
-- 格式化后需要检查是否有误改
-- 建议格式化后运行编译测试
-- 格式化后应该提交代码
+- ✅ 提交时自动格式化（pre-commit hook）
+- ✅ 无需手动运行格式化
+- ⚠️ 格式化后建议运行编译测试
 
 ---
 
@@ -267,9 +269,14 @@ swift-format format --in-place --recursive .
 
 提交时会自动触发 pre-commit hook：
 - 自动检测暂存的 Swift 文件
-- 自动运行 `swift-format` 格式化
+- 自动运行 `swiftformat` 格式化
 - 自动将格式化后的文件重新加入暂存区
 - 然后完成提交
+
+**相关文件：**
+- `script/format.sh` - 格式化脚本
+- `script/pre-commit` - pre-commit hook 脚本
+- `.git/hooks/pre-commit` - Git hook（自动调用）
 
 ### 2. 提交代码
 ```bash

@@ -213,7 +213,7 @@ class DeckViewModel {
         // ✅ 先加载会话列表（包括 Cloudflare 同步），确保后续操作有数据
         logger.info("📥 加载会话列表...")
         await loadSessionsFromStorage()
-        logger.info("✅ 会话列表加载完成，共 \(sessionOrder.count) 个会话")
+        logger.info("✅ 会话列表加载完成，共 \(self.sessionOrder.count) 个会话")
 
         // 创建 GatewayClient
         let client = GatewayClient(url: gatewayUrl, token: token)
@@ -797,7 +797,7 @@ class DeckViewModel {
             // 更新进度（按会话数量）
             if totalCount > 0 {
                 loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
-                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(loadingProgress * 100))%")
+                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.loadingProgress * 100))%")
             }
         }
 

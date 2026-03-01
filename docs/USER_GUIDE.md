@@ -21,6 +21,21 @@
 
 ### 1.1 安装
 
+**推荐方式：一键安装脚本**
+
+```bash
+# macOS / Linux / WSL2
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+安装完成后，运行 `openclaw start` 启动 Gateway。
+
+**可选：跳过设置向导**
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+```
+
+**备选方式：从源码编译**
 ```bash
 cd ~/Projects
 git clone https://github.com/Alex-ai-future/openclaw-deck-swift.git
@@ -34,6 +49,15 @@ open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
 
 **步骤 1：安装 Gateway**
 
+```bash
+# 推荐：使用安装脚本（见 1.1 节）
+curl -fsSL https://openclaw.ai/install.sh | bash
+
+# 启动 Gateway
+openclaw start
+```
+
+**备选：从源码运行**
 ```bash
 # 克隆 OpenClaw 项目
 git clone https://github.com/openclaw/openclaw.git

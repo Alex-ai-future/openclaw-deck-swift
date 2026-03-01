@@ -173,8 +173,7 @@ class DeckViewModel {
         // 加载配置
         playSoundOnMessage = UserDefaults.standard.object(forKey: "playSoundOnMessage") as? Bool ?? true
 
-        // 从 UserDefaults 加载 Session
-        loadSessionsFromStorage()
+        // ⚠️ 不在这里加载 Sessions，在 initialize() 中同步加载
     }
 
     /// 设置 Gateway 回调
@@ -210,6 +209,11 @@ class DeckViewModel {
             isInitializing = false
             return
         }
+
+        // ✅ 先加载会话列表（包括 Cloudflare 同步），确保后续操作有数据
+        logger.info("📥 加载会话列表...")
+        await loadSessionsFromStorage()
+        logger.info("✅ 会话列表加载完成，共 \(sessionOrder.count) 个会话")
 
         // 创建 GatewayClient
         let client = GatewayClient(url: gatewayUrl, token: token)
@@ -270,8 +274,7 @@ class DeckViewModel {
             loadingStage = .connecting
             loadingProgress = 0.2
 
-            // ✅ 完全从本地加载会话列表，不从 Gateway 获取
-            // sessionOrder 已经在 loadSessionsFromStorage() 中加载
+            // ✅ sessionOrder 已经在 initialize() 中加载完成，直接使用
 
             // 检查是否有会话列表
             if sessionOrder.isEmpty {
@@ -432,7 +435,7 @@ class DeckViewModel {
     // MARK: - Storage
 
     /// 从 UserDefaults 加载 Sessions（带 Cloudflare 同步）
-    private func loadSessionsFromStorage() {
+    private func loadSessionsFromStorage() async {
         logger.log("📥 加载 Sessions...")
 
         // 测试环境跳过云端同步
@@ -445,9 +448,7 @@ class DeckViewModel {
         // 尝试从 Cloudflare 同步（如果已配置）
         if CloudflareKV.shared.isConfigured {
             logger.log("☁️ Cloudflare 已配置，开始同步...")
-            Task {
-                await loadSessionsWithCloudflareSync()
-            }
+            await loadSessionsWithCloudflareSync()
         } else {
             logger.log("📱 未配置 Cloudflare，使用本地数据")
             // 没有配置 Cloudflare，使用本地数据
@@ -483,14 +484,6 @@ class DeckViewModel {
                 if let firstSessionId = sessionOrder.first {
                     globalInputState.selectedSessionId = firstSessionId
                     logger.log("🎯 选中 Session: \(firstSessionId)")
-                }
-
-                // 如果 Gateway 已连接，立即加载历史消息
-                if gatewayConnected {
-                    logger.log("🔗 Gateway 已连接，加载历史消息...")
-                    Task {
-                        await loadAllSessionHistory()
-                    }
                 }
             }
         } catch {
@@ -799,7 +792,7 @@ class DeckViewModel {
             // 更新进度（按会话数量）
             if totalCount > 0 {
                 loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
-                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.loadingProgress * 100))%")
+                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(loadingProgress * 100))%")
             }
         }
 

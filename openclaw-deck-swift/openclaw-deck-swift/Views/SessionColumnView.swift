@@ -22,21 +22,17 @@ struct SessionColumnView: View {
   let onDelete: () -> Void
 
   @State private var showingDeleteAlert = false
-  @State private var scrollTrigger = 0  // 用于触发滚动到底部（使用计数而非 toggle）
-  @State private var isScrolling = false  // 防止重复滚动
+  @State private var scrollTrigger = 0  // 用于触发滚动到底部（使用唯一值避免合并）
 
   // 滚动到底部
   private func scrollToBottom() {
-    guard !isScrolling else { return }
-    isScrolling = true
-
+    guard let lastId = session.messages.last?.id else { return }
+      
+      print("lastId\(lastId)")
+    
+    // 每次点击都使用新的唯一值触发 onChange，避免 SwiftUI 合并变化
     withAnimation(.smooth(duration: 0.3)) {
-      scrollTrigger = 1
-    }
-
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-      scrollTrigger = 0
-      isScrolling = false
+      scrollTrigger = Int.random(in: 1000...9999)
     }
   }
 
@@ -181,6 +177,7 @@ struct SessionColumnView: View {
           }
         }
       }
+      // 🆕 在 VStack 上使用 safeAreaInset 让输入框和消息列表平级
       .safeAreaInset(edge: .bottom, spacing: 0) {
         // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
         if !DeviceUtils.isIPad {
@@ -191,8 +188,6 @@ struct SessionColumnView: View {
           }
         }
       }
-      // 🆕 键盘弹出时忽略底部 safe area，让视图向上移动避免输入框被遮挡
-      .ignoresSafeArea(.keyboard, edges: .bottom)
     #endif
     .deleteSessionAlert(isPresented: $showingDeleteAlert) {
       onDelete()
@@ -331,12 +326,6 @@ struct SessionColumnView: View {
           }
         }
       }
-      .onChange(of: scrollTrigger) { _, newValue in
-        // 只在 trigger=1 时滚动（确保每次位置一致）
-        if newValue == 1, let lastId = session.messages.last?.id {
-          proxy.scrollTo(lastId, anchor: .bottom)  // 滚动到最后一条消息的底部
-        }
-      }
     }
     .background(Color.adaptiveBackground)
   }
@@ -386,9 +375,9 @@ struct SessionColumnView: View {
       // 只显示 user 和 assistant 消息
       if message.role != .user && message.role != .assistant {
         EmptyView()
-      } else if message.text.isEmpty && !shouldShowEmptyMessage {
-        // 对于 assistant 空消息，只有在 streaming 时显示占位
-        EmptyView()
+//      } else if message.text.isEmpty && !shouldShowEmptyMessage {
+//        // 对于 assistant 空消息，只有在 streaming 时显示占位
+//        EmptyView()
       } else {
         messageBody
       }

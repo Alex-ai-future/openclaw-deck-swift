@@ -243,7 +243,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
   func testConfig_defaultValues() {
     let config = viewModel.config
-    
+
     // 验证默认配置
     XCTAssertEqual(config.gatewayUrl, "ws://127.0.0.1:18789")
     XCTAssertEqual(config.mainAgentId, "main")

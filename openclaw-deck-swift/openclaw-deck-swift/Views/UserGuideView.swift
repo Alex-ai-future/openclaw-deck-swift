@@ -42,10 +42,12 @@ struct UserGuideView: View {
                 }
             }
             .navigationTitle("user_guide".localized)
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                await loadMarkdown()
-            }
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .task {
+                    await loadMarkdown()
+                }
         }
     }
 

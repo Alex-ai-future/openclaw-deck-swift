@@ -1,0 +1,159 @@
+//
+//  Localizable.strings
+//  简体中文
+//
+//  Created by LanguageManager
+//
+
+// MARK: - App Name
+"app_name" = "OpenClaw Deck";
+
+// MARK: - Common
+"preview" = "预览";
+"loading" = "加载中...";
+"save" = "保存";
+"cancel" = "取消";
+"delete" = "删除";
+"confirm" = "确认";
+"continue" = "继续";
+"done" = "完成";
+"settings" = "设置";
+"version" = "版本";
+
+// MARK: - Toolbar
+"openclaw_deck" = "OpenClaw Deck";
+"this_will_sync_all_sessions" = "这将同步所有会话到 Gateway。继续吗？";
+"sync_all_sessions" = "同步所有会话？";
+"sync_conflict" = "同步冲突";
+
+// MARK: - Views
+"ipad_content" = "iPad 内容";
+"iphone_content" = "iPhone 内容";
+"message" = "消息";
+"drag_to_reorder" = "拖动重新排序";
+
+// MARK: - Settings
+"gateway" = "Gateway";
+"modify_and_apply" = "修改并应用以重新连接";
+"apply_and_reconnect" = "应用并重新连接";
+"save_changes_and_reconnect" = "保存更改并重新连接到 Gateway";
+"notifications_and_cloud" = "通知和云同步设置";
+"reset_device_identity" = "重置设备身份";
+"clear_stored_device_identity" = "清除存储的设备身份和令牌";
+"disconnect" = "断开连接";
+"disconnect_from_gateway" = "断开与 Gateway 的连接并返回欢迎界面";
+"view_usage_instructions" = "查看完整使用说明和故障排除指南";
+"version_number" = "1.0.0";
+
+// MARK: - Cloudflare Settings
+"cloudflare_kv_sync" = "Cloudflare KV 同步";
+"sync_sessions_across_devices" = "使用 Cloudflare KV 在多个设备间同步会话";
+"free_tier_limit" = "免费额度：10 万次读取/天，1000 次写入/天，1GB 存储";
+"configuration" = "配置";
+"api_token_encrypted" = "API Token 已加密存储在 Keychain 中";
+"status" = "状态";
+"test_connection" = "测试连接";
+"clear_configuration" = "清除配置";
+"actions" = "操作";
+
+// MARK: - Alerts
+"microphone_permission_required" = "需要麦克风权限";
+"reset_device_identity_alert" = "重置设备身份？";
+
+// MARK: - Language Settings
+"language" = "语言";
+"language_description" = "选择应用语言";
+"follow_system" = "跟随系统";
+"03" = "[待翻译：0.3]";
+"05" = "[待翻译：0.5]";
+"07" = "[待翻译：0.7]";
+"100" = "[待翻译：1.0.0]";
+"a_unique_identifier_for_this_session" = "[待翻译：A unique identifier for this session.]";
+"about" = "[待翻译：ABOUT]";
+"account_id" = "[待翻译：Account ID]";
+"additional_context_or_description_for_this_session" = "[待翻译：Additional context or description for this session.]";
+"api_token" = "[待翻译：API Token]";
+"api_token_is_encrypted_in_keychain" = "[待翻译：API Token is encrypted in Keychain]";
+"app" = "应用";
+"apply_reconnect" = "[待翻译：Apply & Reconnect]";
+"attempt_attemptsmaxattempts" = "[待翻译：Attempt \(attempts)/\(maxAttempts)]";
+"blue" = "[待翻译：Blue]";
+"clear_stored_device_identity_and_token" = "[待翻译：Clear stored device identity and token]";
+"cloudflare_sync" = "[待翻译：Cloudflare Sync]";
+"connect" = "[待翻译：Connect]";
+"connecting_to_gateway" = "[待翻译：Connecting to Gateway...]";
+"connection" = "连接";
+"connection_failed" = "[待翻译：Connection Failed]";
+"context_contextprefix100" = "[待翻译：Context: \(context.prefix(100))]";
+"copy" = "[待翻译：Copy]";
+"count_count" = "[待翻译：Count: \\(count)]";
+"create" = "[待翻译：Create]";
+"delete_session" = "[待翻译：Delete Session]";
+"device" = "设备";
+"dictated_text" = "[待翻译：Dictated: \(text)]";
+"dictation_button_preview" = "[待翻译：Dictation Button Preview]";
+"disconnect_from_gateway_and_return_to_welcome_screen" = "[待翻译：Disconnect from Gateway and return to welcome screen]";
+"dismiss" = "[待翻译：Dismiss]";
+"empty_input_box_should_be_36pt_1_line" = "[待翻译：Empty input box - should be 36pt (1 line)]";
+"free_tier_100k_readsday_1k_writesday_1gb_storage" = "[待翻译：Free tier: 100K reads/day, 1K writes/day, 1GB storage]";
+"gateway_gatewayurl" = "[待翻译：Gateway: \(gatewayUrl)]";
+"gateway_url" = "[待翻译：Gateway URL]";
+"help" = "帮助";
+"increment" = "[待翻译：Increment]";
+"intprogress_100" = "[待翻译：\(Int(progress * 100))%]";
+"key_sessionsessionkey" = "[待翻译：Key: \(session.sessionKey)]";
+"last_formatdatelastactivity" = "[待翻译：Last: \(formatDate(lastActivity))]";
+"loading_history" = "[待翻译：Loading history...]";
+"long_text_should_max_at_150pt_7_lines" = "[待翻译：Long text - should max at 150pt (7 lines)]";
+"modify_and_apply_to_reconnect_with_new_settings" = "[待翻译：Modify and apply to reconnect with new settings]";
+"multi_device_sync" = "[待翻译：Multi-Device Sync]";
+"multi_line_text_type_to_test_auto_growth" = "[待翻译：Multi-line text - type to test auto growth]";
+"multi_session_chat_client" = "[待翻译：Multi-Session Chat Client]";
+"namespace_id" = "[待翻译：Namespace ID]";
+"new" = "[待翻译：/new]";
+"new_session" = "[待翻译：New Session]";
+"no_messages" = "[待翻译：No messages]";
+"notes_optional" = "[待翻译：Notes (Optional)]";
+"notifications_and_cloud_sync_settings" = "[待翻译：Notifications and cloud sync settings]";
+"ok" = "[待翻译：OK]";
+"open_settings" = "[待翻译：Open Settings]";
+"orange" = "[待翻译：Orange]";
+"please_enable_microphone_permission_in_settings_to_use_voice_input" = "[待翻译：Please enable microphone permission in Settings to use voice input]";
+"processing_state_button_preview" = "[待翻译：Processing State Button Preview]";
+"reconnecting" = "[待翻译：Reconnecting...]";
+"red" = "[待翻译：Red]";
+"reset" = "[待翻译：Reset]";
+"save_changes_and_reconnect_to_gateway" = "[待翻译：Save changes and reconnect to Gateway]";
+"session_name" = "[待翻译：Session Name]";
+"sessionmessagecount" = "[待翻译：\(session.messageCount)]";
+"sessionmessagescount_messages" = "[待翻译：\(session.messages.count) messages]";
+"short_text_should_stay_1_line" = "[待翻译：Short text - should stay 1 line]";
+"sort_sessions" = "[待翻译：Sort Sessions]";
+"sync" = "[待翻译：Sync]";
+"sync_sessions_across_multiple_devices_using_cloudflare_kv" = "[待翻译：Sync sessions across multiple devices using Cloudflare KV]";
+"tap_the_in_the_top_rightnto_get_started" = "[待翻译：Tap the ⚙️ in the top right\nto get started]";
+"tap_to_toggle_state" = "[待翻译：Tap to toggle state]";
+"testing" = "[待翻译：Testing...]";
+"text" = "[待翻译：Text]";
+"this_will_sync_all_sessions_with_the_gateway_continue" = "[待翻译：This will sync all sessions with the Gateway. Continue?]";
+"tint_color_tests" = "[待翻译：Tint Color Tests]";
+"token_optional" = "[待翻译：Token (optional)]";
+"use_cloud_merge_with_local" = "[待翻译：Use Cloud (Merge with Local)]";
+"use_local_overwrite_cloud" = "[待翻译：Use Local (Overwrite Cloud)]";
+"user_guide" = "[待翻译：User Guide]";
+"user_id_custom_eg_email" = "[待翻译：User ID (custom, e.g., email)]";
+"view_complete_usage_instructions_and_troubleshooting_guide" = "[待翻译：View complete usage instructions and troubleshooting guide]";
+"welcome" = "[待翻译：Welcome]";
+"wshostport" = "[待翻译：ws://host:port]";
+"删除" = "[待翻译：删除]";
+"加载失败" = "[待翻译：加载失败]";
+"加载用户指南" = "[待翻译：加载用户指南...]";
+"已读" = "[待翻译：已读]";
+"未读" = "[待翻译：未读]";
+"正在加载消息历史" = "[待翻译：正在加载消息历史...]";
+"sound_on_message" = "[待翻译：Sound on Message]";
+"this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered" = "[待翻译：This will clear the stored device identity and token, then reconnect using the token you entered.]";
+"this_will_remove_the_session_from_the_deck_messages_are_stored_in_gateway_and_can_be_reloaded" = "[待翻译：This will remove the session from the deck. Messages are stored in Gateway and can be reloaded.]";
+"fetching_sessions_from_cloudflare_kv" = "从 Cloudflare KV 获取会话";
+"fetching_messages_from_gateway" = "从 Gateway 获取消息";
+"saving_to_local_storage" = "保存到本地存储";

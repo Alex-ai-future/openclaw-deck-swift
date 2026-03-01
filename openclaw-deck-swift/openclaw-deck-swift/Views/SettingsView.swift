@@ -18,6 +18,8 @@ struct SettingsView: View {
     /// ViewModel binding for settings
     var viewModel: DeckViewModel?
 
+    @StateObject private var languageManager = LanguageManager.shared
+
     @State private var hasChanges = false
     @State private var originalUrl = ""
     @State private var originalToken = ""
@@ -60,7 +62,7 @@ struct SettingsView: View {
                         isConnected: isConnected
                     )
                 } header: {
-                    Label("gateway_1".localized, systemImage: "server.rack")
+                    Label("gateway".localized, systemImage: "server.rack")
                 } footer: {
                     Text("modify_and_apply_to_reconnect_with_new_settings".localized)
                 }
@@ -85,6 +87,13 @@ struct SettingsView: View {
                 // MARK: - 3. APP SETTINGS
 
                 Section {
+                    // Language Selector
+                    Picker("language".localized, selection: $languageManager.selectedLanguage) {
+                        ForEach(LanguageManager.Language.allCases) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+
                     // Notifications
                     Toggle("sound_on_message".localized, systemImage: "speaker.wave.2",
                            isOn: .init(
@@ -153,7 +162,7 @@ struct SettingsView: View {
                     }
                     .tint(.red)
                 } header: {
-                    Label("disconnect_1".localized, systemImage: "slash.circle")
+                    Label("disconnect".localized, systemImage: "slash.circle")
                 } footer: {
                     Text("disconnect_from_gateway_and_return_to_welcome_screen".localized)
                 }

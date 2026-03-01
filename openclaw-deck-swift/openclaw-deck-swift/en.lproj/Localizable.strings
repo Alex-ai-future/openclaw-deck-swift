@@ -1,0 +1,154 @@
+//
+//  Localizable.strings
+//  English
+//
+//  Created by LanguageManager
+//
+
+// MARK: - App Name
+"app_name" = "OpenClaw Deck";
+
+// MARK: - Common
+"preview" = "Preview";
+"loading" = "Loading...";
+"save" = "Save";
+"cancel" = "Cancel";
+"delete" = "Delete";
+"confirm" = "Confirm";
+"continue" = "Continue";
+"done" = "Done";
+"settings" = "Settings";
+"version" = "Version";
+
+// MARK: - Toolbar
+"openclaw_deck" = "OpenClaw Deck";
+"this_will_sync_all_sessions" = "This will sync all sessions with the Gateway. Continue?";
+"sync_all_sessions" = "Sync All Sessions?";
+"sync_conflict" = "Sync Conflict";
+
+// MARK: - Views
+"ipad_content" = "iPad Content";
+"iphone_content" = "iPhone Content";
+"message" = "Message";
+"drag_to_reorder" = "Drag to reorder";
+
+// MARK: - Settings
+"gateway" = "Gateway";
+"modify_and_apply" = "Modify and apply to reconnect with new settings";
+"apply_and_reconnect" = "Apply & Reconnect";
+"save_changes_and_reconnect" = "Save changes and reconnect to Gateway";
+"notifications_and_cloud" = "Notifications and cloud sync settings";
+"reset_device_identity" = "Reset Device Identity";
+"clear_stored_device_identity" = "Clear stored device identity and token";
+"disconnect" = "Disconnect";
+"disconnect_from_gateway" = "Disconnect from Gateway and return to welcome screen";
+"view_usage_instructions" = "View complete usage instructions and troubleshooting guide";
+"version_number" = "1.0.0";
+
+// MARK: - Cloudflare Settings
+"cloudflare_kv_sync" = "Cloudflare KV Sync";
+"sync_sessions_across_devices" = "Sync sessions across multiple devices using Cloudflare KV";
+"free_tier_limit" = "Free tier: 100K reads/day, 1K writes/day, 1GB storage";
+"configuration" = "Configuration";
+"api_token_encrypted" = "API Token is encrypted in Keychain";
+"status" = "Status";
+"test_connection" = "Test Connection";
+"clear_configuration" = "Clear Configuration";
+"actions" = "Actions";
+
+// MARK: - Alerts
+"microphone_permission_required" = "Microphone Permission Required";
+"reset_device_identity_alert" = "Reset Device Identity?";
+
+// MARK: - Language Settings
+"language" = "Language";
+"language_description" = "Select app language";
+"follow_system" = "Follow System";
+"03" = "0.3";
+"05" = "0.5";
+"07" = "0.7";
+"100" = "1.0.0";
+"a_unique_identifier_for_this_session" = "A unique identifier for this session.";
+"about" = "ABOUT";
+"account_id" = "Account ID";
+"additional_context_or_description_for_this_session" = "Additional context or description for this session.";
+"api_token" = "API Token";
+"api_token_is_encrypted_in_keychain" = "API Token is encrypted in Keychain";
+"app" = "APP";
+"apply_reconnect" = "Apply & Reconnect";
+"attempt_attemptsmaxattempts" = "Attempt \(attempts)/\(maxAttempts)";
+"blue" = "Blue";
+"clear_stored_device_identity_and_token" = "Clear stored device identity and token";
+"cloudflare_sync" = "Cloudflare Sync";
+"connect" = "Connect";
+"connecting_to_gateway" = "Connecting to Gateway...";
+"connection" = "CONNECTION";
+"connection_failed" = "Connection Failed";
+"context_contextprefix100" = "Context: \(context.prefix(100))";
+"copy" = "Copy";
+"count_count" = "Count: \\(count)";
+"create" = "Create";
+"delete_session" = "Delete Session";
+"device" = "DEVICE";
+"dictated_text" = "Dictated: \(text)";
+"dictation_button_preview" = "Dictation Button Preview";
+"disconnect_from_gateway_and_return_to_welcome_screen" = "Disconnect from Gateway and return to welcome screen";
+"dismiss" = "Dismiss";
+"empty_input_box_should_be_36pt_1_line" = "Empty input box - should be 36pt (1 line)";
+"free_tier_100k_readsday_1k_writesday_1gb_storage" = "Free tier: 100K reads/day, 1K writes/day, 1GB storage";
+"gateway_gatewayurl" = "Gateway: \(gatewayUrl)";
+"gateway_url" = "Gateway URL";
+"help" = "HELP";
+"increment" = "Increment";
+"intprogress_100" = "\(Int(progress * 100))%";
+"key_sessionsessionkey" = "Key: \(session.sessionKey)";
+"last_formatdatelastactivity" = "Last: \(formatDate(lastActivity))";
+"loading_history" = "Loading history...";
+"long_text_should_max_at_150pt_7_lines" = "Long text - should max at 150pt (7 lines)";
+"modify_and_apply_to_reconnect_with_new_settings" = "Modify and apply to reconnect with new settings";
+"multi_device_sync" = "Multi-Device Sync";
+"multi_line_text_type_to_test_auto_growth" = "Multi-line text - type to test auto growth";
+"multi_session_chat_client" = "Multi-Session Chat Client";
+"namespace_id" = "Namespace ID";
+"new" = "/new";
+"new_session" = "New Session";
+"no_messages" = "No messages";
+"notes_optional" = "Notes (Optional)";
+"notifications_and_cloud_sync_settings" = "Notifications and cloud sync settings";
+"ok" = "OK";
+"open_settings" = "Open Settings";
+"orange" = "Orange";
+"please_enable_microphone_permission_in_settings_to_use_voice_input" = "Please enable microphone permission in Settings to use voice input";
+"processing_state_button_preview" = "Processing State Button Preview";
+"reconnecting" = "Reconnecting...";
+"red" = "Red";
+"reset" = "Reset";
+"save_changes_and_reconnect_to_gateway" = "Save changes and reconnect to Gateway";
+"session_name" = "Session Name";
+"sessionmessagecount" = "\(session.messageCount)";
+"sessionmessagescount_messages" = "\(session.messages.count) messages";
+"short_text_should_stay_1_line" = "Short text - should stay 1 line";
+"sort_sessions" = "Sort Sessions";
+"sync" = "Sync";
+"sync_sessions_across_multiple_devices_using_cloudflare_kv" = "Sync sessions across multiple devices using Cloudflare KV";
+"tap_the_in_the_top_rightnto_get_started" = "Tap the ⚙️ in the top right\nto get started";
+"tap_to_toggle_state" = "Tap to toggle state";
+"testing" = "Testing...";
+"text" = "Text";
+"this_will_sync_all_sessions_with_the_gateway_continue" = "This will sync all sessions with the Gateway. Continue?";
+"tint_color_tests" = "Tint Color Tests";
+"token_optional" = "Token (optional)";
+"use_cloud_merge_with_local" = "Use Cloud (Merge with Local)";
+"use_local_overwrite_cloud" = "Use Local (Overwrite Cloud)";
+"user_guide" = "User Guide";
+"user_id_custom_eg_email" = "User ID (custom, e.g., email)";
+"view_complete_usage_instructions_and_troubleshooting_guide" = "View complete usage instructions and troubleshooting guide";
+"welcome" = "Welcome";
+"wshostport" = "ws://host:port";
+"保存到本地存储" = "保存到本地存储";
+"sound_on_message" = "Sound on Message";
+"this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered" = "This will clear the stored device identity and token, then reconnect using the token you entered.";
+"this_will_remove_the_session_from_the_deck_messages_are_stored_in_gateway_and_can_be_reloaded" = "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded.";
+"fetching_sessions_from_cloudflare_kv" = "Fetching sessions from Cloudflare KV";
+"fetching_messages_from_gateway" = "Fetching messages from Gateway";
+"saving_to_local_storage" = "Saving to local storage";

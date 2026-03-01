@@ -73,17 +73,6 @@ case "$MODE" in
     if swiftformat --lint $SWIFT_FILES 2>&1 | grep -q "Source input did not pass lint check"; then
       echo "⚠️  发现格式问题，正在修复..."
       swiftformat $SWIFT_FILES
-      
-      UNFORMATTED=$(git diff --name-only $SWIFT_FILES)
-      
-      if [ -n "$UNFORMATTED" ]; then
-        echo "⚠️  以下文件已自动格式化："
-        echo "$UNFORMATTED" | sed 's/^/  /'
-        echo ""
-        echo "✅ 已自动将格式化后的文件加入暂存区"
-        git add $UNFORMATTED
-      fi
-      
       echo "✅ 格式修复完成"
     else
       echo "✅ 格式检查通过"

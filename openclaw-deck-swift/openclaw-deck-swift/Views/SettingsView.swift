@@ -41,7 +41,7 @@ struct SettingsView: View {
                         Spacer()
                     }
                 } header: {
-                    Label("CONNECTION", systemImage: "network")
+                    Label("connection".localized, systemImage: "network")
                 } footer: {
                     if isConnected {
                         Text("Gateway: \(gatewayUrl)")
@@ -60,9 +60,9 @@ struct SettingsView: View {
                         isConnected: isConnected
                     )
                 } header: {
-                    Label("GATEWAY", systemImage: "server.rack")
+                    Label("gateway_1".localized, systemImage: "server.rack")
                 } footer: {
-                    Text("Modify and apply to reconnect with new settings")
+                    Text("modify_and_apply_to_reconnect_with_new_settings".localized)
                 }
 
                 // Apply & Reconnect button (only when changes exist)
@@ -73,12 +73,12 @@ struct SettingsView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "arrow.triangle.2.circlepath")
-                                Text("Apply & Reconnect")
+                                Text("apply_reconnect".localized)
                                     .fontWeight(.medium)
                             }
                         }
                     } footer: {
-                        Text("Save changes and reconnect to Gateway")
+                        Text("save_changes_and_reconnect_to_gateway".localized)
                     }
                 }
 
@@ -86,20 +86,18 @@ struct SettingsView: View {
 
                 Section {
                     // Notifications
-                    Toggle(
-                        "Sound on Message", systemImage: "speaker.wave.2",
-                        isOn: .init(
-                            get: { viewModel?.playSoundOnMessage ?? true },
-                            set: { viewModel?.playSoundOnMessage = $0 }
-                        )
-                    )
+                    Toggle("sound_on_message".localized, systemImage: "speaker.wave.2",
+                           isOn: .init(
+                               get: { viewModel?.playSoundOnMessage ?? true },
+                               set: { viewModel?.playSoundOnMessage = $0 }
+                           ))
 
                     // Cloudflare KV Sync
                     NavigationLink {
                         CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
                     } label: {
                         HStack {
-                            Label("Multi-Device Sync", systemImage: "icloud.and.arrow.down")
+                            Label("multi_device_sync".localized, systemImage: "icloud.and.arrow.down")
                             Spacer()
                             if CloudflareKV.shared.isConfigured {
                                 Circle()
@@ -109,9 +107,9 @@ struct SettingsView: View {
                         }
                     }
                 } header: {
-                    Label("APP", systemImage: "app.badge")
+                    Label("app".localized, systemImage: "app.badge")
                 } footer: {
-                    Text("Notifications and cloud sync settings")
+                    Text("notifications_and_cloud_sync_settings".localized)
                 }
 
                 // MARK: - 4. DEVICE MANAGEMENT
@@ -122,25 +120,23 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "trash.fill")
-                            Text("Reset Device Identity")
+                            Text("reset_device_identity".localized)
                                 .fontWeight(.medium)
                         }
                     }
                     .tint(.orange)
-                    .alert("Reset Device Identity?", isPresented: $showingResetAlert) {
-                        Button("Cancel", role: .cancel) {}
-                        Button("Reset", role: .destructive) {
+                    .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
+                        Button("cancel".localized, role: .cancel) {}
+                        Button("reset".localized, role: .destructive) {
                             onResetDeviceIdentity?()
                         }
                     } message: {
-                        Text(
-                            "This will clear the stored device identity and token, then reconnect using the token you entered."
-                        )
+                        Text("this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered".localized)
                     }
                 } header: {
-                    Label("DEVICE", systemImage: "iphone")
+                    Label("device".localized, systemImage: "iphone")
                 } footer: {
-                    Text("Clear stored device identity and token")
+                    Text("clear_stored_device_identity_and_token".localized)
                 }
 
                 // MARK: - 5. DISCONNECT (Separate section for safety)
@@ -151,15 +147,15 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "xmark.square.fill")
-                            Text("Disconnect")
+                            Text("disconnect".localized)
                                 .fontWeight(.medium)
                         }
                     }
                     .tint(.red)
                 } header: {
-                    Label("DISCONNECT", systemImage: "slash.circle")
+                    Label("disconnect_1".localized, systemImage: "slash.circle")
                 } footer: {
-                    Text("Disconnect from Gateway and return to welcome screen")
+                    Text("disconnect_from_gateway_and_return_to_welcome_screen".localized)
                 }
 
                 // MARK: - 6. HELP
@@ -168,19 +164,19 @@ struct SettingsView: View {
                     NavigationLink {
                         UserGuideView()
                     } label: {
-                        Label("User Guide", systemImage: "book")
+                        Label("user_guide".localized, systemImage: "book")
                     }
                 } header: {
-                    Label("HELP", systemImage: "questionmark.circle")
+                    Label("help".localized, systemImage: "questionmark.circle")
                 } footer: {
-                    Text("View complete usage instructions and troubleshooting guide")
+                    Text("view_complete_usage_instructions_and_troubleshooting_guide".localized)
                 }
 
                 // MARK: - 7. ABOUT
 
                 Section {
                     HStack {
-                        Text("Version")
+                        Text("version".localized)
                         Spacer()
                         Text("1.0.0")
                             .foregroundColor(.secondary)
@@ -190,19 +186,19 @@ struct SettingsView: View {
                     Link("OpenClaw Documentation", destination: URL(string: "https://docs.openclaw.ai")!)
                         .font(.caption)
                 } header: {
-                    Label("ABOUT", systemImage: "info.circle")
+                    Label("about".localized, systemImage: "info.circle")
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("settings".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("cancel".localized) {
                         onClose?()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button("done".localized) {
                         onClose?()
                     }
                     .fontWeight(.semibold)

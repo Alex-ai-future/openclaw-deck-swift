@@ -36,7 +36,7 @@ struct GlobalInputView: View {
 
             // 输入框
             ZStack(alignment: .trailing) {
-                TextField("Message", text: $state.inputText, axis: .vertical)
+                TextField("message".localized, text: $state.inputText, axis: .vertical)
                     .font(.body)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 4)
@@ -76,7 +76,7 @@ struct GlobalInputView: View {
 
                 // 占位文字
                 if state.inputText.isEmpty {
-                    Text("Message")
+                    Text("message".localized)
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -136,7 +136,7 @@ struct DeckCommonContainer<Content: View>: View {
             showingSettings: .constant(false),
             showingNewSessionSheet: .constant(false)
         ) {
-            Text("iPad Content")
+            Text("ipad_content".localized)
         }
     }
 }
@@ -149,7 +149,7 @@ struct DeckCommonContainer<Content: View>: View {
             showingNewSessionSheet: .constant(false)
         ) {
             List {
-                Text("iPhone Content")
+                Text("iphone_content".localized)
             }
         }
     }

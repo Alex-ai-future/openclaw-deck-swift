@@ -30,7 +30,7 @@ struct DeckToolbar: ToolbarContent {
                         }
                         .accessibilityIdentifier("settingsButton")
 
-                        Text("OpenClaw Deck")
+                        Text("openclaw_deck".localized)
                             .font(.headline)
                             .fontWeight(.semibold)
                             .frame(width: 160, alignment: .leading)
@@ -57,7 +57,7 @@ struct DeckToolbar: ToolbarContent {
                     }
                     .accessibilityIdentifier("settingsButton")
 
-                    Text("OpenClaw Deck")
+                    Text("openclaw_deck".localized)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .frame(width: 160, alignment: .leading)
@@ -109,31 +109,31 @@ extension View {
     ) -> some View {
         self
             // 同步确认弹窗
-            .alert("Sync All Sessions?", isPresented: showingSyncAlert) {
-                Button("Cancel", role: .cancel) {}
-                Button("Sync") {
+            .alert("sync_all_sessions".localized, isPresented: showingSyncAlert) {
+                Button("cancel".localized, role: .cancel) {}
+                Button("sync".localized) {
                     Task {
                         await viewModel.handleSync()
                     }
                 }
                 .tint(.blue)
             } message: {
-                Text("This will sync all sessions with the Gateway. Continue?")
+                Text("this_will_sync_all_sessions_with_the_gateway_continue".localized)
             }
 
             // 同步冲突弹窗
-            .alert("Sync Conflict", isPresented: showingConflictAlert) {
-                Button("Use Local (Overwrite Cloud)", role: .destructive) {
+            .alert("sync_conflict".localized, isPresented: showingConflictAlert) {
+                Button("use_local_overwrite_cloud".localized, role: .destructive) {
                     Task {
                         await viewModel.resolveSyncConflict(choice: "local")
                     }
                 }
-                Button("Use Cloud (Merge with Local)") {
+                Button("use_cloud_merge_with_local".localized) {
                     Task {
                         await viewModel.resolveSyncConflict(choice: "remote")
                     }
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("cancel".localized, role: .cancel) {}
             } message: {
                 if let info = viewModel.conflictInfo {
                     Text(info.description)
@@ -155,7 +155,7 @@ extension View {
 
 #Preview {
     NavigationStack {
-        Text("Preview")
+        Text("preview".localized)
             .toolbar {
                 DeckToolbar(
                     viewModel: DeckViewModel(),

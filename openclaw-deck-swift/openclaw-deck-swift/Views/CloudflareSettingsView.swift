@@ -38,10 +38,10 @@ struct CloudflareSettingsView: View {
                 // Description
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Cloudflare KV Sync")
+                        Text("cloudflare_kv_sync".localized)
                             .font(.headline)
 
-                        Text("Sync sessions across multiple devices using Cloudflare KV")
+                        Text("sync_sessions_across_multiple_devices_using_cloudflare_kv".localized)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
@@ -52,12 +52,12 @@ struct CloudflareSettingsView: View {
                     }
                     .padding(.vertical, 4)
                 } footer: {
-                    Text("Free tier: 100K reads/day, 1K writes/day, 1GB storage")
+                    Text("free_tier_100k_readsday_1k_writesday_1gb_storage".localized)
                 }
 
                 // Configuration Input
                 Section {
-                    TextField("User ID (custom, e.g., email)", text: $userId)
+                    TextField("user_id_custom_eg_email".localized, text: $userId)
                         .focused($focusedField, equals: .userId)
                         .submitLabel(.done)
                         .onSubmit {
@@ -67,7 +67,7 @@ struct CloudflareSettingsView: View {
                             autoSave()
                         }
 
-                    TextField("Account ID", text: $accountId)
+                    TextField("account_id".localized, text: $accountId)
                         .focused($focusedField, equals: .accountId)
                         .submitLabel(.done)
                         .onSubmit {
@@ -77,7 +77,7 @@ struct CloudflareSettingsView: View {
                             autoSave()
                         }
 
-                    TextField("Namespace ID", text: $namespaceId)
+                    TextField("namespace_id".localized, text: $namespaceId)
                         .focused($focusedField, equals: .namespaceId)
                         .submitLabel(.done)
                         .onSubmit {
@@ -87,7 +87,7 @@ struct CloudflareSettingsView: View {
                             autoSave()
                         }
 
-                    TextField("API Token", text: $apiToken)
+                    TextField("api_token".localized, text: $apiToken)
                         .focused($focusedField, equals: .apiToken)
                         .submitLabel(.done)
                         .onSubmit {
@@ -97,9 +97,9 @@ struct CloudflareSettingsView: View {
                             autoSave()
                         }
                 } header: {
-                    Text("Configuration")
+                    Text("configuration".localized)
                 } footer: {
-                    Text("API Token is encrypted in Keychain")
+                    Text("api_token_is_encrypted_in_keychain".localized)
                 }
 
                 // Status
@@ -122,7 +122,7 @@ struct CloudflareSettingsView: View {
                         }
                     }
                 } header: {
-                    Text("Status")
+                    Text("status".localized)
                 }
 
                 // Actions
@@ -134,7 +134,7 @@ struct CloudflareSettingsView: View {
                     } label: {
                         HStack {
                             Image(systemName: "antenna.radiowaves.left.and.right")
-                            Text("Test Connection")
+                            Text("test_connection".localized)
                         }
                     }
                     .disabled(isTesting || !isFormValid)
@@ -145,15 +145,15 @@ struct CloudflareSettingsView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "trash.fill")
-                                Text("Clear Configuration")
+                                Text("clear_configuration".localized)
                             }
                         }
                     }
                 } header: {
-                    Text("Actions")
+                    Text("actions".localized)
                 } footer: {
                     if isTesting {
-                        Text("Testing...")
+                        Text("testing".localized)
                             .foregroundColor(.secondary)
                     } else if let result = testResult {
                         Text(result)
@@ -161,7 +161,7 @@ struct CloudflareSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Cloudflare Sync")
+            .navigationTitle("cloudflare_sync".localized)
             .toolbar {
                 // No cancel button - navigation back is sufficient
             }

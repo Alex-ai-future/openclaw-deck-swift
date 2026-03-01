@@ -58,7 +58,7 @@ struct SessionListView: View {
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("OpenClaw Deck")
+            .navigationTitle("openclaw_deck".localized)
             .accessibilityIdentifier("SessionList")
             .toolbar {
                 DeckToolbar(
@@ -234,7 +234,7 @@ struct SessionRowView: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text("No messages")
+                    Text("no_messages".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -261,7 +261,7 @@ struct SessionRowView: View {
                 Button {
                     session.hasUnreadMessage = false
                 } label: {
-                    Label("已读", systemImage: "checkmark.circle")
+                    Label("已读".localized, systemImage: "checkmark.circle")
                 }
                 .tint(.green)
             } else {
@@ -269,7 +269,7 @@ struct SessionRowView: View {
                 Button {
                     session.hasUnreadMessage = true
                 } label: {
-                    Label("未读", systemImage: "circle")
+                    Label("未读".localized, systemImage: "circle")
                 }
                 .tint(.orange)
             }
@@ -279,7 +279,7 @@ struct SessionRowView: View {
             Button(role: .destructive) {
                 onRequestDelete()
             } label: {
-                Label("删除", systemImage: "trash")
+                Label("删除".localized, systemImage: "trash")
             }
         }
     }

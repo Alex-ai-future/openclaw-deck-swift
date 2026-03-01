@@ -12,14 +12,12 @@ extension View {
     ///   - onConfirm: 用户确认删除后的回调
     func deleteSessionAlert(isPresented: Binding<Bool>, onConfirm: @escaping () -> Void) -> some View {
         alert("Delete Session?", isPresented: isPresented) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
+            Button("cancel".localized, role: .cancel) {}
+            Button("delete".localized, role: .destructive) {
                 onConfirm()
             }
         } message: {
-            Text(
-                "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded."
-            )
+            Text("this_will_remove_the_session_from_the_deck_messages_are_stored_in_gateway_and_can_be_reloaded".localized)
         }
     }
 }

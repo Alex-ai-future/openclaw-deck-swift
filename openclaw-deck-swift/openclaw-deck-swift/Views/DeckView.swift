@@ -206,14 +206,14 @@ struct NewSessionSheet: View {
             Form {
                 // Session Name
                 Section {
-                    TextField("Session Name", text: $name)
+                    TextField("session_name".localized, text: $name)
                         .focused($isNameFieldFocused)
                         .textContentType(.name)
                         .onSubmit {
                             createSession()
                         }
                 } footer: {
-                    Text("A unique identifier for this session.")
+                    Text("a_unique_identifier_for_this_session".localized)
                 }
 
                 // Notes (Optional)
@@ -223,22 +223,22 @@ struct NewSessionSheet: View {
                         .frame(minHeight: 80)
                         .scrollContentBackground(.hidden)
                 } header: {
-                    Text("Notes (Optional)")
+                    Text("notes_optional".localized)
                 } footer: {
-                    Text("Additional context or description for this session.")
+                    Text("additional_context_or_description_for_this_session".localized)
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("New Session")
+            .navigationTitle("new_session".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("cancel".localized) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
+                    Button("create".localized) {
                         createSession()
                     }
                     .disabled(name.isEmpty)

@@ -17,5 +17,6 @@ fi
 # 调用格式化脚本（只格式化，不 add）
 "$PROJECT_DIR/script/format.sh" --staged
 
-# 重新添加格式化后的文件到暂存区（只 add 原本暂存的文件）
-git add $SWIFT_FILES
+# 注意：不执行 git add
+# script/committer 会在格式化后执行 git add
+# git commit 会自动使用工作区的最新版本

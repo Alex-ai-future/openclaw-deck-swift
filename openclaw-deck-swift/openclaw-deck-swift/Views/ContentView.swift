@@ -251,7 +251,7 @@ struct ConnectingView: View {
             ProgressView()
                 .scaleEffect(1.5)
 
-            Text("Connecting to Gateway...")
+            Text("connecting_to_gateway".localized)
                 .font(.headline)
                 .foregroundColor(.secondary)
         }
@@ -272,14 +272,14 @@ struct ReconnectingView: View {
             ProgressView()
                 .scaleEffect(1.5)
 
-            Text("Reconnecting...")
+            Text("reconnecting".localized)
                 .font(.headline)
 
             Text("Attempt \(attempts)/\(maxAttempts)")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            Button("Cancel", action: onCancel)
+            Button("cancel".localized, action: onCancel)
                 .buttonStyle(.bordered)
                 .padding(.top, 20)
         }
@@ -308,18 +308,18 @@ struct WelcomeView: View {
                         .font(.system(size: 64))
                         .foregroundColor(.blue)
 
-                    Text("OpenClaw Deck")
+                    Text("openclaw_deck".localized)
                         .font(.largeTitle)
                         .fontWeight(.bold)
 
-                    Text("Multi-Session Chat Client")
+                    Text("multi_session_chat_client".localized)
                         .font(.title3)
                         .foregroundColor(.secondary)
                 }
                 .padding(.top, 60)
 
                 // Simple guide
-                Text("Tap the ⚙️ in the top right\nto get started")
+                Text("tap_the_in_the_top_rightnto_get_started_1".localized)
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -333,11 +333,11 @@ struct WelcomeView: View {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.red)
-                            Text("Connection Failed")
+                            Text("connection_failed".localized)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.red)
                             Spacer()
-                            Button("Dismiss", action: onClearError)
+                            Button("dismiss".localized, action: onClearError)
                                 .font(.caption)
                         }
 

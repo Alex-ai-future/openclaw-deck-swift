@@ -16,7 +16,7 @@ struct GatewayConfigInput: View {
 
     var body: some View {
         // Gateway URL
-        TextField("Gateway URL", text: $gatewayUrl, prompt: Text("ws://host:port"))
+        TextField("gateway_url".localized, text: $gatewayUrl, prompt: Text("ws://host:port"))
             .textContentType(.URL)
             .focused($isGatewayUrlFocused)
             .submitLabel(.done)
@@ -29,7 +29,7 @@ struct GatewayConfigInput: View {
         #endif
 
         // Token
-        TextField("Token (optional)", text: $token)
+        TextField("token_optional".localized, text: $token)
             .textContentType(.none)
             .focused($isTokenFocused)
             .submitLabel(.done)
@@ -47,7 +47,7 @@ struct GatewayConfigInput: View {
             } label: {
                 HStack {
                     Image(systemName: "plug")
-                    Text("Connect")
+                    Text("connect".localized)
                 }
                 .frame(maxWidth: .infinity)
             }

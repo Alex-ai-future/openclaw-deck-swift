@@ -109,7 +109,7 @@ struct SessionColumnView: View {
                                 Button {
                                     sendNewMessage()
                                 } label: {
-                                    Text("/new")
+                                    Text("new".localized)
                                         .font(.title3)
                                         .foregroundColor(.blue)
                                 }
@@ -120,7 +120,7 @@ struct SessionColumnView: View {
                                 Button {
                                     sendOKMessage()
                                 } label: {
-                                    Text("OK")
+                                    Text("ok".localized)
                                         .font(.title3)
                                         .foregroundColor(.blue)
                                 }
@@ -264,7 +264,7 @@ struct SessionColumnView: View {
                 Button(role: .destructive) {
                     showingDeleteAlert = true
                 } label: {
-                    Label("Delete Session", systemImage: "trash")
+                    Label("delete_session".localized, systemImage: "trash")
                 }
             }
         }
@@ -301,7 +301,7 @@ struct SessionColumnView: View {
                         // 消息加载中
                         VStack {
                             ProgressView()
-                            Text("正在加载消息历史...")
+                            Text("正在加载消息历史".localized)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -318,7 +318,7 @@ struct SessionColumnView: View {
                                     Spacer()
                                     ProgressView()
                                         .scaleEffect(0.8)
-                                    Text("Loading history...")
+                                    Text("loading_history".localized)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -427,7 +427,7 @@ struct SessionColumnView: View {
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                 impactFeedback.impactOccurred()
                             } label: {
-                                Label("Copy", systemImage: "doc.on.doc")
+                                Label("copy".localized, systemImage: "doc.on.doc")
                             }
                         }
 
@@ -651,7 +651,7 @@ private func createSampleSession() -> SessionState {
                 var body: some View {
                     VStack {
                         Text("Count: \\(count)")
-                        Button("Increment") {
+                        Button("increment".localized) {
                             count += 1
                         }
                     }
@@ -844,7 +844,7 @@ private func createStreamingSession() -> SessionState {
 
         var body: some View {
             VStack {
-                Text("Empty input box - should be 36pt (1 line)")
+                Text("empty_input_box_should_be_36pt_1_line".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -872,7 +872,7 @@ private func createStreamingSession() -> SessionState {
                     }
 
                     if text.isEmpty {
-                        Text("Message")
+                        Text("message".localized)
                             .font(.body)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -904,7 +904,7 @@ private func createStreamingSession() -> SessionState {
 
         var body: some View {
             VStack {
-                Text("Short text - should stay 1 line")
+                Text("short_text_should_stay_1_line".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -955,7 +955,7 @@ private func createStreamingSession() -> SessionState {
 
         var body: some View {
             VStack {
-                Text("Multi-line text - type to test auto growth")
+                Text("multi_line_text_type_to_test_auto_growth".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -1007,7 +1007,7 @@ private func createStreamingSession() -> SessionState {
 
         var body: some View {
             VStack {
-                Text("Long text - should max at 150pt (7 lines)")
+                Text("long_text_should_max_at_150pt_7_lines".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -1069,14 +1069,14 @@ struct HeightPreference: PreferenceKey {
 
         var body: some View {
             VStack(spacing: 20) {
-                Text("Processing State Button Preview")
+                Text("processing_state_button_preview".localized)
                     .font(.headline)
 
                 // 🆕 使用 tint 方法
                 Button {
                     isProcessing.toggle()
                 } label: {
-                    Text("Welcome")
+                    Text("welcome".localized)
                         .font(.body)
                         .fontWeight(.medium)
                         .lineLimit(1)
@@ -1086,20 +1086,20 @@ struct HeightPreference: PreferenceKey {
                 // 🆕 使用 tint 改变玻璃按钮背景色
                 .tint(isProcessing ? Color.orange : Color.clear)
 
-                Text("Tap to toggle state")
+                Text("tap_to_toggle_state".localized)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
                 // 测试不同 tint 颜色
                 VStack(spacing: 10) {
-                    Text("Tint Color Tests")
+                    Text("tint_color_tests".localized)
                         .font(.subheadline)
                         .fontWeight(.medium)
 
                     // 测试不同颜色
                     HStack(spacing: 10) {
                         Button(role: .none) {} label: {
-                            Text("Orange")
+                            Text("orange".localized)
                                 .font(.caption)
                                 .padding(8)
                         }
@@ -1107,7 +1107,7 @@ struct HeightPreference: PreferenceKey {
                         .tint(Color.orange)
 
                         Button(role: .none) {} label: {
-                            Text("Blue")
+                            Text("blue".localized)
                                 .font(.caption)
                                 .padding(8)
                         }
@@ -1115,7 +1115,7 @@ struct HeightPreference: PreferenceKey {
                         .tint(Color.blue)
 
                         Button(role: .none) {} label: {
-                            Text("Red")
+                            Text("red".localized)
                                 .font(.caption)
                                 .padding(8)
                         }

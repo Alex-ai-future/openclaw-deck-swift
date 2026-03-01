@@ -57,22 +57,22 @@ struct SessionSortView: View {
                         sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
                     }
                 } footer: {
-                    Text("Drag to reorder")
+                    Text("drag_to_reorder".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("Sort Sessions")
+            .navigationTitle("sort_sessions".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("cancel".localized) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button("done".localized) {
                         applySortOrder()
                         dismiss()
                     }

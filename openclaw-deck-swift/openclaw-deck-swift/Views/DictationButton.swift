@@ -55,15 +55,15 @@ struct DictationButton: View {
         .frame(width: 36, height: 36)
         .contentShape(Rectangle())
         #if os(iOS) || os(visionOS)
-            .alert("Microphone Permission Required", isPresented: $showingPermissionAlert) {
-                Button("Cancel", role: .cancel) {}
-                Button("Open Settings") {
+            .alert("microphone_permission_required".localized, isPresented: $showingPermissionAlert) {
+                Button("cancel".localized, role: .cancel) {}
+                Button("open_settings".localized) {
                     if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(settingsUrl)
                     }
                 }
             } message: {
-                Text("Please enable microphone permission in Settings to use voice input")
+                Text("please_enable_microphone_permission_in_settings_to_use_voice_input".localized)
             }
         #endif
     }
@@ -76,14 +76,14 @@ struct DictationButton: View {
 
         var body: some View {
             VStack(spacing: 20) {
-                Text("Dictation Button Preview")
+                Text("dictation_button_preview".localized)
                     .font(.headline)
 
                 HStack {
                     DictationButton(text: $text, speechRecognizer: speechRecognizer)
                         .frame(width: 36, height: 36)
 
-                    TextField("Text", text: $text)
+                    TextField("text".localized, text: $text)
                         .textFieldStyle(.roundedBorder)
                 }
                 .padding()

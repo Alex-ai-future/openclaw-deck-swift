@@ -15,7 +15,7 @@ struct UserGuideView: View {
     var body: some View {
         NavigationStack {
             MarkdownView(url: URL(string: rawUrl)!)
-                .navigationTitle("User Guide")
+                .navigationTitle("user_guide".localized)
                 .navigationBarTitleDisplayMode(.inline)
                 .markdownTheme(.default)
         }

@@ -456,6 +456,11 @@ class DeckViewModel {
         }
     }
 
+    /// 测试专用：加载 Sessions（测试用）
+    @MainActor func loadSessionsFromStorageForTesting() async {
+        await loadSessionsFromStorage()
+    }
+
     /// 从 Cloudflare 同步加载 Sessions
     private func loadSessionsWithCloudflareSync() async {
         do {
@@ -801,7 +806,7 @@ class DeckViewModel {
             // 更新进度（按会话数量）
             if totalCount > 0 {
                 loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
-                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\self.(Int(loadingProgress * 100))%")
+                logger.info("✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.loadingProgress * 100))%")
             }
         }
 

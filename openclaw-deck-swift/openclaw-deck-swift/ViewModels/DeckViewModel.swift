@@ -222,10 +222,14 @@ class DeckViewModel {
                     self?.loadingStage = .connecting
                     self?.loadingProgress = 0.2
 
-                    // 获取会话列表成功
+                    // 获取会话列表并同步
                     self?.loadingStage = .fetchingSessions
                     self?.loadingProgress = 0.5
 
+                    // 先同步会话列表（填充 sessionOrder）
+                    await self?.syncWithGateway()
+
+                    // 再加载所有消息
                     await self?.loadAllSessionHistory()
 
                     // 获取消息完成
@@ -235,13 +239,14 @@ class DeckViewModel {
                     // 同步本地完成
                     self?.loadingStage = .syncingLocal
                     self?.loadingProgress = 1.0
-                    self?.loadingStage = .idle
 
                     // 初始化完成
                     self?.isInitializing = false
 
                     // 所有数据加载完成，现在才设置 gatewayConnected
+                    // 注意：先设置 gatewayConnected，再设置 loadingStage = .idle，避免 UI 闪烁
                     self?.gatewayConnected = true
+                    self?.loadingStage = .idle
 
                     // 🆕 启动会话状态轮询
                     self?.startSessionPolling()

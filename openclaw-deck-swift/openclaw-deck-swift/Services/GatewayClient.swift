@@ -751,10 +751,6 @@ class GatewayClient {
         let privateKey = try Curve25519.Signing.PrivateKey(rawRepresentation: privateKeySeed)
         let signatureData = try privateKey.signature(for: Array(payload.utf8))
 
-        logger.info(
-            "🔐 [DeviceAuth] Signature generated: \(base64UrlEncode(signatureData).prefix(32))..."
-        )
-
         // Build result dictionary - only include nonce if provided
         var result: [String: Any] = [
             "id": identity["id"] as! String,

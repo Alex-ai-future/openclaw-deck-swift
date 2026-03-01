@@ -37,7 +37,7 @@ struct UserGuideView: View {
                 } else {
                     ScrollView {
                         MarkdownView(markdownContent)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 48)
                     }
                 }
             }

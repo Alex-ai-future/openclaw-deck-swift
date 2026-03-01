@@ -45,6 +45,7 @@ struct DeckToolbar: ToolbarContent {
           .accessibilityIdentifier("settingsButton")
         }
       }
+
     #else
       ToolbarItem(placement: .automatic) {
         // macOS：显示设置按钮 + App 名字

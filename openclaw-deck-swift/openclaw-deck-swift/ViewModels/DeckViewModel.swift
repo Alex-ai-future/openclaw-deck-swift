@@ -763,6 +763,11 @@ class DeckViewModel {
             await loadAllSessionHistory()
 
             logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
+
+            // ✅ 重置加载状态，避免卡在 100%
+            loadingStage = .idle
+            loadingProgress = 0.0
+
             return .success("Sync complete: \(result.data.sessions.count) sessions")
         } catch {
             logger.error("❌ Sync failed: \(error.localizedDescription)")

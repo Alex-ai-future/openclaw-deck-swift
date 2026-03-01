@@ -620,5 +620,58 @@ git add .           # ❌ 绝对禁止
 
 ---
 
+## 📝 日志规范
+
+### 日志查看（iOS 设备）
+
+**设备日志自动同步到 Mac！**
+
+当 iPhone 通过 USB/WiFi 连接 Mac 时，所有 `Logger` 日志会自动出现在：
+
+**1. Console.app（推荐）**
+```
+1. Mac 打开 Console.app（应用程序 → 实用工具）
+2. 左侧选择你的 iPhone
+3. 搜索：com.openclaw.deck
+4. 实时查看所有日志
+```
+
+**2. Xcode 控制台**
+```
+1. Xcode → Window → Devices and Simulators
+2. 选择 iPhone → 勾选 "Show the console"
+3. 运行 App → 日志自动显示
+```
+
+**3. Xcode 调试控制台**
+```
+1. Xcode 运行 App（Cmd+R）
+2. 底部调试区域自动显示日志
+```
+
+### 日志级别使用
+
+| 级别 | 用途 | 示例 |
+|------|------|------|
+| `error` | 错误，需要立即处理 | 连接失败、数据丢失 |
+| `warning` | 警告，不影响功能 | 重试成功、降级处理 |
+| `info` | 重要事件 | 用户登录、配置变更 |
+| `debug` | 调试信息 | 状态变化、中间结果 |
+
+### 日志代码示例
+
+```swift
+import OSLog
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "Gateway")
+
+logger.error("连接失败：\(error)")
+logger.warning("重试成功")
+logger.info("用户登录")
+logger.debug("状态变化：\(state)")
+```
+
+---
+
 **创建日期：** 2026-02-26  
-**最后更新：** 2026-02-27（添加文档编写规则）
+**最后更新：** 2026-03-01（添加测试规范、多代理安全规则、日志规范）

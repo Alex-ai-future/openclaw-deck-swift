@@ -64,7 +64,7 @@ class GlobalInputState: GlobalInputStateProtocol {
       layoutManager.addTextContainer(textContainer)
       textStorage.addLayoutManager(layoutManager)
       let rect = layoutManager.usedRect(for: textContainer)
-      let height = max(36.0, min(rect.height + 8, 150))
+      let height = max(36.0, rect.height + 8)
     #else
       let font = UIFont.preferredFont(forTextStyle: .body)
       let rect = text.boundingRect(
@@ -73,7 +73,7 @@ class GlobalInputState: GlobalInputStateProtocol {
         attributes: [.font: font],
         context: nil
       )
-      let height = max(36.0, min(rect.height + 8, 150))
+      let height = max(36.0, rect.height + 8)
     #endif
 
     DispatchQueue.main.async {

@@ -262,25 +262,29 @@ swift-format format --in-place --recursive .
 
 **每次修改代码后，按以下步骤操作：**
 
-### 1. 自动格式化
-```bash
-cd ~/Projects/openclaw-deck-swift/openclaw-deck-swift/openclaw-deck-swift
-swift-format format --in-place --recursive .
-```
+### 1. 自动格式化（pre-commit hook）
+**无需手动运行格式化！**
+
+提交时会自动触发 pre-commit hook：
+- 自动检测暂存的 Swift 文件
+- 自动运行 `swift-format` 格式化
+- 自动将格式化后的文件重新加入暂存区
+- 然后完成提交
 
 ### 2. 提交代码
-- 格式化后提交
-- 提交信息清晰描述修改内容
+```bash
+./script/committer "[类型] 描述" 文件 1 文件 2...
+```
 
 **好处：**
-- ✅ 代码风格统一
-- ✅ 保持代码整洁
-- ✅ 提交前自动清理
+- ✅ 代码风格统一（自动）
+- ✅ 保持代码整洁（自动）
+- ✅ 提交前自动清理（自动）
+- ✅ AI 无需手动格式化
 
 **注意：**
 - ⚠️ 不自动执行编译（太耗时）
-- ⚠️ 如需验证，手动运行编译脚本
-- ⚠️ 格式化可能引入语法错误，需注意
+- ⚠️ 如需验证，手动运行编译脚本（用子代理）
 
 ---
 

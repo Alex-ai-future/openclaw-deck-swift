@@ -27,8 +27,11 @@ struct SessionColumnView: View {
   // 滚动到底部（手动点击按钮）
   private func scrollToBottom() {
     guard let lastId = session.messages.last?.id else { return }
-    // 设置目标 ID，触发滚动
-    scrollTargetId = lastId
+    // 先清空再设置，强制触发 onChange（即使 ID 相同）
+    scrollTargetId = nil
+    DispatchQueue.main.async {
+      scrollTargetId = lastId
+    }
   }
 
   // 发送 OK 消息

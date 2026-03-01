@@ -206,7 +206,6 @@ class DeckViewModel {
         // 设置连接状态回调
         client.onConnection = { [weak self] connected in
             Task { @MainActor in
-                self?.gatewayConnected = connected
                 if connected {
                     // 重连时重置所有 session 的处理状态
                     if let sessions = self?.sessions {
@@ -241,6 +240,9 @@ class DeckViewModel {
                     // 初始化完成
                     self?.isInitializing = false
 
+                    // 所有数据加载完成，现在才设置 gatewayConnected
+                    self?.gatewayConnected = true
+
                     // 🆕 启动会话状态轮询
                     self?.startSessionPolling()
                 } else {
@@ -252,6 +254,7 @@ class DeckViewModel {
 
                     // 连接失败，结束初始化
                     self?.isInitializing = false
+                    self?.gatewayConnected = false
                 }
             }
         }

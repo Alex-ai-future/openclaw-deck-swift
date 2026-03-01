@@ -270,10 +270,8 @@ class DeckViewModel {
             loadingStage = .connecting
             loadingProgress = 0.2
 
-            // 加载会话列表
-            loadingStage = .fetchingSessions
-            loadingProgress = 0.5
-            try await loadSessionsFromGateway()
+            // ✅ 完全从本地加载会话列表，不从 Gateway 获取
+            // sessionOrder 已经在 loadSessionsFromStorage() 中加载
 
             // 检查是否有会话列表
             if sessionOrder.isEmpty {
@@ -776,39 +774,6 @@ class DeckViewModel {
         } catch {
             logger.error("❌ Sync failed: \(error.localizedDescription)")
             return .failure(error)
-        }
-    }
-
-    // MARK: - Load Sessions
-
-    /// 从 Gateway 加载会话列表（填充 sessionOrder）
-    @MainActor
-    private func loadSessionsFromGateway() async throws {
-        guard let client = gatewayClient, client.connected else {
-            logger.error("❌ Gateway 未连接，无法加载会话列表")
-            throw NSError(domain: "DeckViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"])
-        }
-
-        do {
-            // 使用 fetchSessions 获取活跃会话列表
-            // activeMinutes: 1000000 = 约 694 天，基本等于获取所有会话
-            let statuses = try await client.fetchSessions(activeMinutes: 1_000_000)
-            let sessionIds = statuses.map(\.key)
-            logger.info("📋 从 Gateway 获取到 \(sessionIds.count) 个会话")
-
-            sessionOrder = sessionIds.map { $0.lowercased() }
-            createSessionStates()
-
-            logger.info("📋 Session 顺序：\(sessionOrder)")
-
-            // 默认选中第一个 Session
-            if let firstSessionId = sessionOrder.first {
-                globalInputState.selectedSessionId = firstSessionId
-                logger.info("🎯 选中 Session: \(firstSessionId)")
-            }
-        } catch {
-            logger.error("❌ 加载会话列表失败：\(error.localizedDescription)")
-            throw error
         }
     }
 

@@ -84,10 +84,11 @@ struct SessionColumnView: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      ZStack {
-        // 关键修复：messageList 固定高度，避免飘移
+      // 消息列表和浮动按钮 - 使用 ZStack 但让消息列表可以压缩
+      ZStack(alignment: .bottom) {
+        // 消息列表 - 使用 maxHeight: .infinity 但不设置 minHeight
         messageList
-          .frame(minHeight: 700, maxHeight: .infinity)
+          .frame(maxHeight: .infinity)
 
         // 底部浮动按钮组
         VStack {
@@ -143,11 +144,23 @@ struct SessionColumnView: View {
           .padding(12)
         }
       }
+      .frame(maxHeight: .infinity)
 
       // 底部状态条 - 选中蓝色，未选中灰色
       Rectangle()
         .fill(isSelected ? Color.blue : Color.gray)
         .frame(height: 3)
+
+      // MARK: - 输入框（放在 VStack 内部，键盘弹出时会自动推起）
+      #if os(iOS)
+        if !DeviceUtils.isIPad {
+          GlobalInputView(
+            state: viewModel.globalInputState as! GlobalInputState
+          ) {
+            await viewModel.sendCurrentInput()
+          }
+        }
+      #endif
     }
     .contentShape(Rectangle())
     .onTapGesture {
@@ -175,18 +188,6 @@ struct SessionColumnView: View {
           }
         }
       }
-      // 🆕 在 VStack 上使用 safeAreaInset 让输入框和消息列表平级
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        // 只在 iPhone 上显示输入框（iPad 的 DeckView 已经有输入框）
-        if !DeviceUtils.isIPad {
-          GlobalInputView(
-            state: viewModel.globalInputState as! GlobalInputState
-          ) {
-            await viewModel.sendCurrentInput()
-          }
-        }
-      }
-
     #endif
     .deleteSessionAlert(isPresented: $showingDeleteAlert) {
       onDelete()
@@ -316,15 +317,13 @@ struct SessionColumnView: View {
           }
         }
         .padding()
-        .id("messages-container-\(session.messages.count)")  // 强制在消息变化时重新布局
+        .id("messages-container-\(session.messages.count)")
       }
-      // 监听最新消息 ID 变化，更新滚动目标
       .onChange(of: session.messages.last?.id) { _, newLastMessageId in
         if let lastId = newLastMessageId {
-          scrollTargetId = lastId  // 保存目标 ID
+          scrollTargetId = lastId
         }
       }
-      // 监听滚动目标，执行滚动
       .onChange(of: scrollTargetId) { _, newTargetId in
         if let lastId = newTargetId {
           withAnimation(.smooth(duration: 0.2)) {

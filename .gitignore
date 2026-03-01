@@ -23,7 +23,8 @@ build/
 # Swift Package Manager
 .swiftpm/
 Packages/
-Package.resolved
+# Package.resolved - allow xcodeproj workspace resolved files
+# openclaw-deck-swift/openclaw-deck-swift.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 Package.pins
 
 # Fastlane

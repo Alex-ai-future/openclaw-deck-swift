@@ -27,9 +27,9 @@ struct SessionColumnView: View {
   // 滚动到底部
   private func scrollToBottom() {
     guard let lastId = session.messages.last?.id else { return }
-      
-      print("lastId\(lastId)")
-    
+
+    print("lastId\(lastId)")
+
     // 每次点击都使用新的唯一值触发 onChange，避免 SwiftUI 合并变化
     withAnimation(.smooth(duration: 0.3)) {
       scrollTrigger = Int.random(in: 1000...9999)
@@ -375,9 +375,9 @@ struct SessionColumnView: View {
       // 只显示 user 和 assistant 消息
       if message.role != .user && message.role != .assistant {
         EmptyView()
-//      } else if message.text.isEmpty && !shouldShowEmptyMessage {
-//        // 对于 assistant 空消息，只有在 streaming 时显示占位
-//        EmptyView()
+        //      } else if message.text.isEmpty && !shouldShowEmptyMessage {
+        //        // 对于 assistant 空消息，只有在 streaming 时显示占位
+        //        EmptyView()
       } else {
         messageBody
       }

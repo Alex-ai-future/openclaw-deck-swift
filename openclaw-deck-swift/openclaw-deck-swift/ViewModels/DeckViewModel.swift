@@ -13,11 +13,11 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewM
 
 /// 加载阶段枚举
 enum LoadingStage: Equatable {
-    case idle  // 无加载
-    case connecting  // 连接 Gateway
-    case fetchingSessions  // 从云端获取会话列表
-    case fetchingMessages  // 从后端获取消息历史
-    case syncingLocal  // 同步到本地存储
+    case idle // 无加载
+    case connecting // 连接 Gateway
+    case fetchingSessions // 从云端获取会话列表
+    case fetchingMessages // 从后端获取消息历史
+    case syncingLocal // 同步到本地存储
 }
 
 // MARK: - LoadingStage: CustomStringConvertible
@@ -307,7 +307,7 @@ class DeckViewModel {
             loadingProgress = 1.0
 
             // 稍作延迟，让用户看到 100% 进度（避免闪动）
-            try? await Task.sleep(nanoseconds: 300_000_000)  // 300ms
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 
             // 初始化完成
             isInitializing = false
@@ -362,7 +362,7 @@ class DeckViewModel {
     /// 发送当前输入（全局入口）
     func sendCurrentInput() async {
         guard let sessionId = globalInputState.selectedSessionId,
-            let session = getSession(sessionId: sessionId)
+              let session = getSession(sessionId: sessionId)
         else {
             return
         }
@@ -409,7 +409,7 @@ class DeckViewModel {
         // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）
         let sessionIdLower = sessionId.lowercased()
         sessions[sessionIdLower] = sessionState
-        sessionOrder.insert(sessionIdLower, at: 0)  // 插入到开头，让新 Session 在最左边
+        sessionOrder.insert(sessionIdLower, at: 0) // 插入到开头，让新 Session 在最左边
 
         // 6. 保存到 UserDefaults
         saveSessionsToStorage()
@@ -785,7 +785,7 @@ class DeckViewModel {
                     NSError(
                         domain: "DeckViewModel", code: 409,
                         userInfo: [
-                            NSLocalizedDescriptionKey: "Sync conflict: please select data source"
+                            NSLocalizedDescriptionKey: "Sync conflict: please select data source",
                         ]
                     )
                 )
@@ -947,9 +947,9 @@ class DeckViewModel {
         if event.event == "chat" {
             // 保留关键错误信息
             if let payload = event.payload as? [String: Any],
-                let state = payload["state"] as? String,
-                state == "error",
-                let errorMessage = payload["errorMessage"] as? String
+               let state = payload["state"] as? String,
+               state == "error",
+               let errorMessage = payload["errorMessage"] as? String
             {
                 logger.error("❌ Chat event error: \(errorMessage)")
             }
@@ -982,9 +982,9 @@ class DeckViewModel {
     /// 处理 agent 事件（新格式）
     private func handleAgentEvent(_ event: GatewayEvent) {
         guard let payload = event.payload as? [String: Any],
-            let runId = payload["runId"] as? String,
-            let stream = payload["stream"] as? String,
-            let sessionKey = payload["sessionKey"] as? String
+              let runId = payload["runId"] as? String,
+              let stream = payload["stream"] as? String,
+              let sessionKey = payload["sessionKey"] as? String
         else {
             logger.error("Invalid agent event payload")
             return
@@ -1030,8 +1030,8 @@ class DeckViewModel {
         case "lifecycle":
             // 生命周期：{ data: { phase: "start" | "end" } }
             if let data = payload["data"] as? [String: Any],
-                let phase = data["phase"] as? String,
-                let runId = payload["runId"] as? String
+               let phase = data["phase"] as? String,
+               let runId = payload["runId"] as? String
             {
                 switch phase {
                 case "start":
@@ -1041,14 +1041,14 @@ class DeckViewModel {
                     session.activeRunId = runId
                 case "end":
                     session.isProcessing = false
-                    session.hasUnreadMessage = true  // 总是标记为未读
+                    session.hasUnreadMessage = true // 总是标记为未读
                     session.status = .idle
                     session.activeRunId = nil
 
                     // 🎯 发送通知：无论前台后台都发
                     if let lastMessage = session.messages.last,
-                        lastMessage.role == .assistant,
-                        !lastMessage.text.isEmpty
+                       lastMessage.role == .assistant,
+                       !lastMessage.text.isEmpty
                     {
                         NotificationService.shared.sendNewMessageNotification(
                             sessionName: session.sessionId,
@@ -1161,7 +1161,7 @@ class DeckViewModel {
         session.messages[index] = ChatMessage(
             id: message.id,
             role: message.role,
-            text: text,  // 替换为累积文本
+            text: text, // 替换为累积文本
             timestamp: message.timestamp,
             streaming: message.streaming,
             thinking: message.thinking,
@@ -1241,7 +1241,7 @@ class DeckViewModel {
         session.messages[index] = ChatMessage(
             id: message.id,
             role: message.role,
-            text: text,  // 替换而不是追加
+            text: text, // 替换而不是追加
             timestamp: message.timestamp,
             streaming: message.streaming,
             thinking: message.thinking,
@@ -1295,7 +1295,7 @@ class DeckViewModel {
     private func handleAgentContent(_ event: GatewayEvent) {
         // 从 payload 中提取文本
         guard let payload = event.payload as? [String: Any],
-            let text = payload["text"] as? String
+              let text = payload["text"] as? String
         else {
             return
         }
@@ -1346,7 +1346,7 @@ class DeckViewModel {
     /// 处理 agent.error 事件
     private func handleAgentError(_ event: GatewayEvent) {
         guard let payload = event.payload as? [String: Any],
-            let message = payload["message"] as? String
+              let message = payload["message"] as? String
         else {
             return
         }
@@ -1386,7 +1386,7 @@ class DeckViewModel {
     /// 从事件中提取 sessionId（通过 sessionKey）
     private func sessionFromEvent(_ event: GatewayEvent) -> SessionState? {
         guard let payload = event.payload as? [String: Any],
-            let sessionKey = payload["sessionKey"] as? String
+              let sessionKey = payload["sessionKey"] as? String
         else {
             return nil
         }
@@ -1401,7 +1401,7 @@ class DeckViewModel {
             if let activeRunId = session.activeRunId {
                 // 如果事件 payload 中有 runId，进行匹配
                 if let payload = event.payload as? [String: Any],
-                    let eventRunId = payload["runId"] as? String
+                   let eventRunId = payload["runId"] as? String
                 {
                     if activeRunId == eventRunId {
                         return session

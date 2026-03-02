@@ -9,19 +9,19 @@ import Foundation
 
 /// Mock Gateway 客户端
 @MainActor
-class MockGatewayClient: GatewayClientProtocol {
-    var connected: Bool = true
-    var connectionError: String?
-    var onEvent: ((GatewayEvent) -> Void)?
-    var onConnection: ((Bool) -> Void)?
+public class MockGatewayClient: GatewayClientProtocol {
+    public var connected: Bool = true
+    public var connectionError: String?
+    public var onEvent: ((GatewayEvent) -> Void)?
+    public var onConnection: ((Bool) -> Void)?
 
     /// 模拟延迟（秒）
-    var simulatedDelay: Double = 0.0
+    public var simulatedDelay: Double = 0.0
 
     /// 模拟消息历史
-    var mockHistory: [ChatMessage] = []
+    public var mockHistory: [ChatMessage] = []
 
-    func connect() async {
+    public func connect() async {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }
@@ -31,27 +31,27 @@ class MockGatewayClient: GatewayClientProtocol {
         }
     }
 
-    func disconnect() {
+    public func disconnect() {
         connected = false
         onConnection?(false)
     }
 
-    func clearError() {
+    public func clearError() {
         connectionError = nil
     }
 
-    func resetDeviceIdentity() {
+    public func resetDeviceIdentity() {
         // Mock 实现
     }
 
-    func getSessionHistory(sessionKey _: String) async throws -> [ChatMessage]? {
+    public func getSessionHistory(sessionKey _: String) async throws -> [ChatMessage]? {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }
         return mockHistory
     }
 
-    func runAgent(
+    public func runAgent(
         agentId _: String,
         message _: String,
         sessionKey: String?
@@ -89,7 +89,7 @@ class MockGatewayClient: GatewayClientProtocol {
         return (runId, "success")
     }
 
-    func abortChat(sessionKey _: String, runId _: String?) async throws {
+    public func abortChat(sessionKey _: String, runId _: String?) async throws {
         // Mock 实现，什么都不做
     }
 }

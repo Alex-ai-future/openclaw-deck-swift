@@ -8,16 +8,16 @@
 import Foundation
 
 /// Mock Cloudflare KV
-class MockCloudflareKV: CloudflareKVProtocol {
-    var isConfigured: Bool = true
+public class MockCloudflareKV: CloudflareKVProtocol {
+    public var isConfigured: Bool = true
 
     /// 模拟数据
-    var mockData: SyncData?
+    public var mockData: SyncData?
 
     /// 模拟延迟（秒）
-    var simulatedDelay: Double = 0.0
+    public var simulatedDelay: Double = 0.0
 
-    func syncAndGet() async throws -> MergeResult {
+    public func syncAndGet() async throws -> MergeResult {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }
@@ -33,7 +33,7 @@ class MockCloudflareKV: CloudflareKVProtocol {
         )
     }
 
-    func save(_ data: SyncData) async throws {
+    public func save(_ data: SyncData) async throws {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }

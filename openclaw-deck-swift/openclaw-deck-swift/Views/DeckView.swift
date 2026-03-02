@@ -176,7 +176,7 @@ struct DeckView: View {
             .alert("stop_failed".localized, isPresented: $viewModel.showStopError) {
                 Button("ok".localized, role: .cancel) {}
             } message: {
-                Text(viewModel.stopErrorText)
+                Text(String(format: "stop_failed_message".localized, viewModel.stopErrorText))
             }
         }
     }

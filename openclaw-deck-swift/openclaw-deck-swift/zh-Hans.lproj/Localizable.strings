@@ -169,3 +169,7 @@
 "usage_examples" = "使用样例";
 "loading_document" = "正在加载文档...";
 "failed_to_load_document" = "加载文档失败";
+
+// MARK: - Error Messages
+"stop_failed" = "停止失败";
+"stop_failed_message" = "无法停止当前对话：%@\\n请检查网络连接或稍后重试。";

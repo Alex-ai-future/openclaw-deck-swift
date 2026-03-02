@@ -169,3 +169,7 @@
 "usage_examples" = "Usage Examples";
 "loading_document" = "Loading document...";
 "failed_to_load_document" = "Failed to load document";
+
+// MARK: - Error Messages
+"stop_failed" = "Stop Failed";
+"stop_failed_message" = "Failed to stop current conversation: %@\\nPlease check your network connection and try again.";

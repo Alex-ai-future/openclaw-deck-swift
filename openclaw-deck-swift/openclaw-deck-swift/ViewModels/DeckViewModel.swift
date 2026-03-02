@@ -13,11 +13,10 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewM
 
 /// 加载阶段枚举
 enum LoadingStage: Equatable {
-    case idle // 无加载
+    case idle // 无加载（完成）
     case connecting // 连接 Gateway
-    case fetchingSessions // 从云端获取会话列表
-    case fetchingMessages // 从后端获取消息历史
-    case syncingLocal // 同步到本地存储
+    case fetchingSessions // 从 Gateway 获取会话列表
+    case fetchingMessages // 从 Gateway 获取消息历史
 }
 
 // MARK: - LoadingStage: CustomStringConvertible
@@ -29,7 +28,6 @@ extension LoadingStage: CustomStringConvertible {
         case .connecting: "connecting"
         case .fetchingSessions: "fetchingSessions"
         case .fetchingMessages: "fetchingMessages"
-        case .syncingLocal: "syncingLocal"
         }
     }
 }
@@ -47,19 +45,15 @@ extension LoadingStage {
             "fetching_sessions".localized
         case .fetchingMessages:
             "fetching_messages".localized
-        case .syncingLocal:
-            "syncing_to_local".localized
         }
     }
 
     var subtitle: String? {
         switch self {
         case .fetchingSessions:
-            "fetching_sessions_from_cloudflare_kv".localized
+            "fetching_sessions_from_gateway".localized
         case .fetchingMessages:
             "fetching_messages_from_gateway".localized
-        case .syncingLocal:
-            "saving_to_local_storage".localized
         default:
             nil
         }
@@ -216,11 +210,6 @@ class DeckViewModel {
             return
         }
 
-        // ✅ 先加载会话列表（包括 Cloudflare 同步），确保后续操作有数据
-        logger.info("📥 加载会话列表...")
-        await loadSessionsFromStorage()
-        logger.info("✅ 会话列表加载完成，共 \(self.sessionOrder.count) 个会话")
-
         // 创建 GatewayClient
         let client = GatewayClient(url: gatewayUrl, token: token)
 
@@ -253,8 +242,9 @@ class DeckViewModel {
                         return
                     }
 
-                    // 网络断开，保留所有数据供用户离线浏览
-                    // 连接失败，结束初始化
+                    // 网络断开，清空所有数据
+                    self.sessions = [:]
+                    self.sessionOrder = []
                     self.isInitializing = false
                     self.gatewayConnected = false
                     self.loadingStage = .idle
@@ -280,20 +270,22 @@ class DeckViewModel {
             loadingStage = .connecting
             loadingProgress = 0.2
 
-            // ✅ sessionOrder 已经在 initialize() 中加载完成，直接使用
+            // 1. 从 Gateway 加载 Session 列表
+            loadingStage = .fetchingSessions
+            loadingProgress = 0.5
+            await loadSessionsFromGateway()
 
             // 检查是否有会话列表
             if sessionOrder.isEmpty {
                 logger.warning("⚠️ 没有会话列表，跳过消息加载")
             } else {
-                // 加载所有历史
+                // 2. 加载所有历史消息
                 loadingStage = .fetchingMessages
                 loadingProgress = 0.8
                 await loadAllSessionHistory()
             }
 
             // 所有数据加载完成，设置 100%
-            loadingStage = .syncingLocal
             loadingProgress = 1.0
 
             // 稍作延迟，让用户看到 100% 进度（避免闪动）
@@ -451,215 +443,45 @@ class DeckViewModel {
 
     // MARK: - Storage
 
-    /// 从 UserDefaults 加载 Sessions（带 Cloudflare 同步）
-    private func loadSessionsFromStorage() async {
-        logger.log("📥 加载 Sessions...")
+    /// 从 Gateway 加载 Sessions
+    @MainActor
+    private func loadSessionsFromGateway() async {
+        logger.log("📥 从 Gateway 加载 Sessions...")
 
-        // 测试环境跳过云端同步
-        if storage.isTesting {
-            logger.log("🧪 测试环境，使用本地数据")
-            loadFromLocalOnly()
+        guard let client = gatewayClient, client.connected else {
+            logger.warning("⚠️ Gateway 未连接，跳过加载")
+            sessions = [:]
+            sessionOrder = []
             return
         }
 
-        // 尝试从 Cloudflare 同步（如果已配置）
-        if CloudflareKV.shared.isConfigured {
-            logger.log("☁️ Cloudflare 已配置，开始同步...")
-            await loadSessionsWithCloudflareSync()
-        } else {
-            logger.log("📱 未配置 Cloudflare，使用本地数据")
-            // 没有配置 Cloudflare，使用本地数据
-            loadFromLocalOnly()
-        }
-    }
-
-    /// 测试专用：加载 Sessions（测试用）
-    @MainActor func loadSessionsFromStorageForTesting() async {
-        await loadSessionsFromStorage()
-    }
-
-    /// 从 Cloudflare 同步加载 Sessions
-    private func loadSessionsWithCloudflareSync() async {
         do {
-            logger.log("🔄 开始智能同步...")
+            // 从 Gateway 获取最近 24 小时的活跃 Session
+            let sessionStatuses = try await client.fetchSessions(activeMinutes: 1440)
 
-            // 智能同步：返回本地和云端数据，自动处理一致情况，冲突时弹窗
-            let result = try await CloudflareKV.shared.syncAndGet()
+            var newSessions: [String: SessionState] = [:]
+            var newSessionOrder: [String] = []
 
-            // 检测是否需要用户选择
-            if result.source == .conflict {
-                // 数据冲突，需要用户选择
-                await handleSyncConflict(result: result)
-                return
+            for status in sessionStatuses {
+                let sessionId = status.sessionId.lowercased()
+                newSessions[sessionId] = SessionState(
+                    sessionId: status.sessionId,
+                    sessionKey: status.key
+                )
+                newSessionOrder.append(sessionId)
             }
 
-            logger.log("✅ 同步成功：\(result.data.sessions.count) 个 sessions")
+            // 更新状态
+            sessions = newSessions
+            sessionOrder = newSessionOrder
 
-            // 使用同步后的数据
-            await MainActor.run {
-                self.sessionOrder = result.data.sessions.map { $0.lowercased() }
-                self.createSessionStates()
+            logger.info("✅ 从 Gateway 加载 \(sessionOrder.count) 个 Session")
 
-                logger.log("📋 Session 顺序：\(self.sessionOrder)")
-
-                // 默认选中第一个 Session
-                if let firstSessionId = sessionOrder.first {
-                    globalInputState.selectedSessionId = firstSessionId
-                    logger.log("🎯 选中 Session: \(firstSessionId)")
-                }
-            }
         } catch {
-            logger.error("❌ Cloudflare sync failed: \(error.localizedDescription)")
-            // 同步失败，退化到本地数据
-            await MainActor.run {
-                self.loadFromLocalOnly()
-            }
-        }
-    }
-
-    /// 处理同步冲突（弹窗让用户选择）
-    @MainActor
-    private func handleSyncConflict(result: MergeResult) async {
-        guard let localData = result.localData, let remoteData = result.remoteData else {
-            logger.error("❌ handleSyncConflict: missing localData or remoteData")
-            return
-        }
-
-        logger.log(
-            "⚠️ Data conflict detected: local \(localData.sessions.count) sessions, remote \(remoteData.sessions.count) sessions"
-        )
-
-        // 设置冲突数据，供 UI 层显示
-        conflictLocalData = localData
-        conflictRemoteData = remoteData
-        conflictInfo = ConflictInfo.create(local: localData, remote: remoteData)
-        showingSyncConflict = true
-
-        logger.log("✅ showingSyncConflict set to TRUE, UI should show conflict alert")
-        logger.log("⏳ Waiting for user selection...")
-    }
-
-    /// 冲突时的本地数据（用于弹窗显示）
-    var conflictLocalData: SyncData?
-
-    /// 冲突时的云端数据（用于弹窗显示）
-    var conflictRemoteData: SyncData?
-
-    /// 是否显示同步冲突弹窗
-    var showingSyncConflict: Bool = false
-
-    /// 冲突信息（用于弹窗说明）
-    var conflictInfo: ConflictInfo?
-
-    /// 用户选择同步方案
-    @MainActor
-    func resolveSyncConflict(choice: String) async {
-        showingSyncConflict = false
-
-        guard let localData = conflictLocalData, let remoteData = conflictRemoteData else {
-            return
-        }
-
-        switch choice {
-        case "local":
-            // Use local data (overwrite cloud)
-            logger.log("✅ User selected: local data (\(localData.sessions.count) sessions)")
-            await applySyncData(localData)
-
-        case "remote":
-            // Use cloud data (merge with local)
-            logger.log("✅ User selected: cloud data (\(remoteData.sessions.count) sessions)")
-            await applySyncData(remoteData)
-
-        default:
-            // Cancel, do nothing
-            logger.log("⚠️ User cancelled sync")
-            return
-        }
-
-        // Clear conflict data
-        conflictLocalData = nil
-        conflictRemoteData = nil
-        conflictInfo = nil
-
-        // ✅ 重置加载状态，避免卡在 100%
-        loadingStage = .idle
-        loadingProgress = 0.0
-    }
-
-    /// 应用同步数据
-    @MainActor
-    private func applySyncData(_ data: SyncData) async {
-        sessionOrder = data.sessions.map { $0.lowercased() }
-        createSessionStates()
-
-        // Save to local
-        let storage = UserDefaultsStorage.shared
-        storage.saveSessionOrder(data.sessions)
-        UserDefaults.standard.set(
-            data.lastUpdated, forKey: "openclaw.deck.sessionOrder.lastUpdated"
-        )
-
-        // Always save to cloud when resolving conflict (user explicitly chose)
-        do {
-            try await CloudflareKV.shared.save(data)
-            logger.info("✅ Saved to cloud: \(data.sessions.count) sessions")
-        } catch {
-            logger.error("❌ Failed to save to cloud: \(error.localizedDescription)")
-        }
-
-        logger.log("✅ Sync complete: \(data.sessions.count) sessions")
-
-        // If Gateway connected, load history
-        if gatewayConnected {
-            await loadAllSessionHistory()
-        }
-    }
-
-    /// 仅从本地加载 Sessions（退化模式）
-    private func loadFromLocalOnly() {
-        logger.log("📱 从本地加载 Sessions...")
-
-        let configs = storage.loadSessions()
-        let order = storage.loadSessionOrder()
-
-        logger.log("📋 本地 configs: \(configs.count) 个，order: \(order.count) 个")
-
-        // 如果没有 session，创建 welcome session
-        if configs.isEmpty {
-            logger.log("📭 本地没有 session，创建 Welcome session")
-            createWelcomeSession()
-            return
-        }
-
-        // 使用小写 key 确保与 Gateway 一致
-        for config in configs {
-            let idLower = config.id.lowercased()
-            sessions[idLower] = SessionState(
-                sessionId: config.id,
-                sessionKey: config.sessionKey
-            )
-        }
-
-        // 也小写化 sessionOrder
-        if order.isEmpty {
-            sessionOrder = configs.map { $0.id.lowercased() }
-        } else {
-            sessionOrder = order.map { $0.lowercased() }
-        }
-
-        // 默认选中第一个 Session
-        if let firstSessionId = sessionOrder.first {
-            globalInputState.selectedSessionId = firstSessionId
-            logger.log("🎯 选中 Session: \(firstSessionId)")
-        }
-
-        // 如果 Gateway 已连接，立即加载历史消息
-        if gatewayConnected {
-            logger.log("🔗 Gateway 已连接，加载历史消息...")
-            Task {
-                await loadAllSessionHistory()
-            }
+            logger.error("❌ 从 Gateway 加载失败：\(error.localizedDescription)")
+            // 失败时清空
+            sessions = [:]
+            sessionOrder = []
         }
     }
 

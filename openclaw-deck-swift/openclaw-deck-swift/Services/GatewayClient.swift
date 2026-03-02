@@ -379,6 +379,18 @@ class GatewayClient {
         )
     }
 
+    /// 删除 Session
+    func deleteSession(sessionKey: String, deleteTranscript: Bool = true) async throws {
+        _ = try await request(
+            method: "sessions.delete",
+            params: [
+                "key": sessionKey,
+                "deleteTranscript": deleteTranscript,
+                "emitLifecycleHooks": false,
+            ]
+        )
+    }
+
     /// 获取 Session 历史消息
     func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
         let result = try await request(

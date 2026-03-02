@@ -128,7 +128,7 @@ struct SessionListView: View {
                 SettingsView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,
-                    isConnected: .constant(viewModel.gatewayConnected),
+                    isConnected: viewModel.$gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false
@@ -181,6 +181,35 @@ struct SessionListView: View {
                 } else {
                     showingConflictAlert = false
                 }
+            }
+            // 消息发送失败弹窗
+            .alert("message_send_failed".localized, isPresented: $viewModel.showMessageSendError) {
+                Button("cancel".localized, role: .cancel) {}
+                Button("retry".localized) {
+                    Task {
+                        // 1. 先重连 Gateway
+                        await viewModel.reconnect()
+
+                        // 2. 等待连接成功（最多 3 秒）
+                        var waitCount = 0
+                        while !viewModel.gatewayConnected, waitCount < 30 {
+                            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 秒
+                            waitCount += 1
+                        }
+
+                        // 3. 检查连接状态
+                        if viewModel.gatewayConnected {
+                            // 连接成功，发送消息
+                            await viewModel.sendCurrentInput()
+                        } else {
+                            // 仍然失败，更新错误提示
+                            viewModel.messageSendErrorText = "cannot_reconnect_check_settings".localized
+                            viewModel.showMessageSendError = true
+                        }
+                    }
+                }
+            } message: {
+                Text("gateway_not_connected_message".localized)
             }
             .deleteSessionAlert(isPresented: $showingDeleteAlert) {
                 // 用户确认删除

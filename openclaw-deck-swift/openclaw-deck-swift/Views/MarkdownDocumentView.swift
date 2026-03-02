@@ -3,7 +3,7 @@
 //
 // 通用 Markdown 文档加载组件
 
-import MarkdownView
+import MarkdownUI
 import SwiftUI
 
 /// 通用 Markdown 文档视图
@@ -37,7 +37,7 @@ struct MarkdownDocumentView: View {
                     .padding()
                 } else {
                     ScrollView {
-                        MarkdownView(markdownContent)
+                        Markdown(markdownContent)
                             .padding(.horizontal, 24) // 调小边距
                     }
                 }

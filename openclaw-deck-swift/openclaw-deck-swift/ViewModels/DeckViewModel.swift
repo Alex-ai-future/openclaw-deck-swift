@@ -148,6 +148,12 @@ class DeckViewModel {
     /// 全局输入状态（唯一实例）
     var globalInputState: GlobalInputStateProtocol
 
+    /// 是否显示消息发送失败弹窗
+    var showMessageSendError: Bool = false
+
+    /// 消息发送失败原因
+    var messageSendErrorText: String = ""
+
     /// 是否播放消息提示音
     var playSoundOnMessage: Bool = true {
         didSet {
@@ -863,6 +869,8 @@ class DeckViewModel {
     ///   - text: 消息文本
     func sendMessage(sessionId: String, text: String) async {
         guard let client = gatewayClient, client.connected else {
+            messageSendErrorText = "Gateway 未连接"
+            showMessageSendError = true
             return
         }
 

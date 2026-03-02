@@ -143,6 +143,17 @@ struct DeckView: View {
                     showingConflictAlert = false
                 }
             }
+            // 消息发送失败弹窗
+            .alert("发送失败", isPresented: $viewModel.showMessageSendError) {
+                Button("取消", role: .cancel) {}
+                Button("重试") {
+                    Task {
+                        await viewModel.sendCurrentInput()
+                    }
+                }
+            } message: {
+                Text("Gateway 未连接，消息未发送")
+            }
         }
     }
 

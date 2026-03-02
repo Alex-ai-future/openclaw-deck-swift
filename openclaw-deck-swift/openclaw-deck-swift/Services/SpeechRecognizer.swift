@@ -55,11 +55,10 @@ class SpeechRecognizer: ObservableObject {
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
         isAvailable = recognizer?.isAvailable ?? false
 
-        // 测试环境跳过权限检查，避免弹窗
-        #if !TESTING
-            // Speech recognizer initialized
+        // 🧪 测试环境跳过权限检查，避免弹窗
+        if !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             checkPermissions()
-        #endif
+        }
     }
 
     /// 检查语音识别权限

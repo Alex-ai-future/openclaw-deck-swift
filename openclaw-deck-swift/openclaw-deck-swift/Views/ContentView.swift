@@ -214,6 +214,11 @@ struct ContentView: View {
 
             // Auto-connect on first launch if credentials exist
             guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
+            // 🧪 UI 测试模式：跳过自动连接
+            guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else {
+                hasAttemptedAutoConnect = true
+                return
+            }
             hasAttemptedAutoConnect = true
 
             logger.debug("Attempting auto-connect...")

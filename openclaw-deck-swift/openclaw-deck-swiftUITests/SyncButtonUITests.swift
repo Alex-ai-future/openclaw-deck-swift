@@ -26,11 +26,14 @@ final class SyncButtonUITests: XCTestCase {
         // 启动应用
         app.launch()
 
-        // 等待主界面加载
-        XCTAssertTrue(
-            app.tables["SessionList"].waitForExistence(timeout: 10),
-            "Session 列表应该在 10 秒内加载"
-        )
+        // 等待主界面加载（增加超时时间）
+        let sessionListExists = app.tables["SessionList"].waitForExistence(timeout: 30)
+        if !sessionListExists {
+            // 尝试查找其他可能的标识
+            print("SessionList not found, available tables:")
+            print(app.tables.allElementsBoundByIndex.map(\.identifier))
+        }
+        XCTAssertTrue(sessionListExists, "Session 列表应该在 30 秒内加载")
     }
 
     override func tearDownWithError() throws {

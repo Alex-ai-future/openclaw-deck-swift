@@ -69,7 +69,7 @@ struct DeckView: View {
             .task {
                 // 初始化选中状态：确保 ViewModel 有选中的 Session
                 if viewModel.globalInputState.selectedSessionId == nil,
-                   let firstSessionId = viewModel.sessionOrder.first
+                   let firstSessionId = viewModel.sortedSessionIds.first
                 {
                     viewModel.selectSession(firstSessionId)
                 }
@@ -181,7 +181,7 @@ struct DeckView: View {
         ScrollView(.horizontal, showsIndicators: true) {
             HStack(alignment: .top, spacing: 0) {
                 // Session columns
-                ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+                ForEach(viewModel.sortedSessionIds, id: \.self) { sessionId in
                     if let session = viewModel.sessions[sessionId] {
                         SessionColumnView(
                             session: session,
@@ -213,7 +213,7 @@ struct DeckView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
+            .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sortedSessionIds)
             .background(Color.adaptiveBackground)
         }
     }

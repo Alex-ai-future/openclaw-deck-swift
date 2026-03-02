@@ -172,3 +172,4 @@
 "fetching_sessions_from_gateway" = "从 Gateway 获取会话";
 "fetching_messages_from_gateway" = "从 Gateway 获取消息";
 "session_data_is_stored_in_gateway_and_loaded_on_connect" = "会话数据存储在 Gateway 中，连接时自动加载";
+"sessions_are_sorted_alphabetically_by_name" = "会话按名称字典顺序自动排序";

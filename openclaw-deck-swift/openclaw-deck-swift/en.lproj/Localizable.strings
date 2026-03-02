@@ -172,3 +172,4 @@
 "fetching_sessions_from_gateway" = "Fetching sessions from Gateway";
 "fetching_messages_from_gateway" = "Fetching messages from Gateway";
 "session_data_is_stored_in_gateway_and_loaded_on_connect" = "Session data is stored in Gateway and loaded on connect";
+"sessions_are_sorted_alphabetically_by_name" = "Sessions are sorted alphabetically by name";

@@ -74,8 +74,10 @@ class DeckViewModel {
     /// 所有 Session 状态（按 sessionId 索引）
     var sessions: [String: SessionState] = [:]
 
-    /// Session 顺序（用于 UI 展示顺序）
-    var sessionOrder: [String] = []
+    /// 按字典顺序排序的 Session ID 列表（用于 UI 展示）
+    var sortedSessionIds: [String] {
+        sessions.keys.sorted { $0 < $1 }
+    }
 
     /// Gateway 连接状态
     var gatewayConnected: Bool = false
@@ -209,7 +211,7 @@ class DeckViewModel {
 
                     // 网络断开，清空所有数据
                     self.sessions = [:]
-                    self.sessionOrder = []
+                    // sessionOrder 已移除
                     self.isInitializing = false
                     self.gatewayConnected = false
                     self.loadingStage = .idle
@@ -240,7 +242,7 @@ class DeckViewModel {
         await loadSessionsFromGateway()
 
         // 检查是否有会话列表
-        if sessionOrder.isEmpty {
+        if sortedSessionIds.isEmpty {
             logger.warning("⚠️ 没有会话列表，跳过消息加载")
         } else {
             // 2. 加载所有历史消息
@@ -346,7 +348,6 @@ class DeckViewModel {
         // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）
         let sessionIdLower = sessionId.lowercased()
         sessions[sessionIdLower] = sessionState
-        sessionOrder.insert(sessionIdLower, at: 0)
 
         // 6. 如果已连接，调用 Gateway 触发创建（通过加载历史）
         if gatewayConnected {
@@ -371,7 +372,6 @@ class DeckViewModel {
 
         // 1. 从本地内存删除
         sessions.removeValue(forKey: sessionId.lowercased())
-        sessionOrder.removeAll { $0 == sessionId.lowercased() }
 
         // 2. 从 Gateway 删除（如果已连接）
         if let key = sessionKey, gatewayConnected {
@@ -409,7 +409,7 @@ class DeckViewModel {
         guard let client = gatewayClient, client.connected else {
             logger.warning("⚠️ Gateway 未连接，跳过加载")
             sessions = [:]
-            sessionOrder = []
+            // sessionOrder 已移除
             return
         }
 
@@ -431,24 +431,23 @@ class DeckViewModel {
 
             // 更新状态
             sessions = newSessions
-            sessionOrder = newSessionOrder
 
-            logger.info("✅ 从 Gateway 加载 \(self.sessionOrder.count) 个 Session")
+            logger.info("✅ 从 Gateway 加载 \(self.sortedSessionIds.count) 个 Session")
 
         } catch {
             logger.error("❌ 从 Gateway 加载失败：\(error.localizedDescription)")
             // 失败时清空
             sessions = [:]
-            sessionOrder = []
+            // sessionOrder 已移除
         }
     }
 
-    /// 创建 Session 状态（从 sessionOrder）
+    /// 创建 Session 状态（从 sessions 字典）
     private func createSessionStates() {
         logger.log("🏗️ 创建 Session 状态...")
 
         // 为每个 Session ID 创建 SessionState
-        for sessionId in sessionOrder {
+        for sessionId in sortedSessionIds {
             if sessions[sessionId] == nil {
                 let sessionKey = SessionConfig.generateSessionKey(sessionId: sessionId)
                 sessions[sessionId] = SessionState(
@@ -460,33 +459,6 @@ class DeckViewModel {
         }
     }
 
-    /// 保存 Sessions 到 UserDefaults（并同步到 Cloudflare）
-    func saveSessionsToStorage() {
-        let configs = sessionOrder.compactMap { id -> SessionConfig? in
-            guard let state = self.sessions[id] else { return nil }
-            return SessionConfig(
-                id: state.sessionId,
-                sessionKey: state.sessionKey,
-                createdAt: Date(),
-                name: state.sessionId,
-                icon: nil,
-                context: state.context
-            )
-        }
-
-        storage.saveSessions(configs)
-        storage.saveSessionOrder(sessionOrder)
-
-        // 更新最后更新时间
-        UserDefaults.standard.set(
-            ISO8601DateFormatter().string(from: Date()),
-            forKey: "openclaw.deck.sessionOrder.lastUpdated"
-        )
-
-        // 不再保存到本地存储 - 所有数据从 Gateway 获取
-        logger.log("📝 Session 已更新（仅内存，不持久化）")
-    }
-
     // MARK: - Load History
 
     /// 加载所有 Session 的历史消息
@@ -496,12 +468,12 @@ class DeckViewModel {
         loadingStage = .fetchingMessages
         loadingProgress = 0.8
 
-        let totalCount = sessionOrder.count
+        let totalCount = sortedSessionIds.count
         var loadedCount = 0
 
         logger.info("📥 开始加载所有会话历史，共 \(totalCount) 个会话...")
 
-        for session in sessionOrder.compactMap({ sessions[$0] }) {
+        for session in sortedSessionIds.compactMap({ sessions[$0] }) {
             logger.info("📥 [\(loadedCount + 1)/\(totalCount)] 加载会话：\(session.sessionId)")
             await loadSessionHistory(sessionKey: session.sessionKey)
             loadedCount += 1
@@ -1075,7 +1047,7 @@ class DeckViewModel {
             }
         }
 
-        // 如果没有找到 activeRunId，返回最后一个 session（作为后备）
-        return sessionOrder.last.flatMap { sessions[$0] }
+        // 如果没有找到 activeRunId，返回字典顺序最后一个 session（作为后备）
+        return sortedSessionIds.last.flatMap { sessions[$0] }
     }
 }

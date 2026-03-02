@@ -42,7 +42,7 @@ struct SessionListView: View {
         NavigationStack(path: $navigationPath) {
             List {
                 // Session 列表
-                ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+                ForEach(viewModel.sortedSessionIds, id: \.self) { sessionId in
                     if let session = viewModel.getSession(sessionId: sessionId) {
                         NavigationLink(value: session) {
                             SessionRowView(
@@ -225,7 +225,7 @@ struct SessionListView: View {
 
     private func logSessionData() {
         logger.debug(
-            "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
+            "📊 SessionListView: sessionOrder=\(viewModel.sortedSessionIds.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
         )
     }
 }

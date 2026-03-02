@@ -372,10 +372,14 @@ class GatewayClient: GatewayClientProtocol {
     }
 
     /// 中断当前对话
-    func abortChat(sessionKey: String, runId: String) async throws {
+    func abortChat(sessionKey: String, runId: String? = nil) async throws {
+        var params: [String: Any] = ["sessionKey": sessionKey]
+        if let runId {
+            params["runId"] = runId
+        }
         _ = try await request(
             method: "chat.abort",
-            params: ["sessionKey": sessionKey, "runId": runId]
+            params: params
         )
     }
 

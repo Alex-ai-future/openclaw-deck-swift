@@ -134,50 +134,60 @@ struct SessionColumnView: View {
                         // 快速操作按钮组 - 只在选中时显示
                         if isSelected {
                             HStack(spacing: 16) {
-                                // /new 按钮 - 点击发送 "/new" 消息
-                                Button {
-                                    sendNewMessage()
-                                } label: {
-                                    Text("new".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(height: 36)
+                                // 判断输入框是否有内容
+                                let hasInput = !viewModel.globalInputState.inputText.isEmpty
 
-                                // OK 按钮 - 点击发送 "OK" 消息
-                                Button {
-                                    sendOKMessage()
-                                } label: {
-                                    Text("ok".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
+                                // /new 按钮 - 点击发送 "/new" 消息（只在输入框为空时显示）
+                                if !hasInput {
+                                    Button {
+                                        sendNewMessage()
+                                    } label: {
+                                        Text("new".localized)
+                                            .font(.title3)
+                                            .foregroundColor(.blue)
+                                    }
+                                    .buttonStyle(.glass)
+                                    .frame(height: 36)
                                 }
-                                .buttonStyle(.glass)
-                                .frame(height: 36)
+
+                                // OK 按钮 - 点击发送 "OK" 消息（只在输入框为空时显示）
+                                if !hasInput {
+                                    Button {
+                                        sendOKMessage()
+                                    } label: {
+                                        Text("ok".localized)
+                                            .font(.title3)
+                                            .foregroundColor(.blue)
+                                    }
+                                    .buttonStyle(.glass)
+                                    .frame(height: 36)
+                                }
 
                                 // Stop 按钮 - 点击中断当前对话（只在 streaming 时显示）
                                 if session.status == .streaming {
                                     Button {
                                         sendStopMessage()
                                     } label: {
-                                        Text("stop".localized)
-                                            .font(.title3)
+                                        Image(systemName: "stop.circle.fill")
+                                            .font(.title2)
                                             .foregroundColor(.red)
                                     }
                                     .buttonStyle(.glass)
-                                    .frame(height: 36)
+                                    .frame(width: 36, height: 36)
                                 }
 
-                                // 发送按钮 - 点击发送输入框内容
-                                Button {
-                                    sendInputMessage()
-                                } label: {
-                                    Image(systemName: "arrow.up.circle")
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
+                                // 发送按钮 - 点击发送输入框内容（只在输入框有内容时显示）
+                                if hasInput {
+                                    Button {
+                                        sendInputMessage()
+                                    } label: {
+                                        Image(systemName: "arrow.up.circle.fill")
+                                            .font(.title2)
+                                            .foregroundColor(.blue)
+                                    }
+                                    .buttonStyle(.glass)
+                                    .frame(width: 36, height: 36)
                                 }
-                                .buttonStyle(.glass)
                                 .frame(width: 36, height: 36)
                             }
                             .transition(.opacity.combined(with: .scale))

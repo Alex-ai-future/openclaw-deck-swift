@@ -218,7 +218,12 @@ class DeckViewModel {
 
         // ✅ 先加载会话列表（包括 Cloudflare 同步），确保后续操作有数据
         logger.info("📥 加载会话列表...")
+        loadingStage = .fetchingSessions
+        loadingProgress = 0.4
         await loadSessionsFromStorage()
+        // 恢复为 connecting 状态，等待连接成功
+        loadingStage = .connecting
+        loadingProgress = 0.2
         logger.info("✅ 会话列表加载完成，共 \(self.sessionOrder.count) 个会话")
 
         // 创建 GatewayClient
@@ -247,18 +252,23 @@ class DeckViewModel {
                     // 连接成功，开始加载流程
                     await self.initializeAfterConnect()
                 } else {
-                    // ⚠️ 如果已经完成初始化，忽略断开连接回调（避免网络波动导致 UI 重置）
-                    guard self.isInitializing || !self.gatewayConnected else {
-                        logger.info("⚠️ 忽略断开连接回调（已完成初始化）")
-                        return
+                    // ✅ 断开连接时，总是更新状态（但保留数据供离线浏览）
+                    if self.gatewayConnected {
+                        // 已连接状态下断开
+                        logger.info("🔌 Gateway 断开连接")
+                        self.gatewayConnected = false
+                        self.isInitializing = false
+                        self.loadingStage = .idle
+                        self.loadingProgress = 0.0
+                    } else if self.isInitializing {
+                        // 初始化期间连接失败
+                        logger.info("🔌 初始化期间连接失败")
+                        self.isInitializing = false
+                        self.gatewayConnected = false
+                        self.loadingStage = .idle
+                        self.loadingProgress = 0.0
                     }
-
-                    // 网络断开，保留所有数据供用户离线浏览
-                    // 连接失败，结束初始化
-                    self.isInitializing = false
-                    self.gatewayConnected = false
-                    self.loadingStage = .idle
-                    self.loadingProgress = 0.0
+                    // 本来就是断开状态，忽略（避免重复触发）
                 }
             }
         }
@@ -475,7 +485,12 @@ class DeckViewModel {
 
     /// 测试专用：加载 Sessions（测试用）
     @MainActor func loadSessionsFromStorageForTesting() async {
+        loadingStage = .fetchingSessions
+        loadingProgress = 0.4
         await loadSessionsFromStorage()
+        // 恢复为 connecting 状态，等待连接成功
+        loadingStage = .connecting
+        loadingProgress = 0.2
     }
 
     /// 从 Cloudflare 同步加载 Sessions

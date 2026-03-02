@@ -135,37 +135,12 @@ struct SessionColumnView: View {
 
                         // 快速操作按钮组 - 只在选中时显示
                         if isSelected {
-                            // 判断输入框是否有内容
+                            // 判断状态
                             let hasInput = !viewModel.globalInputState.inputText.isEmpty
+                            let isProcessing = session.activeRunId != nil
 
-                            // /new 按钮 - 点击发送 "/new" 消息（只在输入框为空时显示）
-                            if !hasInput {
-                                Button {
-                                    sendNewMessage()
-                                } label: {
-                                    Text("new".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(height: 40)
-                            }
-
-                            // OK 按钮 - 点击发送 "OK" 消息（只在输入框为空时显示）
-                            if !hasInput {
-                                Button {
-                                    sendOKMessage()
-                                } label: {
-                                    Text("ok".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(height: 40)
-                            }
-
-                            // Stop 按钮 - 点击中断当前对话（有 activeRunId 时显示）
-                            if session.activeRunId != nil {
+                            // Stop 按钮 - 优先级最高，AI 处理中时只显示 Stop
+                            if isProcessing {
                                 Button {
                                     sendStopMessage()
                                 } label: {
@@ -176,14 +151,35 @@ struct SessionColumnView: View {
                                 .buttonStyle(.glass)
                                 .frame(height: 40)
                             }
-
-                            // 发送按钮 - 点击发送输入框内容（只在输入框有内容时显示）
-                            if hasInput {
+                            // 发送按钮 - 输入框有内容时显示
+                            else if hasInput {
                                 Button {
                                     sendInputMessage()
                                 } label: {
                                     Image(systemName: "arrow.up.circle")
                                         .font(.title2)
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.glass)
+                                .frame(height: 40)
+                            }
+                            // new/OK 按钮 - 输入框为空且 AI 未处理时显示
+                            else {
+                                Button {
+                                    sendNewMessage()
+                                } label: {
+                                    Text("new".localized)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.glass)
+                                .frame(height: 40)
+
+                                Button {
+                                    sendOKMessage()
+                                } label: {
+                                    Text("ok".localized)
+                                        .font(.title3)
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)

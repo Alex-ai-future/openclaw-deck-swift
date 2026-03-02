@@ -13,17 +13,23 @@ final class DeckViewModelTests: XCTestCase {
 
   var viewModel: DeckViewModel!
   var mockStorage: MockUserDefaultsStorage!
+  var mockGlobalInputState: MockGlobalInputState!
 
   override func setUp() async throws {
     try await super.setUp()
-    // 使用 Mock 存储，完全隔离测试
+    // 使用 Mock 存储和 Mock GlobalInputState，完全隔离测试
     mockStorage = MockUserDefaultsStorage()
-    viewModel = DeckViewModel(storage: mockStorage)
+    mockGlobalInputState = MockGlobalInputState()
+    viewModel = DeckViewModel(
+      storage: mockStorage,
+      globalInputState: mockGlobalInputState
+    )
   }
 
   override func tearDown() async throws {
     viewModel = nil
     mockStorage = nil
+    mockGlobalInputState = nil
     try await super.tearDown()
   }
 
@@ -121,9 +127,14 @@ final class DeckViewModelTests: XCTestCase {
     let session2 = viewModel.createSession(name: "Second")
     let session3 = viewModel.createSession(name: "Third")
 
-    XCTAssertEqual(viewModel.sessionOrder[initialCount], session1.id.lowercased())
-    XCTAssertEqual(viewModel.sessionOrder[initialCount + 1], session2.id.lowercased())
-    XCTAssertEqual(viewModel.sessionOrder[initialCount + 2], session3.id.lowercased())
+    // 新 session 插入到开头（最左边），所以：
+    // 初始：[welcome]
+    // 创建 first 后：[first, welcome]
+    // 创建 second 后：[second, first, welcome]
+    // 创建 third 后：[third, second, first, welcome]
+    XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased())  // 最新的是 third
+    XCTAssertEqual(viewModel.sessionOrder[1], session2.id.lowercased())  // 然后是 second
+    XCTAssertEqual(viewModel.sessionOrder[2], session1.id.lowercased())  // 然后是 first
   }
 
   // MARK: - Event Handling Tests

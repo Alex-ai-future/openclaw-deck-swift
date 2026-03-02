@@ -2,7 +2,7 @@
 
 多 Session AI 聊天客户端 - 基于 SwiftUI 原生构建
 
-一款用于管理多个 OpenClaw Agent Session 的客户端应用，支持 iPadOS 和 macOS。
+一款用于管理多个 OpenClaw Agent Session 的客户端应用，支持 iPadOS、macOS 和 iOS。
 
 **GitHub**: [github.com/Alex-ai-future/openclaw-deck-swift](https://github.com/Alex-ai-future/openclaw-deck-swift)
 
@@ -39,7 +39,9 @@ open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
 - 实时流式消息显示
 - Session 拖拽排序
 - 语音输入
-- iPadOS + macOS 支持
+- Cloudflare 多设备同步 ⭐ NEW
+- 快速发送（/new 命令）⭐ NEW
+- iPadOS + macOS + iOS 支持
 
 ## 文档
 

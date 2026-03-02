@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		58399B062F4C9274008689AD /* MarkdownView in Frameworks */ = {isa = PBXBuildFile; productRef = 58399B052F4C9274008689AD /* MarkdownView */; };
+		5864EFE82F516FFA004FCE4C /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5864EFE72F516FFA004FCE4C /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				58399B062F4C9274008689AD /* MarkdownView in Frameworks */,
+				5864EFE82F516FFA004FCE4C /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,7 @@
 			name = "openclaw-deck-swift";
 			packageProductDependencies = (
 				58399B052F4C9274008689AD /* MarkdownView */,
+				5864EFE72F516FFA004FCE4C /* MarkdownUI */,
 			);
 			productName = "openclaw-deck-swift";
 			productReference = 58399A8A2F4C9059008689AD /* openclaw-deck-swift.app */;
@@ -197,12 +200,13 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
-				Base,
+				"zh-Hans",
 			);
 			mainGroup = 58399A812F4C9059008689AD;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				58399B042F4C9274008689AD /* XCRemoteSwiftPackageReference "MarkdownView" */,
+				5864EFE62F516FFA004FCE4C /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 58399A8B2F4C9059008689AD /* Products */;
@@ -509,6 +513,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 63F2TW9G35;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"TEST=1",
+					"$(inherited)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -535,6 +543,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 63F2TW9G35;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"TEST=1",
+					"$(inherited)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -650,8 +662,16 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/LiYanan2004/MarkdownView.git";
 			requirement = {
+				kind = exactVersion;
+				version = 2.5.2;
+			};
+		};
+		5864EFE62F516FFA004FCE4C /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.6.0;
+				minimumVersion = 2.4.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -661,6 +681,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 58399B042F4C9274008689AD /* XCRemoteSwiftPackageReference "MarkdownView" */;
 			productName = MarkdownView;
+		};
+		5864EFE72F516FFA004FCE4C /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5864EFE62F516FFA004FCE4C /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

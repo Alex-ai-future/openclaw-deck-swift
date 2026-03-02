@@ -1,0 +1,163 @@
+//
+//  Localizable.strings
+//  简体中文
+//
+//  Created by LanguageManager
+//
+
+// MARK: - App Name
+"app_name" = "OpenClaw Deck";
+
+// MARK: - Loading States
+"fetching_sessions" = "获取会话列表";
+"fetching_messages" = "加载消息历史";
+"syncing_to_local" = "同步到本地";
+
+// MARK: - Common
+"preview" = "预览";
+"loading" = "加载中...";
+"save" = "保存";
+"cancel" = "取消";
+"delete" = "删除";
+"confirm" = "确认";
+"continue" = "继续";
+"done" = "完成";
+"settings" = "设置";
+"version" = "版本";
+"stop" = "stop";
+
+// MARK: - Toolbar
+"openclaw_deck" = "OpenClaw Deck";
+"this_will_sync_all_sessions" = "这将同步所有会话到 Gateway。继续吗？";
+"sync_all_sessions" = "同步所有会话？";
+"sync_conflict" = "同步冲突";
+
+// MARK: - Views
+"ipad_content" = "iPad 内容";
+"iphone_content" = "iPhone 内容";
+"message" = "消息";
+"drag_to_reorder" = "拖动重新排序";
+
+// MARK: - Settings
+"gateway" = "Gateway";
+"modify_and_apply" = "修改并应用以重新连接";
+"apply_and_reconnect" = "应用并重新连接";
+"save_changes_and_reconnect" = "保存更改并重新连接到 Gateway";
+"notifications_and_cloud" = "通知和云同步设置";
+"reset_device_identity" = "重置设备身份";
+"clear_stored_device_identity" = "清除存储的设备身份和令牌";
+"disconnect" = "断开连接";
+"disconnect_from_gateway" = "断开与 Gateway 的连接并返回欢迎界面";
+"view_usage_instructions" = "查看完整使用说明和故障排除指南";
+"version_number" = "1.0.0";
+
+// MARK: - Cloudflare Settings
+"cloudflare_kv_sync" = "Cloudflare KV 同步";
+"sync_sessions_across_devices" = "使用 Cloudflare KV 在多个设备间同步会话";
+"free_tier_limit" = "免费额度：10 万次读取/天，1000 次写入/天，1GB 存储";
+"configuration" = "配置";
+"api_token_encrypted" = "API Token 已加密存储在 Keychain 中";
+"status" = "状态";
+"test_connection" = "测试连接";
+"clear_configuration" = "清除配置";
+"actions" = "操作";
+
+// MARK: - Alerts
+"microphone_permission_required" = "需要麦克风权限";
+"reset_device_identity_alert" = "重置设备身份？";
+
+// MARK: - Language Settings
+"language" = "语言";
+"language_description" = "选择应用语言";
+"follow_system" = "跟随系统";
+"03" = "0.3";
+"05" = "0.5";
+"07" = "0.7";
+"100" = "1.0.0";
+"a_unique_identifier_for_this_session" = "会话的唯一标识符";
+"about" = "关于";
+"account_id" = "Account ID";
+"additional_context_or_description_for_this_session" = "会话的附加上下文或描述";
+"api_token" = "API Token";
+"api_token_is_encrypted_in_keychain" = "API Token 已加密存储在 Keychain 中";
+"app" = "应用";
+"apply_reconnect" = "应用并重新连接";
+"attempt_attemptsmaxattempts" = "尝试 \(attempts)/\(maxAttempts)";
+"blue" = "蓝色";
+"clear_stored_device_identity_and_token" = "清除存储的设备身份和令牌";
+"cloudflare_sync" = "Cloudflare 同步";
+"connect" = "连接";
+"connecting_to_gateway" = "正在连接到 Gateway...";
+"connection" = "连接";
+"connection_failed" = "连接失败";
+"context_contextprefix100" = "上下文：\(context.prefix(100))";
+"copy" = "复制";
+"count_count" = "计数：\\(count)";
+"create" = "创建";
+"delete_session" = "删除会话";
+"device" = "设备";
+"dictated_text" = "听写：\(text)";
+"dictation_button_preview" = "听写按钮预览";
+"disconnect_from_gateway_and_return_to_welcome_screen" = "断开与 Gateway 的连接并返回欢迎界面";
+"dismiss" = "关闭";
+"empty_input_box_should_be_36pt_1_line" = "空输入框 - 应为 36pt（1 行）";
+"free_tier_100k_readsday_1k_writesday_1gb_storage" = "免费额度：10 万次读取/天，1000 次写入/天，1GB 存储";
+"gateway_gatewayurl" = "Gateway：\(gatewayUrl)";
+"gateway_url" = "Gateway URL";
+"help" = "帮助";
+"increment" = "递增";
+"intprogress_100" = "\(Int(progress * 100))%";
+"key_sessionsessionkey" = "键：\(session.sessionKey)";
+"last_formatdatelastactivity" = "最后活动：\(formatDate(lastActivity))";
+"loading_history" = "正在加载历史...";
+"long_text_should_max_at_150pt_7_lines" = "长文本 - 最大 150pt（7 行）";
+"modify_and_apply_to_reconnect_with_new_settings" = "修改并应用新设置以重新连接";
+"multi_device_sync" = "多设备同步";
+"multi_line_text_type_to_test_auto_growth" = "多行文本 - 输入以测试自动增长";
+"multi_session_chat_client" = "多会话聊天客户端";
+"namespace_id" = "Namespace ID";
+"new" = "/new";
+"new_session" = "新建会话";
+"no_messages" = "无消息";
+"notes_optional" = "备注（可选）";
+"notifications_and_cloud_sync_settings" = "通知和云同步设置";
+"ok" = "OK";
+"open_settings" = "打开设置";
+"orange" = "橙色";
+"please_enable_microphone_permission_in_settings_to_use_voice_input" = "请在设置中启用麦克风权限以使用语音输入";
+"processing_state_button_preview" = "处理状态按钮预览";
+"reconnecting" = "正在重新连接...";
+"red" = "红色";
+"reset" = "重置";
+"save_changes_and_reconnect_to_gateway" = "保存更改并重新连接到 Gateway";
+"session_name" = "会话名称";
+"sessionmessagecount" = "\(session.messageCount)";
+"sessionmessagescount_messages" = "\(session.messages.count) 条消息";
+"short_text_should_stay_1_line" = "短文本 - 应保持 1 行";
+"sort_sessions" = "排序会话";
+"sync" = "同步";
+"sync_sessions_across_multiple_devices_using_cloudflare_kv" = "使用 Cloudflare KV 在多个设备间同步会话";
+"tap_the_in_the_top_rightnto_get_started" = "点击右上角的 ⚙️\n开始使用";
+"tap_to_toggle_state" = "点击切换状态";
+"testing" = "正在测试...";
+"text" = "文本";
+"this_will_sync_all_sessions_with_the_gateway_continue" = "这将同步所有会话到 Gateway。继续吗？";
+"tint_color_tests" = "色调测试";
+"token_optional" = "Token（可选）";
+"use_cloud_merge_with_local" = "使用云端（与本地合并）";
+"use_local_overwrite_cloud" = "使用本地（覆盖云端）";
+"user_guide" = "用户指南";
+"user_id_custom_eg_email" = "用户 ID（自定义，如邮箱）";
+"view_complete_usage_instructions_and_troubleshooting_guide" = "查看完整使用说明和故障排除指南";
+"welcome" = "欢迎";
+"wshostport" = "ws://host:port";
+
+"sound_on_message" = "消息提示音";
+"this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered" = "这将清除存储的设备身份和令牌，然后使用您输入的令牌重新连接";
+"this_will_remove_the_session_from_the_deck_messages_are_stored_in_gateway_and_can_be_reloaded" = "这将从卡片组中移除会话。消息存储在 Gateway 中，可以重新加载";
+"fetching_sessions_from_cloudflare_kv" = "从 Cloudflare KV 获取会话";
+"fetching_messages_from_gateway" = "从 Gateway 获取消息";
+"saving_to_local_storage" = "保存到本地存储";
+"mark_as_read" = "已读";
+"mark_as_unread" = "未读";
+"delete_session_action" = "删除";

@@ -8,9 +8,43 @@
 
 ## 📚 项目文档
 
-- **使用说明书** - [docs/USER_GUIDE.md](docs/USER_GUIDE.md) - 完整功能说明和故障排除
-- **项目介绍** - [docs/introduction.md](docs/introduction.md) - 技术架构和实现细节
-- **本文件** - AGENTS.md - 工作规则和流程
+### 文档分工原则
+
+**核心文档，明确分工，避免重复：**
+
+| 文档 | 目标读者 | 内容重点 | 篇幅 | 写作原则 |
+|------|---------|---------|------|---------|
+| **README.md** | 访问者 | 项目简介 + 快速开始 + 文档索引 | ≤100 行 | 极简，只引用不展开 |
+| **USER_GUIDE.md** | 用户 | 怎么使用 + 故障排除 | 按任务组织 | **50% 篇幅用于故障排除** |
+| **introduction.md** | 开发者 | 技术架构 + 设计决策 + 开发指南 | ≤500 行 | 纯技术，不写功能说明 |
+
+**USER_GUIDE.md 写作标准：**
+- ✅ 按"我要做 X"组织，不是按"功能 Y"组织
+- ✅ **故障排除占 50% 篇幅**（连接问题、发送失败、常见错误）
+- ✅ 每个问题包含：症状、检查步骤、解决方法
+- ❌ 不写技术实现细节
+- ❌ 不写设计原理
+
+**introduction.md 写作标准：**
+- ✅ 架构设计和技术选型
+- ✅ 解释"为什么这样设计"
+- ✅ 开发指南和测试标准
+- ❌ 不写功能说明（用户指南里有）
+- ❌ 不写 API 细节（代码注释里有）
+
+**README.md 写作标准：**
+- ✅ 一句话说明项目
+- ✅ 3 步快速开始
+- ✅ 文档链接索引
+- ❌ 不写功能列表
+- ❌ 不写技术细节
+
+**核心原则：**
+1. **用户文档 = 故障排除手册** - 用户遇到问题时能快速找到答案
+2. **技术文档 = 架构指南** - 新开发者能快速理解架构
+3. **README = 门面** - 5 秒内理解项目是做什么的
+
+---
 
 ---
 
@@ -68,6 +102,51 @@
 - [ ] 修改文件、删除文件、创建文件 → ⚠️ **必须先确认**
 - [ ] 运行构建/测试命令 → ⚠️ **必须先确认**
 - [ ] 执行 git 操作（commit/push 等）→ ⚠️ **必须先确认**
+
+---
+
+## 🤖 子代理使用规则
+
+**核心原则：耗时操作必须通过子代理执行，主代理不得直接运行**
+
+### 必须使用子代理的操作：
+
+| 操作类型 | 命令示例 | 原因 |
+|---------|---------|------|
+| **编译项目** | `xcodebuild`, `bash script/build_*.sh` | 耗时 3-15 分钟，阻塞主会话 |
+| **代码格式化** | `swift-format format --in-place` | 可能修改多个文件 |
+| **运行测试** | `xcodebuild test`, `bash script/run_*.sh` | 耗时 2-10 分钟 |
+| **其他耗时操作** | 预计超过 30 秒的命令 | 避免阻塞主会话 |
+
+### 执行流程：
+
+```
+1. 用户请求 → 2. 创建子代理 (sessions_spawn) → 3. 子代理执行 → 4. 完成后自动通知
+```
+
+### 禁止做法：
+
+❌ **主代理直接执行**：
+```
+用户：编译一下
+助手：好的，执行 xcodebuild...（主代理直接跑编译）
+```
+
+### 正确做法：
+
+✅ **通过子代理执行**：
+```
+用户：编译一下
+助手：好的，创建子代理来编译...
+→ 子代理执行编译
+→ 完成后自动通知结果
+```
+
+### 好处：
+
+- ✅ **不阻塞主会话** - 编译期间可以继续聊天
+- ✅ **隔离操作** - 失败不影响主会话状态
+- ✅ **清晰分工** - 主代理负责沟通，子代理负责执行
 
 ---
 
@@ -148,34 +227,36 @@
 
 ## 🧹 代码清理规则
 
-### 使用 swift-format 格式化代码
+### 使用 swiftformat 格式化代码
+
+**工具：** [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
+
+**安装：**
+```bash
+brew install swiftformat
+```
 
 **命令：**
 ```bash
-swift-format format --in-place --recursive .
-```
+# 格式化整个项目
+bash script/format.sh --all
 
-**参数说明：**
-- `format` - 格式化命令
-- `--in-place` - 直接修改文件（不输出到新文件）
-- `--recursive` - 递归处理所有子目录
-- `.` - 当前目录
+# 格式化修改的文件
+bash script/format.sh
+
+# 只检查不修改（CI 用）
+bash script/format.sh --check
+```
 
 **使用场景：**
 - 提交代码前统一格式
 - 清理他人贡献的代码
 - 保持代码风格一致
 
-**执行位置：**
-```bash
-cd ~/Projects/openclaw-deck-swift/openclaw-deck-swift/openclaw-deck-swift
-swift-format format --in-place --recursive .
-```
-
 **注意事项：**
-- 格式化后需要检查是否有误改
-- 建议格式化后运行编译测试
-- 格式化后应该提交代码
+- ✅ 提交时自动格式化（pre-commit hook）
+- ✅ 无需手动运行格式化
+- ⚠️ 格式化后建议运行编译测试
 
 ---
 
@@ -183,25 +264,478 @@ swift-format format --in-place --recursive .
 
 **每次修改代码后，按以下步骤操作：**
 
-### 1. 自动格式化
-```bash
-cd ~/Projects/openclaw-deck-swift/openclaw-deck-swift/openclaw-deck-swift
-swift-format format --in-place --recursive .
-```
+### 1. 自动格式化（pre-commit hook）
+**无需手动运行格式化！**
+
+提交时会自动触发 pre-commit hook：
+- 自动检测暂存的 Swift 文件
+- 自动运行 `swiftformat` 格式化
+- 自动将格式化后的文件重新加入暂存区
+- 然后完成提交
+
+**相关文件：**
+- `script/format.sh` - 格式化脚本
+- `script/pre-commit` - pre-commit hook 脚本
+- `.git/hooks/pre-commit` - Git hook（自动调用）
 
 ### 2. 提交代码
-- 格式化后提交
-- 提交信息清晰描述修改内容
+```bash
+./script/committer "[类型] 描述" 文件 1 文件 2...
+```
 
 **好处：**
-- ✅ 代码风格统一
-- ✅ 保持代码整洁
-- ✅ 提交前自动清理
+- ✅ 代码风格统一（自动）
+- ✅ 保持代码整洁（自动）
+- ✅ 提交前自动清理（自动）
+- ✅ AI 无需手动格式化
 
 **注意：**
 - ⚠️ 不自动执行编译（太耗时）
-- ⚠️ 如需验证，手动运行编译脚本
-- ⚠️ 格式化可能引入语法错误，需注意
+- ⚠️ 如需验证，手动运行编译脚本（用子代理）
+
+---
+
+## 🔧 Git Hooks 使用说明
+
+### 自动格式化（pre-commit）
+
+**工作原理：**
+```
+git commit
+    ↓
+.git/hooks/pre-commit 触发
+    ↓
+调用 script/pre-commit
+    ↓
+调用 script/format.sh --staged
+    ↓
+格式化暂存的 Swift 文件
+    ↓
+提交继续
+```
+
+**职责分工：**
+| 组件 | 职责 |
+|------|------|
+| `script/format.sh` | 格式化 Swift 代码 |
+| `script/pre-commit` | pre-commit hook 逻辑 |
+| `script/committer` | 安全提交（自动格式化 + add + commit） |
+
+### 提交脚本
+
+**使用 `script/committer` 提交：**
+```bash
+./script/committer "[类型] 描述" 文件 1 文件 2...
+```
+
+**自动执行：**
+1. git add 文件
+2. 格式化 Swift 代码
+3. 重新 add 格式化后的文件
+4. git commit
+
+**提交类型：**
+- `[feature]` - 新功能
+- `[fix]` - 修复 bug
+- `[ui]` - UI 改进
+- `[refactor]` - 重构
+- `[docs]` - 文档更新
+- `[style]` - 代码格式化
+- `[ci]` - CI/CD 配置
+- `[test]` - 测试相关
+
+---
+
+## 🚀 CI/CD 流程
+
+### GitHub Actions
+
+**配置文件：** `.github/workflows/ci.yml`
+
+**检查流程：**
+```
+push / PR
+    ↓
+1️⃣ Format Check (swiftformat)
+    ↓
+2️⃣ Build macOS
+    ↓
+3️⃣ Build iOS
+    ↓
+4️⃣ Build iPadOS
+    ↓
+5️⃣ Unit Tests
+    ↓
+✅ 全部通过 → PR 显示绿色勾
+❌ 任何失败 → PR 显示红色叉
+```
+
+**运行平台：**
+- ✅ macOS（macOS 应用编译）
+- ✅ iOS（iOS 模拟器编译）
+- ✅ iPadOS（iPadOS 模拟器编译）
+
+**预计耗时：** 10-20 分钟
+
+### 查看 CI 状态
+
+**GitHub Actions 页面：**
+https://github.com/Alex-ai-future/openclaw-deck-swift/actions
+
+**PR 检查状态：**
+在 Pull Request 页面底部查看
+
+---
+
+## 📋 提交 PR 完整流程
+
+### 前提条件
+
+**确保完成以下检查：**
+
+### 1️⃣ 代码格式化
+
+```bash
+# 格式化所有修改的文件
+bash script/format.sh
+
+# 或者检查格式（不修改）
+bash script/format.sh --check
+```
+
+**预期输出：**
+```
+✅ 格式检查通过
+```
+
+---
+
+### 2️⃣ 本地编译检查（三个平台）
+
+**⚠️ 重要：编译操作必须创建子代理执行！**
+
+**原因：**
+- 编译耗时 3-15 分钟，会阻塞主会话
+- 子代理后台运行，完成后自动通知
+- 主会话可以继续聊天，不被阻塞
+
+**正确做法：**
+```
+用户：编译一下
+助手：好的，创建子代理来编译...
+→ 子代理执行编译
+→ 完成后自动通知结果
+```
+
+**错误做法：**
+```
+❌ 助手：好的，执行 bash script/build.sh macos...
+（主代理直接跑编译，阻塞主会话）
+```
+
+**如果要本地验证（开发阶段）：**
+```bash
+# macOS 编译
+bash script/build.sh macos
+
+# iOS 编译
+bash script/build.sh ios
+
+# iPadOS 编译
+bash script/build.sh ipados
+```
+
+**预期输出：**
+```
+========================================
+✅ macOS Build Succeeded
+========================================
+```
+
+**如果失败：**
+- 查看编译日志：`build/macos/build.log`
+- 修复错误后重新编译
+
+---
+
+### 3️⃣ 单元测试
+
+**⚠️ 重要：测试操作必须创建子代理执行！**
+
+**原因：**
+- 测试耗时 2-10 分钟，会阻塞主会话
+- 子代理后台运行，完成后自动通知
+- 主会话可以继续聊天，不被阻塞
+
+**正确做法：**
+```
+用户：运行测试
+助手：好的，创建子代理来运行测试...
+→ 子代理执行测试
+→ 完成后自动通知结果
+```
+
+**错误做法：**
+```
+❌ 助手：好的，执行 bash script/run_unit_tests.sh...
+（主代理直接跑测试，阻塞主会话）
+```
+
+**如果要本地验证（开发阶段）：**
+```bash
+bash script/run_unit_tests.sh
+```
+
+**预期输出：**
+```
+========================================
+✅ Unit Tests Completed Successfully!
+========================================
+```
+
+**如果失败：**
+- 查看测试日志：`build/tests/test_output.log`
+- 修复失败的测试
+- 重新运行测试
+
+---
+
+### 4️⃣ 查看分支差别
+
+**查看提交历史差别：**
+```bash
+# 查看本地分支比远程 main 多出的提交
+git log --oneline origin/main..HEAD
+
+# 查看远程 main 比本地分支多出的提交
+git log --oneline HEAD..origin/main
+```
+
+**查看文件改动统计：**
+```bash
+# 查看文件改动统计
+git diff --stat origin/main..HEAD
+
+# 查看具体文件改动
+git diff origin/main..HEAD -- <文件路径>
+```
+
+**示例输出：**
+```
+commit 45aa924 [fix] 修复加载进度状态管理和线程问题
+commit d70aeae [refactor] 删除未使用的 listSessions() 方法
+commit d7eadf9 [fix] 修复加载动画显示逻辑和连接回调问题
+...
+
+64 files changed, 12286 insertions(+), 6276 deletions(-)
+```
+
+---
+
+### 5️⃣ 提交代码
+
+**使用 committer 脚本提交：**
+```bash
+# 单个文件
+./script/committer "[类型] 描述" 文件路径
+
+# 多个文件
+./script/committer "[类型] 描述" 文件 1 文件 2 文件 3
+```
+
+**提交类型：**
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| `[feature]` | 新功能 | `[feature] 添加会话搜索功能` |
+| `[fix]` | 修复 bug | `[fix] 修复空指针异常` |
+| `[ui]` | UI 改进 | `[ui] 优化按钮样式` |
+| `[refactor]` | 重构 | `[refactor] 简化会话加载逻辑` |
+| `[docs]` | 文档更新 | `[docs] 更新 README 安装说明` |
+| `[style]` | 代码格式化 | `[style] 统一代码缩进` |
+| `[ci]` | CI/CD 配置 | `[ci] 添加 iOS 编译任务` |
+| `[test]` | 测试相关 | `[test] 添加会话管理单元测试` |
+
+**自动执行：**
+1. ✅ git add 文件
+2. ✅ 格式化 Swift 代码
+3. ✅ 重新 add 格式化后的文件
+4. ✅ git commit
+
+**⚠️ 注意：提交操作可以直接执行**
+- `script/committer` 是快速命令（<5 秒）
+- 不需要创建子代理
+- 主代理可以直接运行
+
+---
+
+### 6️⃣ 推送到 GitHub
+
+```bash
+# 推送到当前分支
+git push origin <分支名>
+
+# 示例
+git push origin ai/dev-1
+```
+
+**推送后：**
+- GitHub Actions 自动运行 CI
+- 在 Actions 页面查看进度
+- 等待所有检查通过
+
+---
+
+### 7️⃣ 创建 Pull Request
+
+**访问：** https://github.com/Alex-ai-future/openclaw-deck-swift/pulls
+
+**步骤：**
+1. 点击 "New pull request"
+2. 选择分支：
+   - **base:** `main`
+   - **compare:** `<你的分支>`
+3. 填写 PR 信息（自动加载模板）
+
+---
+
+### 8️⃣ 填写 PR 模板
+
+**PR 模板位置：** `docs/PULL_REQUEST_TEMPLATE.md`
+
+**必填内容：**
+
+```markdown
+## 改动说明
+<!-- 详细描述本次 PR 的目的和改动内容 -->
+<!-- 说明解决了什么问题，为什么需要这个改动 -->
+
+## 测试
+- [x] 本地编译通过（macOS + iOS + iPadOS）
+  - `bash script/build.sh macos` ✅
+  - `bash script/build.sh ios` ✅
+  - `bash script/build.sh ipados` ✅
+- [x] 本地测试通过
+  - `bash script/run_unit_tests.sh` ✅
+- [x] 代码已格式化
+  - `bash script/format.sh` ✅
+- [ ] CI 检查通过
+  - 等待 GitHub Actions 完成
+
+## 相关 Issue
+<!-- 关联的 Issue 编号，如：Fixes #123 -->
+<!-- 如果没有关联 Issue，说明原因 -->
+
+## 分支差别
+<!-- 使用 git log --oneline origin/main..HEAD 查看 -->
+<!-- 列出主要提交记录 -->
+
+<details>
+<summary>提交历史（点击展开）</summary>
+
+```
+commit 45aa924 [fix] 修复加载进度状态管理和线程问题
+commit d70aeae [refactor] 删除未使用的 listSessions() 方法
+commit d7eadf9 [fix] 修复加载动画显示逻辑和连接回调问题
+...
+```
+
+</details>
+
+## 文件改动统计
+<!-- 使用 git diff --stat origin/main..HEAD 查看 -->
+
+```
+64 files changed, 12286 insertions(+), 6276 deletions(-)
+```
+
+## 截图（可选）
+<!-- 如果有 UI 改动，添加截图 -->
+
+## 注意事项
+- [ ] 已阅读 [AGENTS.md](AGENTS.md) 项目规则
+- [ ] 已确认不包含敏感信息
+- [ ] 已确认不包含构建产物
+```
+
+---
+
+### 9️⃣ 等待 CI 通过
+
+**查看 CI 状态：**
+- PR 页面底部显示检查状态
+- 绿色勾 ✅ = 通过
+- 红色叉 ❌ = 失败
+
+**如果 CI 失败：**
+
+**⚠️ 重要：调试 CI 失败必须创建子代理！**
+
+**原因：**
+- 重新编译和测试耗时 10-20 分钟
+- 子代理后台运行，完成后自动通知
+- 主会话可以继续处理其他任务
+
+**正确做法：**
+```
+用户：CI 失败了，修复一下
+助手：好的，我分析一下失败原因...
+     创建子代理来重新编译和测试...
+→ 子代理执行编译 + 测试
+→ 定位失败原因
+→ 修复后重新推送
+→ 完成后自动通知结果
+```
+
+**错误做法：**
+```
+❌ 助手：好的，我执行 bash script/build.sh macos...
+（主代理直接跑编译，阻塞主会话 10+ 分钟）
+```
+
+**调试步骤：**
+1. 点击 "Details" 查看详细日志
+2. 定位失败的步骤（Format/Build/Test）
+3. 创建子代理重新运行对应命令
+4. 根据日志修复问题
+5. 重新推送代码
+6. CI 会自动重新运行
+
+---
+
+### 🔟 合并 PR
+
+**合并条件：**
+- ✅ 所有 CI 检查通过
+- ✅ 至少 1 人审查通过
+- ✅ 无冲突
+
+**合并方式：**
+- **Squash and merge** - 压缩提交为一个（推荐）
+- **Merge commit** - 保留所有提交
+- **Rebase and merge** - 变基合并
+
+**合并后：**
+- 删除分支（可选）
+- 验证 main 分支 CI 状态
+
+---
+
+## 📝 PR 模板
+
+**位置：** `docs/PULL_REQUEST_TEMPLATE.md`
+
+**创建 PR 时自动加载**
+
+**包含内容：**
+- 改动说明
+- 测试清单（编译 + 测试 + 格式化 + CI）
+- 相关 Issue
+- 截图（可选）
+- 注意事项
+
+**参考文档：**
+- [AGENTS.md](AGENTS.md) - 项目工作规则
+- [USER_GUIDE.md](docs/USER_GUIDE.md) - 用户使用指南
 
 ---
 
@@ -225,7 +759,9 @@ swift-format format --in-place --recursive .
 export MAX_BUILD_WAIT=120
 
 # 运行构建
-bash script/build_macos.sh
+bash script/build.sh macos
+bash script/build.sh ios
+bash script/build.sh ipados
 ```
 
 ### 如果超时
@@ -244,6 +780,170 @@ killall Xcode
 1. **编译前询问** - "现在可以编译吗？"
 2. **避免同时编译** - 等另一个 AI 完成
 3. **使用不同构建目录** - 如需频繁并发编译
+
+---
+
+## 🔒 多代理安全规则
+
+**背景：** 当多个 AI 同时工作时，某些操作可能互相干扰。
+
+### ❌ 禁止的操作（除非用户明确指令）
+
+**1. 禁止 git stash**
+```bash
+# ❌ 禁止
+git stash
+git stash save "temp"
+git stash pop
+```
+**原因：** 可能隐藏其他 AI 的改动
+
+**2. 禁止切换分支**
+```bash
+# ❌ 禁止
+git checkout <分支>
+git switch <分支>
+```
+**原因：** 可能打断其他 AI 的工作
+
+**3. 禁止修改 worktree**
+```bash
+# ❌ 禁止
+git worktree add ...
+git worktree remove ...
+```
+**原因：** 改变项目结构
+
+**4. 禁止自动 rebase**
+```bash
+# ❌ 禁止
+git pull --rebase --autostash
+```
+**原因：** autostash 可能丢失改动
+
+### ✅ 允许的操作
+
+**1. 查看状态（只读）**
+```bash
+git status
+git diff
+git log --oneline -5
+```
+
+**2. 提交自己的改动**
+```bash
+./script/committer "[类型] 描述" 文件 1 文件 2...
+```
+
+**3. 用户明确指令时**
+```bash
+# 用户说"pull" → 可以执行
+git pull --rebase
+
+# 用户说"切换到 xx 分支" → 可以执行
+git checkout <分支>
+```
+
+### 🤝 多代理协作建议
+
+**1. 编译前询问**
+```
+AI: "现在可以编译吗？有没有其他 AI 在编译？"
+```
+
+**2. 避免同时编译**
+- 编译锁规则已实现（build.db 检查）
+- 等待另一个 AI 完成
+
+**3. 只提交自己的改动**
+- 不提交其他 AI 修改的文件
+- 不确定时先问用户
+
+---
+
+## 🧪 测试规范
+
+### 测试框架
+- **XCTest** - Swift 原生测试框架
+- **测试脚本**: `bash script/run_unit_tests.sh`
+- **测试位置**: 与源码同目录，`*Tests.swift` 命名
+- **测试数量**: 93 个单元测试，100% 通过
+
+### 测试运行规则
+
+**⚠️ 主代理禁止直接运行测试（耗时 2-10 分钟）**
+
+**正确流程：**
+```
+1. AI 修改逻辑代码
+2. AI 告知用户修改内容
+3. AI 问："需要运行测试吗？"
+4. 用户批准
+5. AI 用子代理运行测试：
+   sessions_spawn --task "运行单元测试"
+6. 测试通过后才能提交
+```
+
+**示例对话：**
+```
+AI: "完成了！修改了 SessionManager.swift 的消息发送逻辑。
+     需要运行测试吗？（约 2-5 分钟）"
+
+用户：要
+
+AI: （创建子代理运行测试）
+     → 子代理执行 bash script/run_unit_tests.sh
+     → 完成后通知结果
+
+AI: "✅ 93 个测试全部通过，可以提交了"
+```
+
+### 测试覆盖要求
+
+**必须添加测试的情况：**
+- ✅ 新增功能模块
+- ✅ 修复 bug（添加回归测试）
+- ✅ 重构核心逻辑
+
+**测试命名规范：**
+```swift
+// 格式：test<功能>_<场景>_<预期结果>()
+func testSendMessage_WithValidSession_ShouldSucceed()
+func testParseMessage_WithInvalidFormat_ShouldReturnNil()
+```
+
+### 测试失败处理
+
+**流程：**
+1. 告诉用户测试失败
+2. 分析失败原因（读取错误日志）
+3. 提供修复方案
+4. 用户批准后修复
+5. 重新运行测试
+
+**禁止：**
+- ❌ 测试失败还提交代码
+- ❌ 跳过测试直接提交
+- ❌ 修改测试代码来"通过"（除非测试本身有误）
+
+### 提交前检查
+
+**AI 提交前必须确认：**
+- [ ] 修改的代码已运行测试
+- [ ] 测试通过（或用户明确说"不用测"）
+- [ ] 没有破坏现有测试
+
+### 特殊情况
+
+**可以不运行测试的情况：**
+- 📝 只修改文档
+- 🎨 只修改注释/空格
+- 🖼️ 只修改 UI 资源文件（图片、颜色等）
+
+**但必须问用户：**
+```
+AI: "我只改了文档/注释，需要运行测试吗？"
+```
 
 ---
 
@@ -284,6 +984,44 @@ killall Xcode
    - [ ] 提交信息清晰描述了修改内容
    - [ ] **已获得用户明确批准**
 
+### 使用 `script/committer` 脚本（**必须**）
+
+**⚠️ AI 禁止直接使用 `git add` / `git commit` 命令！**
+
+**项目提供了安全的提交脚本，AI 必须使用该脚本执行提交：**
+
+```bash
+# 用法
+./script/committer "<提交信息>" <文件 1> [文件 2] [文件 3...]
+
+# 示例 - 提交单个文件
+./script/committer "[feature] 添加搜索功能" Sources/Views/SearchView.swift
+
+# 示例 - 提交多个文件
+./script/committer "[fix] 修复崩溃问题" Sources/AppDelegate.swift Sources/Managers/SessionManager.swift
+```
+
+**脚本特性：**
+- ✅ 自动检查文件是否存在
+- ✅ 自动跳过无修改的文件
+- ✅ 只显示提交指定的文件
+- ✅ 彩色输出，清晰的状态提示
+- ✅ **防止误操作**（不能提交未指定的文件）
+
+**为什么必须用脚本？**
+- ❌ `git add/commit` 容易误加其他文件
+- ❌ `git add .` 可能包含构建产物
+- ✅ `script/committer` 只提交明确指定的文件
+
+**提交类型：**
+| 类型 | 用途 | 示例 |
+|------|------|------|
+| `[feature]` | 新功能 | `[feature] 添加消息搜索` |
+| `[fix]` | 修复 bug | `[fix] 修复空指针崩溃` |
+| `[ui]` | UI 改进 | `[ui] 优化按钮样式` |
+| `[refactor]` | 重构 | `[refactor] 简化状态管理` |
+| `[docs]` | 文档更新 | `[docs] 更新 README` |
+
 ### 示例对话
 
 #### ❌ 错误做法
@@ -314,20 +1052,77 @@ killall Xcode
 ### 提交命令参考
 
 ```bash
-# 查看修改的文件
+# AI 必须使用脚本
+./script/committer "[类型] 描述" 文件 1 文件 2...
+
+# 查看修改的文件（AI 可以用）
 git status
 
-# 添加指定文件
-git add <文件路径>
-
-# 提交
-git commit -m "[类型] 描述"
-
-# 推送（如果需要）
+# 推送（如果需要，用户明确指令时）
 git push
+```
+
+**⚠️ AI 禁止使用的命令：**
+```bash
+git add <文件>      # ❌ 只能用 script/committer
+git commit -m "..." # ❌ 只能用 script/committer
+git add .           # ❌ 绝对禁止
+```
+
+---
+
+## 📝 日志规范
+
+### 日志查看（iOS 设备）
+
+**设备日志自动同步到 Mac！**
+
+当 iPhone 通过 USB/WiFi 连接 Mac 时，所有 `Logger` 日志会自动出现在：
+
+**1. Console.app（推荐）**
+```
+1. Mac 打开 Console.app（应用程序 → 实用工具）
+2. 左侧选择你的 iPhone
+3. 搜索：com.openclaw.deck
+4. 实时查看所有日志
+```
+
+**2. Xcode 控制台**
+```
+1. Xcode → Window → Devices and Simulators
+2. 选择 iPhone → 勾选 "Show the console"
+3. 运行 App → 日志自动显示
+```
+
+**3. Xcode 调试控制台**
+```
+1. Xcode 运行 App（Cmd+R）
+2. 底部调试区域自动显示日志
+```
+
+### 日志级别使用
+
+| 级别 | 用途 | 示例 |
+|------|------|------|
+| `error` | 错误，需要立即处理 | 连接失败、数据丢失 |
+| `warning` | 警告，不影响功能 | 重试成功、降级处理 |
+| `info` | 重要事件 | 用户登录、配置变更 |
+| `debug` | 调试信息 | 状态变化、中间结果 |
+
+### 日志代码示例
+
+```swift
+import OSLog
+
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "Gateway")
+
+logger.error("连接失败：\(error)")
+logger.warning("重试成功")
+logger.info("用户登录")
+logger.debug("状态变化：\(state)")
 ```
 
 ---
 
 **创建日期：** 2026-02-26  
-**最后更新：** 2026-02-27（添加文档编写规则）
+**最后更新：** 2026-03-01（添加测试规范、多代理安全规则、日志规范）

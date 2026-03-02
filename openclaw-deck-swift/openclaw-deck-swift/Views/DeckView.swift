@@ -4,210 +4,266 @@
 // Created by jihuihuang on 2/24/2026.
 // Copyright © 2026 OpenClaw. All rights reserved.
 
+import os.log
 import SwiftUI
 
+private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckView")
+
 #if os(macOS)
-  import AppKit
+    import AppKit
 #else
-  import UIKit
+    import UIKit
 #endif
 
-/// Deck 视图 - 多列布局容器
+/// Deck 视图 - 多列布局容器（iPad）
 struct DeckView: View {
-  @Bindable var viewModel: DeckViewModel
-  @Binding var showingSettings: Bool
-  @Binding var showingNewSessionSheet: Bool
-  @State private var showingSortSheet: Bool = false
-  @State private var selectedSessionId: String?
+    @Bindable var viewModel: DeckViewModel
+    @Binding var showingSettings: Bool
+    @Binding var showingNewSessionSheet: Bool
+    @State private var selectedSessionId: String?
+    @State private var gatewayUrl: String
+    @State private var token: String
 
-  var body: some View {
-    NavigationStack {
-      VStack(spacing: 0) {
-        sessionColumns
-      }
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        // 全局输入视图 - 系统自动处理键盘避让
-        GlobalInputView(state: viewModel.globalInputState) {
-          await viewModel.sendCurrentInput()
-        }
-      }
-      .task {
-        // 初始化选中状态：从 ViewModel 读取默认选中的 Session
-        if let defaultSessionId = viewModel.globalInputState.selectedSessionId {
-          selectedSessionId = defaultSessionId
-        }
-      }
-      .onChange(of: selectedSessionId) { _, newId in
-        // Session 切换时通知 ViewModel
-        viewModel.selectSession(newId)
+    // 内部状态管理
+    @State private var showingSortSheet = false
+    @State private var showingSyncAlert = false
+    @State private var showingConflictAlert = false
 
-        // 新选中的 Session 标记为已读
-        if let sessionId = newId,
-          let session = viewModel.sessions[sessionId]
-        {
-          session.hasUnreadMessage = false
-        }
-      }
-      .navigationTitle("OpenClaw Deck")
-      .toolbarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem {
-          Button {
-            showingNewSessionSheet = true
-          } label: {
-            Image(systemName: "plus")
-          }
-          .disabled(!viewModel.gatewayConnected)
-        }
-        ToolbarItem {
-          // Sort button
-          Button {
-            showingSortSheet = true
-          } label: {
-            Image(systemName: "arrow.up.arrow.down")
-          }
-        }
+    init(
+        viewModel: DeckViewModel, showingSettings: Binding<Bool>, showingNewSessionSheet: Binding<Bool>
+    ) {
+        self.viewModel = viewModel
+        _showingSettings = showingSettings
+        _showingNewSessionSheet = showingNewSessionSheet
 
-        ToolbarItem {
-          // Settings button
-          Button {
-            showingSettings = true
-          } label: {
-            Image(systemName: "gear")
-          }
-          .accessibilityIdentifier("settingsButton")
-        }
-
-      }
-      .sheet(isPresented: $showingSortSheet) {
-        SessionSortView(viewModel: viewModel)
-      }
-      .sheet(isPresented: $showingNewSessionSheet) {
-        NewSessionSheet(
-          viewModel: viewModel,
-          isPresented: $showingNewSessionSheet
-        )
-      }
+        // 从 UserDefaults 加载配置
+        let storage = UserDefaultsStorage.shared
+        _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
+        _token = State(initialValue: storage.loadToken() ?? "")
     }
-  }
 
-  // MARK: - Session Columns
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Session 列 - 占据剩余空间
+                sessionColumns
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-  private var sessionColumns: some View {
-    ScrollView(.horizontal, showsIndicators: true) {
-      HStack(alignment: .top, spacing: 0) {
-        // Session columns
-        ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-          if let session = viewModel.sessions[sessionId] {
-            SessionColumnView(
-              session: session,
-              viewModel: viewModel,
-              isSelected: sessionId == selectedSessionId,
-              onSelect: {
-                withAnimation {
-                  selectedSessionId = sessionId
-                  // hasUnreadMessage 在 .onChange 中统一处理
+                // 全局输入视图 - 固定在底部
+                GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+                    await viewModel.sendCurrentInput()
                 }
-              },
-              onDelete: {
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
-                  viewModel.deleteSession(sessionId: sessionId)
-                  if selectedSessionId == sessionId {
-                    selectedSessionId = nil
-                  }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onChange(of: selectedSessionId) { _, newId in
+                // Session 切换时通知 ViewModel
+                viewModel.selectSession(newId)
+
+                // 新选中的 Session 标记为已读
+                if let sessionId = newId,
+                   let session = viewModel.sessions[sessionId]
+                {
+                    session.hasUnreadMessage = false
                 }
-              }
-            )
-            .frame(width: 400)
-            .transition(
-              .asymmetric(
-                insertion: .scale(scale: 0.75).combined(with: .opacity),
-                removal: .move(edge: .trailing).combined(with: .opacity)
-              )
-            )
-          }
+            }
+            .task {
+                // 初始化选中状态：确保 ViewModel 有选中的 Session
+                if viewModel.globalInputState.selectedSessionId == nil,
+                   let firstSessionId = viewModel.sessionOrder.first
+                {
+                    viewModel.selectSession(firstSessionId)
+                }
+                selectedSessionId = viewModel.globalInputState.selectedSessionId
+            }
+            .toolbar {
+                DeckToolbar(
+                    viewModel: viewModel,
+                    showingSettings: $showingSettings,
+                    showingNewSessionSheet: $showingNewSessionSheet,
+                    showingSortSheet: $showingSortSheet,
+                    showingSyncAlert: $showingSyncAlert,
+                    showingConflictAlert: $showingConflictAlert
+                )
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView(
+                    gatewayUrl: $gatewayUrl,
+                    token: $token,
+                    isConnected: .constant(viewModel.gatewayConnected),
+                    onDisconnect: {
+                        viewModel.disconnect()
+                        showingSettings = false
+                    },
+                    onApplyAndReconnect: {
+                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                        UserDefaultsStorage.shared.saveToken(token)
+                        Task {
+                            await viewModel.initialize(url: gatewayUrl, token: token)
+                        }
+                        showingSettings = false
+                    },
+                    onConnect: {
+                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                        UserDefaultsStorage.shared.saveToken(token)
+                        Task {
+                            await viewModel.initialize(url: gatewayUrl, token: token)
+                        }
+                        showingSettings = false
+                    },
+                    onResetDeviceIdentity: {
+                        viewModel.resetDeviceIdentity()
+                        Task {
+                            await viewModel.initialize(url: gatewayUrl, token: token)
+                        }
+                        showingSettings = false
+                    },
+                    onClose: {
+                        showingSettings = false
+                    },
+                    viewModel: viewModel
+                )
+            }
+            .sheet(isPresented: $showingNewSessionSheet) {
+                NewSessionSheet(
+                    viewModel: viewModel,
+                    isPresented: $showingNewSessionSheet
+                )
+            }
+            .sheet(isPresented: $showingSortSheet) {
+                SessionSortView(viewModel: viewModel)
+            }
+            .deckSyncAlerts(
+                viewModel: viewModel,
+                showingSyncAlert: $showingSyncAlert,
+                showingConflictAlert: $showingConflictAlert
+            ) { newValue in
+                if newValue {
+                    showingConflictAlert = true
+                } else {
+                    showingConflictAlert = false
+                }
+            }
         }
-      }
     }
-    .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
-    .background(Color.adaptiveBackground)
-  }
+
+    // MARK: - Session Columns
+
+    private var sessionColumns: some View {
+        ScrollView(.horizontal, showsIndicators: true) {
+            HStack(alignment: .top, spacing: 0) {
+                // Session columns
+                ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+                    if let session = viewModel.sessions[sessionId] {
+                        SessionColumnView(
+                            session: session,
+                            viewModel: viewModel,
+                            isSelected: sessionId == selectedSessionId,
+                            onSelect: {
+                                withAnimation {
+                                    selectedSessionId = sessionId
+                                    // hasUnreadMessage 在 .onChange 中统一处理
+                                }
+                            },
+                            onDelete: {
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
+                                    viewModel.deleteSession(sessionId: sessionId)
+                                    if selectedSessionId == sessionId {
+                                        selectedSessionId = nil
+                                    }
+                                }
+                            }
+                        )
+                        .frame(width: 400)
+                        .transition(
+                            .asymmetric(
+                                insertion: .scale(scale: 0.75).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            )
+                        )
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
+            .background(Color.adaptiveBackground)
+        }
+    }
 }
 
 // MARK: - New Session Sheet
 
 struct NewSessionSheet: View {
-  @Bindable var viewModel: DeckViewModel
-  @Binding var isPresented: Bool
-  @Environment(\.dismiss) private var dismiss
+    @Bindable var viewModel: DeckViewModel
+    @Binding var isPresented: Bool
+    @Environment(\.dismiss) private var dismiss
 
-  @State private var name = "default"
-  @State private var context = ""
-  @FocusState private var isNameFieldFocused: Bool
+    @State private var name = "default"
+    @State private var context = ""
+    @FocusState private var isNameFieldFocused: Bool
 
-  var body: some View {
-    NavigationStack {
-      Form {
-        // Session Name
-        Section {
-          TextField("Session Name", text: $name)
-            .focused($isNameFieldFocused)
-            .textContentType(.name)
-            .onSubmit {
-              createSession()
+    var body: some View {
+        NavigationStack {
+            Form {
+                // Session Name
+                Section {
+                    TextField("session_name".localized, text: $name)
+                        .focused($isNameFieldFocused)
+                        .textContentType(.name)
+                        .onSubmit {
+                            createSession()
+                        }
+                } footer: {
+                    Text("a_unique_identifier_for_this_session".localized)
+                }
+
+                // Notes (Optional)
+                Section {
+                    TextEditor(text: $context)
+                        .font(.body)
+                        .frame(minHeight: 80)
+                        .scrollContentBackground(.hidden)
+                } header: {
+                    Text("notes_optional".localized)
+                } footer: {
+                    Text("additional_context_or_description_for_this_session".localized)
+                }
             }
-        } footer: {
-          Text("A unique identifier for this session.")
-        }
+            .formStyle(.grouped)
+            .navigationTitle("new_session".localized)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel".localized) {
+                        dismiss()
+                    }
+                }
 
-        // Notes (Optional)
-        Section {
-          TextEditor(text: $context)
-            .font(.body)
-            .frame(minHeight: 80)
-            .scrollContentBackground(.hidden)
-        } header: {
-          Text("Notes (Optional)")
-        } footer: {
-          Text("Additional context or description for this session.")
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("create".localized) {
+                        createSession()
+                    }
+                    .disabled(name.isEmpty)
+                    .fontWeight(.semibold)
+                }
+            }
         }
-      }
-      .formStyle(.grouped)
-      .navigationTitle("New Session")
-      .toolbar {
-        ToolbarItem(placement: .cancellationAction) {
-          Button("Cancel") {
-            dismiss()
-          }
+        #if os(macOS)
+        .frame(width: 400, height: 400)
+        #endif
+        .task {
+            isNameFieldFocused = true
         }
-
-        ToolbarItem(placement: .confirmationAction) {
-          Button("Create") {
-            createSession()
-          }
-          .disabled(name.isEmpty)
-          .fontWeight(.semibold)
-        }
-      }
     }
-    #if os(macOS)
-      .frame(width: 400, height: 400)
-    #endif
-    .task {
-      isNameFieldFocused = true
-    }
-  }
 
-  private func createSession() {
-    _ = viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
-    dismiss()
-  }
+    private func createSession() {
+        _ = viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
+        dismiss()
+    }
 }
 
 #Preview {
-  DeckView(
-    viewModel: DeckViewModel(),
-    showingSettings: .constant(false),
-    showingNewSessionSheet: .constant(false)
-  )
+    DeckView(
+        viewModel: DeckViewModel(),
+        showingSettings: .constant(false),
+        showingNewSessionSheet: .constant(false)
+    )
 }

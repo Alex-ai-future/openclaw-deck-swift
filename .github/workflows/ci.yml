@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, ai/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  format:
+    name: Code Format
+    runs-on: macos-26
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Install SwiftFormat
+      run: brew install swiftformat
+    
+    - name: Check Format
+      run: bash script/format.sh --check
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-26
+    needs: format
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Build
+      run: bash script/build.sh macos
+    
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-app
+        path: build/macos/DerivedData/Build/Products/Release/*.app
+        if-no-files-found: warn
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-26
+    needs: format
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Build
+      run: bash script/build.sh ios
+
+  build-ipados:
+    name: Build iPadOS
+    runs-on: macos-26
+    needs: format
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Build
+      run: bash script/build.sh ipados
+
+  test:
+    name: Unit Tests
+    runs-on: macos-26
+    needs: build-macos
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Run Unit Tests
+      run: bash script/run_unit_tests.sh
+      timeout-minutes: 10
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: build/tests/TestResults.xcresult
+        if-no-files-found: warn

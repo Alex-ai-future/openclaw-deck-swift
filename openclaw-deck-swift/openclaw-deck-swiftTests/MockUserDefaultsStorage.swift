@@ -13,6 +13,9 @@ final class MockUserDefaultsStorage: UserDefaultsStorageProtocol {
   // 内存存储，每个测试实例独立
   private var storage: [String: Any] = [:]
 
+  /// 标记为测试环境
+  var isTesting: Bool { true }
+
   // MARK: - Gateway URL
 
   func saveGatewayUrl(_ url: String) {

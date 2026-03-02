@@ -123,10 +123,7 @@ struct ContentView: View {
             SettingsView(
                 gatewayUrl: $gatewayUrl,
                 token: $token,
-                isConnected: .init(
-                    get: { viewModel.gatewayConnected },
-                    set: { _ in }
-                ),
+                isConnected: $viewModel.gatewayConnected,
                 onDisconnect: {
                     viewModel.disconnect()
                     showingSettings = false

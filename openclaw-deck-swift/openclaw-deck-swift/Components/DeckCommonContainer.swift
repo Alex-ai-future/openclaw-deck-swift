@@ -46,7 +46,7 @@ struct DeckCommonContainer<Content: View>: View {
                 SettingsView(
                     gatewayUrl: gatewayUrl ?? $localGatewayUrl,
                     token: token ?? $localToken,
-                    isConnected: .constant(viewModel.gatewayConnected),
+                    isConnected: $viewModel.gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false

@@ -110,7 +110,13 @@ class DeckViewModel {
     // See: https://github.com/swiftlang/swift/issues/87316
     nonisolated deinit {}
 
-    /// 依赖容器
+    // 依赖容器
+
+    /// 是否在 UI 测试模式
+    private var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("--ui-testing")
+    }
+
     private let diContainer: DIContainer
 
     /// Gateway 客户端
@@ -197,18 +203,25 @@ class DeckViewModel {
     // MARK: - Gateway Connection
 
     /// 初始化并连接 Gateway
+    /// 初始化并连接 Gateway
     func initialize(url: String, token: String?) async {
         guard !isInitializing else { return }
         isInitializing = true
 
+        // 🧪 UI 测试模式：跳过 Gateway 连接，直接完成初始化
+        if isUITesting {
+            logger.info("🧪 UI 测试模式，跳过 Gateway 连接")
+            loadingStage = .idle
+            loadingProgress = 0.0
+            gatewayConnected = true
+            isInitializing = false
+            // 加载本地会话（测试环境 storage.isTesting 应该为 true）
+            await loadSessionsFromStorage()
+            return
+        }
+
         loadingStage = .connecting
         loadingProgress = 0.0
-
-        // Clear previous error
-        connectionError = nil
-
-        config.gatewayUrl = url
-        config.token = token
 
         // 保存到 UserDefaults
         storage.saveGatewayUrl(url)

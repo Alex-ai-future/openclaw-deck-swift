@@ -25,7 +25,6 @@ struct DeckView: View {
     @State private var token: String
 
     // 内部状态管理
-    @State private var showingSortSheet = false
     @State private var showingSyncAlert = false
     @State private var showingConflictAlert = false
 
@@ -80,7 +79,7 @@ struct DeckView: View {
                     viewModel: viewModel,
                     showingSettings: $showingSettings,
                     showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet,
+
                     showingSyncAlert: $showingSyncAlert,
                     showingConflictAlert: $showingConflictAlert
                 )
@@ -129,9 +128,7 @@ struct DeckView: View {
                     isPresented: $showingNewSessionSheet
                 )
             }
-            .sheet(isPresented: $showingSortSheet) {
-                SessionSortView(viewModel: viewModel)
-            }
+
             .deckSyncAlerts(
                 viewModel: viewModel,
                 showingSyncAlert: $showingSyncAlert,

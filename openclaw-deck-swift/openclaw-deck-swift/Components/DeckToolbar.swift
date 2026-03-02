@@ -12,7 +12,6 @@ struct DeckToolbar: ToolbarContent {
     // Binding 状态
     @Binding var showingSettings: Bool
     @Binding var showingNewSessionSheet: Bool
-    @Binding var showingSortSheet: Bool
     @Binding var showingSyncAlert: Bool
     @Binding var showingConflictAlert: Bool
 
@@ -80,13 +79,6 @@ struct DeckToolbar: ToolbarContent {
                 viewModel: viewModel,
                 showingSyncAlert: $showingSyncAlert
             )
-
-            // 排序按钮
-            Button {
-                showingSortSheet = true
-            } label: {
-                Image(systemName: "arrow.up.arrow.down")
-            }
         }
     }
 }
@@ -120,7 +112,7 @@ extension View {
                     viewModel: DeckViewModel(),
                     showingSettings: .constant(false),
                     showingNewSessionSheet: .constant(false),
-                    showingSortSheet: .constant(false),
+
                     showingSyncAlert: .constant(false),
                     showingConflictAlert: .constant(false)
                 )

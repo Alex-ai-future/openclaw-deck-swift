@@ -89,7 +89,7 @@ struct DeckView: View {
                 SettingsView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,
-                    isConnected: viewModel.$gatewayConnected,
+                    isConnected: $viewModel.gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false

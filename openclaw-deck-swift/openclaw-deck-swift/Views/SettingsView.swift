@@ -8,7 +8,7 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var gatewayUrl: String
     @Binding var token: String
-    var isConnected: Bool
+    @Binding var isConnected: Bool
     var onDisconnect: () -> Void
     var onApplyAndReconnect: () -> Void
     var onConnect: () -> Void

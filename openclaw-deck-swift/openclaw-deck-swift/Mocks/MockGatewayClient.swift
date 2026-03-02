@@ -85,9 +85,9 @@ class MockGatewayClient: GatewayClientProtocol {
         onEvent?(endEvent)
 
         return (runId, "success")
+    }
 
-        func abortChat(sessionKey _: String, runId _: String) async throws {
-            // Mock 实现，什么都不做
-        }
+    func abortChat(sessionKey _: String, runId _: String) async throws {
+        // Mock 实现，什么都不做
     }
 }

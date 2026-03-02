@@ -18,14 +18,16 @@ struct SessionDetailView: View {
                     .padding()
             }
             .navigationTitle("session_details".localized)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        dismiss()
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
+                            dismiss()
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -103,7 +105,6 @@ struct SessionDetailView: View {
                             .font(.caption.monospaced())
                             .foregroundColor(.blue)
                             .lineLimit(nil)
-                            .textSelection(.enabled)
                     }
                 }
             }
@@ -296,7 +297,6 @@ struct DetailRow: View {
                     .font(isMonospaced ? .body.monospaced() : .body)
                     .foregroundColor(.primary)
                     .lineLimit(nil)
-                    .textSelection(isCopyable ? .enabled : .disabled)
             }
         }
     }

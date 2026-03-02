@@ -41,7 +41,7 @@ protocol GatewayClientProtocol {
         message: String,
         sessionKey: String?
     ) async throws -> (runId: String, status: String)
-}
 
-/// 中断对话
-func abortChat(sessionKey: String, runId: String) async throws
+    /// 中断对话
+    func abortChat(sessionKey: String, runId: String) async throws
+}

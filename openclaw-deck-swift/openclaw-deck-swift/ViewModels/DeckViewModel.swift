@@ -473,6 +473,13 @@ class DeckViewModel {
     private func loadSessionsFromStorage() async {
         logger.log("📥 加载 Sessions...")
 
+        // 🧪 UI 测试模式：跳过云端同步
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            logger.log("🧪 UI 测试模式，使用本地数据")
+            loadFromLocalOnly()
+            return
+        }
+
         // 测试环境跳过云端同步
         if storage.isTesting {
             logger.log("🧪 测试环境，使用本地数据")
@@ -652,6 +659,9 @@ class DeckViewModel {
         if configs.isEmpty {
             logger.log("📭 本地没有 session，创建 Welcome session")
             createWelcomeSession()
+            // ✅ 重置加载状态，避免卡在 100%
+            loadingStage = .idle
+            loadingProgress = 0.0
             return
         }
 

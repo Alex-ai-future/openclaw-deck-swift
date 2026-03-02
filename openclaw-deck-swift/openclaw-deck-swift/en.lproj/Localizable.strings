@@ -165,3 +165,4 @@
 "message_send_failed" = "Send Failed";
 "gateway_not_connected_message" = "Gateway not connected, message not sent";
 "retry" = "Retry";
+"cannot_reconnect_check_settings" = "Cannot reconnect, please check Gateway settings";

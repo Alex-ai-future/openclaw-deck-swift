@@ -328,6 +328,17 @@ class DeckViewModel {
         gatewayConnected = false
     }
 
+    /// 重新连接 Gateway
+    func reconnect() async {
+        guard let client = gatewayClient else { return }
+
+        // 断开现有连接
+        client.disconnect()
+
+        // 重新连接
+        await client.connect()
+    }
+
     /// 重置设备身份（清除 device identity 和 device token）
     func resetDeviceIdentity() {
         gatewayClient?.resetDeviceIdentity()

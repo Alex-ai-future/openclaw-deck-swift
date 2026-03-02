@@ -89,7 +89,7 @@ struct DeckView: View {
                 SettingsView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,
-                    isConnected: .constant(viewModel.gatewayConnected),
+                    isConnected: viewModel.$gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false
@@ -148,7 +148,25 @@ struct DeckView: View {
                 Button("cancel".localized, role: .cancel) {}
                 Button("retry".localized) {
                     Task {
-                        await viewModel.sendCurrentInput()
+                        // 1. 先重连 Gateway
+                        await viewModel.reconnect()
+
+                        // 2. 等待连接成功（最多 3 秒）
+                        var waitCount = 0
+                        while !viewModel.gatewayConnected, waitCount < 30 {
+                            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 秒
+                            waitCount += 1
+                        }
+
+                        // 3. 检查连接状态
+                        if viewModel.gatewayConnected {
+                            // 连接成功，发送消息
+                            await viewModel.sendCurrentInput()
+                        } else {
+                            // 仍然失败，更新错误提示
+                            viewModel.messageSendErrorText = "cannot_reconnect_check_settings".localized
+                            viewModel.showMessageSendError = true
+                        }
                     }
                 }
             } message: {

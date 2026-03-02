@@ -71,8 +71,6 @@ bash script/format.sh
 
 **提交类型：** `[feature]` `[fix]` `[ui]` `[refactor]` `[docs]`
 
-**单元测试：** 93 个测试，100% 通过
-
 ## 系统要求
 
 - iPadOS 18.0+ / macOS 15.0+

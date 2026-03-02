@@ -9,19 +9,19 @@ import Foundation
 
 /// Mock Gateway 客户端
 @MainActor
-public class MockGatewayClient: GatewayClientProtocol {
-    public var connected: Bool = true
-    public var connectionError: String?
-    public var onEvent: ((GatewayEvent) -> Void)?
-    public var onConnection: ((Bool) -> Void)?
+class MockGatewayClient: GatewayClientProtocol {
+    var connected: Bool = true
+    var connectionError: String?
+    var onEvent: ((GatewayEvent) -> Void)?
+    var onConnection: ((Bool) -> Void)?
 
     /// 模拟延迟（秒）
-    public var simulatedDelay: Double = 0.0
+    var simulatedDelay: Double = 0.0
 
     /// 模拟消息历史
-    public var mockHistory: [ChatMessage] = []
+    var mockHistory: [ChatMessage] = []
 
-    public func connect() async {
+    func connect() async {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }
@@ -31,27 +31,27 @@ public class MockGatewayClient: GatewayClientProtocol {
         }
     }
 
-    public func disconnect() {
+    func disconnect() {
         connected = false
         onConnection?(false)
     }
 
-    public func clearError() {
+    func clearError() {
         connectionError = nil
     }
 
-    public func resetDeviceIdentity() {
+    func resetDeviceIdentity() {
         // Mock 实现
     }
 
-    public func getSessionHistory(sessionKey _: String) async throws -> [ChatMessage]? {
+    func getSessionHistory(sessionKey _: String) async throws -> [ChatMessage]? {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }
         return mockHistory
     }
 
-    public func runAgent(
+    func runAgent(
         agentId _: String,
         message _: String,
         sessionKey: String?
@@ -89,7 +89,7 @@ public class MockGatewayClient: GatewayClientProtocol {
         return (runId, "success")
     }
 
-    public func abortChat(sessionKey _: String, runId _: String?) async throws {
+    func abortChat(sessionKey _: String, runId _: String?) async throws {
         // Mock 实现，什么都不做
     }
 }

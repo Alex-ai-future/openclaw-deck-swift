@@ -8,8 +8,8 @@
 import Foundation
 
 /// Mock UserDefaults 存储
-public class MockUserDefaultsStorage: UserDefaultsStorageProtocol {
-    public var isTesting: Bool = true
+class MockUserDefaultsStorage: UserDefaultsStorageProtocol {
+    var isTesting: Bool = true
 
     /// 内存存储
     private var sessionsStore: [SessionConfig] = []
@@ -17,39 +17,39 @@ public class MockUserDefaultsStorage: UserDefaultsStorageProtocol {
     private var gatewayUrlStore: String?
     private var tokenStore: String?
 
-    public func saveSessions(_ sessions: [SessionConfig]) {
+    func saveSessions(_ sessions: [SessionConfig]) {
         sessionsStore = sessions
     }
 
-    public func loadSessions() -> [SessionConfig] {
+    func loadSessions() -> [SessionConfig] {
         sessionsStore
     }
 
-    public func saveSessionOrder(_ order: [String]) {
+    func saveSessionOrder(_ order: [String]) {
         sessionOrderStore = order
     }
 
-    public func loadSessionOrder() -> [String] {
+    func loadSessionOrder() -> [String] {
         sessionOrderStore
     }
 
-    public func saveGatewayUrl(_ url: String) {
+    func saveGatewayUrl(_ url: String) {
         gatewayUrlStore = url
     }
 
-    public func loadGatewayUrl() -> String? {
+    func loadGatewayUrl() -> String? {
         gatewayUrlStore
     }
 
-    public func saveToken(_ token: String) {
+    func saveToken(_ token: String) {
         tokenStore = token
     }
 
-    public func loadToken() -> String? {
+    func loadToken() -> String? {
         tokenStore
     }
 
-    public func clearAll() {
+    func clearAll() {
         sessionsStore = []
         sessionOrderStore = []
         gatewayUrlStore = nil

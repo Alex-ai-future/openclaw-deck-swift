@@ -9,7 +9,7 @@ on:
 jobs:
   format:
     name: Code Format
-    runs-on: macos-15
+    runs-on: macos-26
     
     steps:
     - name: Checkout
@@ -23,7 +23,7 @@ jobs:
 
   build-macos:
     name: Build macOS
-    runs-on: macos-15
+    runs-on: macos-26
     needs: format
     
     steps:
@@ -42,7 +42,7 @@ jobs:
 
   build-ios:
     name: Build iOS
-    runs-on: macos-15
+    runs-on: macos-26
     needs: format
     
     steps:
@@ -54,7 +54,7 @@ jobs:
 
   build-ipados:
     name: Build iPadOS
-    runs-on: macos-15
+    runs-on: macos-26
     needs: format
     
     steps:
@@ -66,8 +66,8 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: macos-15
-    needs: [build-macos, build-ios, build-ipados]
+    runs-on: macos-26
+    needs: build-macos
     
     steps:
     - name: Checkout
@@ -75,6 +75,7 @@ jobs:
     
     - name: Run Unit Tests
       run: bash script/run_unit_tests.sh
+      timeout-minutes: 10
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v4

@@ -20,6 +20,7 @@ struct GatewayConfigInput: View {
             .textContentType(.URL)
             .focused($isGatewayUrlFocused)
             .submitLabel(.done)
+            .accessibilityIdentifier("gatewayUrlInput")
             .onSubmit {
                 isGatewayUrlFocused = false
             }
@@ -29,10 +30,11 @@ struct GatewayConfigInput: View {
         #endif
 
         // Token
-        TextField("token_optional".localized, text: $token)
+        TextField("token".localized, text: $token)
             .textContentType(.none)
             .focused($isTokenFocused)
             .submitLabel(.done)
+            .accessibilityIdentifier("tokenInput")
             .onSubmit {
                 isTokenFocused = false
             }
@@ -53,6 +55,7 @@ struct GatewayConfigInput: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.green)
+            .accessibilityIdentifier("Connect")
         }
     }
 }

@@ -102,54 +102,13 @@ extension View {
     ///   - onChangeConflict: 冲突状态变化时的回调
     /// - Returns: 添加了弹窗的视图
     func deckSyncAlerts(
-        viewModel: DeckViewModel,
-        showingSyncAlert: Binding<Bool>,
-        showingConflictAlert: Binding<Bool>,
-        onChangeConflict: @escaping (Bool) -> Void
+        viewModel _: DeckViewModel,
+        showingSyncAlert _: Binding<Bool>,
+        showingConflictAlert _: Binding<Bool>,
+        onChangeConflict _: @escaping (Bool) -> Void
     ) -> some View {
         self
-            // 同步确认弹窗
-            .alert("sync_all_sessions".localized, isPresented: showingSyncAlert) {
-                Button("cancel".localized, role: .cancel) {}
-                Button("sync".localized) {
-                    Task {
-                        await viewModel.handleSync()
-                    }
-                }
-                .tint(.blue)
-            } message: {
-                Text("this_will_sync_all_sessions_with_the_gateway_continue".localized)
-            }
-
-            // 同步冲突弹窗
-            .alert("sync_conflict".localized, isPresented: showingConflictAlert) {
-                Button("use_local_overwrite_cloud".localized, role: .destructive) {
-                    Task {
-                        await viewModel.resolveSyncConflict(choice: "local")
-                    }
-                }
-                Button("use_cloud_merge_with_local".localized) {
-                    Task {
-                        await viewModel.resolveSyncConflict(choice: "remote")
-                    }
-                }
-                Button("cancel".localized, role: .cancel) {}
-            } message: {
-                if let info = viewModel.conflictInfo {
-                    Text(info.description)
-                } else {
-                    let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
-                    let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
-                    Text(
-                        "Local has \(localCount) sessions, Cloud has \(remoteCount) sessions.\n\nChoose which data to use:"
-                    )
-                }
-            }
-
-            // 监听冲突状态变化
-            .onChange(of: viewModel.showingSyncConflict) { _, newValue in
-                onChangeConflict(newValue)
-            }
+        // 同步确认弹窗（已移除 - 不再需要 Cloudflare 同步）
     }
 }
 

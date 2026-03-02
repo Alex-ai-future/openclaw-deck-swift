@@ -368,6 +368,7 @@ struct WelcomeView: View {
                             Image(systemName: "gear")
                                 .font(.title2)
                         }
+                        .accessibilityIdentifier("Settings")
                     }
                 }
             #else
@@ -379,6 +380,7 @@ struct WelcomeView: View {
                                 Image(systemName: "gear")
                                     .font(.title2)
                             }
+                            .accessibilityIdentifier("Settings")
                         }
                     }
             #endif

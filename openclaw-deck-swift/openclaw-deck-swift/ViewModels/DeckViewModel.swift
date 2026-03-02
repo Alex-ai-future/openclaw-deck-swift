@@ -391,12 +391,9 @@ class DeckViewModel {
         // 5. 添加到 sessions（使用小写 key 确保与 Gateway 一致）
         let sessionIdLower = sessionId.lowercased()
         sessions[sessionIdLower] = sessionState
-        sessionOrder.insert(sessionIdLower, at: 0) // 插入到开头，让新 Session 在最左边
+        sessionOrder.insert(sessionIdLower, at: 0)
 
-        // 6. 保存到 UserDefaults
-        saveSessionsToStorage()
-
-        // 7. 如果已连接，加载历史消息
+        // 6. 如果已连接，调用 Gateway 触发创建（通过加载历史）
         if gatewayConnected {
             Task {
                 await loadSessionHistory(sessionKey: sessionKey)
@@ -415,22 +412,28 @@ class DeckViewModel {
     /// 删除 Session
     /// - Parameter sessionId: 要删除的 Session ID
     func deleteSession(sessionId: String) {
-        // 1. 从 sessions 中移除（使用小写 key）
-        sessions.removeValue(forKey: sessionId.lowercased())
+        let sessionKey = sessions[sessionId.lowercased()]?.sessionKey
 
-        // 2. 从 sessionOrder 中移除
+        // 1. 从本地内存删除
+        sessions.removeValue(forKey: sessionId.lowercased())
         sessionOrder.removeAll { $0 == sessionId.lowercased() }
 
-        // 3. 保存到 UserDefaults
-        saveSessionsToStorage()
+        // 2. 从 Gateway 删除（如果已连接）
+        if let key = sessionKey, gatewayConnected {
+            Task {
+                do {
+                    try await gatewayClient?.deleteSession(sessionKey: key)
+                    logger.info("✅ Gateway 中删除 Session: \(key)")
+                } catch {
+                    logger.error("❌ Gateway 删除失败：\(error.localizedDescription)")
+                }
+            }
+        }
 
-        // 4. 如果删除后没有 session 了，创建 welcome session
+        // 3. 如果删除后没有 session 了，创建 welcome session
         if sessions.isEmpty {
             createWelcomeSession()
         }
-
-        // 注意：Gateway 中的消息历史不会被删除
-        // Session Key 可以继续使用，下次创建同名 Session 会加载历史
     }
 
     /// 获取 Session
@@ -475,7 +478,7 @@ class DeckViewModel {
             sessions = newSessions
             sessionOrder = newSessionOrder
 
-            logger.info("✅ 从 Gateway 加载 \(sessionOrder.count) 个 Session")
+            logger.info("✅ 从 Gateway 加载 \(self.sessionOrder.count) 个 Session")
 
         } catch {
             logger.error("❌ 从 Gateway 加载失败：\(error.localizedDescription)")
@@ -546,84 +549,6 @@ class DeckViewModel {
             logger.info("Synced to Cloudflare KV")
         } catch {
             logger.error("Cloudflare sync failed: \(error.localizedDescription)")
-        }
-    }
-
-    // MARK: - Sync
-
-    /// 同步操作（带状态管理）
-    /// - Returns: 同步结果（成功/失败消息）
-    @MainActor
-    func handleSync() async -> Result<String, Error> {
-        isSyncing = true
-        defer { isSyncing = false }
-        return await syncAll()
-    }
-
-    /// 完整同步：Cloudflare（Session 列表）+ Gateway（对话内容）
-    /// - Returns: 同步结果（成功/失败消息）
-    @MainActor
-    func syncAll() async -> Result<String, Error> {
-        guard gatewayConnected else {
-            return .failure(
-                NSError(
-                    domain: "DeckViewModel", code: 400,
-                    userInfo: [NSLocalizedDescriptionKey: "Gateway not connected"]
-                )
-            )
-        }
-
-        do {
-            logger.info("🔄 Starting full sync...")
-
-            // ✅ 立即显示加载动画
-            loadingStage = .fetchingSessions
-            loadingProgress = 0.5
-
-            // 1. 从 Cloudflare 同步 Session 列表
-            let result = try await CloudflareKV.shared.syncAndGet()
-
-            // 处理冲突情况
-            if result.source == .conflict {
-                // 冲突时让用户选择（弹窗）
-                logger.info("⚠️ Conflict detected during sync, showing conflict dialog")
-                await handleSyncConflict(result: result)
-                return .failure(
-                    NSError(
-                        domain: "DeckViewModel", code: 409,
-                        userInfo: [
-                            NSLocalizedDescriptionKey: "Sync conflict: please select data source",
-                        ]
-                    )
-                )
-            }
-
-            // 更新本地 sessions
-            sessionOrder = result.data.sessions.map { $0.lowercased() }
-            createSessionStates()
-            saveSessionsToStorage()
-
-            logger.info("✅ Session list updated: \(result.data.sessions.count) sessions")
-
-            // 2. 清空所有 Session 的当前消息
-            for session in sessions.values {
-                session.messages.removeAll()
-                session.historyLoaded = false
-            }
-
-            // 3. 重新加载所有 Session 的对话内容
-            await loadAllSessionHistory()
-
-            logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
-
-            // ✅ 重置加载状态，避免卡在 100%
-            loadingStage = .idle
-            loadingProgress = 0.0
-
-            return .success("Sync complete: \(result.data.sessions.count) sessions")
-        } catch {
-            logger.error("❌ Sync failed: \(error.localizedDescription)")
-            return .failure(error)
         }
     }
 

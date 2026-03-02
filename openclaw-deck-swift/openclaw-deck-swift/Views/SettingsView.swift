@@ -247,7 +247,7 @@ struct SettingsView: View {
     SettingsView(
         gatewayUrl: .constant("ws://127.0.0.1:18789"),
         token: .constant(""),
-        isConnected: true,
+        isConnected: .constant(true),
         onDisconnect: {},
         onApplyAndReconnect: {},
         onConnect: {}

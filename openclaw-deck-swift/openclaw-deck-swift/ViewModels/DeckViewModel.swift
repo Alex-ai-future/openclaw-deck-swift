@@ -179,7 +179,7 @@ class DeckViewModel {
     @MainActor init(diContainer: DIContainer? = nil) {
         self.diContainer = diContainer ?? DIContainer.shared
         self.storage = self.diContainer.storage
-        self.globalInputState = diContainer.createGlobalInputState()
+        self.globalInputState = self.diContainer.createGlobalInputState()
         setupGatewayCallbacks()
 
         // 加载配置

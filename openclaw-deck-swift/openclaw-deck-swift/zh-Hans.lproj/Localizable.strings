@@ -161,3 +161,7 @@
 "mark_as_read" = "已读";
 "mark_as_unread" = "未读";
 "delete_session_action" = "删除";
+
+"message_send_failed" = "发送失败";
+"gateway_not_connected_message" = "Gateway 未连接，消息未发送";
+"retry" = "重试";

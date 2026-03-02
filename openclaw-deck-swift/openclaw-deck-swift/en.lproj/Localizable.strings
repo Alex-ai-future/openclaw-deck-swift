@@ -161,3 +161,7 @@
 "mark_as_read" = "Mark as Read";
 "mark_as_unread" = "Mark as Unread";
 "delete_session_action" = "Delete";
+
+"message_send_failed" = "Send Failed";
+"gateway_not_connected_message" = "Gateway not connected, message not sent";
+"retry" = "Retry";

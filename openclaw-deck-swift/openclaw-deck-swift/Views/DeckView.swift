@@ -144,15 +144,15 @@ struct DeckView: View {
                 }
             }
             // 消息发送失败弹窗
-            .alert("发送失败", isPresented: $viewModel.showMessageSendError) {
-                Button("取消", role: .cancel) {}
-                Button("重试") {
+            .alert("message_send_failed".localized, isPresented: $viewModel.showMessageSendError) {
+                Button("cancel".localized, role: .cancel) {}
+                Button("retry".localized) {
                     Task {
                         await viewModel.sendCurrentInput()
                     }
                 }
             } message: {
-                Text("Gateway 未连接，消息未发送")
+                Text("gateway_not_connected_message".localized)
             }
         }
     }

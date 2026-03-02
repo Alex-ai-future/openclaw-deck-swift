@@ -215,7 +215,7 @@ struct ContentView: View {
             // Auto-connect on first launch if credentials exist
             guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
             // 🧪 UI 测试模式：跳过 Gateway 连接，但需要初始化 Session
-            if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
                 hasAttemptedAutoConnect = true
                 // UI 测试模式：调用 initialize 但不连接 Gateway
                 await viewModel.initialize(url: "http://test", token: nil)

@@ -17,8 +17,8 @@ final class SyncButtonUITests: XCTestCase {
         // 启动应用
         app = XCUIApplication()
 
-        // 添加测试模式标记（用于依赖注入检测）
-        app.launchArguments = ["--ui-testing"]
+        // 添加测试模式标记（使用环境变量，更可靠）
+        app.launchEnvironment["UITESTING"] = "YES"
 
         // 继续失败（一个测试失败后继续执行）
         continueAfterFailure = true
@@ -257,7 +257,7 @@ final class SyncButtonPerformanceTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         app = XCUIApplication()
-        app.launchArguments = ["--ui-testing"]
+        app.launchEnvironment["UITESTING"] = "YES"
         app.launch()
     }
 

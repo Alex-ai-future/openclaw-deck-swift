@@ -114,7 +114,7 @@ class DeckViewModel {
 
     /// 是否在 UI 测试模式
     private var isUITesting: Bool {
-        ProcessInfo.processInfo.arguments.contains("--ui-testing")
+        ProcessInfo.processInfo.environment["UITESTING"] == "YES"
     }
 
     private let diContainer: DIContainer
@@ -423,7 +423,7 @@ class DeckViewModel {
         saveSessionsToStorage()
 
         // 7. 如果已连接，加载历史消息
-        if gatewayConnected, !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        if gatewayConnected, !ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
             Task {
                 await loadSessionHistory(sessionKey: sessionKey)
             }
@@ -474,7 +474,7 @@ class DeckViewModel {
         logger.log("📥 加载 Sessions...")
 
         // 🧪 UI 测试模式：跳过云端同步
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
             logger.log("🧪 UI 测试模式，使用本地数据")
             loadFromLocalOnly()
             return
@@ -641,7 +641,7 @@ class DeckViewModel {
         logger.log("✅ Sync complete: \(data.sessions.count) sessions")
 
         // If Gateway connected, load history
-        if gatewayConnected, !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        if gatewayConnected, !ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
             await loadAllSessionHistory()
         }
     }
@@ -688,7 +688,7 @@ class DeckViewModel {
         }
 
         // 如果 Gateway 已连接，立即加载历史消息
-        if gatewayConnected, !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        if gatewayConnected, !ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
             logger.log("🔗 Gateway 已连接，加载历史消息...")
             Task {
                 await loadAllSessionHistory()

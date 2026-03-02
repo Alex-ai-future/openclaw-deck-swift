@@ -52,7 +52,8 @@ class SpeechRecognizer: ObservableObject {
 
     init() {
         // 🧪 测试环境跳过权限检查，避免弹窗
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        // 使用环境变量（UI 测试中通过 launchEnvironment 设置）
+        if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
             // UI 测试模式：不初始化 SFSpeechRecognizer，避免权限请求
             isAvailable = false
             return

@@ -176,9 +176,9 @@ class DeckViewModel {
 
     /// 初始化（使用 DI 容器）
     /// - Parameter diContainer: 依赖容器（默认为共享实例）
-    @MainActor init(diContainer: DIContainer = .shared) {
-        self.diContainer = diContainer
-        self.storage = diContainer.storage
+    @MainActor init(diContainer: DIContainer? = nil) {
+        self.diContainer = diContainer ?? DIContainer.shared
+        self.storage = self.diContainer.storage
         self.globalInputState = diContainer.createGlobalInputState()
         setupGatewayCallbacks()
 
@@ -290,43 +290,33 @@ class DeckViewModel {
     /// 连接成功后初始化（加载会话列表和消息历史）
     @MainActor
     private func initializeAfterConnect() async {
-        do {
-            // 连接成功，更新进度
-            loadingStage = .connecting
-            loadingProgress = 0.2
+        // 连接成功，更新进度
+        loadingStage = .connecting
+        loadingProgress = 0.2
 
-            // ✅ sessionOrder 已经在 initialize() 中加载完成，直接使用
+        // ✅ sessionOrder 已经在 initialize() 中加载完成，直接使用
 
-            // 检查是否有会话列表
-            if sessionOrder.isEmpty {
-                logger.warning("⚠️ 没有会话列表，跳过消息加载")
-            } else {
-                // 加载所有历史
-                loadingStage = .fetchingMessages
-                loadingProgress = 0.8
-                await loadAllSessionHistory()
-            }
-
-            // 所有数据加载完成，设置 100%
-            loadingStage = .syncingLocal
-            loadingProgress = 1.0
-
-            // 稍作延迟，让用户看到 100% 进度（避免闪动）
-            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
-
-            // 初始化完成
-            isInitializing = false
-            gatewayConnected = true
-            loadingStage = .idle
-        } catch {
-            logger.error("❌ 初始化失败：\(error.localizedDescription)")
-            // 初始化失败，重置状态
-            isInitializing = false
-            gatewayConnected = false
-            loadingStage = .idle
-            loadingProgress = 0.0
-            connectionError = error.localizedDescription
+        // 检查是否有会话列表
+        if sessionOrder.isEmpty {
+            logger.warning("⚠️ 没有会话列表，跳过消息加载")
+        } else {
+            // 加载所有历史
+            loadingStage = .fetchingMessages
+            loadingProgress = 0.8
+            await loadAllSessionHistory()
         }
+
+        // 所有数据加载完成，设置 100%
+        loadingStage = .syncingLocal
+        loadingProgress = 1.0
+
+        // 稍作延迟，让用户看到 100% 进度（避免闪动）
+        try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+
+        // 初始化完成
+        isInitializing = false
+        gatewayConnected = true
+        loadingStage = .idle
     }
 
     /// 清除连接错误

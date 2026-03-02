@@ -65,7 +65,7 @@ struct SessionColumnView: View {
             do {
                 // 不传 runId，让 Gateway 中止该 session 的所有活跃 run
                 // 这样更可靠，因为 runId 可能已经过期或不匹配
-                try await client.abortChat(sessionKey: session.sessionKey)
+                try await client.abortChat(sessionKey: session.sessionKey, runId: nil)
                 // 成功后更新状态
                 await MainActor.run {
                     session.activeRunId = nil

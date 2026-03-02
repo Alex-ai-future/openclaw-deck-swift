@@ -423,7 +423,7 @@ class DeckViewModel {
         saveSessionsToStorage()
 
         // 7. 如果已连接，加载历史消息
-        if gatewayConnected {
+        if gatewayConnected, !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             Task {
                 await loadSessionHistory(sessionKey: sessionKey)
             }
@@ -641,7 +641,7 @@ class DeckViewModel {
         logger.log("✅ Sync complete: \(data.sessions.count) sessions")
 
         // If Gateway connected, load history
-        if gatewayConnected {
+        if gatewayConnected, !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             await loadAllSessionHistory()
         }
     }
@@ -688,7 +688,7 @@ class DeckViewModel {
         }
 
         // 如果 Gateway 已连接，立即加载历史消息
-        if gatewayConnected {
+        if gatewayConnected, !ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             logger.log("🔗 Gateway 已连接，加载历史消息...")
             Task {
                 await loadAllSessionHistory()

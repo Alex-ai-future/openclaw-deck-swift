@@ -74,8 +74,9 @@ echo "Destination: $DESTINATION"
 echo "========================================"
 echo ""
 
-# 清理旧的测试结果
-rm -rf "$BUILD_DIR"
+# 只清理测试结果，保留构建产物以支持增量构建
+rm -rf "$BUILD_DIR/TestResults.xcresult"
+rm -rf "$BUILD_DIR/test_output.log"
 mkdir -p "$BUILD_DIR"
 
 echo "🔨 Building and testing..."

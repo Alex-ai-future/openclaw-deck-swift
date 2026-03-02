@@ -8,7 +8,7 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var gatewayUrl: String
     @Binding var token: String
-    @Binding var isConnected: Bool
+    var isConnected: Bool
     var onDisconnect: () -> Void
     var onApplyAndReconnect: () -> Void
     var onConnect: () -> Void
@@ -178,6 +178,12 @@ struct SettingsView: View {
                     } label: {
                         Label("user_guide".localized, systemImage: "book")
                     }
+
+                    NavigationLink {
+                        UsageExamplesView()
+                    } label: {
+                        Label("usage_examples".localized, systemImage: "list.bullet")
+                    }
                 } header: {
                     Label("help".localized, systemImage: "questionmark.circle")
                 } footer: {
@@ -241,7 +247,7 @@ struct SettingsView: View {
     SettingsView(
         gatewayUrl: .constant("ws://127.0.0.1:18789"),
         token: .constant(""),
-        isConnected: .constant(true),
+        isConnected: true,
         onDisconnect: {},
         onApplyAndReconnect: {},
         onConnect: {}

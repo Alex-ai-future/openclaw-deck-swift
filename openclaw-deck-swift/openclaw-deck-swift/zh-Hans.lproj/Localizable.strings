@@ -166,3 +166,6 @@
 "gateway_not_connected_message" = "Gateway 未连接，消息未发送";
 "retry" = "重试";
 "cannot_reconnect_check_settings" = "无法重连，请检查 Gateway 设置";
+"usage_examples" = "使用样例";
+"loading_document" = "正在加载文档...";
+"failed_to_load_document" = "加载文档失败";

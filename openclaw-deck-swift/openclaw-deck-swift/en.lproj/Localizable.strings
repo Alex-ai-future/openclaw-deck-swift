@@ -166,3 +166,6 @@
 "gateway_not_connected_message" = "Gateway not connected, message not sent";
 "retry" = "Retry";
 "cannot_reconnect_check_settings" = "Cannot reconnect, please check Gateway settings";
+"usage_examples" = "Usage Examples";
+"loading_document" = "Loading document...";
+"failed_to_load_document" = "Failed to load document";

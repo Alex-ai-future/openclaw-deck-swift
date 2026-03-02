@@ -1,3 +1,5 @@
+@testable import openclaw_deck_swift
+
 // MockCloudflareKV.swift
 // OpenClaw Deck Swift
 //

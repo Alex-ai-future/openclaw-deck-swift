@@ -1,3 +1,5 @@
+@testable import openclaw_deck_swift
+
 // MockGatewayClient.swift
 // OpenClaw Deck Swift
 //

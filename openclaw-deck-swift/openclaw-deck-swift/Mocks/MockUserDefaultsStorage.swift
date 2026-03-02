@@ -1,3 +1,5 @@
+@testable import openclaw_deck_swift
+
 // MockUserDefaultsStorage.swift
 // OpenClaw Deck Swift
 //

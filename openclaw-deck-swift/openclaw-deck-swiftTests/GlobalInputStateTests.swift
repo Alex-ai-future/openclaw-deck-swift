@@ -17,12 +17,10 @@ final class GlobalInputStateTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         inputState = GlobalInputState()
-        mockStorage = MockUserDefaultsStorage()
-        let testDIContainer = DIContainer(
+        mockStorage = MockFactory.createMockStorage()
+        let testDIContainer = MockFactory.createDIContainer(
             storage: mockStorage,
-            gatewayClientFactory: { _, _ in MockGatewayClient() },
-            cloudflareKV: MockCloudflareKV(),
-            globalInputStateFactory: { GlobalInputState() }
+            globalInputState: inputState
         )
         viewModel = DeckViewModel(diContainer: testDIContainer)
     }
@@ -115,7 +113,6 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.inputText = ""
         inputState.inputWidth = 300
         inputState.calculateTextHeight()
-        // 空文本应该保持最小高度
         XCTAssertEqual(inputState.textHeight, 36)
     }
 
@@ -123,7 +120,6 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.inputText = "Hello"
         inputState.inputWidth = 300
         inputState.calculateTextHeight()
-        // 短文本应该是最小高度
         XCTAssertEqual(inputState.textHeight, 36)
     }
 
@@ -132,33 +128,28 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.inputText = veryLongText
         inputState.inputWidth = 300
         inputState.calculateTextHeight()
-        // 高度不应该超过最大值 150
         XCTAssertLessThanOrEqual(inputState.textHeight, 150)
     }
 
     func testCalculateTextHeight_widthAffectsHeight() {
         let text = "This is a test text that will wrap differently based on width"
 
-        // 窄宽度
         inputState.inputText = text
         inputState.inputWidth = 200
         inputState.calculateTextHeight()
         let narrowHeight = inputState.textHeight
 
-        // 宽宽度
         inputState.inputText = text
         inputState.inputWidth = 600
         inputState.calculateTextHeight()
         let wideHeight = inputState.textHeight
 
-        // 窄宽度应该导致更大的高度（因为需要更多行）
         XCTAssertGreaterThanOrEqual(narrowHeight, wideHeight)
     }
 
     // MARK: - Send Message Tests
 
     func testSendMessage_success() async {
-        // 准备测试数据
         inputState.inputText = "Test message"
         inputState.selectedSessionId = "test-session"
 
@@ -167,10 +158,8 @@ final class GlobalInputStateTests: XCTestCase {
             sessionKey: "agent:main:test-session"
         )
 
-        // 发送消息
         await inputState.sendMessage(to: session, viewModel: viewModel)
 
-        // 验证输入已清空（主要验证发送流程完成）
         XCTAssertEqual(inputState.inputText, "")
     }
 
@@ -187,7 +176,6 @@ final class GlobalInputStateTests: XCTestCase {
 
         await inputState.sendMessage(to: session, viewModel: viewModel)
 
-        // 空文本不应该发送，消息数量不变
         XCTAssertEqual(session.messages.count, initialMessageCount)
     }
 
@@ -202,7 +190,6 @@ final class GlobalInputStateTests: XCTestCase {
 
         await inputState.sendMessage(to: session, viewModel: viewModel)
 
-        // 发送后输入应该被清空
         XCTAssertEqual(inputState.inputText, "")
         XCTAssertEqual(inputState.textHeight, 36)
     }
@@ -211,7 +198,6 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.inputText = "Test message"
         inputState.selectedSessionId = "test-session"
 
-        // 模拟语音识别正在监听
         inputState.speechRecognizer.isListening = true
 
         let session = SessionState(
@@ -221,7 +207,6 @@ final class GlobalInputStateTests: XCTestCase {
 
         await inputState.sendMessage(to: session, viewModel: viewModel)
 
-        // 发送后语音识别应该停止
         XCTAssertFalse(inputState.speechRecognizer.isListening)
     }
 
@@ -229,7 +214,6 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.inputText = "Test message"
         inputState.selectedSessionId = "test-session"
 
-        // 语音识别未监听
         inputState.speechRecognizer.isListening = false
 
         let session = SessionState(
@@ -237,7 +221,6 @@ final class GlobalInputStateTests: XCTestCase {
             sessionKey: "agent:main:test-session"
         )
 
-        // 不应该崩溃
         await inputState.sendMessage(to: session, viewModel: viewModel)
 
         XCTAssertFalse(inputState.speechRecognizer.isListening)
@@ -249,7 +232,6 @@ final class GlobalInputStateTests: XCTestCase {
 
         inputState.clearInput()
 
-        // selectedSessionId 应该保留
         XCTAssertEqual(inputState.selectedSessionId, "test-session")
         XCTAssertEqual(inputState.inputText, "")
     }
@@ -272,7 +254,6 @@ final class GlobalInputStateTests: XCTestCase {
         XCTAssertEqual(inputState.selectedSessionId, "session-1")
         XCTAssertEqual(inputState.inputText, "Message for session 1")
 
-        // 切换到另一个 Session
         inputState.selectedSessionId = "session-2"
         inputState.inputText = "Message for session 2"
 

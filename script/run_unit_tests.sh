@@ -38,13 +38,14 @@ if xcodebuild test \
     -scheme "$SCHEME_NAME" \
     -destination 'platform=macOS,name=My Mac' \
     -only-testing:"${SCHEME_NAME}Tests" \
-    -skip-testing:"${SCHEME_NAME}Tests/DeckViewModelTests" \
-    -skip-testing:"${SCHEME_NAME}Tests/GlobalInputStateTests" \
+    -skip-testing:"${SCHEME_NAME}UITests" \
     -resultBundlePath "$BUILD_DIR/TestResults.xcresult" \
     -parallel-testing-enabled NO \
     CODE_SIGN_IDENTITY="-" \
     CODE_GENERATION_INSTRUMENTATION=YES \
     OTHER_SWIFT_FLAGS="-D TESTING" \
+    -enableCodeCoverage YES \
+    -configuration Debug \
     2>&1 | tee "$BUILD_DIR/test_output.log"; then
     
     # Check if tests actually passed (not just build)

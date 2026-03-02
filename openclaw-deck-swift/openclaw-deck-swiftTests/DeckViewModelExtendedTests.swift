@@ -14,15 +14,13 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        mockStorage = MockUserDefaultsStorage()
+        mockStorage = MockFactory.createMockStorage()
         mockGlobalInputState = MockGlobalInputState()
         // 清除 Cloudflare 配置，避免测试中访问 Keychain
         CloudflareConfig.clear()
-        let testDIContainer = DIContainer(
+        let testDIContainer = MockFactory.createDIContainer(
             storage: mockStorage,
-            gatewayClientFactory: { _, _ in MockGatewayClient() },
-            cloudflareKV: MockCloudflareKV(),
-            globalInputStateFactory: { [self] in mockGlobalInputState }
+            globalInputState: mockGlobalInputState
         )
         viewModel = DeckViewModel(diContainer: testDIContainer)
         // 加载 sessions（会创建 welcome session）

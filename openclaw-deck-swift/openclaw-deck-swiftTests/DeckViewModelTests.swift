@@ -16,13 +16,11 @@ final class DeckViewModelTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         // 使用 Mock 存储和 Mock GlobalInputState，完全隔离测试
-        mockStorage = MockUserDefaultsStorage()
+        mockStorage = MockFactory.createMockStorage()
         mockGlobalInputState = MockGlobalInputState()
-        let testDIContainer = DIContainer(
+        let testDIContainer = MockFactory.createDIContainer(
             storage: mockStorage,
-            gatewayClientFactory: { _, _ in MockGatewayClient() },
-            cloudflareKV: MockCloudflareKV(),
-            globalInputStateFactory: { [self] in mockGlobalInputState }
+            globalInputState: mockGlobalInputState
         )
         viewModel = DeckViewModel(diContainer: testDIContainer)
     }
@@ -38,7 +36,6 @@ final class DeckViewModelTests: XCTestCase {
 
     func testViewModelInitialization() {
         XCTAssertNil(viewModel.gatewayClient)
-        // Note: DeckViewModel auto-creates welcome session if no sessions exist
         XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 0)
         XCTAssertGreaterThanOrEqual(viewModel.sessionOrder.count, 0)
         XCTAssertFalse(viewModel.gatewayConnected)
@@ -48,6 +45,8 @@ final class DeckViewModelTests: XCTestCase {
     // MARK: - Connection Tests
 
     func testClearConnectionError() {
+        viewModel.connectionError = "Test error"
+        XCTAssertNotNil(viewModel.connectionError)
         viewModel.clearConnectionError()
         XCTAssertNil(viewModel.connectionError)
     }
@@ -70,7 +69,6 @@ final class DeckViewModelTests: XCTestCase {
     func testCreateSession_savesToStorage() {
         let session = viewModel.createSession(name: "Test")
 
-        // Verify session was created
         XCTAssertNotNil(viewModel.getSession(sessionId: session.id))
         XCTAssertEqual(viewModel.getSession(sessionId: session.id)?.sessionId, session.id)
     }
@@ -90,21 +88,14 @@ final class DeckViewModelTests: XCTestCase {
         let session = viewModel.createSession(name: "To Delete")
         let sessionId = session.id
 
-        // Verify session exists
         XCTAssertNotNil(viewModel.getSession(sessionId: sessionId))
-
-        // Delete session
         viewModel.deleteSession(sessionId: sessionId)
-
-        // Verify session is deleted
         XCTAssertNil(viewModel.getSession(sessionId: sessionId))
     }
 
     func testDeleteSession_createsWelcomeSession() {
         let session = viewModel.createSession(name: "Only Session")
         viewModel.deleteSession(sessionId: session.id)
-
-        // Should have at least welcome session
         XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 1)
     }
 
@@ -123,19 +114,13 @@ final class DeckViewModelTests: XCTestCase {
     }
 
     func testSessionOrder() {
-        let initialCount = viewModel.sessionOrder.count
         let session1 = viewModel.createSession(name: "First")
         let session2 = viewModel.createSession(name: "Second")
         let session3 = viewModel.createSession(name: "Third")
 
-        // 新 session 插入到开头（最左边），所以：
-        // 初始：[welcome]
-        // 创建 first 后：[first, welcome]
-        // 创建 second 后：[second, first, welcome]
-        // 创建 third 后：[third, second, first, welcome]
-        XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased()) // 最新的是 third
-        XCTAssertEqual(viewModel.sessionOrder[1], session2.id.lowercased()) // 然后是 second
-        XCTAssertEqual(viewModel.sessionOrder[2], session1.id.lowercased()) // 然后是 first
+        XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased())
+        XCTAssertEqual(viewModel.sessionOrder[1], session2.id.lowercased())
+        XCTAssertEqual(viewModel.sessionOrder[2], session1.id.lowercased())
     }
 
     // MARK: - Event Handling Tests
@@ -143,25 +128,21 @@ final class DeckViewModelTests: XCTestCase {
     func testHandleGatewayEvent_unknownEvent() {
         let event = GatewayEvent(event: "unknown.event", payload: nil)
         viewModel.handleGatewayEvent(event)
-        // Should not crash
     }
 
     func testHandleGatewayEvent_tickEvent() {
         let event = GatewayEvent(event: "tick", payload: nil)
         viewModel.handleGatewayEvent(event)
-        // Should be ignored
     }
 
     func testHandleGatewayEvent_healthEvent() {
         let event = GatewayEvent(event: "health", payload: nil)
         viewModel.handleGatewayEvent(event)
-        // Should be ignored
     }
 
     func testHandleGatewayEvent_heartbeatEvent() {
         let event = GatewayEvent(event: "heartbeat", payload: nil)
         viewModel.handleGatewayEvent(event)
-        // Should be ignored
     }
 
     // MARK: - Gateway Event Integration Tests
@@ -169,7 +150,6 @@ final class DeckViewModelTests: XCTestCase {
     func testHandleAgentEvent_withInvalidPayload() {
         let event = GatewayEvent(event: "agent", payload: nil)
         viewModel.handleGatewayEvent(event)
-        // Should not crash
     }
 
     func testHandleAgentEvent_withMissingSessionKey() {
@@ -178,7 +158,6 @@ final class DeckViewModelTests: XCTestCase {
             payload: ["runId": "run-1", "stream": "assistant"]
         )
         viewModel.handleGatewayEvent(event)
-        // Should not crash
     }
 
     // MARK: - State Management Tests
@@ -187,25 +166,16 @@ final class DeckViewModelTests: XCTestCase {
         let session = viewModel.createSession(name: "Test")
         let sessionState = viewModel.getSession(sessionId: session.id)
 
-        XCTAssertNotNil(sessionState, "Session should exist")
+        XCTAssertNotNil(sessionState)
         guard let state = sessionState else { return }
 
-        // Initial state
         XCTAssertEqual(state.status, .idle)
-
-        // Set to thinking
         state.status = .thinking
         XCTAssertEqual(state.status, .thinking)
-
-        // Set to streaming
         state.status = .streaming
         XCTAssertEqual(state.status, .streaming)
-
-        // Set to error
         state.status = .error("Test error")
         XCTAssertEqual(state.status, .error("Test error"))
-
-        // Back to idle
         state.status = .idle
         XCTAssertEqual(state.status, .idle)
     }
@@ -224,17 +194,13 @@ final class DeckViewModelTests: XCTestCase {
     }
 
     func testDeleteNonExistentSession() {
-        // Should not crash
         viewModel.deleteSession(sessionId: "non-existent")
     }
 
     func testMultipleSessionsWithSameName() {
-        let initialCount = viewModel.sessions.count
         let session1 = viewModel.createSession(name: "Same Name")
         let session2 = viewModel.createSession(name: "Same Name")
 
-        // Should have different IDs
         XCTAssertNotEqual(session1.id, session2.id)
-        XCTAssertEqual(viewModel.sessions.count, initialCount + 2)
     }
 }

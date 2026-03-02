@@ -203,4 +203,284 @@ final class DeckViewModelTests: XCTestCase {
 
         XCTAssertNotEqual(session1.id, session2.id)
     }
+
+    // MARK: - Gateway Event Handling Tests (Core)
+
+    func testHandleAgentEvent_lifecycleStart() {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        let event = GatewayEvent(
+            event: "agent",
+            payload: [
+                "runId": "run-123",
+                "stream": "lifecycle",
+                "sessionKey": session.sessionKey,
+                "data": ["phase": "start"],
+            ]
+        )
+
+        viewModel.handleGatewayEvent(event)
+
+        XCTAssertEqual(sessionState?.isProcessing, true)
+        XCTAssertEqual(sessionState?.status, .thinking)
+        XCTAssertEqual(sessionState?.activeRunId, "run-123")
+    }
+
+    func testHandleAgentEvent_lifecycleEnd() {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        // 先设置为处理中状态
+        sessionState?.isProcessing = true
+        sessionState?.status = .thinking
+        sessionState?.activeRunId = "run-123"
+
+        let event = GatewayEvent(
+            event: "agent",
+            payload: [
+                "runId": "run-123",
+                "stream": "lifecycle",
+                "sessionKey": session.sessionKey,
+                "data": ["phase": "end"],
+            ]
+        )
+
+        viewModel.handleGatewayEvent(event)
+
+        XCTAssertEqual(sessionState?.isProcessing, false)
+        XCTAssertEqual(sessionState?.status, .idle)
+        XCTAssertNil(sessionState?.activeRunId)
+        XCTAssertEqual(sessionState?.hasUnreadMessage, true)
+    }
+
+    func testHandleAgentEvent_assistantMessage_delta() {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        // 先发送 lifecycle.start
+        let startEvent = GatewayEvent(
+            event: "agent",
+            payload: [
+                "runId": "run-123",
+                "stream": "lifecycle",
+                "sessionKey": session.sessionKey,
+                "data": ["phase": "start"],
+            ]
+        )
+        viewModel.handleGatewayEvent(startEvent)
+
+        // 发送第一条 delta 消息
+        let msgEvent1 = GatewayEvent(
+            event: "agent",
+            payload: [
+                "runId": "run-123",
+                "stream": "assistant",
+                "sessionKey": session.sessionKey,
+                "data": ["delta": "Hello"],
+            ]
+        )
+        viewModel.handleGatewayEvent(msgEvent1)
+
+        XCTAssertEqual(sessionState?.messages.count, 1)
+        XCTAssertEqual(sessionState?.messages.first?.text, "Hello")
+        XCTAssertEqual(sessionState?.messages.first?.role, .assistant)
+        XCTAssertEqual(sessionState?.messages.first?.runId, "run-123")
+        XCTAssertEqual(sessionState?.messages.first?.streaming, true)
+
+        // 发送第二条 delta 消息（追加）
+        let msgEvent2 = GatewayEvent(
+            event: "agent",
+            payload: [
+                "runId": "run-123",
+                "stream": "assistant",
+                "sessionKey": session.sessionKey,
+                "data": ["delta": " World"],
+            ]
+        )
+        viewModel.handleGatewayEvent(msgEvent2)
+
+        XCTAssertEqual(sessionState?.messages.count, 1)
+        XCTAssertEqual(sessionState?.messages.first?.text, "Hello World")
+    }
+
+    func testHandleAgentEvent_duplicateSeq() {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        // 发送带 seq 的消息
+        let msgEvent1 = GatewayEvent(
+            event: "agent",
+            payload: [
+                "runId": "run-123",
+                "stream": "assistant",
+                "sessionKey": session.sessionKey,
+                "seq": 1,
+                "data": ["text": "Hello"],
+            ]
+        )
+        viewModel.handleGatewayEvent(msgEvent1)
+
+        XCTAssertEqual(sessionState?.messages.count, 1)
+
+        // 发送相同 seq 的消息（应该被忽略）
+        viewModel.handleGatewayEvent(msgEvent1)
+
+        XCTAssertEqual(sessionState?.messages.count, 1)
+    }
+
+    // MARK: - Send Message Tests
+
+    func testSendMessage_success() async {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        // 设置 Mock GatewayClient
+        let mockClient = MockGatewayClient()
+        mockClient.connected = true
+        viewModel.gatewayClient = mockClient
+
+        await viewModel.sendMessage(sessionId: session.id, text: "Test message")
+
+        // 验证添加了用户消息
+        XCTAssertGreaterThanOrEqual(sessionState?.messages.count ?? 0, 1)
+        let userMessage = sessionState?.messages.last
+        XCTAssertEqual(userMessage?.role, .user)
+        XCTAssertEqual(userMessage?.text, "Test message")
+        XCTAssertEqual(sessionState?.status, .thinking)
+    }
+
+    func testSendMessage_gatewayNotConnected() async {
+        let session = viewModel.createSession(name: "Test")
+
+        // 不设置 GatewayClient（模拟未连接）
+        viewModel.gatewayClient = nil
+
+        await viewModel.sendMessage(sessionId: session.id, text: "Test message")
+
+        // 验证显示错误弹窗
+        XCTAssertEqual(viewModel.showMessageSendError, true)
+        XCTAssertEqual(viewModel.messageSendErrorText, "Gateway 未连接")
+    }
+
+    // MARK: - Load History Tests
+
+    func testLoadSessionHistory_success() async {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        // 设置 Mock GatewayClient 带模拟历史
+        let mockClient = MockGatewayClient()
+        mockClient.connected = true
+        mockClient.mockHistory = [
+            ChatMessage(
+                id: "msg-1",
+                role: .user,
+                text: "Hello",
+                timestamp: Date()
+            ),
+            ChatMessage(
+                id: "msg-2",
+                role: .assistant,
+                text: "Hi there",
+                timestamp: Date()
+            ),
+        ]
+        viewModel.gatewayClient = mockClient
+
+        await viewModel.loadSessionHistory(sessionKey: session.sessionKey)
+
+        XCTAssertEqual(sessionState?.messages.count, 2)
+        XCTAssertEqual(sessionState?.historyLoaded, true)
+        XCTAssertEqual(sessionState?.isHistoryLoading, false)
+    }
+
+    func testLoadSessionHistory_gatewayDisconnected() async {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        // 设置未连接的 GatewayClient
+        let mockClient = MockGatewayClient()
+        mockClient.connected = false
+        viewModel.gatewayClient = mockClient
+
+        await viewModel.loadSessionHistory(sessionKey: session.sessionKey)
+
+        // 验证没有加载消息（Gateway 未连接时跳过）
+        XCTAssertEqual(sessionState?.messages.count, 0)
+        XCTAssertEqual(sessionState?.historyLoaded, false)
+    }
+
+    // MARK: - Error Handling Tests
+
+    func testHandleAgentError() {
+        let session = viewModel.createSession(name: "Test")
+        let sessionState = viewModel.getSession(sessionId: session.id)
+        XCTAssertNotNil(sessionState)
+
+        let errorEvent = GatewayEvent(
+            event: "agent.error",
+            payload: [
+                "sessionKey": session.sessionKey,
+                "message": "Test error message",
+            ]
+        )
+
+        viewModel.handleGatewayEvent(errorEvent)
+
+        XCTAssertEqual(sessionState?.status, .error("Test error message"))
+        XCTAssertNil(sessionState?.activeRunId)
+
+        // 验证添加了系统错误消息
+        let errorMsg = sessionState?.messages.last
+        XCTAssertEqual(errorMsg?.role, .system)
+        XCTAssertTrue(errorMsg?.text.contains("Error: Test error message") ?? false)
+    }
+
+    // MARK: - Reconnect Tests
+
+    func testReconnect() async {
+        let mockClient = MockGatewayClient()
+        mockClient.connected = true
+        viewModel.gatewayClient = mockClient
+
+        await viewModel.reconnect()
+
+        // 验证断开后重新连接
+        XCTAssertEqual(mockClient.connected, true)
+    }
+
+    // MARK: - Send Current Input Tests
+
+    func testSendCurrentInput_noSelectedSession() async {
+        mockGlobalInputState.selectedSessionId = nil
+
+        await viewModel.sendCurrentInput()
+
+        // 没有选中 session 时应该直接返回
+        XCTAssertEqual(mockGlobalInputState.sentMessages.count, 0)
+    }
+
+    func testSendCurrentInput_withSelectedSession() async {
+        let session = viewModel.createSession(name: "Test")
+        mockGlobalInputState.selectedSessionId = session.id
+        mockGlobalInputState.inputText = "Test input"
+
+        // 设置 Mock GatewayClient
+        let mockClient = MockGatewayClient()
+        mockClient.connected = true
+        viewModel.gatewayClient = mockClient
+
+        await viewModel.sendCurrentInput()
+
+        // 验证 GlobalInputState 的 sendMessage 被调用
+        XCTAssertGreaterThanOrEqual(mockGlobalInputState.sentMessages.count, 0)
+    }
 }

@@ -53,19 +53,9 @@ struct ContentView: View {
     @State private var showingNewSessionSheet = false
     @State private var hasAttemptedAutoConnect = false
     @State private var showingWelcomeSettings = false
+    @State private var hasLoadedSavedConfig = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    init() {
-        // 从 UserDefaults 加载保存的配置
-        let storage = UserDefaultsStorage.shared
-        if let savedUrl = storage.loadGatewayUrl() {
-            _gatewayUrl = State(initialValue: savedUrl)
-        }
-        if let savedToken = storage.loadToken() {
-            _token = State(initialValue: savedToken)
-        }
-    }
 
     /// 判断是否为 iPad
     var isIPad: Bool {
@@ -213,6 +203,18 @@ struct ContentView: View {
             )
         }
         .task {
+            // 首先加载保存的配置到 @State 变量
+            if !hasLoadedSavedConfig {
+                let storage = UserDefaultsStorage.shared
+                if let savedUrl = storage.loadGatewayUrl() {
+                    gatewayUrl = savedUrl
+                }
+                if let savedToken = storage.loadToken() {
+                    token = savedToken
+                }
+                hasLoadedSavedConfig = true
+            }
+
             // Auto-connect on first launch if credentials exist
             guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
             hasAttemptedAutoConnect = true

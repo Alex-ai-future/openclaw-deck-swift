@@ -684,6 +684,10 @@ class DeckViewModel {
                 await loadAllSessionHistory()
             }
         }
+
+        // ✅ 重置加载状态，避免卡在 100%
+        loadingStage = .idle
+        loadingProgress = 0.0
     }
 
     /// 创建 Session 状态（从 sessionOrder）

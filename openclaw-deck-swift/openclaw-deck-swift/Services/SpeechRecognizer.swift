@@ -64,6 +64,9 @@ class SpeechRecognizer: ObservableObject {
 
     /// 检查语音识别权限
     private func checkPermissions() {
+        // 🧪 跳过权限检查（测试模式）
+        guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else { return }
+
         SFSpeechRecognizer.requestAuthorization { authStatus in
             Task { @MainActor in
                 switch authStatus {

@@ -169,3 +169,6 @@
 "usage_examples" = "Usage Examples";
 "loading_document" = "Loading document...";
 "failed_to_load_document" = "Failed to load document";
+"fetching_sessions_from_gateway" = "Fetching sessions from Gateway";
+"fetching_messages_from_gateway" = "Fetching messages from Gateway";
+"session_data_is_stored_in_gateway_and_loaded_on_connect" = "Session data is stored in Gateway and loaded on connect";

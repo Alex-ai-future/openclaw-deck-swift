@@ -60,41 +60,6 @@ extension LoadingStage {
     }
 }
 
-// MARK: - Conflict Info
-
-/// 冲突信息
-struct ConflictInfo {
-    let localCount: Int
-    let remoteCount: Int
-    let isOrderOnly: Bool
-    let description: String
-
-    static func create(local: SyncData, remote: SyncData) -> ConflictInfo {
-        let localCount = local.sessions.count
-        let remoteCount = remote.sessions.count
-
-        // 检查是否只是顺序差异（内容相同但顺序不同）
-        let localSet = Set(local.sessions)
-        let remoteSet = Set(remote.sessions)
-        let isOrderOnly = localSet == remoteSet && local.sessions != remote.sessions
-
-        let description = if isOrderOnly {
-            "Local and remote have the same \(localCount) sessions but in different order.\n\n• Use Local: Keep your order (overwrite cloud)\n• Use Cloud: Merge cloud order with local"
-        } else if localCount == remoteCount {
-            "Local and remote both have \(localCount) sessions but with different content.\n\n• Use Local: Keep local sessions (overwrite cloud)\n• Use Cloud: Merge cloud sessions with local"
-        } else {
-            "Local has \(localCount) sessions, Cloud has \(remoteCount) sessions.\n\n• Use Local: Keep local sessions (overwrite cloud)\n• Use Cloud: Merge cloud sessions with local"
-        }
-
-        return ConflictInfo(
-            localCount: localCount,
-            remoteCount: remoteCount,
-            isOrderOnly: isOrderOnly,
-            description: description
-        )
-    }
-}
-
 /// Deck ViewModel - 管理多个 Session
 @MainActor
 @Observable
@@ -528,28 +493,8 @@ class DeckViewModel {
             forKey: "openclaw.deck.sessionOrder.lastUpdated"
         )
 
-        // 测试环境跳过云端同步
-        if storage.isTesting {
-            logger.log("🧪 测试环境，跳过云端同步")
-        } else if CloudflareKV.shared.isConfigured {
-            // 生产环境，同步到云端
-            Task {
-                await syncToCloudflare()
-            }
-        }
-    }
-
-    /// 同步到 Cloudflare KV
-    private func syncToCloudflare() async {
-        do {
-            let syncData = SyncData(
-                sessions: sessionOrder, lastUpdated: ISO8601DateFormatter().string(from: Date())
-            )
-            try await CloudflareKV.shared.save(syncData)
-            logger.info("Synced to Cloudflare KV")
-        } catch {
-            logger.error("Cloudflare sync failed: \(error.localizedDescription)")
-        }
+        // 不再保存到本地存储 - 所有数据从 Gateway 获取
+        logger.log("📝 Session 已更新（仅内存，不持久化）")
     }
 
     // MARK: - Load History

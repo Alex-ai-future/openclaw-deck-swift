@@ -92,7 +92,7 @@ struct SessionDetailView: View {
                             .foregroundColor(.secondary)
                         Text(formatDate(lastActivity))
                             .font(.caption.monospaced())
-                            .foregroundColor(.tertiary)
+                            .foregroundColor(.secondary.opacity(0.7))
                     }
 
                     if let firstMessage = session.messages.first {
@@ -102,7 +102,7 @@ struct SessionDetailView: View {
                             .foregroundColor(.secondary)
                         Text(formatDate(firstMessage.timestamp))
                             .font(.caption.monospaced())
-                            .foregroundColor(.tertiary)
+                            .foregroundColor(.secondary.opacity(0.7))
                     }
                 }
 

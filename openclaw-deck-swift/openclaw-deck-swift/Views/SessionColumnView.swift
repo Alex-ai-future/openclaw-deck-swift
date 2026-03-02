@@ -54,10 +54,6 @@ struct SessionColumnView: View {
 
     /// 发送 Stop 请求 - 中断当前对话
     private func sendStopMessage() {
-        guard let runId = session.activeRunId else {
-            return
-        }
-
         guard let client = viewModel.gatewayClient else {
             // Gateway 未连接，显示错误
             viewModel.stopErrorText = "Gateway 未连接"
@@ -67,10 +63,9 @@ struct SessionColumnView: View {
 
         Task {
             do {
-                try await client.abortChat(
-                    sessionKey: session.sessionKey,
-                    runId: runId
-                )
+                // 不传 runId，让 Gateway 中止该 session 的所有活跃 run
+                // 这样更可靠，因为 runId 可能已经过期或不匹配
+                try await client.abortChat(sessionKey: session.sessionKey)
                 // 成功后更新状态
                 await MainActor.run {
                     session.activeRunId = nil

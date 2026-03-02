@@ -189,3 +189,14 @@
 "loading_messages" = "Loading messages...";
 "confirm_delete" = "Confirm Delete";
 "delete_session_confirm_message" = "Are you sure you want to delete this session? This action cannot be undone.";
+
+// MARK: - Session Details (Simplified)
+"processing" = "Processing";
+"yes" = "Yes";
+"no" = "No";
+"total_messages_count" = "Total Messages";
+"user_messages" = "User Messages";
+"assistant_messages" = "Assistant Messages";
+"completed" = "Completed";
+"incomplete" = "Incomplete";
+"status_loading" = "Loading";

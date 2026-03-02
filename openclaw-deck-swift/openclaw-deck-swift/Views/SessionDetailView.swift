@@ -6,7 +6,7 @@
 
 import SwiftUI
 
-/// Session 详情视图 - 简洁的表单布局
+/// Session 详情视图 - 极简布局
 struct SessionDetailView: View {
     let session: SessionState
     let onDelete: () -> Void
@@ -19,17 +19,13 @@ struct SessionDetailView: View {
                 // MARK: - 基础信息
 
                 Section("basic_info".localized) {
-                    Label(session.sessionId, systemImage: "circle.fill")
-
-                    Label(session.sessionKey, systemImage: "tag")
+                    Text("ID: \(session.sessionId)")
+                    Text("Key: \(session.sessionKey)")
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
 
                     if let context = session.context, !context.isEmpty {
-                        Label("Context", systemImage: "text.alignleft")
-                        Text(context)
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                        Text("备注：\(context)")
                             .textSelection(.enabled)
                     }
                 }
@@ -37,32 +33,13 @@ struct SessionDetailView: View {
                 // MARK: - 状态
 
                 Section("status".localized) {
-                    HStack {
-                        Image(systemName: sessionStatusIcon)
-                            .foregroundColor(sessionStatusColor)
-                        Text(sessionStatusText)
-                            .foregroundColor(sessionStatusColor)
-                    }
-
-                    HStack {
-                        Image(systemName: session.isProcessing ? "gearshape.fill" : "gearshape")
-                            .foregroundColor(session.isProcessing ? .orange : .secondary)
-                        Text(session.isProcessing ? "processing".localized : "idle".localized)
-                            .foregroundColor(session.isProcessing ? .orange : .secondary)
-                    }
-
-                    HStack {
-                        Image(systemName: session.hasUnreadMessage ? "circle.fill" : "circle")
-                            .foregroundColor(session.hasUnreadMessage ? .green : .secondary)
-                        Text(session.hasUnreadMessage ? "unread_messages".localized : "all_read".localized)
-                            .foregroundColor(session.hasUnreadMessage ? .green : .secondary)
-                    }
+                    Text("状态：\(sessionStatusText)")
+                    Text("处理中：\(session.isProcessing ? "是" : "否")")
+                    Text("未读消息：\(session.hasUnreadMessage ? "是" : "否")")
 
                     if let runId = session.activeRunId {
-                        Label("Active Run", systemImage: "play.circle.fill")
-                        Text(runId)
+                        Text("活跃 Run: \(runId)")
                             .font(.caption.monospaced())
-                            .foregroundColor(.blue)
                             .textSelection(.enabled)
                     }
                 }
@@ -70,70 +47,34 @@ struct SessionDetailView: View {
                 // MARK: - 消息统计
 
                 Section("message_stats".localized) {
-                    Label("\(session.messages.count) " + "total_messages".localized, systemImage: "message.fill")
-
-                    HStack {
-                        Label("\(userMessageCount)", systemImage: "person.fill")
-                            .foregroundColor(.blue)
-                        Spacer()
-                        Label("\(assistantMessageCount)", systemImage: "cpu.fill")
-                            .foregroundColor(.purple)
-                    }
-                    .font(.caption)
+                    Text("总消息数：\(session.messages.count)")
+                    Text("User 消息：\(userMessageCount)")
+                    Text("Assistant 消息：\(assistantMessageCount)")
                 }
 
-                // MARK: - 时间信息
+                // MARK: - 时间
 
                 Section("timeline".localized) {
                     if let lastActivity = session.lastMessageAt {
-                        Label("last_activity".localized, systemImage: "clock.fill")
-                        Text(formatRelativeDate(lastActivity))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text(formatDate(lastActivity))
-                            .font(.caption.monospaced())
-                            .foregroundColor(.secondary.opacity(0.7))
+                        Text("最后活动：\(formatRelativeDate(lastActivity)) (\(formatDateTime(lastActivity)))")
                     }
 
                     if let firstMessage = session.messages.first {
-                        Label("first_message".localized, systemImage: "arrow.up.right.circle.fill")
-                        Text(formatRelativeDate(firstMessage.timestamp))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text(formatDate(firstMessage.timestamp))
-                            .font(.caption.monospaced())
-                            .foregroundColor(.secondary.opacity(0.7))
+                        Text("第一条消息：\(formatRelativeDate(firstMessage.timestamp)) (\(formatDateTime(firstMessage.timestamp)))")
                     }
                 }
 
                 // MARK: - 加载状态
 
                 Section("load_status".localized) {
-                    HStack {
-                        Image(systemName: session.historyLoaded ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(session.historyLoaded ? .green : .secondary)
-                        Text("history_loaded".localized)
-                            .foregroundColor(session.historyLoaded ? .green : .secondary)
-                    }
+                    Text("历史加载：\(session.historyLoaded ? "已完成" : "未完成")")
 
                     if session.isHistoryLoading {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("loading_history".localized)
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                        }
+                        Text("状态：正在加载历史...")
                     }
 
                     if session.isLoadingMessages {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("loading_messages".localized)
-                                .font(.caption)
-                                .foregroundColor(.orange)
-                        }
+                        Text("状态：正在加载消息...")
                     }
                 }
 
@@ -143,59 +84,38 @@ struct SessionDetailView: View {
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
-                        Label("delete_session".localized, systemImage: "trash.fill")
+                        Text("delete_session".localized)
                     }
                 }
             }
             .navigationTitle("session_details".localized)
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("done".localized) {
-                            dismiss()
-                        }
-                    }
-                }
-                .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
-                    Button("cancel".localized, role: .cancel) {}
-                    Button("delete".localized, role: .destructive) {
-                        // 删除会话
-                        onDelete()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("done".localized) {
                         dismiss()
                     }
-                } message: {
-                    Text("delete_session_confirm_message".localized)
                 }
+            }
+            .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
+                Button("cancel".localized, role: .cancel) {}
+                Button("delete".localized, role: .destructive) {
+                    onDelete()
+                    dismiss()
+                }
+            } message: {
+                Text("delete_session_confirm_message".localized)
+            }
         }
     }
 
     // MARK: - Helpers
 
-    private var sessionStatusIcon: String {
-        switch session.status {
-        case .idle: "circle.fill"
-        case .thinking: "brain.head.profile"
-        case .streaming: "waveform"
-        case .error: "exclamationmark.triangle.fill"
-        }
-    }
-
-    private var sessionStatusColor: Color {
-        switch session.status {
-        case .idle: .secondary
-        case .thinking: .orange
-        case .streaming: .blue
-        case .error: .red
-        }
-    }
-
     private var sessionStatusText: String {
         switch session.status {
-        case .idle: "idle".localized
-        case .thinking: "thinking".localized
-        case .streaming: "streaming".localized
+        case .idle: "idle"
+        case .thinking: "thinking"
+        case .streaming: "streaming"
         case let .error(message): "Error: \(message)"
         }
     }
@@ -214,9 +134,9 @@ struct SessionDetailView: View {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 
-    private func formatDate(_ date: Date) -> String {
+    private func formatDateTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
         return formatter.string(from: date)
     }
 }
@@ -224,7 +144,9 @@ struct SessionDetailView: View {
 #Preview {
     SessionDetailView(
         session: createSampleSession(),
-        onDelete: {}
+        onDelete: {
+            print("Delete session (preview)")
+        }
     )
 }
 

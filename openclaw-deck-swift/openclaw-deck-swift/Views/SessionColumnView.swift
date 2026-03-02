@@ -58,9 +58,16 @@ struct SessionColumnView: View {
             return
         }
 
+        guard let client = viewModel.gatewayClient else {
+            // Gateway 未连接，显示错误
+            viewModel.stopErrorText = "Gateway 未连接"
+            viewModel.showStopError = true
+            return
+        }
+
         Task {
             do {
-                try await viewModel.gatewayClient?.abortChat(
+                try await client.abortChat(
                     sessionKey: session.sessionKey,
                     runId: runId
                 )
@@ -133,64 +140,60 @@ struct SessionColumnView: View {
 
                         // 快速操作按钮组 - 只在选中时显示
                         if isSelected {
-                            HStack(spacing: 16) {
-                                // 判断输入框是否有内容
-                                let hasInput = !viewModel.globalInputState.inputText.isEmpty
+                            // 判断输入框是否有内容
+                            let hasInput = !viewModel.globalInputState.inputText.isEmpty
 
-                                // /new 按钮 - 点击发送 "/new" 消息（只在输入框为空时显示）
-                                if !hasInput {
-                                    Button {
-                                        sendNewMessage()
-                                    } label: {
-                                        Text("new".localized)
-                                            .font(.title3)
-                                            .foregroundColor(.blue)
-                                    }
-                                    .buttonStyle(.glass)
-                                    .frame(height: 36)
+                            // /new 按钮 - 点击发送 "/new" 消息（只在输入框为空时显示）
+                            if !hasInput {
+                                Button {
+                                    sendNewMessage()
+                                } label: {
+                                    Text("new".localized)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
                                 }
-
-                                // OK 按钮 - 点击发送 "OK" 消息（只在输入框为空时显示）
-                                if !hasInput {
-                                    Button {
-                                        sendOKMessage()
-                                    } label: {
-                                        Text("ok".localized)
-                                            .font(.title3)
-                                            .foregroundColor(.blue)
-                                    }
-                                    .buttonStyle(.glass)
-                                    .frame(height: 36)
-                                }
-
-                                // Stop 按钮 - 点击中断当前对话（只在 streaming 时显示）
-                                if session.status == .streaming {
-                                    Button {
-                                        sendStopMessage()
-                                    } label: {
-                                        Image(systemName: "stop.circle.fill")
-                                            .font(.title2)
-                                            .foregroundColor(.red)
-                                    }
-                                    .buttonStyle(.glass)
-                                    .frame(width: 36, height: 36)
-                                }
-
-                                // 发送按钮 - 点击发送输入框内容（只在输入框有内容时显示）
-                                if hasInput {
-                                    Button {
-                                        sendInputMessage()
-                                    } label: {
-                                        Image(systemName: "arrow.up.circle.fill")
-                                            .font(.title2)
-                                            .foregroundColor(.blue)
-                                    }
-                                    .buttonStyle(.glass)
-                                    .frame(width: 36, height: 36)
-                                }
-                                .frame(width: 36, height: 36)
+                                .buttonStyle(.glass)
+                                .frame(width: 40, height: 40)
                             }
-                            .transition(.opacity.combined(with: .scale))
+
+                            // OK 按钮 - 点击发送 "OK" 消息（只在输入框为空时显示）
+                            if !hasInput {
+                                Button {
+                                    sendOKMessage()
+                                } label: {
+                                    Text("ok".localized)
+                                        .font(.title3)
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.glass)
+                                .frame(width: 40, height: 40)
+                            }
+
+                            // Stop 按钮 - 点击中断当前对话（有 activeRunId 时显示）
+                            if session.activeRunId != nil {
+                                Button {
+                                    sendStopMessage()
+                                } label: {
+                                    Image(systemName: "stop.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.glass)
+                                .frame(width: 40, height: 40)
+                            }
+
+                            // 发送按钮 - 点击发送输入框内容（只在输入框有内容时显示）
+                            if hasInput {
+                                Button {
+                                    sendInputMessage()
+                                } label: {
+                                    Image(systemName: "arrow.up.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.glass)
+                                .frame(width: 40, height: 40)
+                            }
                         }
                     }
                     .padding(12)

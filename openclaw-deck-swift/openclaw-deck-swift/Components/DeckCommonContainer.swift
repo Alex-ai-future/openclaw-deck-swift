@@ -19,7 +19,6 @@ struct DeckCommonContainer<Content: View>: View {
     var token: Binding<String>?
 
     // 内部状态管理
-    @State private var showingSortSheet = false
     @State private var showingSyncAlert = false
     @State private var showingConflictAlert = false
 
@@ -107,11 +106,6 @@ struct DeckCommonContainer<Content: View>: View {
                     viewModel: viewModel,
                     isPresented: $showingNewSessionSheet
                 )
-            }
-
-            // Sort Sheet
-            .sheet(isPresented: $showingSortSheet) {
-                SessionSortView(viewModel: viewModel)
             }
 
             // Sync Alerts

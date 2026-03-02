@@ -18,10 +18,13 @@ final class DeckViewModelExtendedTests: XCTestCase {
         mockGlobalInputState = MockGlobalInputState()
         // 清除 Cloudflare 配置，避免测试中访问 Keychain
         CloudflareConfig.clear()
-        viewModel = DeckViewModel(
+        let testDIContainer = DIContainer(
             storage: mockStorage,
-            globalInputState: mockGlobalInputState
+            gatewayClientFactory: { _, _ in MockGatewayClient() },
+            cloudflareKV: MockCloudflareKV(),
+            globalInputStateFactory: { [self] in mockGlobalInputState }
         )
+        viewModel = DeckViewModel(diContainer: testDIContainer)
         // 加载 sessions（会创建 welcome session）
         await viewModel.loadSessionsFromStorageForTesting()
     }

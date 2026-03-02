@@ -89,7 +89,9 @@ struct SessionDetailView: View {
                 }
             }
             .navigationTitle("session_details".localized)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("done".localized) {

@@ -20,7 +20,13 @@ final class GlobalInputStateTests: XCTestCase {
     try await super.setUp()
     inputState = GlobalInputState()
     mockStorage = MockUserDefaultsStorage()
-    viewModel = DeckViewModel(storage: mockStorage)
+    let testDIContainer = DIContainer(
+      storage: mockStorage,
+      gatewayClientFactory: { _, _ in MockGatewayClient() },
+      cloudflareKV: MockCloudflareKV(),
+      globalInputStateFactory: { GlobalInputState() }
+    )
+    viewModel = DeckViewModel(diContainer: testDIContainer)
   }
 
   override func tearDown() async throws {

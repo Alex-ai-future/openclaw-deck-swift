@@ -20,10 +20,13 @@ final class DeckViewModelTests: XCTestCase {
     // 使用 Mock 存储和 Mock GlobalInputState，完全隔离测试
     mockStorage = MockUserDefaultsStorage()
     mockGlobalInputState = MockGlobalInputState()
-    viewModel = DeckViewModel(
+    let testDIContainer = DIContainer(
       storage: mockStorage,
-      globalInputState: mockGlobalInputState
+      gatewayClientFactory: { _, _ in MockGatewayClient() },
+      cloudflareKV: MockCloudflareKV(),
+      globalInputStateFactory: { [self] in mockGlobalInputState }
     )
+    viewModel = DeckViewModel(diContainer: testDIContainer)
   }
 
   override func tearDown() async throws {

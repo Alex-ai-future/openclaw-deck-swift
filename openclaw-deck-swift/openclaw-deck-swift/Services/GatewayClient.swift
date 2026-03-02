@@ -623,6 +623,14 @@ class GatewayClient {
                 return
             }
 
+            // 打印所有发送请求的完整 JSON 日志
+            if let jsonData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let prettyData = try? JSONSerialization.data(withJSONObject: jsonData, options: .prettyPrinted),
+               let prettyString = String(data: prettyData, encoding: .utf8)
+            {
+                logger.info("📤 [Request] \(prettyString)")
+            }
+
             webSocket.send(.string(string)) { error in
                 if let error {
                     logger.error("Send error: \(error.localizedDescription)")

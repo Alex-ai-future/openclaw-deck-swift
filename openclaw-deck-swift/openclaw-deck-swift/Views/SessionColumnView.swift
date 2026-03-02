@@ -148,7 +148,7 @@ struct SessionColumnView: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(width: 40, height: 40)
+                                .frame(height: 40)
                             }
 
                             // OK 按钮 - 点击发送 "OK" 消息（只在输入框为空时显示）
@@ -161,7 +161,7 @@ struct SessionColumnView: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(width: 40, height: 40)
+                                .frame(height: 40)
                             }
 
                             // Stop 按钮 - 点击中断当前对话（有 activeRunId 时显示）
@@ -174,7 +174,7 @@ struct SessionColumnView: View {
                                         .foregroundColor(.red)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(width: 40, height: 40)
+                                .frame(height: 40)
                             }
 
                             // 发送按钮 - 点击发送输入框内容（只在输入框有内容时显示）
@@ -187,7 +187,7 @@ struct SessionColumnView: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(width: 40, height: 40)
+                                .frame(height: 40)
                             }
                         }
                     }
@@ -248,42 +248,30 @@ struct SessionColumnView: View {
     // MARK: - Session Name Button
 
     private var sessionNameButton: some View {
-        // 点击打开详情 Sheet，长按弹出菜单
-        Menu {
-            // 使用共用的菜单内容
-            sessionMenuContent
+        Button {
+            showingSessionDetails = true
         } label: {
-            // 点击按钮打开详情 Sheet
-            Button {
-                showingSessionDetails = true
-            } label: {
-                Text(session.sessionId)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-                    // 工作中橘黄，完成未读绿色，其他蓝色
-                    .foregroundColor(
-                        session.isProcessing
-                            ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
-                    )
-            }
-            .buttonStyle(.glass)
+            Text(session.sessionId)
+                .font(.body)
+                .fontWeight(.medium)
+                .lineLimit(1)
+                // 工作中橘黄，完成未读绿色，其他蓝色
+                .foregroundColor(
+                    session.isProcessing
+                        ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
+                )
         }
+        .buttonStyle(.glass)
         .sheet(isPresented: $showingSessionDetails) {
             SessionDetailView(session: session)
         }
-    }
-
-    // MARK: - Menu Button
-
-    private var menuButton: some View {
-        Menu {
-            // 使用共用的菜单内容
-            sessionMenuContent
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.body)
-                .foregroundColor(.secondary)
+        // 长按显示删除确认
+        .contextMenu {
+            Button(role: .destructive) {
+                showingDeleteAlert = true
+            } label: {
+                Label("delete_session".localized, systemImage: "trash.fill")
+            }
         }
     }
 

@@ -531,6 +531,13 @@ class GatewayClient {
 
     /// 处理响应
     private func handleResponse(_ json: [String: Any]) {
+        // 打印所有响应的完整 JSON 日志
+        if let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8)
+        {
+            logger.info("📥 [Response] \(jsonString)")
+        }
+
         guard let id = json["id"] as? String,
               let pending = pendingRequests.removeValue(forKey: id)
         else {

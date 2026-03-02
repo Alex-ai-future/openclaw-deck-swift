@@ -60,7 +60,7 @@ final class SyncButtonUITests: XCTestCase {
     /// 测试 2: Sync 按钮存在
     func testSyncButton_exists() {
         // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"]
+        let syncButton = app.buttons["SyncButton"].firstMatch
 
         // 验证按钮存在
         XCTAssertTrue(
@@ -76,7 +76,7 @@ final class SyncButtonUITests: XCTestCase {
     /// 测试 3: 点击 Sync 按钮显示确认弹窗
     func testSyncButton_showsConfirmation() {
         // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"]
+        let syncButton = app.buttons["SyncButton"].firstMatch
 
         // 等待按钮出现
         guard syncButton.waitForExistence(timeout: 5) else {
@@ -121,7 +121,7 @@ final class SyncButtonUITests: XCTestCase {
     /// 测试 4: 点击 Cancel 取消同步
     func testSyncButton_cancelDoesNotSync() {
         // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"]
+        let syncButton = app.buttons["SyncButton"].firstMatch
 
         guard syncButton.waitForExistence(timeout: 5) else {
             XCTFail("同步按钮未找到")
@@ -159,7 +159,7 @@ final class SyncButtonUITests: XCTestCase {
     /// 测试 5: 点击 Sync 执行同步
     func testSyncButton_confirmStartsSync() {
         // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"]
+        let syncButton = app.buttons["SyncButton"].firstMatch
 
         guard syncButton.waitForExistence(timeout: 5) else {
             XCTFail("同步按钮未找到")
@@ -196,7 +196,7 @@ final class SyncButtonUITests: XCTestCase {
     /// 测试 6: 多次点击 Sync 按钮不会崩溃
     func testSyncButton_multipleClicks() {
         // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"]
+        let syncButton = app.buttons["SyncButton"].firstMatch
 
         guard syncButton.waitForExistence(timeout: 5) else {
             XCTFail("同步按钮未找到")
@@ -269,7 +269,7 @@ final class SyncButtonPerformanceTests: XCTestCase {
 
     /// 性能测试：Sync 按钮响应时间
     func testSyncButton_responseTime() {
-        let syncButton = app.buttons["SyncButton"]
+        let syncButton = app.buttons["SyncButton"].firstMatch
 
         guard syncButton.waitForExistence(timeout: 5) else {
             XCTFail("同步按钮未找到")

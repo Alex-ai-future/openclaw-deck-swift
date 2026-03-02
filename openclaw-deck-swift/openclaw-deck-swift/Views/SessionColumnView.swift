@@ -64,8 +64,18 @@ struct SessionColumnView: View {
                     sessionKey: session.sessionKey,
                     runId: runId
                 )
+                // 成功后更新状态
+                await MainActor.run {
+                    session.activeRunId = nil
+                    session.status = .idle
+                    session.isProcessing = false
+                }
             } catch {
-                print("Stop 请求失败：\(error.localizedDescription)")
+                // 失败时显示错误提示
+                await MainActor.run {
+                    viewModel.stopErrorText = "Stop 失败：\(error.localizedDescription)"
+                    viewModel.showStopError = true
+                }
             }
         }
     }
@@ -146,16 +156,18 @@ struct SessionColumnView: View {
                                 .buttonStyle(.glass)
                                 .frame(height: 36)
 
-                                // Stop 按钮 - 点击中断当前对话
-                                Button {
-                                    sendStopMessage()
-                                } label: {
-                                    Text("stop".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.red)
+                                // Stop 按钮 - 点击中断当前对话（只在 streaming 时显示）
+                                if session.status == .streaming {
+                                    Button {
+                                        sendStopMessage()
+                                    } label: {
+                                        Text("stop".localized)
+                                            .font(.title3)
+                                            .foregroundColor(.red)
+                                    }
+                                    .buttonStyle(.glass)
+                                    .frame(height: 36)
                                 }
-                                .buttonStyle(.glass)
-                                .frame(height: 36)
 
                                 // 发送按钮 - 点击发送输入框内容
                                 Button {

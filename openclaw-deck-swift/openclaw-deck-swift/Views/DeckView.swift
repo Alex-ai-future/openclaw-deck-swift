@@ -172,6 +172,12 @@ struct DeckView: View {
             } message: {
                 Text("gateway_not_connected_message".localized)
             }
+            // Stop 失败弹窗
+            .alert("stop_failed".localized, isPresented: $viewModel.showStopError) {
+                Button("ok".localized, role: .cancel) {}
+            } message: {
+                Text(viewModel.stopErrorText)
+            }
         }
     }
 

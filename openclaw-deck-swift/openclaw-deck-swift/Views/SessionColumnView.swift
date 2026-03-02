@@ -15,13 +15,14 @@ import SwiftUI
 
 /// Session 列视图 - 单个聊天会话（只负责展示）
 struct SessionColumnView: View {
-    @Bindable var session: SessionState
-    @Bindable var viewModel: DeckViewModel
+    var session: SessionState
+    var viewModel: DeckViewModel
     let isSelected: Bool
     let onSelect: () -> Void
     let onDelete: () -> Void
 
     @State private var showingDeleteAlert = false
+    @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
     /// 滚动到底部（手动点击按钮）
@@ -227,14 +228,14 @@ struct SessionColumnView: View {
     // MARK: - Session Name Button
 
     private var sessionNameButton: some View {
-        // 点击选中，长按弹出菜单
+        // 点击打开详情 Sheet，长按弹出菜单
         Menu {
             // 使用共用的菜单内容
             sessionMenuContent
         } label: {
-            // 点击按钮选中 Session
+            // 点击按钮打开详情 Sheet
             Button {
-                onSelect()
+                showingSessionDetails = true
             } label: {
                 Text(session.sessionId)
                     .font(.body)
@@ -247,6 +248,9 @@ struct SessionColumnView: View {
                     )
             }
             .buttonStyle(.glass)
+        }
+        .sheet(isPresented: $showingSessionDetails) {
+            SessionDetailView(session: session)
         }
     }
 
@@ -267,36 +271,244 @@ struct SessionColumnView: View {
 
     private var sessionMenuContent: some View {
         Group {
-            // 会话详细信息（仅 4 项）
+            // MARK: - 基础信息
+
             Section {
-                // 消息数量
-                Label("\(session.messages.count) messages", systemImage: "message")
+                // Session ID
+                Label(session.sessionId, systemImage: "circle.fill")
+                    .font(.body.monospaced())
 
-                // 最后活动时间
-                if let lastActivity = session.lastMessageAt {
-                    Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
-                }
-
-                // 上下文（如果有，限制 100 字符）
-                if let context = session.context, !context.isEmpty {
-                    Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
-                }
-
-                // Session Key
+                // Session Key（可复制）
                 Label("Key: \(session.sessionKey)", systemImage: "tag")
+                    .font(.caption.monospaced())
+                    .contextMenu {
+                        Button {
+                            #if os(iOS)
+                                UIPasteboard.general.string = session.sessionKey
+                            #else
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(session.sessionKey, forType: .string)
+                            #endif
+                        } label: {
+                            Label("copy_session_key".localized, systemImage: "doc.on.doc")
+                        }
+                    }
+
+                // 上下文/备注（如果有，完整显示）
+                if let context = session.context, !context.isEmpty {
+                    Divider()
+                    Label("Context", systemImage: "text.alignleft")
+                        .fontWeight(.semibold)
+                    Text(context)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(nil)
+                }
             }
+
+            // MARK: - 状态信息
+
+            Section {
+                // 会话状态（带颜色）
+                HStack {
+                    Image(systemName: sessionStatusIcon)
+                        .foregroundColor(sessionStatusColor)
+                    Text(sessionStatusText)
+                        .foregroundColor(sessionStatusColor)
+                }
+
+                // 处理中状态
+                HStack {
+                    Image(systemName: session.isProcessing ? "gearshape.fill" : "gearshape")
+                        .foregroundColor(session.isProcessing ? .orange : .secondary)
+                    Text(session.isProcessing ? "processing".localized : "idle".localized)
+                        .foregroundColor(session.isProcessing ? .orange : .secondary)
+                }
+
+                // 未读消息状态
+                HStack {
+                    Image(systemName: session.hasUnreadMessage ? "circle.fill" : "circle")
+                        .foregroundColor(session.hasUnreadMessage ? .green : .secondary)
+                    Text(session.hasUnreadMessage ? "unread_messages".localized : "all_read".localized)
+                        .foregroundColor(session.hasUnreadMessage ? .green : .secondary)
+                }
+
+                // 活跃 Run ID（如果有）
+                if let runId = session.activeRunId {
+                    Divider()
+                    Label("Active Run", systemImage: "play.circle.fill")
+                        .fontWeight(.semibold)
+                    Text(runId)
+                        .font(.caption.monospaced())
+                        .foregroundColor(.blue)
+                        .lineLimit(2)
+                        .contextMenu {
+                            Button {
+                                #if os(iOS)
+                                    UIPasteboard.general.string = runId
+                                #else
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(runId, forType: .string)
+                                #endif
+                            } label: {
+                                Label("copy_run_id".localized, systemImage: "doc.on.doc")
+                            }
+                        }
+                }
+            }
+
+            // MARK: - 消息统计
+
+            Section {
+                Label("\(session.messages.count) total messages", systemImage: "message.fill")
+
+                // User / Assistant 消息数统计
+                HStack {
+                    Label("\(userMessageCount)", systemImage: "person.fill")
+                        .foregroundColor(.blue)
+                    Spacer()
+                    Label("\(assistantMessageCount)", systemImage: "cpu.fill")
+                        .foregroundColor(.purple)
+                }
+                .font(.caption)
+            }
+
+            // MARK: - 时间信息
+
+            Section {
+                // 最后活动时间（相对 + 绝对）
+                if let lastActivity = session.lastMessageAt {
+                    Label("Last Activity", systemImage: "clock.fill")
+                        .fontWeight(.semibold)
+                    Text("\(formatRelativeDate(lastActivity))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(formatDate(lastActivity))")
+                        .font(.caption.monospaced())
+                        .foregroundColor(.secondary.opacity(0.7))
+                }
+
+                // 第一条消息时间（如果有）
+                if let firstMessage = session.messages.first {
+                    Label("First Message", systemImage: "arrow.up.right.circle.fill")
+                        .fontWeight(.semibold)
+                    Text("\(formatRelativeDate(firstMessage.timestamp))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(formatDate(firstMessage.timestamp))")
+                        .font(.caption.monospaced())
+                        .foregroundColor(.secondary.opacity(0.7))
+                }
+            }
+
+            // MARK: - 加载状态（技术信息）
+
+            Section {
+                Label("Load Status", systemImage: "arrow.triangle.2.circlepath")
+                    .fontWeight(.semibold)
+
+                HStack {
+                    Image(systemName: session.historyLoaded ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(session.historyLoaded ? .green : .secondary)
+                    Text("History loaded")
+                        .font(.caption)
+                        .foregroundColor(session.historyLoaded ? .green : .secondary)
+                }
+
+                if session.isHistoryLoading {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Loading history...")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+
+                if session.isLoadingMessages {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Loading messages...")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+            }
+
+            // MARK: - 操作
 
             Divider()
 
-            // 删除按钮
             Section {
                 Button(role: .destructive) {
                     showingDeleteAlert = true
                 } label: {
-                    Label("delete_session".localized, systemImage: "trash")
+                    Label("delete_session".localized, systemImage: "trash.fill")
                 }
             }
         }
+    }
+
+    // MARK: - Session Status Helpers
+
+    /// 会话状态图标
+    private var sessionStatusIcon: String {
+        switch session.status {
+        case .idle:
+            "circle.fill"
+        case .thinking:
+            "brain.head.profile"
+        case .streaming:
+            "waveform"
+        case .error:
+            "exclamationmark.triangle.fill"
+        }
+    }
+
+    /// 会话状态颜色
+    private var sessionStatusColor: Color {
+        switch session.status {
+        case .idle:
+            .secondary
+        case .thinking:
+            .orange
+        case .streaming:
+            .blue
+        case .error:
+            .red
+        }
+    }
+
+    /// 会话状态文本
+    private var sessionStatusText: String {
+        switch session.status {
+        case .idle:
+            "idle".localized
+        case .thinking:
+            "thinking".localized
+        case .streaming:
+            "streaming".localized
+        case let .error(message):
+            "Error: \(message)"
+        }
+    }
+
+    /// User 消息数量
+    private var userMessageCount: Int {
+        session.messages.count(where: { $0.role == .user })
+    }
+
+    /// Assistant 消息数量
+    private var assistantMessageCount: Int {
+        session.messages.count(where: { $0.role == .assistant })
+    }
+
+    /// 格式化相对日期（如"5 分钟前"）
+    private func formatRelativeDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     // MARK: - Top Status Bar (iPad)

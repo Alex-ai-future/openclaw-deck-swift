@@ -964,6 +964,11 @@ class DeckViewModel {
                 }
             }
         }
+
+        // ✅ 立即设置处理中状态，避免 OK 按钮闪现
+        // lifecycle.start 事件到达后会更新为真实的 runId
+        session.isProcessing = true
+        session.activeRunId = "pending-\(UUID().uuidString)"
     }
 
     // MARK: - Event Handling

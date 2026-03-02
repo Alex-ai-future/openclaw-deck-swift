@@ -885,18 +885,14 @@ class DeckViewModel {
         // Gateway 返回内容时会自动创建 assistant 消息
         Task {
             do {
-                let (runId, _) = try await client.runAgent(
+                _ = try await client.runAgent(
                     agentId: config.mainAgentId,
                     message: text,
                     sessionKey: session.sessionKey
                 )
 
                 // Agent run started
-
-                // 设置 activeRunId 用于关联响应
-                await MainActor.run {
-                    session.activeRunId = runId
-                }
+                // activeRunId 会在 lifecycle.start 事件中设置
             } catch {
                 logger.error("Failed to send message: \(error.localizedDescription)")
                 await MainActor.run {
@@ -998,12 +994,15 @@ class DeckViewModel {
         case "lifecycle":
             // 生命周期：{ data: { phase: "start" | "end" } }
             if let data = payload["data"] as? [String: Any],
-               let phase = data["phase"] as? String
+               let phase = data["phase"] as? String,
+               let runId = payload["runId"] as? String
             {
                 switch phase {
                 case "start":
                     session.isProcessing = true
                     session.status = .thinking
+                    // ✅ 设置 activeRunId（此时 Gateway 已创建 AbortController）
+                    session.activeRunId = runId
                 case "end":
                     session.isProcessing = false
                     session.hasUnreadMessage = true // 总是标记为未读

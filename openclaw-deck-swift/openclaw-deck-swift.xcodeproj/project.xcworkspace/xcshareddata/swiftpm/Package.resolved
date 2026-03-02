@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/LiYanan2004/MarkdownView.git",
       "state" : {
-        "revision" : "0253232fc0c5f71b054cd3e98f27863508f9afca",
-        "version" : "2.6.0"
+        "revision" : "32a31bdb2a4307893dc1edfe5aac06fde3fb3477",
+        "version" : "2.5.2"
       }
     },
     {

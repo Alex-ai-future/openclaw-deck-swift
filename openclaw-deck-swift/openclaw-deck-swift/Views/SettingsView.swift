@@ -104,18 +104,7 @@ struct SettingsView: View {
                                set: { viewModel?.playSoundOnMessage = $0 }
                            ))
 
-                    // Cloudflare KV Sync
-                    NavigationLink {
-                        CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
-                    } label: {
-                        HStack {
-                            Label("multi_device_sync".localized, systemImage: "icloud.and.arrow.down")
                             Spacer()
-                            if CloudflareKV.shared.isConfigured {
-                                Circle()
-                                    .fill(Color.green)
-                                    .frame(width: 8, height: 8)
-                            }
                         }
                     }
                 } header: {

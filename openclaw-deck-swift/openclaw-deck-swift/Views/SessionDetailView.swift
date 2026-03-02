@@ -221,7 +221,8 @@ struct SessionDetailView: View {
 
 #Preview {
     SessionDetailView(
-        session: createSampleSession()
+        session: createSampleSession(),
+        onDelete: {}
     )
 }
 

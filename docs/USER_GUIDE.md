@@ -47,6 +47,10 @@ open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
 
 **OpenClaw Deck Swift 需要连接 OpenClaw Gateway 才能工作。**
 
+> 📚 **官方文档：** 详细的 Gateway 配置说明请查看 [OpenClaw Gateway 文档](https://docs.openclaw.ai)
+> - 安装指南：https://docs.openclaw.ai/getting-started/installation
+> - 快速入门：https://docs.openclaw.ai/getting-started/quickstart
+
 **步骤 1：安装 Gateway**
 
 ```bash
@@ -82,6 +86,8 @@ pnpm start
 ---
 
 ## 2. iOS 设备连接 Gateway ⭐⭐⭐⭐⭐
+
+> 📚 **官方文档：** 详细的移动设备连接说明请查看 [OpenClaw 移动设备连接指南](https://docs.openclaw.ai/guides/mobile-connection)
 
 **适用设备：**
 - iPhone (所有型号)

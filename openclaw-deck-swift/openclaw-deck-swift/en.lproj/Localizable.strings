@@ -24,6 +24,7 @@
 "done" = "Done";
 "settings" = "Settings";
 "version" = "Version";
+"stop" = "Stop";
 
 // MARK: - Toolbar
 "openclaw_deck" = "OpenClaw Deck";

@@ -371,6 +371,14 @@ class GatewayClient {
         return (runId, status)
     }
 
+    /// 中断当前对话
+    func abortChat(sessionKey: String, runId: String) async throws {
+        _ = try await request(
+            method: "chat.abort",
+            params: ["sessionKey": sessionKey, "runId": runId]
+        )
+    }
+
     /// 获取 Session 历史消息
     func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
         let result = try await request(

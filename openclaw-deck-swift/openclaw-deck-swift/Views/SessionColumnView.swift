@@ -51,6 +51,24 @@ struct SessionColumnView: View {
         }
     }
 
+    /// 发送 Stop 请求 - 中断当前对话
+    private func sendStopMessage() {
+        guard let runId = session.activeRunId else {
+            return
+        }
+
+        Task {
+            do {
+                try await viewModel.client.abortChat(
+                    sessionKey: session.sessionKey,
+                    runId: runId
+                )
+            } catch {
+                print("Stop 请求失败：\(error.localizedDescription)")
+            }
+        }
+    }
+
     /// 发送 /new 消息
     private func sendNewMessage() {
         // 设置选中的 Session
@@ -123,6 +141,17 @@ struct SessionColumnView: View {
                                     Text("ok".localized)
                                         .font(.title3)
                                         .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.glass)
+                                .frame(height: 36)
+
+                                // Stop 按钮 - 点击中断当前对话
+                                Button {
+                                    sendStopMessage()
+                                } label: {
+                                    Text("stop".localized)
+                                        .font(.title3)
+                                        .foregroundColor(.red)
                                 }
                                 .buttonStyle(.glass)
                                 .frame(height: 36)

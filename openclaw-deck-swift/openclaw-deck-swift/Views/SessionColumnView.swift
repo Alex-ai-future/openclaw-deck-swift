@@ -169,7 +169,7 @@ struct SessionColumnView: View {
                                 Button {
                                     sendStopMessage()
                                 } label: {
-                                    Image(systemName: "stop.circle.fill")
+                                    Image(systemName: "stop.circle")
                                         .font(.title2)
                                         .foregroundColor(.red)
                                 }
@@ -182,7 +182,7 @@ struct SessionColumnView: View {
                                 Button {
                                     sendInputMessage()
                                 } label: {
-                                    Image(systemName: "arrow.up.circle.fill")
+                                    Image(systemName: "arrow.up.circle")
                                         .font(.title2)
                                         .foregroundColor(.blue)
                                 }
@@ -263,15 +263,13 @@ struct SessionColumnView: View {
         }
         .buttonStyle(.glass)
         .sheet(isPresented: $showingSessionDetails) {
-            SessionDetailView(session: session)
-        }
-        // 长按显示删除确认
-        .contextMenu {
-            Button(role: .destructive) {
-                showingDeleteAlert = true
-            } label: {
-                Label("delete_session".localized, systemImage: "trash.fill")
-            }
+            SessionDetailView(
+                session: session,
+                onDelete: {
+                    showingDeleteAlert = true
+                    showingSessionDetails = false
+                }
+            )
         }
     }
 

@@ -6,183 +6,122 @@
 
 import SwiftUI
 
-/// Session 详情视图 - 显示完整的会话信息
+/// Session 详情视图 - 简洁的表单布局
 struct SessionDetailView: View {
     let session: SessionState
+    let onDelete: () -> Void
     @Environment(\.dismiss) var dismiss
+    @State private var showingDeleteAlert = false
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                sessionDetailContent
-                    .padding()
-            }
-            .navigationTitle("session_details".localized)
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("done".localized) {
-                            dismiss()
-                        }
-                    }
-                }
-        }
-    }
+            Form {
+                // MARK: - 基础信息
 
-    // MARK: - Session Detail Content
+                Section("basic_info".localized) {
+                    Label(session.sessionId, systemImage: "circle.fill")
 
-    private var sessionDetailContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // MARK: - 基础信息
+                    Label(session.sessionKey, systemImage: "tag")
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
 
-            detailSection(title: "basic_info".localized) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Session ID
-                    DetailRow(
-                        icon: "circle.fill",
-                        label: "Session ID",
-                        value: session.sessionId,
-                        isMonospaced: true
-                    )
-
-                    // Session Key（可复制）
-                    DetailRow(
-                        icon: "tag",
-                        label: "Session Key",
-                        value: session.sessionKey,
-                        isMonospaced: true,
-                        isCopyable: true
-                    )
-
-                    // 上下文/备注（如果有，完整显示）
                     if let context = session.context, !context.isEmpty {
-                        Divider()
-                            .padding(.vertical, 8)
-
-                        DetailLabel(icon: "text.alignleft", text: "Context")
+                        Label("Context", systemImage: "text.alignleft")
                         Text(context)
                             .font(.body)
                             .foregroundColor(.secondary)
-                            .lineLimit(nil)
+                            .textSelection(.enabled)
                     }
                 }
-            }
 
-            // MARK: - 状态信息
+                // MARK: - 状态
 
-            detailSection(title: "status".localized) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // 会话状态（带颜色）
-                    StatusRow(
-                        icon: sessionStatusIcon,
-                        text: sessionStatusText,
-                        color: sessionStatusColor
-                    )
+                Section("status".localized) {
+                    HStack {
+                        Image(systemName: sessionStatusIcon)
+                            .foregroundColor(sessionStatusColor)
+                        Text(sessionStatusText)
+                            .foregroundColor(sessionStatusColor)
+                    }
 
-                    // 处理中状态
-                    StatusRow(
-                        icon: session.isProcessing ? "gearshape.fill" : "gearshape",
-                        text: session.isProcessing ? "processing".localized : "idle".localized,
-                        color: session.isProcessing ? .orange : .secondary
-                    )
+                    HStack {
+                        Image(systemName: session.isProcessing ? "gearshape.fill" : "gearshape")
+                            .foregroundColor(session.isProcessing ? .orange : .secondary)
+                        Text(session.isProcessing ? "processing".localized : "idle".localized)
+                            .foregroundColor(session.isProcessing ? .orange : .secondary)
+                    }
 
-                    // 未读消息状态
-                    StatusRow(
-                        icon: session.hasUnreadMessage ? "circle.fill" : "circle",
-                        text: session.hasUnreadMessage ? "unread_messages".localized : "all_read".localized,
-                        color: session.hasUnreadMessage ? .green : .secondary
-                    )
+                    HStack {
+                        Image(systemName: session.hasUnreadMessage ? "circle.fill" : "circle")
+                            .foregroundColor(session.hasUnreadMessage ? .green : .secondary)
+                        Text(session.hasUnreadMessage ? "unread_messages".localized : "all_read".localized)
+                            .foregroundColor(session.hasUnreadMessage ? .green : .secondary)
+                    }
 
-                    // 活跃 Run ID（如果有）
                     if let runId = session.activeRunId {
-                        Divider()
-                            .padding(.vertical, 8)
-
-                        DetailLabel(icon: "play.circle.fill", text: "Active Run")
+                        Label("Active Run", systemImage: "play.circle.fill")
                         Text(runId)
                             .font(.caption.monospaced())
                             .foregroundColor(.blue)
-                            .lineLimit(nil)
+                            .textSelection(.enabled)
                     }
                 }
-            }
 
-            // MARK: - 消息统计
+                // MARK: - 消息统计
 
-            detailSection(title: "message_stats".localized) {
-                VStack(alignment: .leading, spacing: 12) {
-                    DetailRow(
-                        icon: "message.fill",
-                        label: "Total Messages",
-                        value: "\(session.messages.count)"
-                    )
+                Section("message_stats".localized) {
+                    Label("\(session.messages.count) " + "total_messages".localized, systemImage: "message.fill")
 
-                    // User / Assistant 消息数统计
                     HStack {
-                        StatBadge(
-                            icon: "person.fill",
-                            value: "\(userMessageCount)",
-                            label: "User",
-                            color: .blue
-                        )
-
+                        Label("\(userMessageCount)", systemImage: "person.fill")
+                            .foregroundColor(.blue)
                         Spacer()
-
-                        StatBadge(
-                            icon: "cpu.fill",
-                            value: "\(assistantMessageCount)",
-                            label: "Assistant",
-                            color: .purple
-                        )
+                        Label("\(assistantMessageCount)", systemImage: "cpu.fill")
+                            .foregroundColor(.purple)
                     }
+                    .font(.caption)
                 }
-            }
 
-            // MARK: - 时间信息
+                // MARK: - 时间信息
 
-            detailSection(title: "timeline".localized) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // 最后活动时间
+                Section("timeline".localized) {
                     if let lastActivity = session.lastMessageAt {
-                        TimeDetailRow(
-                            icon: "clock.fill",
-                            label: "Last Activity",
-                            relativeTime: formatRelativeDate(lastActivity),
-                            absoluteTime: formatDate(lastActivity)
-                        )
+                        Label("last_activity".localized, systemImage: "clock.fill")
+                        Text(formatRelativeDate(lastActivity))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(formatDate(lastActivity))
+                            .font(.caption.monospaced())
+                            .foregroundColor(.tertiary)
                     }
 
-                    // 第一条消息时间
                     if let firstMessage = session.messages.first {
-                        TimeDetailRow(
-                            icon: "arrow.up.right.circle.fill",
-                            label: "First Message",
-                            relativeTime: formatRelativeDate(firstMessage.timestamp),
-                            absoluteTime: formatDate(firstMessage.timestamp)
-                        )
+                        Label("first_message".localized, systemImage: "arrow.up.right.circle.fill")
+                        Text(formatRelativeDate(firstMessage.timestamp))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(formatDate(firstMessage.timestamp))
+                            .font(.caption.monospaced())
+                            .foregroundColor(.tertiary)
                     }
                 }
-            }
 
-            // MARK: - 加载状态
+                // MARK: - 加载状态
 
-            detailSection(title: "load_status".localized) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // 历史加载状态
-                    StatusRow(
-                        icon: session.historyLoaded ? "checkmark.circle.fill" : "circle",
-                        text: "History loaded",
-                        color: session.historyLoaded ? .green : .secondary
-                    )
+                Section("load_status".localized) {
+                    HStack {
+                        Image(systemName: session.historyLoaded ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(session.historyLoaded ? .green : .secondary)
+                        Text("history_loaded".localized)
+                            .foregroundColor(session.historyLoaded ? .green : .secondary)
+                    }
 
                     if session.isHistoryLoading {
                         HStack {
                             ProgressView()
                                 .scaleEffect(0.8)
-                            Text("Loading history...")
-                                .font(.body)
+                            Text("loading_history".localized)
+                                .font(.caption)
                                 .foregroundColor(.orange)
                         }
                     }
@@ -191,34 +130,42 @@ struct SessionDetailView: View {
                         HStack {
                             ProgressView()
                                 .scaleEffect(0.8)
-                            Text("Loading messages...")
-                                .font(.body)
+                            Text("loading_messages".localized)
+                                .font(.caption)
                                 .foregroundColor(.orange)
                         }
                     }
                 }
+
+                // MARK: - 删除会话
+
+                Section {
+                    Button(role: .destructive) {
+                        showingDeleteAlert = true
+                    } label: {
+                        Label("delete_session".localized, systemImage: "trash.fill")
+                    }
+                }
             }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Helper Views
-
-    private func detailSection(
-        title: String,
-        @ViewBuilder content: () -> some View
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.primary)
-
-            content()
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.adaptiveSecondaryBackground)
-                )
+            .navigationTitle("session_details".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("done".localized) {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
+                Button("cancel".localized, role: .cancel) {}
+                Button("delete".localized, role: .destructive) {
+                    // 删除会话
+                    onDelete()
+                    dismiss()
+                }
+            } message: {
+                Text("delete_session_confirm_message".localized)
+            }
         }
     }
 
@@ -272,128 +219,6 @@ struct SessionDetailView: View {
     }
 }
 
-// MARK: - Subviews
-
-/// 详情行 - 图标 + 标签 + 值
-struct DetailRow: View {
-    let icon: String
-    let label: String
-    let value: String
-    var isMonospaced: Bool = false
-    var isCopyable: Bool = false
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .frame(width: 20)
-                .foregroundColor(.secondary)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Text(value)
-                    .font(isMonospaced ? .body.monospaced() : .body)
-                    .foregroundColor(.primary)
-                    .lineLimit(nil)
-            }
-        }
-    }
-}
-
-/// 详情标签
-struct DetailLabel: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        Label(text, systemImage: icon)
-            .font(.subheadline)
-            .fontWeight(.semibold)
-            .foregroundColor(.primary)
-    }
-}
-
-/// 状态行 - 图标 + 文本（带颜色）
-struct StatusRow: View {
-    let icon: String
-    let text: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .frame(width: 20)
-                .foregroundColor(color)
-
-            Text(text)
-                .foregroundColor(color)
-        }
-    }
-}
-
-/// 时间详情行 - 相对时间 + 绝对时间
-struct TimeDetailRow: View {
-    let icon: String
-    let label: String
-    let relativeTime: String
-    let absoluteTime: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .frame(width: 20)
-                .foregroundColor(.secondary)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Text(relativeTime)
-                    .font(.body)
-                    .foregroundColor(.primary)
-
-                Text(absoluteTime)
-                    .font(.caption.monospaced())
-                    .foregroundColor(.secondary.opacity(0.7))
-            }
-        }
-    }
-}
-
-/// 统计徽章
-struct StatBadge: View {
-    let icon: String
-    let value: String
-    let label: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-
-            Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(color)
-
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(color.opacity(0.1))
-        )
-    }
-}
-
 #Preview {
     SessionDetailView(
         session: createSampleSession()
@@ -406,7 +231,7 @@ private func createSampleSession() -> SessionState {
     let session = SessionState(
         sessionId: "demo-session",
         sessionKey: "agent:main:demo-session-key-12345",
-        context: "这是一个测试会话的上下文描述，用于展示完整信息的显示效果。"
+        context: "这是一个测试会话的上下文描述。"
     )
 
     session.messages.append(
@@ -424,15 +249,6 @@ private func createSampleSession() -> SessionState {
             role: .assistant,
             text: "Hi there!",
             timestamp: Date().addingTimeInterval(-3500)
-        )
-    )
-
-    session.messages.append(
-        ChatMessage(
-            id: "msg-3",
-            role: .user,
-            text: "How are you?",
-            timestamp: Date().addingTimeInterval(-60)
         )
     )
 

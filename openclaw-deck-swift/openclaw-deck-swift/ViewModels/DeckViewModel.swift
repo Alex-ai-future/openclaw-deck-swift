@@ -770,6 +770,12 @@ class DeckViewModel {
     /// - Returns: 同步结果（成功/失败消息）
     @MainActor
     func handleSync() async -> Result<String, Error> {
+        // 🧪 UI 测试模式：跳过真正的同步，直接返回成功
+        if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+            logger.info("🧪 UI 测试模式，跳过真正的同步")
+            return .success("Sync complete (mock)")
+        }
+
         isSyncing = true
         defer { isSyncing = false }
         return await syncAll()

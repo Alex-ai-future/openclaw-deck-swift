@@ -566,8 +566,12 @@ class GatewayClient {
     private func handleEvent(_ json: [String: Any]) {
         guard let event = json["event"] as? String else { return }
 
-        // Log non-incremental events only
-        // Event logging disabled to reduce noise
+        // 打印所有事件的完整 JSON 日志
+        if let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8)
+        {
+            logger.info("📩 [Event] \(jsonString)")
+        }
 
         // Handle connect.challenge event for device auth
         if event == "connect.challenge", let payload = json["payload"] as? [String: Any],

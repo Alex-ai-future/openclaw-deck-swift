@@ -74,7 +74,7 @@ struct GatewaySessionStatus: Identifiable, Hashable {
 /// Gateway 客户端（WebSocket 连接管理）
 @MainActor
 @Observable
-class GatewayClient {
+class GatewayClient: GatewayClientProtocol {
     // Fix for Swift 6 @Observable + @MainActor crash in XCTest
     // See: https://github.com/swiftlang/swift/issues/87316
     nonisolated deinit {}

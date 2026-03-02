@@ -110,8 +110,11 @@ class DeckViewModel {
     // See: https://github.com/swiftlang/swift/issues/87316
     nonisolated deinit {}
 
+    /// 依赖容器
+    private let diContainer: DIContainer
+
     /// Gateway 客户端
-    var gatewayClient: GatewayClient?
+    var gatewayClient: GatewayClientProtocol?
 
     /// 所有 Session 状态（按 sessionId 索引）
     var sessions: [String: SessionState] = [:]
@@ -165,16 +168,12 @@ class DeckViewModel {
     /// UserDefaults 存储
     private let storage: UserDefaultsStorageProtocol
 
-    /// 初始化
-    /// - Parameters:
-    ///   - storage: UserDefaultsStorage 实例（默认为 shared）
-    ///   - globalInputState: GlobalInputState 实例（默认为新实例）
-    @MainActor init(
-        storage: UserDefaultsStorageProtocol? = nil,
-        globalInputState: GlobalInputStateProtocol? = nil
-    ) {
-        self.storage = storage ?? UserDefaultsStorage.shared
-        self.globalInputState = globalInputState ?? GlobalInputState()
+    /// 初始化（使用 DI 容器）
+    /// - Parameter diContainer: 依赖容器（默认为共享实例）
+    @MainActor init(diContainer: DIContainer = .shared) {
+        self.diContainer = diContainer
+        self.storage = diContainer.storage
+        self.globalInputState = diContainer.createGlobalInputState()
         setupGatewayCallbacks()
 
         // 加载配置
@@ -227,7 +226,7 @@ class DeckViewModel {
         logger.info("✅ 会话列表加载完成，共 \(self.sessionOrder.count) 个会话")
 
         // 创建 GatewayClient
-        let client = GatewayClient(url: gatewayUrl, token: token)
+        var client = diContainer.createGatewayClient(url: gatewayUrl, token: token)
 
         // 设置事件回调
         client.onEvent = { [weak self] event in

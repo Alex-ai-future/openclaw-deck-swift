@@ -60,7 +60,7 @@ struct MergeResult {
 
 /// Cloudflare KV HTTP API 封装
 @MainActor
-class CloudflareKV {
+class CloudflareKV: CloudflareKVProtocol {
     static let shared = CloudflareKV()
 
     /// 配置是否已设置

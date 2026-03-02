@@ -40,7 +40,6 @@ struct GlobalInputView: View {
                     .font(.body)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 4)
-                    .padding(.trailing, 40)
                     .textFieldStyle(.plain)
                     .tint(.accentColor)
                     .accessibilityIdentifier("messageInput")
@@ -57,22 +56,6 @@ struct GlobalInputView: View {
                             }
                         }
                     }
-
-                // 发送按钮
-                if !state.inputText.isEmpty {
-                    Button {
-                        Task {
-                            await onSend()
-                        }
-                    } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.blue)
-                    }
-                    .padding(.trailing, 8)
-                    .transition(.opacity.combined(with: .scale))
-                    .accessibilityIdentifier("sendButton")
-                }
 
                 // 占位文字
                 if state.inputText.isEmpty {

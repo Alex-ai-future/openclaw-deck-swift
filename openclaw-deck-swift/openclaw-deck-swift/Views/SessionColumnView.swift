@@ -22,6 +22,7 @@ struct SessionColumnView: View {
     let onDelete: () -> Void
 
     @State private var showingDeleteAlert = false
+    @State private var showingNewAlert = false
     @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
@@ -82,8 +83,13 @@ struct SessionColumnView: View {
         }
     }
 
-    /// 发送 /new 消息
+    /// 发送 /new 消息（先显示确认弹窗）
     private func sendNewMessage() {
+        showingNewAlert = true
+    }
+
+    /// 确认发送 /new 消息
+    private func confirmSendNewMessage() {
         // 设置选中的 Session
         viewModel.globalInputState.selectedSessionId = session.sessionId
 
@@ -238,6 +244,14 @@ struct SessionColumnView: View {
         #endif
         .deleteSessionAlert(isPresented: $showingDeleteAlert) {
             onDelete()
+        }
+        .alert("confirm_new_session".localized, isPresented: $showingNewAlert) {
+            Button("cancel".localized, role: .cancel) {}
+            Button("confirm".localized, role: .destructive) {
+                confirmSendNewMessage()
+            }
+        } message: {
+            Text("new_session_confirm_message".localized)
         }
     }
 

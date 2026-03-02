@@ -200,3 +200,8 @@
 "completed" = "Completed";
 "incomplete" = "Incomplete";
 "status_loading" = "Loading";
+
+// MARK: - New Session Confirmation
+"confirm_new_session" = "Confirm New Session";
+"confirm" = "Confirm";
+"new_session_confirm_message" = "This will start a new conversation and clear the current context. Are you sure you want to continue?";

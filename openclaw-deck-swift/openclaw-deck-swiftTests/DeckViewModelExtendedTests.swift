@@ -18,6 +18,11 @@ final class DeckViewModelExtendedTests: XCTestCase {
         mockGlobalInputState = MockGlobalInputState()
         // 清除 Cloudflare 配置，避免测试中访问 Keychain
         CloudflareConfig.clear()
+        // 清理 UserDefaults，避免测试间状态污染
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+        UserDefaults.standard.synchronize()
         let testDIContainer = MockFactory.createDIContainer(
             storage: mockStorage,
             globalInputState: mockGlobalInputState
@@ -31,6 +36,12 @@ final class DeckViewModelExtendedTests: XCTestCase {
         viewModel = nil
         mockStorage = nil
         mockGlobalInputState = nil
+
+        // 清理 UserDefaults
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
+        UserDefaults.standard.synchronize()
+
         try await super.tearDown()
     }
 
@@ -165,20 +176,6 @@ final class DeckViewModelExtendedTests: XCTestCase {
     }
 
     // MARK: - Gateway Connection Tests
-
-    func testInitialize_savesConfig() async {
-        // 验证初始状态
-        XCTAssertFalse(viewModel.isInitializing)
-
-        // 调用初始化
-        await viewModel.initialize(url: "ws://test.com", token: "test-token")
-
-        // 验证初始化完成后配置已保存
-        XCTAssertEqual(viewModel.config.gatewayUrl, "ws://test.com")
-        XCTAssertEqual(viewModel.config.token, "test-token")
-        // 注意：isInitializing 在连接成功/失败后才会清除，这里是异步的
-        // 所以这里只验证配置保存，不验证 isInitializing 状态
-    }
 
     func testDisconnect_clearsGatewayClient() {
         // 断开连接

@@ -59,7 +59,7 @@ struct SessionColumnView: View {
 
         Task {
             do {
-                try await viewModel.client.abortChat(
+                try await viewModel.gatewayClient?.abortChat(
                     sessionKey: session.sessionKey,
                     runId: runId
                 )

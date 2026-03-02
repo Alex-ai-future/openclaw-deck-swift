@@ -139,26 +139,29 @@ struct SessionColumnView: View {
                             scrollToBottom()
                         }
 
-                        // 快速操作按钮组 - 只在选中时显示
-                        if isSelected {
+                        // 快速操作按钮组
+                        // 判断状态
+                        let isProcessing = session.activeRunId != nil
+
+                        // Stop 按钮 - 优先级最高，无论是否选中，AI 处理中时都显示
+                        if isProcessing {
+                            Button {
+                                sendStopMessage()
+                            } label: {
+                                Image(systemName: "stop.circle")
+                                    .font(.title2)
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.glass)
+                            .frame(height: 40)
+                        }
+                        // 其他按钮只在选中时显示
+                        else if isSelected {
                             // 判断状态
                             let hasInput = !viewModel.globalInputState.inputText.isEmpty
-                            let isProcessing = session.activeRunId != nil
 
-                            // Stop 按钮 - 优先级最高，AI 处理中时只显示 Stop
-                            if isProcessing {
-                                Button {
-                                    sendStopMessage()
-                                } label: {
-                                    Image(systemName: "stop.circle")
-                                        .font(.title2)
-                                        .foregroundColor(.red)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(height: 40)
-                            }
                             // 发送按钮 - 输入框有内容时显示
-                            else if hasInput {
+                            if hasInput {
                                 Button {
                                     sendInputMessage()
                                 } label: {

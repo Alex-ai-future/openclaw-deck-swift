@@ -90,24 +90,24 @@ struct SessionDetailView: View {
             }
             .navigationTitle("session_details".localized)
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-#endif
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        dismiss()
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
+                            dismiss()
+                        }
                     }
                 }
-            }
-            .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
-                Button("cancel".localized, role: .cancel) {}
-                Button("delete".localized, role: .destructive) {
-                    onDelete()
-                    dismiss()
+                .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
+                    Button("cancel".localized, role: .cancel) {}
+                    Button("delete".localized, role: .destructive) {
+                        onDelete()
+                        dismiss()
+                    }
+                } message: {
+                    Text("delete_session_confirm_message".localized)
                 }
-            } message: {
-                Text("delete_session_confirm_message".localized)
-            }
         }
     }
 

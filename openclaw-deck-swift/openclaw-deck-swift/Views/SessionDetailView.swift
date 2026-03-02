@@ -148,24 +148,26 @@ struct SessionDetailView: View {
                 }
             }
             .navigationTitle("session_details".localized)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        dismiss()
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
+                            dismiss()
+                        }
                     }
                 }
-            }
-            .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
-                Button("cancel".localized, role: .cancel) {}
-                Button("delete".localized, role: .destructive) {
-                    // 删除会话
-                    onDelete()
-                    dismiss()
+                .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
+                    Button("cancel".localized, role: .cancel) {}
+                    Button("delete".localized, role: .destructive) {
+                        // 删除会话
+                        onDelete()
+                        dismiss()
+                    }
+                } message: {
+                    Text("delete_session_confirm_message".localized)
                 }
-            } message: {
-                Text("delete_session_confirm_message".localized)
-            }
         }
     }
 

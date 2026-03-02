@@ -87,18 +87,13 @@ final class SyncButtonUITests: XCTestCase {
         // 点击同步按钮
         syncButton.tap()
 
-        // 等待确认弹窗出现
-        let syncAlert = app.alerts["Sync All Sessions?"]
+        // 等待确认弹窗出现（支持中英文）
+        let syncAlert = app.alerts["Sync All Sessions?"].firstMatch
+        let syncAlertCN = app.alerts["同步所有会话？"].firstMatch
+        let foundAlert = syncAlert.exists || syncAlertCN.exists
         XCTAssertTrue(
-            syncAlert.waitForExistence(timeout: 3),
+            foundAlert,
             "同步确认弹窗应该在 3 秒内出现"
-        )
-
-        // 验证弹窗标题
-        XCTAssertEqual(
-            syncAlert.label,
-            "Sync All Sessions?",
-            "弹窗标题应该是 'Sync All Sessions?'"
         )
 
         // 验证弹窗消息

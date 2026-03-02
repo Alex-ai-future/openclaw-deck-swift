@@ -103,14 +103,10 @@ struct SettingsView: View {
                                get: { viewModel?.playSoundOnMessage ?? true },
                                set: { viewModel?.playSoundOnMessage = $0 }
                            ))
-
-                            Spacer()
-                        }
-                    }
                 } header: {
-                    Label("app".localized, systemImage: "app.badge")
+                    Label("app_settings".localized, systemImage: "gearshape")
                 } footer: {
-                    Text("notifications_and_cloud_sync_settings".localized)
+                    Text("session_data_is_stored_in_gateway_and_loaded_on_connect".localized)
                 }
 
                 // MARK: - 4. DEVICE MANAGEMENT

@@ -627,19 +627,57 @@ class DeckViewModel {
         conflictRemoteData = nil
         conflictInfo = nil
 
-        // ✅ 继续完成初始化流程
-        // 设置 Gateway 已连接
-        gatewayConnected = true
+        // ✅ 继续完成初始化流程（连接 Gateway + 加载历史）
+        // 从 UserDefaults 读取配置
+        let gatewayUrl = storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
+        let token = storage.loadToken()
 
-        // 加载所有会话的消息历史
-        await loadAllSessionHistory()
+        // 创建并连接 GatewayClient
+        guard let url = URL(string: gatewayUrl) else {
+            logger.error("❌ Invalid gateway URL: \(gatewayUrl)")
+            isInitializing = false
+            loadingStage = .idle
+            return
+        }
 
-        // 初始化完成
-        isInitializing = false
-        loadingStage = .idle
-        loadingProgress = 0.0
+        // 创建客户端
+        var client = diContainer.createGatewayClient(url: url, token: token)
 
-        logger.log("✅ Sync conflict resolved, initialization complete")
+        // 设置事件回调
+        client.onEvent = { [weak self] event in
+            Task { @MainActor in
+                self?.handleGatewayEvent(event)
+            }
+        }
+
+        // 设置连接状态回调
+        client.onConnection = { [weak self] connected in
+            Task { @MainActor in
+                guard let self else { return }
+                if connected {
+                    logger.log("✅ Gateway 连接成功，开始加载历史...")
+                    // 连接成功后加载历史
+                    await self.loadAllSessionHistory()
+                    // 初始化完成
+                    self.isInitializing = false
+                    self.gatewayConnected = true
+                    self.loadingStage = .idle
+                    self.loadingProgress = 0.0
+                    logger.log("✅ Sync conflict resolved, initialization complete")
+                } else {
+                    logger.error("❌ Gateway 连接失败")
+                    self.isInitializing = false
+                    self.gatewayConnected = false
+                    self.loadingStage = .idle
+                }
+            }
+        }
+
+        gatewayClient = client
+        connectionError = client.connectionError
+
+        // 异步连接 Gateway
+        await client.connect()
     }
 
     /// 应用同步数据

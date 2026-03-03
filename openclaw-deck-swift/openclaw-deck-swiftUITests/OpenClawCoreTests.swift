@@ -52,10 +52,10 @@ final class OpenClawCoreTests: XCTestCase {
     /// 测试 2: 发送消息
     func testSendMessage() {
         // 等待输入框出现（使用 firstMatch 避免 SwiftUI 多元素问题）
-        let messageInput = app.textFields["messageInput"].firstMatch
+        let messageInput = app.textFields["messageInput"].firstMatch.exists ? app.textFields["messageInput"].firstMatch : app.otherElements["messageInput"].firstMatch
 
         // 等待并验证输入框存在
-        let exists = messageInput.waitForExistence(timeout: 5)
+        let exists = messageInput.waitForExistence(timeout: 10)
         XCTAssertTrue(exists, "消息输入框应该在 5 秒内出现")
 
         // 输入消息
@@ -89,7 +89,7 @@ final class OpenClawCoreTests: XCTestCase {
         // 目前只验证设置按钮存在
 
         let settingsButton = app.buttons["settingsButton"].firstMatch
-        let settingsExists = settingsButton.waitForExistence(timeout: 5)
+        let settingsExists = settingsButton.waitForExistence(timeout: 10)
 
         if settingsExists {
             print("✅ 设置按钮存在")

@@ -165,7 +165,7 @@ struct SessionColumnView: View {
                                 Button {
                                     sendInputMessage()
                                 } label: {
-                                    Image(systemName: "arrow.up.circle")
+                                    Image(systemName: "arrow.up.circle").accessibilityIdentifier("sendButton")
                                         .font(.title2)
                                         .foregroundColor(.blue)
                                 }

@@ -147,8 +147,9 @@ extension View {
             }
 
             // 监听冲突状态变化
-            .onChange(of: viewModel.showingSyncConflict) { _, newValue in
-                onChangeConflict(newValue)
+            // 使用 task 来持续监听，因为 @Observable 的 Bool 属性不会触发 onChange
+            .task(id: viewModel.showingSyncConflict) {
+                onChangeConflict(viewModel.showingSyncConflict)
             }
     }
 }

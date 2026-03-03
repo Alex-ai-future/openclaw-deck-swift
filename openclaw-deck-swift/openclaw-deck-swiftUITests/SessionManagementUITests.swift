@@ -1,7 +1,7 @@
 // SessionManagementUITests.swift
 // OpenClaw Deck Swift
 //
-// 会话管理 UI 测试（深度测试）
+// 会话管理 UI 测试
 
 import XCTest
 
@@ -29,11 +29,11 @@ final class SessionManagementUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    // MARK: - 会话创建（填写所有字段）和排序测试
+    // MARK: - 会话创建和排序测试
 
-    /// 测试：创建会话（填写完整字段）和拖动排序
-    func testSessionCreateWithFieldsAndSort() {
-        print("📋 开始测试：创建会话（完整字段）和拖动排序")
+    /// 测试：创建多个会话和拖动排序
+    func testSessionCreateAndSort() {
+        print("📋 开始测试：创建多个会话和拖动排序")
 
         // 1. 记录初始会话数量和顺序
         var sessionButtons = app.buttons.matching(
@@ -41,15 +41,11 @@ final class SessionManagementUITests: XCTestCase {
         ).allElementsBoundByIndex
         
         let initialCount = sessionButtons.count
-        let initialOrder = sessionButtons.map { $0.identifier }
         print("  初始会话数：\(initialCount)")
-        print("  初始顺序：\(initialOrder)")
 
-        // 2. 创建 3 个不同名称的会话
-        let sessionNames = ["测试会话 A", "测试会话 B", "测试会话 C"]
-        
-        for (index, sessionName) in sessionNames.enumerated() {
-            print("  创建第 \(index + 1) 个会话：\(sessionName)")
+        // 2. 创建 3 个会话（使用默认名称，macOS 限制）
+        for i in 1...3 {
+            print("  创建第 \(i) 个会话")
             
             // 点击新建会话
             let newSessionButton = app.buttons["NewSessionButton"].firstMatch
@@ -61,15 +57,13 @@ final class SessionManagementUITests: XCTestCase {
             let createSheet = app.sheets.firstMatch
             XCTAssertTrue(createSheet.waitForExistence(timeout: 3), "创建会话弹窗应该出现")
 
-            // 填写会话名称（macOS 限制，只验证 UI）
+            // 验证输入框存在且可以获取焦点（macOS 限制，不实际输入）
             let nameInput = app.textFields.firstMatch
             XCTAssertTrue(nameInput.waitForExistence(timeout: 3), "名称输入框应该存在")
             nameInput.forceTap()
             sleep(1)
-            
-            // 验证输入框可以获取焦点
             XCTAssertTrue(nameInput.hasFocus, "输入框应该可以获取焦点")
-            print("  ✅ 名称输入框可以获取焦点")
+            print("  ✅ 输入框可以获取焦点")
 
             // 点击创建按钮
             let createButton = app.buttons["创建"].firstMatch.exists
@@ -83,7 +77,7 @@ final class SessionManagementUITests: XCTestCase {
                 app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
                 sleep(2)
             }
-            print("  ✅ 会话 \(sessionName) 创建成功")
+            print("  ✅ 会话 \(i) 创建成功")
         }
 
         // 3. 验证会话数量增加
@@ -120,16 +114,18 @@ final class SessionManagementUITests: XCTestCase {
         ).allElementsBoundByIndex.map { $0.identifier }
         print("  排序前顺序：\(beforeSortOrder)")
 
-        // 8. 拖动第一个会话到最后（macOS 使用 coordinate 拖动）
-        let firstSession = sessionButtons.first
-        let lastSession = sessionButtons.last
+        // 8. 拖动第一个会话到最后
+        sessionButtons = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS 'Session'")
+        ).allElementsBoundByIndex
         
-        if let first = firstSession, let last = lastSession {
-            // 获取坐标
-            let firstCoord = first.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            let lastCoord = last.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        if sessionButtons.count >= 2 {
+            let firstSession = sessionButtons.first!
+            let lastSession = sessionButtons.last!
             
-            // 拖动
+            let firstCoord = firstSession.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let lastCoord = lastSession.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            
             firstCoord.press(forDuration: 0.5, thenDragTo: lastCoord)
             sleep(2)
             print("  ✅ 已拖动第一个会话到最后")
@@ -158,7 +154,7 @@ final class SessionManagementUITests: XCTestCase {
         XCTAssertFalse(sortSheet.exists, "排序视图应该已关闭")
         print("  ✅ 排序视图已关闭")
 
-        print("✅ testSessionCreateWithFieldsAndSort 通过")
+        print("✅ testSessionCreateAndSort 通过")
     }
 
     // MARK: - 删除所有会话测试

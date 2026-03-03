@@ -167,11 +167,6 @@ struct ContentView: View {
                     }
                 },
                 onClose: {
-                    // 保存配置
-                    UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                    if !token.isEmpty {
-                        UserDefaultsStorage.shared.saveToken(token)
-                    }
                     showingSettings = false
                 },
                 viewModel: viewModel
@@ -212,11 +207,6 @@ struct ContentView: View {
                     }
                 },
                 onClose: {
-                    // 保存配置
-                    UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                    if !token.isEmpty {
-                        UserDefaultsStorage.shared.saveToken(token)
-                    }
                     showingWelcomeSettings = false
                 },
                 viewModel: viewModel

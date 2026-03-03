@@ -275,6 +275,7 @@ struct SessionColumnView: View {
                 )
         }
         .buttonStyle(.glass)
+        .accessibilityIdentifier("Session-\(session.sessionId)")
         .sheet(isPresented: $showingSessionDetails) {
             SessionDetailView(
                 session: session,

@@ -227,3 +227,6 @@
 "thinking" = "思考中";
 "streaming" = "输出中";
 "error_prefix" = "错误：";
+
+// MARK: - Privacy Policy
+"privacy_policy" = "隐私政策";

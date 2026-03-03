@@ -178,6 +178,9 @@ struct SettingsView: View {
 
                     Link("usage_examples".localized, destination: URL(string: "https://github.com/Alex-ai-future/openclaw-deck-swift/blob/main/docs/USAGE_EXAMPLES.md")!)
                         .labelStyle(.titleAndIcon)
+
+                    Link("privacy_policy".localized, destination: URL(string: "https://github.com/Alex-ai-future/openclaw-deck-swift/blob/main/docs/PRIVACY.md")!)
+                        .labelStyle(.titleAndIcon)
                 } header: {
                     Label("help".localized, systemImage: "questionmark.circle")
                 } footer: {

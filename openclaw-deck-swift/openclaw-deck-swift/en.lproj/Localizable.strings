@@ -227,3 +227,6 @@
 "thinking" = "Thinking";
 "streaming" = "Streaming";
 "error_prefix" = "Error: ";
+
+// MARK: - Privacy Policy
+"privacy_policy" = "Privacy Policy";

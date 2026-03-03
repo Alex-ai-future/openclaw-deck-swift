@@ -63,9 +63,7 @@ struct SessionListView: View {
                     viewModel: viewModel,
                     showingSettings: $showingSettings,
                     showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet,
-                    showingSyncAlert: $showingSyncAlert,
-                    showingConflictAlert: $showingConflictAlert
+                    showingSortSheet: $showingSortSheet
                 )
             }
             .navigationDestination(for: SessionState.self) { session in

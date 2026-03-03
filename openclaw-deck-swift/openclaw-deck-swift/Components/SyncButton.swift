@@ -8,11 +8,12 @@ import SwiftUI
 /// 同步按钮 - 用于 iPad 和 iPhone
 struct SyncButton: View {
     @Bindable var viewModel: DeckViewModel
-    @Binding var showingSyncAlert: Bool
 
     var body: some View {
         Button {
-            showingSyncAlert = true
+            Task {
+                await viewModel.handleSync()
+            }
         } label: {
             Image(systemName: "arrow.clockwise")
                 .rotationEffect(.degrees(viewModel.isSyncing ? 360 : 0))
@@ -29,8 +30,5 @@ struct SyncButton: View {
 }
 
 #Preview {
-    SyncButton(
-        viewModel: DeckViewModel(),
-        showingSyncAlert: .constant(false)
-    )
+    SyncButton(viewModel: DeckViewModel())
 }

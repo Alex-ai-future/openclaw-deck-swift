@@ -78,9 +78,7 @@ struct DeckView: View {
                     viewModel: viewModel,
                     showingSettings: $showingSettings,
                     showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet,
-                    showingSyncAlert: $showingSyncAlert,
-                    showingConflictAlert: $showingConflictAlert
+                    showingSortSheet: $showingSortSheet
                 )
             }
             .sheet(isPresented: $showingSettings) {

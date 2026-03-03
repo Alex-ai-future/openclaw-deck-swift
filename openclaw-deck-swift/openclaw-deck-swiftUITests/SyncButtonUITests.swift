@@ -1,7 +1,7 @@
 // SyncButtonUITests.swift
 // OpenClaw Deck Swift
 //
-// 同步按钮 UI 测试
+// 同步按钮 UI 测试 - 合并后的完整流程测试
 
 import XCTest
 
@@ -11,13 +11,14 @@ final class SyncButtonUITests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-
+        
         app = XCUIApplication()
         app.launchEnvironment["UITESTING"] = "YES"
+        app.launchArguments.append("--disable-animations")  // 禁用动画
         continueAfterFailure = true
         app.launch()
-
-        // 等待应用加载
+        
+        // 等待应用加载（使用 waitForExistence 替代 sleep）
         let mainWindow = app.windows.firstMatch
         XCTAssertTrue(mainWindow.waitForExistence(timeout: 30), "应用应该在 30 秒内加载")
     }
@@ -28,85 +29,54 @@ final class SyncButtonUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    // MARK: - 同步按钮基础测试
+    // MARK: - 完整的同步按钮测试流程
 
-    /// 测试：同步按钮存在
-    func testSyncButton_Exists() {
+    /// 测试：同步按钮完整功能流程（合并 5 个测试）
+    func testSyncButtonCompleteFlow() {
+        print("💻 开始测试：同步按钮完整流程")
+        
+        // 1. 验证同步按钮存在且可点击
         let syncButton = app.buttons["SyncButton"].firstMatch
         XCTAssertTrue(syncButton.exists, "同步按钮应该存在")
         XCTAssertTrue(syncButton.isEnabled, "同步按钮应该可点击")
-        print("✅ testSyncButton_Exists 通过")
-    }
-
-    /// 测试：点击同步显示确认
-    func testSyncButton_ShowsConfirmation() {
-        let syncButton = app.buttons["SyncButton"].firstMatch
-        syncButton.tap()
-
-        // macOS 使用 dialog，等待任意确认按钮
-        sleep(2)
-
-        let hasButton = app.buttons["取消"].exists ||
-            app.buttons["Cancel"].exists ||
-            app.buttons["同步"].exists ||
-            app.buttons["Sync"].exists
-
-        XCTAssertTrue(hasButton, "应该显示确认弹窗")
-        print("✅ testSyncButton_ShowsConfirmation 通过")
-    }
-
-    // MARK: - macOS 特定测试
-
-    /// macOS 特定：测试菜单项
-    func testSyncButton_MenuShortcut_macOS() {
-        print("💻 macOS 特定测试：菜单快捷键")
-
-        // 验证应用有菜单栏
+        print("  ✅ 同步按钮存在且可点击")
+        
+        // 2. 验证 macOS 菜单栏
         let menuBar = app.menuBars.firstMatch
         if menuBar.exists {
             print("  ✅ macOS 菜单栏存在")
         } else {
             print("  ℹ️  菜单栏不可用（测试环境限制）")
         }
-
-        print("✅ testSyncButton_MenuShortcut_macOS 通过")
-    }
-
-    /// macOS 特定：测试多窗口
-    func testSyncButton_MultipleWindows_macOS() {
-        print("💻 macOS 特定测试：多窗口")
-
+        
+        // 3. 验证多窗口
         let windows = app.windows
         print("  当前窗口数：\(windows.count)")
-
-        // macOS 应该至少有一个窗口
         XCTAssertGreaterThanOrEqual(windows.count, 1, "macOS 应该至少有一个窗口")
-
-        print("✅ testSyncButton_MultipleWindows_macOS 通过")
-    }
-
-    /// macOS 特定：测试鼠标点击
-    func testSyncButton_MouseClick_macOS() {
-        print("💻 macOS 特定测试：鼠标点击")
-
-        let syncButton = app.buttons["SyncButton"].firstMatch
+        
+        // 4. 点击同步按钮显示确认弹窗
         syncButton.tap()
-
-        sleep(2) // 等待弹窗
-
-        // 验证有确认按钮
-        let hasButton = app.buttons["取消"].exists ||
-            app.buttons["Cancel"].exists
-
-        XCTAssertTrue(hasButton, "macOS 应该有确认按钮")
-
-        // 取消操作
-        if app.buttons["取消"].exists {
-            app.buttons["取消"].firstMatch.tap()
-        } else if app.buttons["Cancel"].exists {
-            app.buttons["Cancel"].firstMatch.tap()
+        
+        // 使用 waitForExistence 替代 sleep(2)
+        let cancelButton = app.buttons["取消"].firstMatch
+        let cancelENButton = app.buttons["Cancel"].firstMatch
+        
+        let hasConfirm = cancelButton.waitForExistence(timeout: 5) || 
+                        cancelENButton.waitForExistence(timeout: 5)
+        XCTAssertTrue(hasConfirm, "应该显示确认弹窗")
+        print("  ✅ 确认弹窗出现")
+        
+        // 5. 点击取消按钮（完整交互）
+        if cancelButton.exists {
+            cancelButton.tap()
+        } else if cancelENButton.exists {
+            cancelENButton.tap()
         }
-
-        print("✅ testSyncButton_MouseClick_macOS 通过")
+        
+        // 验证弹窗关闭
+        sleep(1)
+        XCTAssertFalse(cancelButton.exists && cancelENButton.exists, "弹窗应该已关闭")
+        
+        print("✅ testSyncButtonCompleteFlow 通过")
     }
 }

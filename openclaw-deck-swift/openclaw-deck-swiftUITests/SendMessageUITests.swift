@@ -11,12 +11,13 @@ final class SendMessageUITests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-
+        
         app = XCUIApplication()
         app.launchEnvironment["UITESTING"] = "YES"
+        app.launchArguments.append("--disable-animations")  // 禁用动画
         continueAfterFailure = true
         app.launch()
-
+        
         // 等待应用加载
         let mainWindow = app.windows.firstMatch
         XCTAssertTrue(mainWindow.waitForExistence(timeout: 30), "应用应该在 30 秒内加载")
@@ -34,7 +35,7 @@ final class SendMessageUITests: XCTestCase {
     func testSendMessage() throws {
         // 跳过需要网络的测试（除非有 Mock Gateway）
         throw XCTSkip("需要 Gateway 服务器，暂时跳过")
-
+        
         // TODO: 当有 Mock Gateway 时，测试流程如下：
         // 1. 选中一个会话
         // 2. 输入消息

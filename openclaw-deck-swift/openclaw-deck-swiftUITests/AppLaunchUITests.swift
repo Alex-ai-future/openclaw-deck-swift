@@ -11,9 +11,10 @@ final class AppLaunchUITests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-
+        
         app = XCUIApplication()
         app.launchEnvironment["UITESTING"] = "YES"
+        app.launchArguments.append("--disable-animations")  // 禁用动画
         continueAfterFailure = true
         app.launch()
     }

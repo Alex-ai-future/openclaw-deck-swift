@@ -186,13 +186,9 @@ struct DeckView: View {
                             },
                             onDelete: {
                                 withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
-                                    Task(priority: .background) {
-                                        await viewModel.deleteSession(sessionId: sessionId)
-                                        await MainActor.run {
-                                            if selectedSessionId == sessionId {
-                                                selectedSessionId = nil
-                                            }
-                                        }
+                                    viewModel.deleteSession(sessionId: sessionId)
+                                    if selectedSessionId == sessionId {
+                                        selectedSessionId = nil
                                     }
                                 }
                             }

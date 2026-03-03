@@ -68,46 +68,23 @@ final class SessionManagementUITests: XCTestCase {
     func testCompleteSessionLifecycle() {
         print("📋 开始测试：完整会话生命周期")
 
-        // ========== 阶段 0：清理现有会话 ==========
-        print("\n📍 阶段 0：清理现有会话")
+        // ========== 阶段 0：检查现有会话 ==========
+        print("\n📍 阶段 0：检查现有会话")
 
-        // 打印所有按钮的 identifier 用于调试
-        let allButtons = app.buttons.allElementsBoundByIndex
-        print("  🔍 当前界面所有按钮：")
-        for (index, button) in allButtons.enumerated() {
-            if button.exists {
-                print("    [\(index)] identifier=\(button.identifier), label=\(button.label)")
+        let initialSessions = getSessionButtons()
+        print("  📊 初始会话数量：\(initialSessions.count)")
+
+        // 测试模式下可能没有预置会话，这是正常的
+        // 如果有会话，清理到只剩 0 个
+        if initialSessions.count > 0 {
+            print("  🗑️  清理 \(initialSessions.count) 个现有会话...")
+            while getSessionButtons().count > 0 {
+                deleteFirstSession()
             }
+            print("  ✅ 清理完成")
+        } else {
+            print("  ℹ️  没有现有会话（测试模式正常）")
         }
-
-        var initialSessionCount = 0
-        while true {
-            let sessionButtons = getSessionButtons()
-            initialSessionCount = sessionButtons.count
-            print("  📊 当前会话数量：\(sessionButtons.count)")
-            for (index, button) in sessionButtons.enumerated() {
-                print("    [\(index)] identifier=\(button.identifier), label=\(button.label)")
-            }
-
-            // 只剩 1 个会话时停止（系统自动保留）
-            if sessionButtons.count <= 1 {
-                print("  ✅ 清理完成，剩余 \(sessionButtons.count) 个会话（系统保留）")
-                break
-            }
-
-            // 删除第一个会话
-            print("  🗑️  删除会话：\(sessionButtons[0].label)")
-            deleteFirstSession()
-        }
-
-        // 验证清理完成（测试模式可能是 0 个会话）
-        let remainingCount = getSessionButtons().count
-        XCTAssertLessThanOrEqual(
-            remainingCount,
-            1,
-            "清理后应该最多剩 1 个系统保留会话"
-        )
-        print("  ✅ 清理完成，剩余 \(remainingCount) 个会话")
 
         // ========== 阶段 1：创建三个会话 ==========
         print("\n📍 阶段 1：创建三个会话")

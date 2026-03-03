@@ -12,7 +12,7 @@
 2. [技术选型](#tech-stack)
 3. [代码结构](#code-structure)
 4. [核心组件](#core-components)
-5. [会话状态轮询](#session-polling) ⭐ NEW
+5. [会话状态轮询](#session-polling) NEW
 6. [开发指南](#development-guide)
 7. [测试标准](#testing)
 
@@ -245,7 +245,7 @@ private var pendingRequests: [String: PendingRequest] = [:]
 
 ---
 
-### 会话状态轮询机制 ⭐ NEW
+### 会话状态轮询机制 NEW
 
 **设计决策：**
 

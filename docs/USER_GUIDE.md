@@ -9,10 +9,10 @@
 ## 目录
 
 1. [5 分钟快速上手](#quick-start)
-2. [iOS 设备连接 Gateway](#ios-connection) ⭐⭐⭐⭐⭐
+2. [iOS 设备连接 Gateway](#ios-connection) 
 3. [核心功能](#core-features)
-4. [Cloudflare 多设备同步](#cloudflare-sync) ⭐ NEW
-5. [故障排除](#troubleshooting) ⭐⭐⭐⭐⭐
+4. [Cloudflare 多设备同步](#cloudflare-sync) 
+5. [故障排除](#troubleshooting) 
 6. [常见问题](#faq)
 
 ---
@@ -85,7 +85,7 @@ pnpm start
 
 ---
 
-## iOS 设备连接 Gateway {#ios-connection} ⭐⭐⭐⭐⭐
+## iOS 设备连接 Gateway {#ios-connection} 
 
 > 📚 **官方文档：** 详细的移动设备连接说明请查看 [OpenClaw 移动设备连接指南](https://docs.openclaw.ai/guides/mobile-connection)
 
@@ -283,7 +283,7 @@ sudo ufw allow 18789/tcp
 2. 说话
 3. 自动转为文字并发送
 
-**方式 5：/new 快速发送** ⭐ NEW
+**方式 5：/new 快速发送** 
 1. 选中 Session（底部蓝色底条）
 2. 输入 `/new 消息内容`（例如：`/new 帮我写个 Python 脚本`）
 3. 点击发送
@@ -298,7 +298,7 @@ sudo ufw allow 18789/tcp
 - 横向滚动
 - 点击任意 Session
 
-**查看 Session 详情：** ⭐ NEW
+**查看 Session 详情：** 
 - **iPhone：** 点击 NavigationBar 中间的对话名字按钮
 - **iPad：** 点击 Session 列顶部的对话名字按钮
 - **长按：** 弹出菜单（消息数量、最后活动时间、删除等）
@@ -327,7 +327,7 @@ sudo ufw allow 18789/tcp
 - 底部蓝色底条 = 当前选中的 Session
 - 避免多个 Session 同时显示按钮
 
-### 3.4 会话状态指示器 ⭐ NEW
+### 3.4 会话状态指示器 
 
 **状态颜色：**
 - 🟠 **橘黄色** = 处理中（AI 正在回复）
@@ -345,7 +345,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## Cloudflare 多设备同步 {#cloudflare-sync} ⭐ NEW
+## Cloudflare 多设备同步 {#cloudflare-sync} 
 
 **功能说明：**
 - 在多个设备间同步 Session 列表和顺序
@@ -484,7 +484,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 故障排除 {#troubleshooting} ⭐⭐⭐⭐⭐
+## 故障排除 {#troubleshooting} 
 
 ### 5.1 连接问题
 

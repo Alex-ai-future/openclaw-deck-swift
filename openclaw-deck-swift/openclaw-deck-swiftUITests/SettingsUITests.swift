@@ -124,7 +124,7 @@ final class SettingsUITests: XCTestCase {
         print("\n📍 阶段 2：点击取消并验证配置未保存")
 
         // 点击取消按钮
-        let cancelButton = app.buttons["Cancel"]
+        let cancelButton = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
         XCTAssertTrue(
             cancelButton.waitForExistence(timeout: 3),
             "取消按钮必须存在"
@@ -186,7 +186,7 @@ final class SettingsUITests: XCTestCase {
         print("  ✏️  新 Token: \(newToken)")
 
         // 点击 Done 按钮保存
-        let doneButton = app.buttons["Done"]
+        let doneButton = app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
         XCTAssertTrue(
             doneButton.waitForExistence(timeout: 3),
             "完成按钮必须存在"

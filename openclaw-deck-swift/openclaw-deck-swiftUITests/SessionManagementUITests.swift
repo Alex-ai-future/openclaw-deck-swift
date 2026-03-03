@@ -153,7 +153,7 @@ final class SessionManagementUITests: XCTestCase {
         reverseSessionOrder()
 
         // 点击完成按钮
-        let doneButton = app.buttons["Done"]
+        let doneButton = app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
         XCTAssertTrue(
             doneButton.waitForExistence(timeout: 3),
             "完成按钮必须存在"
@@ -252,7 +252,7 @@ final class SessionManagementUITests: XCTestCase {
         }
 
         // 点击创建按钮
-        let createButton = app.buttons["创建"]
+        let createButton = app.buttons["Create"].firstMatch.exists ? app.buttons["Create"] : app.buttons["创建"]
         XCTAssertTrue(
             createButton.waitForExistence(timeout: 3),
             "创建按钮必须存在"
@@ -308,7 +308,7 @@ final class SessionManagementUITests: XCTestCase {
             )
 
             // 点击取消
-            let cancelButton = app.buttons["Cancel"]
+            let cancelButton = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
             XCTAssertTrue(
                 cancelButton.waitForExistence(timeout: 3),
                 "取消按钮必须存在"
@@ -366,7 +366,7 @@ final class SessionManagementUITests: XCTestCase {
                 "删除确认弹窗必须出现"
             )
 
-            let confirmButton = app.buttons["Delete"]
+            let confirmButton = app.buttons["Delete"].firstMatch.exists ? app.buttons["Delete"] : app.buttons["删除"]
             XCTAssertTrue(
                 confirmButton.waitForExistence(timeout: 3),
                 "删除确认按钮必须存在"

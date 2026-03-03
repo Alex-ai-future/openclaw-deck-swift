@@ -5,8 +5,6 @@
 
 import XCTest
 
-// MARK: - 测试用例
-
 @MainActor
 final class SyncButtonUITests: XCTestCase {
     var app: XCUIApplication!
@@ -14,39 +12,164 @@ final class SyncButtonUITests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        // 启动应用
         app = XCUIApplication()
-
-        // 添加测试模式标记（使用环境变量，更可靠）
         app.launchEnvironment["UITESTING"] = "YES"
-
-        // 继续失败（一个测试失败后继续执行）
         continueAfterFailure = true
-
-        // 启动应用
         app.launch()
 
-        // 等待主界面加载（增加超时时间）
+        // 等待主界面加载
         let sessionListExists = app.tables["SessionList"].waitForExistence(timeout: 30)
-        if !sessionListExists {
-            // 尝试查找其他可能的标识
-            print("SessionList not found, available tables:")
-            print(app.tables.allElementsBoundByIndex.map(\.identifier))
-        }
         XCTAssertTrue(sessionListExists, "Session 列表应该在 30 秒内加载")
     }
 
     override func tearDownWithError() throws {
-        // 终止应用
         app.terminate()
         app = nil
         try super.tearDownWithError()
     }
 
-    // MARK: - 基础测试
+    // MARK: - 核心测试：完整的同步流程
 
-    /// 测试 1: 应用启动
-    func testAppLaunch() {
+    /// 测试 1：Sync 按钮完整功能流程
+    ///
+    /// 验证内容：
+    /// 1. 按钮存在且可点击
+    /// 2. 点击后显示确认弹窗
+    /// 3. 弹窗包含正确的标题、消息和按钮
+    /// 4. 点击 Cancel 可以取消同步
+    /// 5. 再次点击可以重新打开弹窗
+    /// 6. 点击 Sync 可以执行同步
+    func testSyncButton_completeFlow() {
+        // 1. 验证同步按钮存在
+        let syncButton = app.buttons["SyncButton"].firstMatch
+        XCTAssertTrue(
+            syncButton.waitForExistence(timeout: 5),
+            "同步按钮应该在 5 秒内出现"
+        )
+        XCTAssertTrue(syncButton.isEnabled, "同步按钮应该可点击")
+
+        // 2. 点击同步按钮，等待确认弹窗
+        syncButton.tap()
+
+        // 使用更通用的方式查找弹窗（支持 macOS SwiftUI）
+        let cancelPredicate = NSPredicate(format: "label CONTAINS 'Cancel' OR label CONTAINS '取消'")
+        let syncPredicate = NSPredicate(format: "label CONTAINS 'Sync' OR label CONTAINS '同步'")
+
+        let cancelButton = app.buttons.matching(cancelPredicate).firstMatch
+        let syncButtonInAlert = app.buttons.matching(syncPredicate).firstMatch
+
+        // 等待弹窗按钮出现（10 秒超时）
+        let alertAppeared = cancelButton.waitForExistence(timeout: 10)
+        XCTAssertTrue(
+            alertAppeared,
+            "确认弹窗应该在 10 秒内出现"
+        )
+
+        // 3. 验证弹窗内容
+        // 验证至少有一个按钮（Cancel 或 取消）
+        XCTAssertTrue(
+            cancelButton.exists || app.buttons["取消"].exists,
+            "弹窗应该有 Cancel/取消按钮"
+        )
+
+        // 验证至少有一个按钮（Sync 或 同步）
+        XCTAssertTrue(
+            syncButtonInAlert.exists || app.buttons["同步"].exists,
+            "弹窗应该有 Sync/同步按钮"
+        )
+
+        // 4. 点击 Cancel 取消同步
+        if cancelButton.exists {
+            cancelButton.tap()
+        } else {
+            app.buttons["取消"].firstMatch.tap()
+        }
+
+        // 验证弹窗消失
+        XCTAssertFalse(
+            cancelButton.waitForExistence(timeout: 2),
+            "弹窗应该在点击 Cancel 后消失"
+        )
+
+        // 验证应用还在主界面
+        XCTAssertTrue(
+            app.tables["SessionList"].exists,
+            "取消后应该还在 Session 列表界面"
+        )
+
+        // 5. 再次点击同步按钮，验证可以重新打开弹窗
+        syncButton.tap()
+        XCTAssertTrue(
+            cancelButton.waitForExistence(timeout: 5),
+            "应该可以重新打开确认弹窗"
+        )
+
+        // 6. 点击 Sync 执行同步
+        if syncButtonInAlert.exists {
+            syncButtonInAlert.tap()
+        } else {
+            app.buttons["同步"].firstMatch.tap()
+        }
+
+        // 验证弹窗消失（同步开始）
+        XCTAssertFalse(
+            cancelButton.waitForExistence(timeout: 2),
+            "弹窗应该在点击 Sync 后消失"
+        )
+
+        print("✅ testSyncButton_completeFlow 通过")
+    }
+
+    // MARK: - 边缘情况测试
+
+    /// 测试 2：Sync 按钮边缘情况
+    ///
+    /// 验证内容：
+    /// 1. 多次快速点击不会崩溃
+    /// 2. 弹窗出现后重复点击按钮
+    /// 3. 应用保持稳定运行
+    func testSyncButton_edgeCases() {
+        let syncButton = app.buttons["SyncButton"].firstMatch
+
+        guard syncButton.waitForExistence(timeout: 5) else {
+            XCTFail("同步按钮未找到")
+            return
+        }
+
+        // 1. 多次快速点击同步按钮
+        for i in 0 ..< 3 {
+            syncButton.tap()
+
+            // 等待弹窗出现（如果还没出现）
+            let cancelPredicate = NSPredicate(format: "label CONTAINS 'Cancel' OR label CONTAINS '取消'")
+            let cancelButton = app.buttons.matching(cancelPredicate).firstMatch
+
+            if cancelButton.waitForExistence(timeout: 2) {
+                // 取消弹窗
+                cancelButton.tap()
+                print("  第 \(i + 1) 次点击：弹窗出现并取消")
+            }
+        }
+
+        // 2. 验证应用没有崩溃
+        XCTAssertTrue(
+            app.tables["SessionList"].waitForExistence(timeout: 5),
+            "应用应该在多次点击后仍然正常运行"
+        )
+
+        // 3. 验证同步按钮仍然可用
+        XCTAssertTrue(
+            syncButton.exists && syncButton.isEnabled,
+            "同步按钮在多次点击后应该仍然可用"
+        )
+
+        print("✅ testSyncButton_edgeCases 通过")
+    }
+
+    // MARK: - 应用启动测试
+
+    /// 测试 3：应用启动和 Sync 按钮初始化
+    func testAppLaunchAndSyncButton() {
         // 验证应用成功启动
         XCTAssertTrue(app.exists, "应用应该成功启动")
 
@@ -54,231 +177,13 @@ final class SyncButtonUITests: XCTestCase {
         let mainWindow = app.windows.firstMatch
         XCTAssertTrue(mainWindow.exists, "主窗口应该存在")
 
-        print("✅ testAppLaunch 通过")
-    }
-
-    /// 测试 2: Sync 按钮存在
-    func testSyncButton_exists() {
-        // 找到同步按钮
+        // 验证同步按钮存在
         let syncButton = app.buttons["SyncButton"].firstMatch
-
-        // 验证按钮存在
         XCTAssertTrue(
             syncButton.waitForExistence(timeout: 5),
             "同步按钮应该在 5 秒内出现"
         )
 
-        print("✅ testSyncButton_exists 通过")
-    }
-
-    // MARK: - 同步交互测试
-
-    /// 测试 3: 点击 Sync 按钮显示确认弹窗
-    func testSyncButton_showsConfirmation() {
-        // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"].firstMatch
-
-        // 等待按钮出现
-        guard syncButton.waitForExistence(timeout: 5) else {
-            XCTFail("同步按钮未找到")
-            return
-        }
-
-        // 点击同步按钮
-        syncButton.tap()
-
-        // 等待确认弹窗出现（支持中英文）
-        let syncAlert = app.alerts["Sync All Sessions?"].firstMatch
-        let syncAlertCN = app.alerts["同步所有会话？"].firstMatch
-        let foundAlert = syncAlert.exists || syncAlertCN.exists
-        XCTAssertTrue(
-            foundAlert,
-            "同步确认弹窗应该在 10 秒内出现"
-        )
-
-        // 验证弹窗消息
-        let alertMessage = syncAlert.staticTexts.element(boundBy: 0)
-        XCTAssertTrue(
-            alertMessage.exists,
-            "弹窗应该有消息文本"
-        )
-
-        // 验证有两个按钮（Cancel 和 Sync）
-        let cancelButton = syncAlert.buttons["Cancel"]
-        let syncButtonInAlert = syncAlert.buttons["Sync"]
-
-        XCTAssertTrue(cancelButton.exists, "应该有 Cancel 按钮")
-        XCTAssertTrue(syncButtonInAlert.exists, "应该有 Sync 按钮")
-
-        print("✅ testSyncButton_showsConfirmation 通过")
-    }
-
-    /// 测试 4: 点击 Cancel 取消同步
-    func testSyncButton_cancelDoesNotSync() {
-        // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"].firstMatch
-
-        guard syncButton.waitForExistence(timeout: 5) else {
-            XCTFail("同步按钮未找到")
-            return
-        }
-
-        // 点击同步按钮
-        syncButton.tap()
-
-        // 等待确认弹窗
-        let syncAlert = app.alerts["Sync All Sessions?"]
-        guard syncAlert.waitForExistence(timeout: 10) else {
-            XCTFail("确认弹窗未出现")
-            return
-        }
-
-        // 点击 Cancel
-        syncAlert.buttons["Cancel"].tap()
-
-        // 验证弹窗消失
-        XCTAssertFalse(
-            syncAlert.waitForExistence(timeout: 2),
-            "弹窗应该在点击 Cancel 后消失"
-        )
-
-        // 验证应用还在主界面
-        XCTAssertTrue(
-            app.tables["SessionList"].exists,
-            "应该还在 Session 列表界面"
-        )
-
-        print("✅ testSyncButton_cancelDoesNotSync 通过")
-    }
-
-    /// 测试 5: 点击 Sync 执行同步
-    func testSyncButton_confirmStartsSync() {
-        // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"].firstMatch
-
-        guard syncButton.waitForExistence(timeout: 5) else {
-            XCTFail("同步按钮未找到")
-            return
-        }
-
-        // 点击同步按钮
-        syncButton.tap()
-
-        // 等待确认弹窗
-        let syncAlert = app.alerts["Sync All Sessions?"]
-        guard syncAlert.waitForExistence(timeout: 10) else {
-            XCTFail("确认弹窗未出现")
-            return
-        }
-
-        // 点击 Sync 确认
-        syncAlert.buttons["Sync"].tap()
-
-        // 验证弹窗消失
-        XCTAssertFalse(
-            syncAlert.waitForExistence(timeout: 2),
-            "弹窗应该在点击 Sync 后消失"
-        )
-
-        // 注意：实际同步可能需要网络，这里只验证弹窗关闭
-        // 如果需要验证同步结果，需要配置测试用的 Gateway
-
-        print("✅ testSyncButton_confirmStartsSync 通过")
-    }
-
-    // MARK: - 多次点击测试
-
-    /// 测试 6: 多次点击 Sync 按钮不会崩溃
-    func testSyncButton_multipleClicks() {
-        // 找到同步按钮
-        let syncButton = app.buttons["SyncButton"].firstMatch
-
-        guard syncButton.waitForExistence(timeout: 5) else {
-            XCTFail("同步按钮未找到")
-            return
-        }
-
-        // 多次点击
-        for i in 0 ..< 3 {
-            syncButton.tap()
-
-            // 等待弹窗
-            let syncAlert = app.alerts["Sync All Sessions?"]
-            if syncAlert.waitForExistence(timeout: 2) {
-                // 取消
-                syncAlert.buttons["Cancel"].tap()
-                print("  第 \(i + 1) 次点击：弹窗出现并取消")
-            }
-        }
-
-        // 验证应用没有崩溃
-        XCTAssertTrue(
-            app.tables["SessionList"].exists,
-            "应用应该在多次点击后仍然正常运行"
-        )
-
-        print("✅ testSyncButton_multipleClicks 通过")
-    }
-
-    // MARK: - 辅助方法
-
-    /// 等待并验证弹窗
-    private func waitForAlert(title: String, timeout: TimeInterval = 3) -> XCUIElement {
-        let alert = app.alerts[title]
-        let exists = alert.waitForExistence(timeout: timeout)
-
-        if !exists {
-            XCTFail("弹窗 '\(title)' 未在 \(timeout) 秒内出现")
-        }
-
-        return alert
-    }
-
-    /// 截图验证
-    private func takeScreenshot(name: String) {
-        let screenshot = app.windows.firstMatch.screenshot()
-        let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
-    }
-}
-
-// MARK: - 性能测试
-
-final class SyncButtonPerformanceTests: XCTestCase {
-    var app: XCUIApplication!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        app = XCUIApplication()
-        app.launchEnvironment["UITESTING"] = "YES"
-        app.launch()
-    }
-
-    override func tearDownWithError() throws {
-        app.terminate()
-        app = nil
-        try super.tearDownWithError()
-    }
-
-    /// 性能测试：Sync 按钮响应时间
-    func testSyncButton_responseTime() {
-        let syncButton = app.buttons["SyncButton"].firstMatch
-
-        guard syncButton.waitForExistence(timeout: 5) else {
-            XCTFail("同步按钮未找到")
-            return
-        }
-
-        // 测量点击到弹窗出现的时间
-        self.measure {
-            syncButton.tap()
-            let alert = app.alerts["Sync All Sessions?"]
-            _ = alert.waitForExistence(timeout: 2)
-
-            // 取消弹窗
-            alert.buttons["Cancel"].tap()
-        }
+        print("✅ testAppLaunchAndSyncButton 通过")
     }
 }

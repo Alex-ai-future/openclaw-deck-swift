@@ -533,8 +533,7 @@ class DeckViewModel {
             // 检测是否需要用户选择
             if result.source == .conflict {
                 // 数据冲突，需要用户选择
-                try await handleSyncConflict(result: result)
-                // 不会执行到这里，handleSyncConflict 会抛出错误
+                await handleSyncConflict(result: result)
                 return
             }
 
@@ -553,10 +552,6 @@ class DeckViewModel {
                     logger.log("🎯 选中 Session: \(firstSessionId)")
                 }
             }
-        } catch SyncError.conflictWaitingForResolution {
-            // 冲突时等待用户解决，不执行 loadFromLocalOnly()
-            // loadingStage 保持 .fetchingSessions，等待用户解决冲突
-            logger.log("⏳ Waiting for user to resolve sync conflict...")
         } catch {
             logger.error("❌ Cloudflare sync failed: \(error.localizedDescription)")
             // 同步失败，退化到本地数据
@@ -568,7 +563,7 @@ class DeckViewModel {
 
     /// 处理同步冲突（弹窗让用户选择）
     @MainActor
-    private func handleSyncConflict(result: MergeResult) async throws {
+    private func handleSyncConflict(result: MergeResult) async {
         guard let localData = result.localData, let remoteData = result.remoteData else {
             logger.error("❌ handleSyncConflict: missing localData or remoteData")
             return
@@ -586,21 +581,7 @@ class DeckViewModel {
 
         logger.log("✅ showingSyncConflict set to TRUE, UI should show conflict alert")
         logger.log("⏳ Waiting for user selection...")
-
-        // ❗ 抛出特殊错误，阻止 initialize() 继续执行
-        throw SyncError.conflictWaitingForResolution
-    }
-
-    /// 同步错误类型
-    enum SyncError: LocalizedError {
-        case conflictWaitingForResolution
-
-        var errorDescription: String? {
-            switch self {
-            case .conflictWaitingForResolution:
-                "Sync conflict: waiting for user resolution"
-            }
-        }
+        // ✅ initialize() 会检测 showingSyncConflict 状态并停止执行
     }
 
     /// 冲突时的本地数据（用于弹窗显示）

@@ -76,7 +76,7 @@ final class SessionManagementUITests: XCTestCase {
         print("  🔍 当前界面所有按钮：")
         for (index, button) in allButtons.enumerated() {
             if button.exists {
-                print("    [\(index)] identifier=\"\(button.identifier)\", label=\"\(button.label)\")
+                print("    [\(index)] identifier=\(button.identifier), label=\(button.label)")
             }
         }
 
@@ -86,7 +86,7 @@ final class SessionManagementUITests: XCTestCase {
             initialSessionCount = sessionButtons.count
             print("  📊 当前会话数量：\(sessionButtons.count)")
             for (index, button) in sessionButtons.enumerated() {
-                print("    [\(index)] identifier=\"\(button.identifier)\", label=\"\(button.label)\")
+                print("    [\(index)] identifier=\(button.identifier), label=\(button.label)")
             }
 
             // 只剩 1 个会话时停止（系统自动保留）

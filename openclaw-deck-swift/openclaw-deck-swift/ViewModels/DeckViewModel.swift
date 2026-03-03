@@ -200,6 +200,50 @@ class DeckViewModel {
         // 回调将在 initialize() 中设置
     }
 
+    /// 连接 Gateway（共用方法）
+    /// - Parameters:
+    ///   - url: Gateway URL
+    ///   - token: Token
+    ///   - onConnect: 连接成功后的回调
+    private func connectGateway(
+        url: URL,
+        token: String?,
+        onConnect: @escaping () async -> Void
+    ) async {
+        // 创建客户端
+        var client = diContainer.createGatewayClient(url: url, token: token)
+
+        // 设置事件回调
+        client.onEvent = { [weak self] event in
+            Task { @MainActor in
+                self?.handleGatewayEvent(event)
+            }
+        }
+
+        // 设置连接状态回调
+        client.onConnection = { [weak self] connected in
+            Task { @MainActor in
+                guard let self else { return }
+                if connected {
+                    logger.log("✅ Gateway 连接成功")
+                    // 调用连接成功后的回调
+                    await onConnect()
+                } else {
+                    logger.error("❌ Gateway 连接失败")
+                    self.gatewayConnected = false
+                    self.isInitializing = false
+                    self.loadingStage = .idle
+                }
+            }
+        }
+
+        gatewayClient = client
+        connectionError = client.connectionError
+
+        // 异步连接 Gateway
+        await client.connect()
+    }
+
     // MARK: - Gateway Connection
 
     /// 初始化并连接 Gateway
@@ -632,52 +676,17 @@ class DeckViewModel {
         let gatewayUrl = storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
         let token = storage.loadToken()
 
-        // 创建并连接 GatewayClient
-        guard let url = URL(string: gatewayUrl) else {
-            logger.error("❌ Invalid gateway URL: \(gatewayUrl)")
-            isInitializing = false
-            loadingStage = .idle
-            return
+        // 使用共用方法连接 Gateway
+        await connectGateway(url: url, token: token) {
+            // 连接成功后加载历史
+            await self.loadAllSessionHistory()
+            // 初始化完成
+            self.gatewayConnected = true
+            self.isInitializing = false
+            self.loadingStage = .idle
+            self.loadingProgress = 0.0
+            logger.log("✅ Sync conflict resolved, initialization complete")
         }
-
-        // 创建客户端
-        var client = diContainer.createGatewayClient(url: url, token: token)
-
-        // 设置事件回调
-        client.onEvent = { [weak self] event in
-            Task { @MainActor in
-                self?.handleGatewayEvent(event)
-            }
-        }
-
-        // 设置连接状态回调
-        client.onConnection = { [weak self] connected in
-            Task { @MainActor in
-                guard let self else { return }
-                if connected {
-                    logger.log("✅ Gateway 连接成功，开始加载历史...")
-                    // 连接成功后加载历史
-                    await self.loadAllSessionHistory()
-                    // 初始化完成
-                    self.isInitializing = false
-                    self.gatewayConnected = true
-                    self.loadingStage = .idle
-                    self.loadingProgress = 0.0
-                    logger.log("✅ Sync conflict resolved, initialization complete")
-                } else {
-                    logger.error("❌ Gateway 连接失败")
-                    self.isInitializing = false
-                    self.gatewayConnected = false
-                    self.loadingStage = .idle
-                }
-            }
-        }
-
-        gatewayClient = client
-        connectionError = client.connectionError
-
-        // 异步连接 Gateway
-        await client.connect()
     }
 
     /// 应用同步数据

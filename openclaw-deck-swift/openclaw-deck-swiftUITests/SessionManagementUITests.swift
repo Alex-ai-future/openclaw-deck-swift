@@ -29,52 +29,11 @@ final class SessionManagementUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    // MARK: - 会话管理基础流程测试
+    // MARK: - 会话创建、排序和删除完整流程
 
-    /// 测试：会话管理基础功能流程
-    func testSessionManagementFlow() {
-        print("💻 开始测试：会话管理基础流程")
-
-        // 1. 验证创建会话按钮
-        let newSessionButton = app.buttons["NewSessionButton"].firstMatch
-
-        if newSessionButton.waitForExistence(timeout: 5) {
-            newSessionButton.tap()
-
-            let hasCreateButton = app.buttons["创建"].firstMatch.waitForExistence(timeout: 3) ||
-                app.buttons["Create"].firstMatch.waitForExistence(timeout: 3) ||
-                app.textFields.firstMatch.waitForExistence(timeout: 3)
-
-            XCTAssertTrue(hasCreateButton, "应该显示创建会话弹窗")
-            print("  ✅ 创建会话弹窗出现")
-
-            // 取消操作
-            let cancelButton = app.buttons["取消"].firstMatch
-            let cancelENButton = app.buttons["Cancel"].firstMatch
-
-            if cancelButton.exists {
-                cancelButton.tap()
-            } else if cancelENButton.exists {
-                cancelENButton.tap()
-            }
-        } else {
-            print("  ℹ️  新建会话按钮未找到")
-        }
-
-        // 2. 验证排序按钮存在且可点击
-        let sortButton = app.buttons["SortButton"].firstMatch
-        XCTAssertTrue(sortButton.waitForExistence(timeout: 5), "排序按钮应该存在")
-        XCTAssertTrue(sortButton.isEnabled, "排序按钮应该可点击")
-        print("  ✅ 排序按钮存在且可用")
-
-        print("✅ testSessionManagementFlow 通过")
-    }
-
-    // MARK: - 创建会话和排序完整流程测试
-
-    /// 测试：创建会话和排序完整流程
-    func testSessionCreateAndSort() {
-        print("📋 开始测试：创建会话和排序完整流程")
+    /// 测试：会话创建、排序和删除完整流程
+    func testSessionCreateSortAndDelete() {
+        print("📋 开始测试：会话创建、排序和删除完整流程")
 
         // 1. 记录初始会话数量
         let initialSessionCount = app.buttons.matching(
@@ -170,36 +129,22 @@ final class SessionManagementUITests: XCTestCase {
         XCTAssertEqual(finalSessionCount, newSessionCount, "会话数量应该不变")
         print("  ✅ 会话列表仍然可用")
 
-        print("✅ testSessionCreateAndSort 通过")
-    }
+        // 10. 删除所有会话（清理数据）
+        print("🗑️  开始删除所有会话")
 
-    // MARK: - 删除所有会话测试（必须最后执行）
-
-    /// 测试：删除所有会话
-    func testSessionDeleteAll() {
-        print("🗑️ 开始测试：删除所有会话")
-
-        // 1. 记录当前会话数量
         var sessionButtons = app.buttons.matching(
             NSPredicate(format: "identifier CONTAINS 'Session'")
         ).allElementsBoundByIndex
 
-        let initialCount = sessionButtons.count
-        print("  当前会话数：\(initialCount)")
-
-        // 2. 当会话数量 > 1 时循环删除
         var deleteCount = 0
-        while sessionButtons.count > 1 && deleteCount < 10 { // 最多删除 10 次，防止死循环
-            // 点击第一个会话的删除按钮
+        while sessionButtons.count > 1 && deleteCount < 10 {
             let deleteButton = sessionButtons[0].buttons["Delete"].firstMatch
             if deleteButton.exists {
                 deleteButton.forceTap()
                 sleep(1)
 
-                // 验证确认弹窗出现
                 let deleteAlert = app.alerts.firstMatch
                 if deleteAlert.waitForExistence(timeout: 3) {
-                    // 点击确认删除
                     let confirmButton = app.buttons["delete"].firstMatch.exists
                         ? app.buttons["delete"].firstMatch
                         : app.buttons["Delete"].firstMatch
@@ -213,13 +158,11 @@ final class SessionManagementUITests: XCTestCase {
                 }
             }
 
-            // 重新获取会话列表
             sessionButtons = app.buttons.matching(
                 NSPredicate(format: "identifier CONTAINS 'Session'")
             ).allElementsBoundByIndex
         }
 
-        // 3. 验证最后剩 1 个 Welcome 会话
         let finalCount = app.buttons.matching(
             NSPredicate(format: "identifier CONTAINS 'Session'")
         ).count
@@ -227,6 +170,6 @@ final class SessionManagementUITests: XCTestCase {
         XCTAssertEqual(finalCount, 1, "应该只剩 1 个 Welcome 会话")
         print("  ✅ 最后剩 \(finalCount) 个会话")
 
-        print("✅ testSessionDeleteAll 通过")
+        print("✅ testSessionCreateSortAndDelete 通过")
     }
 }

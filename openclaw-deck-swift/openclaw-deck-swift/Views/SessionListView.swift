@@ -77,8 +77,8 @@ struct SessionListView: View {
                             viewModel.selectSession(session.sessionId)
                         },
                         onDelete: {
-                            Task {
-                                await viewModel.deleteSession(sessionId: session.sessionId)
+                            Task.detached { [weak viewModel] in
+                                await viewModel?.deleteSession(sessionId: session.sessionId)
                             }
                         }
                     )
@@ -96,8 +96,8 @@ struct SessionListView: View {
                             viewModel.selectSession(session.sessionId)
                         },
                         onDelete: {
-                            Task {
-                                await viewModel.deleteSession(sessionId: session.sessionId)
+                            Task.detached { [weak viewModel] in
+                                await viewModel?.deleteSession(sessionId: session.sessionId)
                             }
                         }
                     )
@@ -203,8 +203,8 @@ struct SessionListView: View {
             .deleteSessionAlert(isPresented: $showingDeleteAlert) {
                 // 用户确认删除
                 if let sessionId = deleteSessionId {
-                    Task {
-                        await viewModel.deleteSession(sessionId: sessionId)
+                    Task.detached { [weak viewModel] in
+                        await viewModel?.deleteSession(sessionId: sessionId)
                         await MainActor.run {
                             deleteSessionId = nil
                         }

@@ -228,11 +228,13 @@ final class SessionManagementUITests: XCTestCase {
 
     /// 获取所有会话按钮
     private func getSessionButtons() -> [XCUIElement] {
-        // 排除 NewSessionButton 和 SortButton，只匹配真正的会话按钮
+        // 排除 NewSessionButton 和 SortButton，查找所有包含 Session 的元素（不限于 Button）
         let predicate = NSPredicate(
             format: "identifier CONTAINS 'Session' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
         )
-        return app.buttons.matching(predicate).allElementsBoundByIndex
+        return app.descendants(matching: .any)
+            .matching(predicate)
+            .allElementsBoundByIndex
     }
 
     /// 创建会话

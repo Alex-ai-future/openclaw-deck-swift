@@ -35,13 +35,14 @@ struct GlobalInputView: View {
                         state.calculateTextHeight()
                     }
                     .onSubmit {
-                        // 发送后收起键盘
+                        // 有内容时发送
                         if !state.inputText.isEmpty {
                             Task {
                                 await onSend()
-                                isInputFocused = false
                             }
                         }
+                        // 总是收起键盘
+                        isInputFocused = false
                     }
 
                 // 占位文字

@@ -249,6 +249,7 @@ struct SessionRowView: View {
                     .font(.body)
                     .fontWeight(.medium)
                     .lineLimit(1)
+                    .accessibilityIdentifier("Session-\(session.sessionId)")
 
                 if let lastMessage = session.messages.last {
                     Text(lastMessage.text)

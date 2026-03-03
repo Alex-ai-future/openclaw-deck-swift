@@ -105,33 +105,8 @@ final class SendMessageUITests: XCTestCase {
 
         // 6. 验证消息显示在聊天区域（放宽验证）
         sleep(2)
-        let messageExists = app.staticTexts.count > 0
-        XCTAssertTrue(messageExists, "聊天区域应该有消息")
-        print("  ✅ 消息已显示")
-        sleep(2)
-        let messageExists = app.staticTexts.count > 0
-        XCTAssertTrue(messageExists, "聊天区域应该有消息")
-        print("  ✅ 消息已显示")
-    // 6. 验证消息显示在聊天区域（放宽验证）
-        sleep(2)
-        let messageExists = app.staticTexts.count > 0
-        XCTAssertTrue(messageExists, "聊天区域应该有消息")
-        print("  ✅ 消息已显示")
-    // 6. 验证消息显示在聊天区域（放宽验证）
-        sleep(2)
-        let messageExists = app.staticTexts.count > 0
-        XCTAssertTrue(messageExists, "聊天区域应该有消息")
-        print("  ✅ 消息已显示")
-    // 6. 验证消息显示在聊天区域（放宽验证）
-        sleep(2)
-        let messageExists = app.staticTexts.count > 0
-        XCTAssertTrue(messageExists, "聊天区域应该有消息")
-        print("  ✅ 消息已显示")
-    // 6. 验证消息显示在聊天区域（放宽验证）
-        sleep(2)
-        let messageExists = app.staticTexts.count > 0
-        XCTAssertTrue(messageExists, "聊天区域应该有消息")
-        print("  ✅ 消息已显示")
+        let hasMessages = app.staticTexts.count > 0
+        XCTAssertTrue(hasMessages, "聊天区域应该有消息")
         print("  ✅ 消息已显示")
 
         print("✅ testMessageSendFlow 通过")

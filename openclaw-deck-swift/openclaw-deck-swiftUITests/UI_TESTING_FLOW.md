@@ -31,7 +31,7 @@ app.launchArguments.append("--disable-animations")
 **测试文件：** `SessionManagementUITests.swift`  
 **测试方法：** `testCompleteSessionLifecycle()`
 
-> 💡 **说明：** 此流程覆盖了会话创建、消息发送、排序、删除等核心功能，其他相关流程无需重复测试。
+> 💡 **说明：** 此流程覆盖了会话创建、消息发送、排序、删除等核心功能。
 
 #### 前置条件
 - 应用已保存凭证，启动后直接进入主界面（DeckView）
@@ -57,28 +57,9 @@ app.launchArguments.append("--disable-animations")
 | 0.3.7 | 重复 0.3.1-0.3.6 | - | 直到只剩 1 个会话 |
 | 0.4 | 验证列表只剩 1 个会话 | 系统自动保留 | 会话列表 |
 
-**说明：**
-- ⚠️ 系统会自动保留至少 1 个会话，无法完全清空
-- 清理目标：删除到只剩 1 个系统默认会话
-
-**代码示例：**
-```swift
-while true {
-    let sessionButtons = app.buttons.matching(
-        NSPredicate(format: "identifier CONTAINS 'Session'")
-    ).allElementsBoundByIndex
-    
-    // 只剩 1 个会话时停止（系统自动保留）
-    if sessionButtons.count <= 1 {
-        print("✅ 清理完成，剩余 \(sessionButtons.count) 个会话（系统保留）")
-        break
-    }
-    
-    // 删除第一个会话
-    sessionButtons[0].forceTap()
-    // ... 删除流程
-}
-```
+**验证标准：**
+- ✅ `XCTAssertTrue(sessionButtons.count >= 1)` - 至少有一个会话
+- ✅ 删除操作必须成功，否则测试失败
 
 ---
 
@@ -101,9 +82,11 @@ while true {
 - 会话 2：名称="测试会话 2"，备注="这是第二个测试会话"
 - 会话 3：名称="测试会话 3"，备注="这是第三个测试会话"
 
-**验证：**
-- ✅ 列表中有 4 个会话（1 个系统保留 + 3 个新建）
-- ✅ 每个会话的名称都正确显示
+**验证标准：**
+- ✅ `XCTAssertTrue(newSessionButton.exists)` - 新建按钮必须存在
+- ✅ `XCTAssertTrue(sheet.exists)` - 弹窗必须出现
+- ✅ `XCTAssertEqual(sessionCount, 4)` - 必须有 4 个会话（1+3）
+- ❌ 失败则测试终止，不继续执行
 
 ---
 
@@ -120,9 +103,9 @@ while true {
 | 2.5 | 点击取消按钮 | "取消" 或 "Cancel" | 弹窗左侧 |
 | 2.6 | 重复 2.1-2.5 | - | 对每个新建会话执行 |
 
-**说明：**
-- 测试模式下会弹出"连接失败"窗口
-- 点击"取消"关闭弹窗，消息不会发送
+**验证标准：**
+- ✅ `XCTAssertTrue(alert.exists)` - 连接失败弹窗必须出现
+- ✅ `XCTAssertTrue(cancelButton.exists)` - 取消按钮必须存在
 
 ---
 
@@ -136,8 +119,10 @@ let sessions = app.buttons.matching(
 
 let order = sessions.map { $0.identifier }
 print("当前顺序：\(order)")
-// 预期：["Session-测试会话 1", "Session-测试会话 2", "Session-测试会话 3", ...]
 ```
+
+**验证标准：**
+- ✅ `XCTAssertGreaterThanOrEqual(sessions.count, 4)` - 至少有 4 个会话
 
 ---
 
@@ -153,21 +138,10 @@ print("当前顺序：\(order)")
 | 4.4 | 点击完成按钮 | "完成" 或 "Done" | 弹窗右上角 |
 | 4.5 | 验证顺序已反转 | 检查会话按钮顺序 | 会话列表 |
 
-**预期结果：**
-- 原顺序：["测试会话 1", "测试会话 2", "测试会话 3"]
-- 反转后：["测试会话 3", "测试会话 2", "测试会话 1"]
-
-**验证：**
-```swift
-let sessions = app.buttons.matching(
-    NSPredicate(format: "identifier CONTAINS 'Session'")
-).allElementsBoundByIndex
-
-// 验证顺序已反转
-XCTAssertEqual(sessions[0].label, "测试会话 3")
-XCTAssertEqual(sessions[1].label, "测试会话 2")
-XCTAssertEqual(sessions[2].label, "测试会话 1")
-```
+**验证标准：**
+- ✅ `XCTAssertTrue(sortButton.exists)` - 排序按钮必须存在
+- ✅ `XCTAssertTrue(sortSheet.exists)` - 排序弹窗必须打开
+- ✅ `XCTAssertEqual(sessions[0].label, "测试会话 3")` - 顺序必须反转
 
 ---
 
@@ -186,7 +160,7 @@ XCTAssertEqual(sessions[2].label, "测试会话 1")
 | 5.7 | 重复 5.1-5.6 | - | 删除所有新建会话 |
 
 **最终验证：**
-- ✅ 列表只剩 1 个系统保留会话
+- ✅ `XCTAssertEqual(finalCount, 1)` - 必须只剩 1 个系统保留会话
 
 ---
 
@@ -205,166 +179,68 @@ XCTAssertEqual(sessions[2].label, "测试会话 1")
 
 #### 阶段 0：打开设置页面
 
-| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
-|------|------|----------------|-----------|
-| 0.1 | 点击设置按钮 | `settingsButton` (gear 图标) | 左上角 |
-| 0.2 | 验证设置弹窗出现 | `sheet` | 屏幕中央 |
-| 0.3 | 验证连接状态显示 | Text "Connected" 或 "Not Connected" | 顶部 Section |
-
-**验证：**
-- ✅ 设置按钮存在
-- ✅ 设置弹窗打开
-- ✅ 连接状态正确显示
+**验证标准：**
+- ✅ `XCTAssertTrue(settingsButton.exists)` - 设置按钮必须存在
+- ✅ `XCTAssertTrue(settingsSheet.exists)` - 设置弹窗必须打开
 
 ---
 
 #### 阶段 1：记录并修改输入框内容（第一次）
 
-**界面：设置弹窗**
-
-| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
-|------|------|----------------|-----------|
-| 1.1 | 获取 Gateway URL 输入框 | `gatewayUrlInput` (TextField) | Gateway Section |
-| 1.2 | 记录原始 URL 值 | `originalUrl` | - |
-| 1.3 | 获取 Token 输入框 | `tokenInput` (SecureTextField) | Gateway Section |
-| 1.4 | 记录原始 Token 值 | `originalToken` | - |
-| 1.5 | 修改 Gateway URL | 输入："ws://test-host:12345" | `gatewayUrlInput` |
-| 1.6 | 修改 Token | 输入："test-token-123" | `tokenInput` |
-| 1.7 | 验证 "Apply & Reconnect" 按钮出现 | "Apply & Reconnect" 按钮 | 有修改时显示 |
-
-**代码示例：**
-```swift
-// 记录原始值
-let originalUrl = app.textFields["gatewayUrlInput"].value as! String
-let originalToken = app.secureTextFields["tokenInput"].value as! String
-
-// 修改 URL
-let urlField = app.textFields["gatewayUrlInput"]
-urlField.tap()
-urlField.typeText("ws://test-host:12345")
-
-// 修改 Token
-let tokenField = app.secureTextFields["tokenInput"]
-tokenField.tap()
-tokenField.typeText("test-token-123")
-
-// 验证 Apply & Reconnect 按钮出现
-let applyButton = app.buttons["Apply & Reconnect"].firstMatch
-XCTAssertTrue(applyButton.exists, "修改后应该显示 Apply & Reconnect 按钮")
-```
-
-**验证：**
-- ✅ Gateway URL 输入框可编辑
-- ✅ Token 输入框可编辑
-- ✅ 修改后出现 "Apply & Reconnect" 按钮
+**验证标准：**
+- ✅ `XCTAssertTrue(gatewayUrlInput.exists)` - URL 输入框必须存在
+- ✅ `XCTAssertTrue(tokenInput.exists)` - Token 输入框必须存在
+- ✅ `XCTAssertTrue(applyButton.exists)` - 修改后 Apply 按钮必须出现
 
 ---
 
 #### 阶段 2：点击取消并验证不保存
 
-| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
-|------|------|----------------|-----------|
-| 2.1 | 点击取消按钮 | "Cancel" / "取消" | 左上角 |
-| 2.2 | 验证弹窗关闭 | `sheet` 消失 | - |
-| 2.3 | 再次点击设置按钮 | `settingsButton` | 左上角 |
-| 2.4 | 验证弹窗重新打开 | `sheet` 出现 | - |
-| 2.5 | 检查 Gateway URL 输入框 | `gatewayUrlInput` | 应该是原始值 |
-| 2.6 | 验证 URL 未保存 | `gatewayUrlInput.value == originalUrl` | - |
-| 2.7 | 检查 Token 输入框 | `tokenInput` | 应该是原始值 |
-| 2.8 | 验证 Token 未保存 | `tokenInput.value == originalToken` | - |
-
-**代码示例：**
-```swift
-// 点击取消
-app.buttons["Cancel"].firstMatch.forceTap()
-
-// 重新打开设置
-app.buttons["settingsButton"].firstMatch.forceTap()
-
-// 验证值未改变
-let currentUrl = app.textFields["gatewayUrlInput"].value as! String
-let currentToken = app.secureTextFields["tokenInput"].value as! String
-
-XCTAssertEqual(currentUrl, originalUrl, "取消后 URL 应该保持不变")
-XCTAssertEqual(currentToken, originalToken, "取消后 Token 应该保持不变")
-```
-
-**验证：**
-- ✅ 点击取消后弹窗关闭
-- ✅ 重新打开后 URL 保持原始值
-- ✅ 重新打开后 Token 保持原始值
+**验证标准：**
+- ✅ `XCTAssertFalse(settingsSheet.exists)` - 取消后弹窗必须关闭
+- ✅ `XCTAssertEqual(currentUrl, originalUrl)` - URL 必须保持原值
+- ✅ `XCTAssertEqual(currentToken, originalToken)` - Token 必须保持原值
 
 ---
 
 #### 阶段 3：修改并保存（第二次修改）
 
-| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
-|------|------|----------------|-----------|
-| 3.1 | 修改 Gateway URL | 输入："ws://new-host:99999" | `gatewayUrlInput` |
-| 3.2 | 修改 Token | 输入："new-token-999" | `tokenInput` |
-| 3.3 | 点击完成按钮 | "Done" / "完成" | 右上角 |
-| 3.4 | 验证弹窗关闭 | `sheet` 消失 | - |
-
-**代码示例：**
-```swift
-// 清空并输入新 URL
-let urlField = app.textFields["gatewayUrlInput"]
-urlField.tap()
-urlField.typeText(XCUIKeyboardKey.delete)  // 清空
-urlField.typeText("ws://new-host:99999")
-
-// 清空并输入新 Token
-let tokenField = app.secureTextFields["tokenInput"]
-tokenField.tap()
-tokenField.typeText(XCUIKeyboardKey.delete)  // 清空
-tokenField.typeText("new-token-999")
-
-// 点击 Done 保存
-app.buttons["Done"].firstMatch.forceTap()
-```
-
-**验证：**
-- ✅ 修改后可以点击 Done 保存
-- ✅ 弹窗关闭
+**验证标准：**
+- ✅ `XCTAssertTrue(doneButton.exists)` - Done 按钮必须存在
+- ✅ `XCTAssertFalse(settingsSheet.exists)` - 保存后弹窗必须关闭
 
 ---
 
 #### 阶段 4：验证保存成功
 
-| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
-|------|------|----------------|-----------|
-| 4.1 | 再次点击设置按钮 | `settingsButton` | 左上角 |
-| 4.2 | 验证弹窗打开 | `sheet` 出现 | - |
-| 4.3 | 检查 Gateway URL | `gatewayUrlInput` | 应该是 "ws://new-host:99999" |
-| 4.4 | 验证 URL 已保存 | `gatewayUrlInput.value == "ws://new-host:99999"` | - |
-| 4.5 | 检查 Token | `tokenInput` | 应该是 "new-token-999" |
-| 4.6 | 验证 Token 已保存 | `tokenInput.value == "new-token-999"` | - |
-| 4.7 | 点击取消按钮 | "Cancel" | 左上角 |
-| 4.8 | 关闭设置页面 | - | - |
-
-**代码示例：**
-```swift
-// 重新打开设置
-app.buttons["settingsButton"].firstMatch.forceTap()
-
-// 验证保存后的值
-let savedUrl = app.textFields["gatewayUrlInput"].value as! String
-let savedToken = app.secureTextFields["tokenInput"].value as! String
-
-XCTAssertEqual(savedUrl, "ws://new-host:99999", "URL 应该已保存")
-XCTAssertEqual(savedToken, "new-token-999", "Token 应该已保存")
-
-// 关闭设置
-app.buttons["Cancel"].firstMatch.forceTap()
-```
-
-**验证：**
-- ✅ URL 已保存为新值
-- ✅ Token 已保存为新值
+**验证标准：**
+- ✅ `XCTAssertEqual(savedUrl, "ws://new-host:99999")` - URL 必须已保存
+- ✅ `XCTAssertEqual(savedToken, "new-token-999")` - Token 必须已保存
 
 ---
 
-### 按钮标识符汇总
+### 流程 3：应用启动流程
+
+**测试文件：** `AppLaunchUITests.swift`  
+**测试方法：** `testAppLaunchAndResume()`
+
+> 💡 **说明：** 测试应用冷启动和后台恢复。
+
+**流程步骤：**
+- [ ] 冷启动应用
+- [ ] 验证启动时间
+- [ ] 验证自动连接（有保存凭证时）
+- [ ] 验证欢迎界面（无保存凭证时）
+- [ ] 从后台恢复应用
+- [ ] 验证自动重连
+
+**验证标准：**
+- ✅ `XCTAssertTrue(mainWindow.exists)` - 主窗口必须在 30 秒内加载
+- ✅ `XCTAssertLessThanOrEqual(launchTime, 5.0)` - 启动时间不超过 5 秒
+
+---
+
+## 按钮标识符汇总
 
 | 按钮/元素 | Identifier | 类型 | 位置 |
 |----------|-----------|------|------|
@@ -384,53 +260,12 @@ app.buttons["Cancel"].firstMatch.forceTap()
 
 ---
 
-### 流程 3：同步功能流程
-
-**测试文件：** `SyncButtonUITests.swift`  
-**测试方法：** `testSyncAndConflict()`
-
-> 💡 **说明：** 测试 Cloudflare KV 同步和冲突处理。
-
-**流程步骤：**
-- [ ] 点击同步按钮
-- [ ] 验证同步确认弹窗
-- [ ] 点击确定开始同步
-- [ ] 验证同步进度显示
-- [ ] 验证同步完成提示
-
-**同步冲突处理：**
-- [ ] 检测到同步冲突
-- [ ] 显示冲突解决选项
-- [ ] 选择使用本地数据
-- [ ] 选择使用云端数据
-- [ ] 选择取消同步
-
----
-
-### 流程 4：应用启动流程
-
-**测试文件：** `AppLaunchUITests.swift`  
-**测试方法：** `testAppLaunchAndResume()`
-
-> 💡 **说明：** 测试应用冷启动和后台恢复。
-
-**流程步骤：**
-- [ ] 冷启动应用
-- [ ] 验证启动时间
-- [ ] 验证自动连接（有保存凭证时）
-- [ ] 验证欢迎界面（无保存凭证时）
-- [ ] 从后台恢复应用
-- [ ] 验证自动重连
-
----
-
 ## 测试用例映射表
 
 | 流程 | 测试文件 | 测试方法 | 状态 |
 |------|---------|---------|------|
 | 完整会话生命周期 | SessionManagementUITests.swift | testCompleteSessionLifecycle() | 🔄 待实现 |
 | 设置页面完整流程 | SettingsUITests.swift | testSettingsCompleteFlow() | 🔄 待实现 |
-| 同步功能 | SyncButtonUITests.swift | testSyncAndConflict() | ✅ |
 | 应用启动 | AppLaunchUITests.swift | testAppLaunchAndResume() | ✅ |
 
 > ✅ = 已有测试 | 🔄 = 待实现/优化
@@ -463,6 +298,9 @@ xcodebuild test \
 ### Q: 测试失败如何调试？
 A: 查看测试日志 `build/ui_tests/test_output.log`
 
+### Q: 为什么测试会中途终止？
+A: 这是预期行为。任何 `XCTAssert` 失败都会立即终止测试，确保问题不被忽略。
+
 ### Q: 如何添加新的测试用例？
 A: 在对应测试文件中添加新方法，命名格式：`test[功能]_[场景]_[预期结果]()`
 
@@ -477,7 +315,58 @@ A: Token 输入框是 `secureTextFields` 类型，不是 `textFields`。使用 `
 
 ---
 
+## 测试代码编写规范
+
+### 强制验证原则
+
+**❌ 错误做法 - 使用 if 检查跳过：**
+```swift
+if button.exists {
+    button.tap()
+} else {
+    print("按钮不存在，跳过")
+    return  // 测试提前结束，不报错
+}
+```
+
+**✅ 正确做法 - 使用 XCTAssert 强制验证：**
+```swift
+XCTAssertTrue(button.exists, "按钮必须存在")
+button.tap()  // 如果不存在，测试会在这里失败并报错
+```
+
+### 验证标准
+
+1. **每个关键步骤都必须有 XCTAssert 验证**
+2. **失败必须报错，不能跳过或忽略**
+3. **错误信息必须清晰，说明期望和实际结果**
+4. **测试要么完全通过，要么明确失败，没有中间状态**
+
+### 示例对比
+
+**❌ 弱验证：**
+```swift
+let button = app.buttons["test"]
+if button.exists {
+    button.tap()
+    print("点击成功")
+}
+```
+
+**✅ 强验证：**
+```swift
+let button = app.buttons["test"]
+XCTAssertTrue(button.waitForExistence(timeout: 5), 
+              "测试按钮必须在 5 秒内出现")
+button.tap()
+XCTAssertTrue(resultView.exists, 
+              "点击后结果视图必须显示")
+```
+
+---
+
 **维护说明：**
 - 每次添加新功能时，更新此文档并添加对应测试
 - 测试流程变更时，同步更新文档
 - 定期审查测试覆盖率，确保核心功能都有测试
+- 所有新测试必须遵循"强制验证原则"

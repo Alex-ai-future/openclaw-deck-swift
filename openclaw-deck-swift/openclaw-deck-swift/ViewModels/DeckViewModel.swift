@@ -237,12 +237,26 @@ class DeckViewModel {
         }
 
         // ✅ 先加载会话列表（包括 Cloudflare 同步），确保后续操作有数据
-        logger.info("📥 加载会话列表...")
-        loadingStage = .fetchingSessions
-        loadingProgress = 0.4
-        await loadSessionsFromStorage()
-        // 恢复为 connecting 状态，等待连接成功
-        logger.info("✅ 会话列表加载完成，共 \(self.sessionOrder.count) 个会话")
+        // 如果 sessionOrder 已经有值（解决冲突后重新调用），跳过加载
+        if sessionOrder.isEmpty {
+            logger.info("📥 加载会话列表...")
+            loadingStage = .fetchingSessions
+            loadingProgress = 0.4
+            await loadSessionsFromStorage()
+
+            // ❗ 检测是否有冲突（冲突时 showingSyncConflict 会被设置）
+            // 如果有冲突，停止初始化流程，等待用户解决
+            if showingSyncConflict {
+                logger.log("⏳ Sync conflict detected, stopping initialization")
+                // 保持 loadingStage = .fetchingSessions，等待用户解决冲突
+                // 不继续执行连接 Gateway 的流程
+                return
+            }
+
+            logger.info("✅ 会话列表加载完成，共 \(self.sessionOrder.count) 个会话")
+        } else {
+            logger.info("✅ 会话列表已存在，跳过加载（\(self.sessionOrder.count) 个会话）")
+        }
 
         // 创建 GatewayClient
         var client = diContainer.createGatewayClient(url: gatewayUrl, token: token)
@@ -632,17 +646,14 @@ class DeckViewModel {
         conflictRemoteData = nil
         conflictInfo = nil
 
-        // ✅ 继续完成初始化流程
-        // 设置 Gateway 已连接
-        gatewayConnected = true
+        // ✅ 继续完成初始化流程（连接 Gateway）
+        // 从 UserDefaults 读取配置
+        let gatewayUrl = storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
+        let token = storage.loadToken()
 
-        // 加载所有会话的消息历史
-        await loadAllSessionHistory()
-
-        // 初始化完成
-        isInitializing = false
-        loadingStage = .idle
-        loadingProgress = 0.0
+        // 重新调用 initialize() 完成剩余流程
+        // initialize() 会检测到 sessionOrder 已有值，跳过加载会话列表
+        await initialize(url: gatewayUrl, token: token)
     }
 
     /// 应用同步数据

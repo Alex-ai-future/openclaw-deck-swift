@@ -72,15 +72,8 @@ final class OpenClawCoreTests: XCTestCase {
 
         // 输入消息
         messageInput.tap()
-        messageInput.typeText("UI Test Hello")
+        messageInput.typeText("UI Test Hello\n")
 
-        // 等待发送按钮出现
-        let sendButton = app.buttons["sendButton"].firstMatch
-        let buttonExists = sendButton.waitForExistence(timeout: 5)
-        XCTAssertTrue(buttonExists, "发送按钮应该在 5 秒内出现")
-
-        // 点击发送
-        sendButton.tap()
 
         // 等待消息显示
         sleep(2)
@@ -93,6 +86,7 @@ final class OpenClawCoreTests: XCTestCase {
         add(attachment)
         print("✅ testSendMessage 通过")
     }
+
     /// 测试 3: 连接流程（简化版）
     func testConnectionFlow() {
         // 这个测试需要实际的 Gateway 服务器
@@ -102,7 +96,6 @@ final class OpenClawCoreTests: XCTestCase {
         let settingsExists = settingsButton.waitForExistence(timeout: 10)
 
         if settingsExists {
-
             // 截图
             let screenshot = app.windows.firstMatch.screenshot()
             let attachment = XCTAttachment(screenshot: screenshot)

@@ -20,6 +20,20 @@ struct GlobalInputView: View {
             DictationButton(text: $state.inputText, speechRecognizer: state.speechRecognizer)
                 .frame(width: 36, height: 36)
 
+            // 收起键盘按钮（仅 iOS 且键盘弹出时显示）
+            #if os(iOS) || os(visionOS)
+                if isInputFocused {
+                    Button {
+                        isInputFocused = false
+                    } label: {
+                        Image(systemName: "keyboard.chevron.compact.down")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.glass)
+                    .frame(width: 36, height: 36)
+                }
+            #endif
+
             // 输入框
             ZStack(alignment: .trailing) {
                 TextField("message".localized, text: $state.inputText, axis: .vertical)
@@ -28,23 +42,10 @@ struct GlobalInputView: View {
                     .padding(.vertical, 4)
                     .textFieldStyle(.plain)
                     .tint(.accentColor)
-                    .submitLabel(.done)
                     .accessibilityIdentifier("messageInput")
                     .focused($isInputFocused)
                     .onChange(of: state.inputText) { _, _ in
                         state.calculateTextHeight()
-                    }
-                    .onSubmit {
-                        // 有内容时发送
-                        if !state.inputText.isEmpty {
-                            Task {
-                                await onSend()
-                            }
-                        }
-                        // 延迟收起键盘，等待发送完成
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isInputFocused = false
-                        }
                     }
 
                 // 占位文字

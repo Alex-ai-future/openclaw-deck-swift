@@ -35,49 +35,51 @@ struct GlobalInputView: View {
             #endif
 
             // 输入框
-            ZStack(alignment: .trailing) {
-                TextField("message".localized, text: $state.inputText, axis: .vertical)
-                    .font(.body)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 4)
-                    .textFieldStyle(.plain)
-                    .tint(.accentColor)
-                    .accessibilityIdentifier("messageInput")
-                    .focused($isInputFocused)
-                    .onChange(of: state.inputText) { _, _ in
-                        state.calculateTextHeight()
+            // 输入框
+            TextField("message".localized, text: $state.inputText, axis: .vertical)
+                .font(.body)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 4)
+                .textFieldStyle(.plain)
+                .tint(.accentColor)
+                .accessibilityIdentifier("messageInput")
+                .accessibilityLabel("message".localized)
+                .focused($isInputFocused)
+                .onChange(of: state.inputText) { _, _ in
+                    state.calculateTextHeight()
+                }
+                .overlay(
+                    Group {
+                        if state.inputText.isEmpty {
+                            Text("message".localized)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 14)
+                                .allowsHitTesting(false)
+                        }
+                    },
+                    alignment: .leading
+                )
+                .frame(height: state.textHeight)
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear {
+                                state.inputWidth = geometry.size.width
+                            }
+                            .onChange(of: geometry.size.width) { _, newWidth in
+                                state.inputWidth = newWidth
+                            }
                     }
-
-                // 占位文字
-                if state.inputText.isEmpty {
-                    Text("message".localized)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 14)
-                        .allowsHitTesting(false)
-                }
-            }
-            .frame(height: state.textHeight)
-            .background(
-                GeometryReader { geometry in
-                    Color.clear
-                        .onAppear {
-                            state.inputWidth = geometry.size.width
-                        }
-                        .onChange(of: geometry.size.width) { _, newWidth in
-                            state.inputWidth = newWidth
-                        }
-                }
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.regularMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    )
-            )
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.regularMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        )
+                )
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 8)

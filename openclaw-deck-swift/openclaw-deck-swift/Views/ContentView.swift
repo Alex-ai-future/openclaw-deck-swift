@@ -433,6 +433,37 @@ struct WelcomeView: View {
                 .cornerRadius(12)
                 .padding(.horizontal, 24)
 
+
+                // Login guide card
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "hand.point.up.right.fill")
+                            .foregroundColor(.blue)
+                        Text("login_required".localized)
+                            .font(.headline)
+                    }
+
+                    Text("login_guide".localized)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    HStack {
+                        Image(systemName: "gearshape.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("tap_settings_to_configure".localized)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.top, 4)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.adaptiveSecondaryBackground)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
+
                 Spacer()
 
                 // Error message

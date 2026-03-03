@@ -72,7 +72,7 @@ final class SyncButtonUITests: XCTestCase {
         sleep(1)
 
         // 验证弹窗关闭
-        let stillExists = cancelButton.exists || cancelENButton.existsu
+        let stillExists = cancelButton.exists || cancelENButton.exists
         XCTAssertFalse(stillExists, "弹窗应该已关闭")
         sleep(1)
         XCTAssertFalse(cancelButton.exists && cancelENButton.exists, "弹窗应该已关闭")

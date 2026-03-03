@@ -235,3 +235,8 @@
 "first_install" = "首次安装";
 "first_install_guide" = "请先配置 Gateway 连接，详细步骤请查看用户指南。";
 "view_user_guide" = "查看用户指南";
+
+// MARK: - Login Guide
+"login_required" = "需要登录";
+"login_guide" = "配置 Gateway 连接后即可开始使用";
+"tap_settings_to_configure" = "点击右上角设置图标进行配置";

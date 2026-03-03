@@ -235,3 +235,8 @@
 "first_install" = "First Install";
 "first_install_guide" = "Please configure Gateway connection first. See User Guide for detailed steps.";
 "view_user_guide" = "View User Guide";
+
+// MARK: - Login Guide
+"login_required" = "Login Required";
+"login_guide" = "Configure Gateway connection to start using the app.";
+"tap_settings_to_configure" = "Tap the settings icon to configure";

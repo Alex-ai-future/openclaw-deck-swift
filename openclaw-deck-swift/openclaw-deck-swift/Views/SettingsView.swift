@@ -217,6 +217,11 @@ struct SettingsView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("done".localized) {
+                        // 保存配置
+                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                        if !token.isEmpty {
+                            UserDefaultsStorage.shared.saveToken(token)
+                        }
                         onClose?()
                     }
                     .fontWeight(.semibold)

@@ -167,6 +167,11 @@ struct ContentView: View {
                     }
                 },
                 onClose: {
+                    // 保存配置
+                    UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                    if !token.isEmpty {
+                        UserDefaultsStorage.shared.saveToken(token)
+                    }
                     showingSettings = false
                 },
                 viewModel: viewModel
@@ -207,6 +212,11 @@ struct ContentView: View {
                     }
                 },
                 onClose: {
+                    // 保存配置
+                    UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                    if !token.isEmpty {
+                        UserDefaultsStorage.shared.saveToken(token)
+                    }
                     showingWelcomeSettings = false
                 },
                 viewModel: viewModel
@@ -432,7 +442,6 @@ struct WelcomeView: View {
                 .background(Color.adaptiveSecondaryBackground)
                 .cornerRadius(12)
                 .padding(.horizontal, 24)
-
 
                 // Login guide card
                 VStack(alignment: .leading, spacing: 12) {

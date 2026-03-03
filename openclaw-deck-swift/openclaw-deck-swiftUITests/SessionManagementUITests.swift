@@ -146,16 +146,16 @@ final class SessionManagementUITests: XCTestCase {
             if newSessionButton.exists {
                 newSessionButton.forceTap()
                 sleep(1)
-                
+
                 let createButton = app.buttons["创建"].firstMatch.exists
                     ? app.buttons["创建"].firstMatch
                     : app.buttons["Create"].firstMatch
-                
+
                 if createButton.exists {
                     createButton.forceTap()
                     sleep(2)
                 }
-                
+
                 sessionButtons = app.buttons.matching(
                     NSPredicate(format: "identifier CONTAINS 'Session'")
                 ).allElementsBoundByIndex
@@ -172,7 +172,7 @@ final class SessionManagementUITests: XCTestCase {
             let deleteButton = app.buttons["deleteSessionButton"].firstMatch
             if deleteButton.waitForExistence(timeout: 5) {
                 print("  ✅ 删除按钮已找到")
-                
+
                 // 5. 点击删除按钮
                 deleteButton.forceTap()
                 sleep(1)
@@ -202,7 +202,7 @@ final class SessionManagementUITests: XCTestCase {
             ).count
 
             print("  删除后会话数：\(finalCount) (初始：\(initialCount))")
-            
+
             // 宽松验证：只要数量不变或减少即可
             XCTAssertLessThanOrEqual(finalCount, initialCount, "会话数量不应该增加")
             print("  ✅ 会话数量验证通过")

@@ -51,7 +51,7 @@ final class SettingsUITests: XCTestCase {
         let urlInput = settingsSheet.textFields.firstMatch
         if urlInput.exists {
             print("  ✅ Gateway URL 输入框存在")
-            
+
             // 4. 验证输入框可编辑
             urlInput.tap()
             sleep(1)
@@ -72,7 +72,7 @@ final class SettingsUITests: XCTestCase {
         let cancelButton = settingsSheet.buttons["取消"].firstMatch.exists
             ? settingsSheet.buttons["取消"].firstMatch
             : settingsSheet.buttons["Cancel"].firstMatch
-        
+
         if cancelButton.exists {
             cancelButton.forceTap()
             sleep(1)

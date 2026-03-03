@@ -132,8 +132,6 @@ struct SessionColumnView: View {
 
                 // 底部浮动按钮组
                 VStack {
-                    // 顶部状态条 - iPad 显示对话名字
-                    topStatusBar
                     Spacer()
 
                     HStack(spacing: 16) {
@@ -168,9 +166,11 @@ struct SessionColumnView: View {
                                 Button {
                                     sendInputMessage()
                                 } label: {
-                                    Image(systemName: "arrow.up.circle").accessibilityIdentifier("sendButton")
-                                        .font(.title2)
-                                        .foregroundColor(.blue)
+                                    Image(systemName: "arrow.up.circle").accessibilityIdentifier(
+                                        "sendButton"
+                                    )
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
                                 .frame(height: 40)

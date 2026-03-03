@@ -18,12 +18,34 @@ final class SessionManagementUITests: XCTestCase {
         continueAfterFailure = false // 失败立即停止
         app.launch()
 
+        print("🚀 应用已启动，等待加载...")
+
         // 强制验证：应用必须在 30 秒内加载
         let mainWindow = app.windows.firstMatch
         XCTAssertTrue(
             mainWindow.waitForExistence(timeout: 30),
             "应用必须在 30 秒内加载完成"
         )
+        print("✅ 主窗口已加载")
+
+        // 等待 2 秒让界面完全渲染
+        sleep(2)
+
+        // 检查当前界面状态
+        let newSessionButton = app.buttons["NewSessionButton"]
+        let settingsButton = app.buttons["settingsButton"]
+
+        if newSessionButton.exists {
+            print("✅ 主界面已加载（看到新建会话按钮）")
+        } else if settingsButton.exists {
+            print("⚠️  可能显示的是欢迎界面，尝试点击设置按钮")
+        } else {
+            print("⚠️  未检测到主界面按钮，截图诊断...")
+            let screenshot = mainWindow.screenshot()
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "诊断截图_启动后"
+            add(attachment)
+        }
     }
 
     override func tearDownWithError() throws {

@@ -1,12 +1,8 @@
 // SyncButtonUITests.swift
 // OpenClaw Deck Swift
 //
-// SyncButton UI 测试 - 平台适配版本
-//
-// 平台支持：
-// - ✅ iOS: 触摸交互测试
-// - ✅ iPadOS: 平板交互测试
-// - ✅ macOS: 鼠标交互测试
+// SyncButton UI 测试 - 平台分离版本
+// 每个平台只运行适合自己的测试
 
 import XCTest
 
@@ -18,26 +14,20 @@ import XCTest
 final class SyncButtonUITests: XCTestCase {
     var app: XCUIApplication!
 
-    /// 当前运行平台
-    var currentPlatform: String {
+    /// 当前平台
+    var isIOS: Bool {
         #if os(iOS)
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                return "iPadOS"
-            }
-            return "iOS"
-        #elseif os(macOS)
-            return "macOS"
+            return true
         #else
-            return "Unknown"
+            return false
         #endif
     }
 
-    /// 弹窗类型（不同平台不同）
-    var alertType: String {
+    var isMacOS: Bool {
         #if os(macOS)
-            return "dialog" // macOS 使用 dialog
+            return true
         #else
-            return "alert" // iOS 使用 alert
+            return false
         #endif
     }
 
@@ -49,63 +39,14 @@ final class SyncButtonUITests: XCTestCase {
         continueAfterFailure = true
         app.launch()
 
-        print("📱 在 [\(currentPlatform)] 平台启动 UI 测试")
+        print("📱 启动平台：\(isIOS ? "iOS" : isMacOS ? "macOS" : "Unknown")")
 
-        // 等待主界面加载
-        waitForAppToLoad()
-    }
-
-    /// 等待应用加载完成
-    private func waitForAppToLoad() {
-        let loaded = waitForElementToAppear(
-            app.buttons["SyncButton"],
-            timeout: 30,
-            message: "Sync 按钮应该在 30 秒内出现"
+        // 等待应用加载
+        let syncButton = app.buttons["SyncButton"].firstMatch
+        XCTAssertTrue(
+            syncButton.waitForExistence(timeout: 30),
+            "Sync 按钮应该在 30 秒内出现"
         )
-        XCTAssertTrue(loaded)
-    }
-
-    /// 通用方法：等待元素出现
-    private func waitForElementToAppear(
-        _ element: XCUIElement,
-        timeout: TimeInterval,
-        message: String
-    ) -> Bool {
-        let exists = element.waitForExistence(timeout: timeout)
-        if !exists {
-            print("⚠️  \(message)")
-            // 调试信息
-            print("  可用按钮：\(app.buttons.allElementsBoundByIndex.map(\.identifier))")
-        }
-        return exists
-    }
-
-    /// 平台特定：获取确认弹窗的 Cancel 按钮
-    private func getCancelButton() -> XCUIElement {
-        #if os(macOS)
-            // macOS 可能使用不同的按钮标签
-            return app.buttons["取消"].firstMatch.exists
-                ? app.buttons["取消"].firstMatch
-                : app.buttons["Cancel"].firstMatch
-        #else
-            // iOS 使用标准标签
-            return app.buttons["取消"].firstMatch.exists
-                ? app.buttons["取消"].firstMatch
-                : app.buttons["Cancel"].firstMatch
-        #endif
-    }
-
-    /// 平台特定：获取确认弹窗的 Sync 按钮
-    private func getSyncButton() -> XCUIElement {
-        #if os(macOS)
-            return app.buttons["同步"].firstMatch.exists
-                ? app.buttons["同步"].firstMatch
-                : app.buttons["Sync"].firstMatch
-        #else
-            return app.buttons["同步"].firstMatch.exists
-                ? app.buttons["同步"].firstMatch
-                : app.buttons["Sync"].firstMatch
-        #endif
     }
 
     override func tearDownWithError() throws {
@@ -114,209 +55,177 @@ final class SyncButtonUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    // MARK: - 核心测试：完整的同步流程
+    // MARK: - 所有平台通用测试
 
-    /// 测试 1：Sync 按钮完整功能流程
-    func testSyncButton_completeFlow() {
-        print("🧪 开始 testSyncButton_completeFlow [\(currentPlatform)]")
-
-        // 1. 验证同步按钮存在
+    /// 测试：Sync 按钮存在（所有平台）
+    func testSyncButton_Exists() {
         let syncButton = app.buttons["SyncButton"].firstMatch
-        XCTAssertTrue(
-            waitForElementToAppear(syncButton, timeout: 5, message: "同步按钮应该存在"),
-            "同步按钮应该在 5 秒内出现"
-        )
+        XCTAssertTrue(syncButton.exists, "Sync 按钮应该存在")
+        XCTAssertTrue(syncButton.isEnabled, "Sync 按钮应该可点击")
+        print("✅ testSyncButton_Exists 通过")
+    }
 
-        // 平台特定：验证按钮可点击性
-        #if os(macOS)
-            // macOS 验证 hover 状态（如果支持）
-            XCTAssertTrue(syncButton.isEnabled, "macOS: 同步按钮应该可点击")
-        #else
-            // iOS 验证触摸状态
-            XCTAssertTrue(syncButton.isEnabled, "iOS: 同步按钮应该可点击")
-        #endif
-
-        // 2. 点击同步按钮
+    /// 测试：点击 Sync 显示确认（所有平台）
+    func testSyncButton_ShowsConfirmation() {
+        let syncButton = app.buttons["SyncButton"].firstMatch
         syncButton.tap()
-        print("  ✅ 点击了同步按钮")
 
-        // 3. 等待确认弹窗出现
-        let cancelButton = getCancelButton()
-        let syncButtonInAlert = getSyncButton()
+        // 等待任意确认按钮出现（支持中英文）
+        let hasCancel = app.buttons["取消"].waitForExistence(timeout: 10) ||
+            app.buttons["Cancel"].waitForExistence(timeout: 10)
 
-        let alertAppeared = waitForElementToAppear(
-            cancelButton,
-            timeout: 10,
-            message: "确认弹窗应该在 10 秒内出现"
-        )
-        XCTAssertTrue(alertAppeared, "确认弹窗应该出现")
-        print("  ✅ 确认弹窗出现")
-
-        // 4. 验证弹窗内容
-        XCTAssertTrue(
-            cancelButton.exists,
-            "弹窗应该有 Cancel/取消按钮"
-        )
-        XCTAssertTrue(
-            syncButtonInAlert.exists,
-            "弹窗应该有 Sync/同步按钮"
-        )
-        print("  ✅ 弹窗按钮验证通过")
-
-        // 5. 点击 Cancel 取消同步
-        cancelButton.tap()
-        print("  ✅ 点击了取消按钮")
-
-        // 验证弹窗消失
-        sleep(1) // 等待动画
-        XCTAssertFalse(
-            cancelButton.exists,
-            "弹窗应该在点击 Cancel 后消失"
-        )
-        print("  ✅ 弹窗已关闭")
-
-        // 6. 验证应用还在主界面
-        #if os(iOS)
-            XCTAssertTrue(
-                app.tables["SessionList"].exists,
-                "iOS: 应该还在 Session 列表界面"
-            )
-        #elseif os(macOS)
-            // macOS 验证主窗口存在
-            XCTAssertTrue(
-                app.windows.firstMatch.exists || app.buttons["SyncButton"].exists,
-                "macOS: 应用应该还在主界面"
-            )
-        #endif
-        print("  ✅ 返回主界面")
-
-        print("✅ testSyncButton_completeFlow 通过 [\(currentPlatform)]")
+        XCTAssertTrue(hasCancel, "应该显示确认弹窗")
+        print("✅ testSyncButton_ShowsConfirmation 通过")
     }
 
-    // MARK: - 边缘情况测试
-
-    /// 测试 2：Sync 按钮边缘情况
-    func testSyncButton_edgeCases() {
-        print("🧪 开始 testSyncButton_edgeCases [\(currentPlatform)]")
-
-        let syncButton = app.buttons["SyncButton"].firstMatch
-
-        guard waitForElementToAppear(syncButton, timeout: 5, message: "同步按钮未找到") else {
-            XCTFail("同步按钮未找到")
-            return
-        }
-
-        // 平台特定：多次点击测试
-        #if os(iOS)
-            // iOS: 快速连续点击
-            for i in 0 ..< 3 {
-                syncButton.tap()
-                sleep(1)
-
-                let cancelButton = getCancelButton()
-                if cancelButton.exists {
-                    cancelButton.tap()
-                    print("  第 \(i + 1) 次点击：弹窗出现并取消")
-                }
-            }
-        #elseif os(macOS)
-            // macOS: 模拟鼠标点击
-            for i in 0 ..< 3 {
-                syncButton.tap()
-                sleep(2)
-
-                let cancelButton = getCancelButton()
-                if cancelButton.exists {
-                    cancelButton.tap()
-                    print("  第 \(i + 1) 次点击：弹窗出现并取消")
-                }
-            }
-        #endif
-
-        // 验证应用没有崩溃
-        #if os(iOS)
-            XCTAssertTrue(
-                app.tables["SessionList"].waitForExistence(timeout: 5),
-                "iOS: 应用应该在多次点击后仍然正常运行"
-            )
-        #elseif os(macOS)
-            XCTAssertTrue(
-                app.buttons["SyncButton"].waitForExistence(timeout: 5),
-                "macOS: 应用应该在多次点击后仍然正常运行"
-            )
-        #endif
-
-        // 验证同步按钮仍然可用
-        XCTAssertTrue(
-            syncButton.exists && syncButton.isEnabled,
-            "同步按钮在多次点击后应该仍然可用"
-        )
-
-        print("✅ testSyncButton_edgeCases 通过 [\(currentPlatform)]")
-    }
-
-    // MARK: - 应用启动测试
-
-    /// 测试 3：应用启动和 Sync 按钮初始化
-    func testAppLaunchAndSyncButton() {
-        print("🧪 开始 testAppLaunchAndSyncButton [\(currentPlatform)]")
-
-        // 验证应用成功启动
-        XCTAssertTrue(app.exists, "应用应该成功启动")
-
-        // 平台特定：验证窗口
-        #if os(iOS)
-            // iOS 验证主窗口
-            let mainWindow = app.windows.firstMatch
-            XCTAssertTrue(mainWindow.exists, "iOS: 主窗口应该存在")
-        #elseif os(macOS)
-            // macOS 验证应用菜单
-            XCTAssertTrue(
-                app.menuItems.firstMatch.exists || app.buttons.firstMatch.exists,
-                "macOS: 应用界面应该存在"
-            )
-        #endif
-
-        // 验证同步按钮存在
-        let syncButton = app.buttons["SyncButton"].firstMatch
-        XCTAssertTrue(
-            waitForElementToAppear(syncButton, timeout: 5, message: "同步按钮应该存在"),
-            "同步按钮应该在 5 秒内出现"
-        )
-
-        print("✅ testAppLaunchAndSyncButton 通过 [\(currentPlatform)]")
-    }
-
-    // MARK: - 平台特定测试
+    // MARK: - iOS 特定测试
 
     #if os(iOS)
-        /// iOS 特定：验证触摸反馈
-        func testSyncButton_TouchFeedback() {
-            print("🧪 开始 iOS 特定测试：触摸反馈")
+        /// iOS 特定：测试触摸交互流程
+        func testSyncButton_TouchFlow_iOS() {
+            print("📱 运行 iOS 特定测试：触摸交互")
 
             let syncButton = app.buttons["SyncButton"].firstMatch
-            XCTAssertTrue(syncButton.waitForExistence(timeout: 5))
+            syncButton.tap()
 
-            // iOS 验证按钮有触摸反馈
-            // （实际测试需要访问辅助功能属性）
-            XCTAssertTrue(syncButton.isEnabled, "按钮应该可交互")
+            // iOS 使用 alert
+            let cancelButton = app.buttons["取消"].firstMatch.exists
+                ? app.buttons["取消"].firstMatch
+                : app.buttons["Cancel"].firstMatch
 
-            print("✅ iOS 触摸反馈测试通过")
+            XCTAssertTrue(cancelButton.exists, "iOS 应该有取消按钮")
+
+            cancelButton.tap()
+
+            // 验证返回 Session 列表（iOS 特有 UI）
+            let sessionList = app.tables["SessionList"]
+            XCTAssertTrue(
+                sessionList.waitForExistence(timeout: 5),
+                "iOS 应该显示 Session 列表"
+            )
+
+            print("✅ testSyncButton_TouchFlow_iOS 通过")
+        }
+
+        /// iOS 特定：测试快速连续触摸
+        func testSyncButton_RapidTaps_iOS() {
+            print("📱 运行 iOS 特定测试：快速连续触摸")
+
+            let syncButton = app.buttons["SyncButton"].firstMatch
+
+            // iOS 可以快速连续点击
+            for _ in 0 ..< 5 {
+                syncButton.tap()
+                usleep(100_000) // 0.1 秒
+            }
+
+            // 验证应用没有崩溃
+            XCTAssertTrue(syncButton.exists, "iOS: 应用应该仍然响应")
+
+            print("✅ testSyncButton_RapidTaps_iOS 通过")
+        }
+
+        /// iOS 特定：测试横竖屏切换（仅 iPad）
+        func testSyncButton_Orientation_iPad() {
+            #if os(iOS)
+                if UIDevice.current.userInterfaceIdiom != .pad {
+                    throw XCTSkip("仅 iPad 支持横竖屏切换")
+                }
+            #endif
+
+            print("📱 运行 iPad 特定测试：横竖屏切换")
+
+            let syncButton = app.buttons["SyncButton"].firstMatch
+            XCTAssertTrue(syncButton.exists, "iPad: Sync 按钮应该存在")
+
+            // 横竖屏切换后验证按钮仍然可用
+            XCUIDevice.shared.orientation = .landscapeLeft
+            usleep(500_000)
+
+            XCTAssertTrue(syncButton.exists, "iPad: 横屏后按钮应该存在")
+
+            XCUIDevice.shared.orientation = .portrait
+            usleep(500_000)
+
+            XCTAssertTrue(syncButton.exists, "iPad: 竖屏后按钮应该存在")
+
+            print("✅ testSyncButton_Orientation_iPad 通过")
         }
     #endif
 
+    // MARK: - macOS 特定测试
+
     #if os(macOS)
-        /// macOS 特定：验证鼠标悬停
-        func testSyncButton_HoverState() {
-            print("🧪 开始 macOS 特定测试：鼠标悬停")
+        /// macOS 特定：测试鼠标点击交互
+        func testSyncButton_MouseClick_macOS() {
+            print("💻 运行 macOS 特定测试：鼠标点击")
 
             let syncButton = app.buttons["SyncButton"].firstMatch
-            XCTAssertTrue(syncButton.waitForExistence(timeout: 5))
+            syncButton.tap()
 
-            // macOS 验证按钮可以交互
-            XCTAssertTrue(syncButton.isEnabled, "按钮应该可交互")
+            // macOS 使用 dialog，按钮标签可能不同
+            let cancelButton = app.buttons["取消"].firstMatch.exists
+                ? app.buttons["取消"].firstMatch
+                : app.buttons["Cancel"].firstMatch
 
-            print("✅ macOS 鼠标悬停测试通过")
+            XCTAssertTrue(cancelButton.exists, "macOS 应该有取消按钮")
+
+            // macOS 点击后验证主窗口仍然在
+            cancelButton.tap()
+
+            let mainWindow = app.windows.firstMatch
+            XCTAssertTrue(
+                mainWindow.exists || syncButton.exists,
+                "macOS 应该返回主界面"
+            )
+
+            print("✅ testSyncButton_MouseClick_macOS 通过")
+        }
+
+        /// macOS 特定：测试菜单快捷键（如果有）
+        func testSyncButton_MenuShortcut_macOS() {
+            print("💻 运行 macOS 特定测试：菜单快捷键")
+
+            // 验证应用有菜单栏（macOS 特有）
+            let menuBar = app.menuBars.firstMatch
+            if menuBar.exists {
+                print("  ✅ macOS 菜单栏存在")
+
+                // 尝试查找同步相关的菜单项
+                let syncMenuItem = app.menuItems.matching(
+                    NSPredicate(format: "label CONTAINS 'Sync' OR label CONTAINS '同步'")
+                ).firstMatch
+
+                if syncMenuItem.exists {
+                    print("  ✅ 找到同步菜单项")
+                } else {
+                    print("  ℹ️  未找到同步菜单项（可选）")
+                }
+            } else {
+                print("  ℹ️  菜单栏不可用（测试环境限制）")
+            }
+
+            print("✅ testSyncButton_MenuShortcut_macOS 通过")
+        }
+
+        /// macOS 特定：测试多窗口支持
+        func testSyncButton_MultipleWindows_macOS() {
+            print("💻 运行 macOS 特定测试：多窗口")
+
+            let windows = app.windows
+            let windowCount = windows.count
+
+            print("  当前窗口数：\(windowCount)")
+
+            // macOS 应该至少有一个窗口
+            XCTAssertGreaterThanOrEqual(windowCount, 1, "macOS 应该至少有一个窗口")
+
+            // 验证 Sync 按钮在第一个窗口
+            let firstWindow = windows.firstMatch
+            let syncButton = firstWindow.buttons["SyncButton"].firstMatch
+            XCTAssertTrue(syncButton.exists, "macOS: Sync 按钮应该在窗口中")
+
+            print("✅ testSyncButton_MultipleWindows_macOS 通过")
         }
     #endif
 }

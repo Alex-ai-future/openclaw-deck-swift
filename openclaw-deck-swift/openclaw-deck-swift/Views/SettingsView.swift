@@ -173,13 +173,13 @@ struct SettingsView: View {
                 // MARK: - 6. HELP
 
                 Section {
-                    Link("user_guide".localized, destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/docs/USER_GUIDE.md")!)
+                    Link("user_guide".localized, destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/docs/USER_GUIDE.html")!)
                         .labelStyle(.titleAndIcon)
 
-                    Link("usage_examples".localized, destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/docs/USAGE_EXAMPLES.md")!)
+                    Link("usage_examples".localized, destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/docs/USAGE_EXAMPLES.html")!)
                         .labelStyle(.titleAndIcon)
 
-                    Link("privacy_policy".localized, destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/docs/PRIVACY.md")!)
+                    Link("privacy_policy".localized, destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/docs/PRIVACY.html")!)
                         .labelStyle(.titleAndIcon)
                 } header: {
                     Label("help".localized, systemImage: "questionmark.circle")

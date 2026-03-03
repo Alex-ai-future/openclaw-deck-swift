@@ -199,6 +199,38 @@ struct ContentView: View {
                 viewModel: viewModel
             )
         }
+        // 同步冲突弹窗（全局，无论哪个视图都显示）
+        .alert("sync_conflict".localized, isPresented: .init(
+            get: { viewModel.showingSyncConflict },
+            set: { _ in } // 只读，通过 resolveSyncConflict 关闭
+        )) {
+            Button("use_local_overwrite_cloud".localized, role: .destructive) {
+                Task {
+                    await viewModel.resolveSyncConflict(choice: "local")
+                }
+            }
+            Button("use_cloud_merge_with_local".localized) {
+                Task {
+                    await viewModel.resolveSyncConflict(choice: "remote")
+                }
+            }
+            Button("cancel".localized, role: .cancel) {
+                Task {
+                    await viewModel.resolveSyncConflict(choice: "cancel")
+                }
+            }
+        } message: {
+            if let info = viewModel.conflictInfo {
+                Text(info.description)
+            } else {
+                let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
+                let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
+                Text(
+                    "Local has \(localCount) sessions, Cloud has \(remoteCount) sessions.\n\nChoose which data to use:"
+                )
+            }
+        }
+
         .task {
             // 首先加载保存的配置到 @State 变量
             if !hasLoadedSavedConfig {

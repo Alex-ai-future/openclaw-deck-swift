@@ -61,6 +61,8 @@ struct MergeResult {
 /// Cloudflare KV HTTP API 封装
 @MainActor
 class CloudflareKV: CloudflareKVProtocol {
+    /// 测试用 Mock 实例
+    nonisolated(unsafe) static var mockInstance: CloudflareKVProtocol? = nil
     static let shared = CloudflareKV()
 
     /// 配置是否已设置
@@ -90,6 +92,10 @@ class CloudflareKV: CloudflareKVProtocol {
 
     /// 智能同步：自动比较本地和云端数据，返回合并结果
     func syncAndGet() async throws -> MergeResult {
+        // 测试模式使用 Mock 实例
+        if let mock = CloudflareKV.mockInstance {
+            return try await mock.syncAndGet()
+        }
         guard let config = CloudflareConfig.load(), config.isValid else {
             logger.error("未配置，跳过同步")
             throw CloudflareError.notConfigured
@@ -129,6 +135,10 @@ class CloudflareKV: CloudflareKVProtocol {
 
     /// 保存数据到 KV
     func save(_ data: SyncData) async throws {
+        // 测试模式使用 Mock 实例
+        if let mock = CloudflareKV.mockInstance {
+            return try await mock.save(data)
+        }
         guard let config = CloudflareConfig.load(), config.isValid else {
             throw CloudflareError.notConfigured
         }

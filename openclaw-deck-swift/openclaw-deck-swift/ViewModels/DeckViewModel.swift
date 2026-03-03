@@ -465,7 +465,7 @@ class DeckViewModel {
         // 2. 从 sessionOrder 中移除
         sessionOrder.removeAll { $0 == sessionId.lowercased() }
 
-        logger.log("✅ 会话已从本地删除，剩余 \(sessionOrder.count) 个会话")
+        logger.log("✅ 会话已从本地删除，剩余 \(self.sessionOrder.count) 个会话")
 
         // 3. 保存到 UserDefaults（会自动同步到云端）
         saveSessionsToStorage()
@@ -796,7 +796,7 @@ class DeckViewModel {
 
     /// 同步到 Cloudflare KV
     private func syncToCloudflare() async {
-        logger.log("☁️ 开始同步到 Cloudflare KV，共 \(sessionOrder.count) 个会话...")
+        logger.log("☁️ 开始同步到 Cloudflare KV，共 \(self.sessionOrder.count) 个会话...")
 
         do {
             let syncData = SyncData(

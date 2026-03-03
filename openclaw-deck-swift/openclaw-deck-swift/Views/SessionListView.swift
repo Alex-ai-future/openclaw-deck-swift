@@ -77,7 +77,9 @@ struct SessionListView: View {
                             viewModel.selectSession(session.sessionId)
                         },
                         onDelete: {
-                            viewModel.deleteSession(sessionId: session.sessionId)
+                            Task {
+                                await viewModel.deleteSession(sessionId: session.sessionId)
+                            }
                         }
                     )
                     .navigationBarTitleDisplayMode(.inline)
@@ -94,7 +96,9 @@ struct SessionListView: View {
                             viewModel.selectSession(session.sessionId)
                         },
                         onDelete: {
-                            viewModel.deleteSession(sessionId: session.sessionId)
+                            Task {
+                                await viewModel.deleteSession(sessionId: session.sessionId)
+                            }
                         }
                     )
                     .onAppear {
@@ -199,8 +203,10 @@ struct SessionListView: View {
             .deleteSessionAlert(isPresented: $showingDeleteAlert) {
                 // 用户确认删除
                 if let sessionId = deleteSessionId {
-                    viewModel.deleteSession(sessionId: sessionId)
-                    deleteSessionId = nil
+                    Task {
+                        await viewModel.deleteSession(sessionId: sessionId)
+                        deleteSessionId = nil
+                    }
                 }
             }
         }

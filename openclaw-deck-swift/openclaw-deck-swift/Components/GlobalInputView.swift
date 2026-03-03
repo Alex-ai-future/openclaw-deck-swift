@@ -41,8 +41,10 @@ struct GlobalInputView: View {
                                 await onSend()
                             }
                         }
-                        // 总是收起键盘
-                        isInputFocused = false
+                        // 延迟收起键盘，等待发送完成
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isInputFocused = false
+                        }
                     }
 
                 // 占位文字

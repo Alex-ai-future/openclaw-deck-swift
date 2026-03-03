@@ -6,20 +6,108 @@
 
 ---
 
-## 目录
+## 这是什么？ {#what-is-this}
 
-1. [5 分钟快速上手](#quick-start)
-2. [iOS 设备连接 Gateway](#ios-connection) 
-3. [核心功能](#core-features)
-4. [Cloudflare 多设备同步](#cloudflare-sync) 
-5. [故障排除](#troubleshooting) 
-6. [常见问题](#faq)
+OpenClaw Deck 是一个**多会话 AI 聊天客户端**。
+
+### 简单来说：
+
+想象你有一个 AI 助手团队，每个助手负责不同的任务：
+- 助手 A 帮你写代码
+- 助手 B 帮你写文档
+- 助手 C 帮你查资料
+
+OpenClaw Deck 让你可以**同时和多个助手聊天**，每个对话独立记忆，互不干扰。
+
+### 核心特点：
+
+| 特点 | 说明 |
+|------|------|
+| 📱 多平台 | iPhone、iPad、Mac 都能用 |
+| 💬 多会话 | 同时处理多个任务，不会混淆 |
+| 🔄 实时同步 | 多设备之间自动同步对话列表 |
+| 🎤 语音输入 | 说话就能发消息 |
 
 ---
 
-## 5 分钟快速上手 {#quick-start}
+## 快速体验 {#quick-demo}
 
-### 1.1 安装
+### 典型使用场景：
+
+```
+上午 9:00  →  会话 1：帮我写个 Python 脚本
+上午 9:30  →  会话 2：这个 Bug 怎么修？
+上午 10:00 →  切回会话 1：继续刚才的脚本
+```
+
+每个会话都记得之前的对话，随时切换都能继续。
+
+### 实际对话示例：
+
+**会话 1 - 代码开发**
+```
+你：帮我写个快速排序
+AI：好的，Python 版本还是 Swift 版本？
+你：Python
+AI：[给出代码]
+```
+
+**会话 2 - 文档写作**
+```
+你：帮我写个使用说明
+AI：好的，什么产品的使用说明？
+你：就是这个聊天 App
+AI：[开始写文档]
+```
+
+**点击切换会话，继续对话：**
+```
+你：刚才的排序算法，能加注释吗？
+AI：当然可以，这是带注释的版本...
+```
+
+---
+
+## 什么是 Gateway？{#what-is-gateway}
+
+### 通俗解释：
+
+**Gateway = AI 助手的大脑**
+
+OpenClaw Deck 只是一个**界面**（就像手机屏幕），真正的 AI 运行在 Gateway 里。
+
+### 比喻：
+
+| 比喻 | 说明 |
+|------|------|
+| 📺 电视 vs 电视台 | OpenClaw Deck 是电视（显示画面），Gateway 是电视台（发送内容） |
+| 📱 微信 vs 微信服务器 | OpenClaw Deck 是微信 App，Gateway 是微信服务器 |
+| 🎮 游戏手柄 vs 游戏机 | OpenClaw Deck 是手柄，Gateway 是游戏机 |
+
+### 为什么需要自己安装 Gateway？
+
+**因为这是一个"私人 AI 助手"：**
+
+- ✅ **完全私有** - 你的对话只在你自己的设备上
+- ✅ **完全控制** - 你想用什么 AI 模型就用什么
+- ✅ **完全免费** - 不需要付月费（除了你自己的 API 费用）
+
+**代价：** 需要自己安装和配置 Gateway（大约 5 分钟）
+
+### Gateway 安装在哪里？
+
+| 位置 | 说明 |
+|------|------|
+| 你的 Mac | 最常用，推荐 |
+| 你的 PC | 可以，用 WSL2 |
+| 你的服务器 | 可以，24 小时在线 |
+| 云端 | 不推荐，数据不在自己手里 |
+
+---
+
+## 安装 Gateway {#install-gateway}
+
+### 安装步骤
 
 **推荐方式：一键安装脚本**
 
@@ -43,7 +131,7 @@ open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
 # Xcode 中 Cmd+R 运行
 ```
 
-### 1.2 配置 Gateway
+### 配置 Gateway
 
 **OpenClaw Deck Swift 需要连接 OpenClaw Gateway 才能工作。**
 
@@ -85,7 +173,7 @@ pnpm start
 
 ---
 
-## iOS 设备连接 Gateway {#ios-connection} 
+## 连接 Gateway {#connect-gateway} 
 
 > 📚 **官方文档：** 详细的移动设备连接说明请查看 [OpenClaw 移动设备连接指南](https://docs.openclaw.ai/guides/mobile-connection)
 
@@ -251,7 +339,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 1.3 发送第一条消息
+### 发送第一条消息
 
 1. 点击顶部 `+` 创建 Session
 2. 在输入框输入 "Hello"
@@ -262,7 +350,7 @@ sudo ufw allow 18789/tcp
 
 ## 核心功能 {#core-features}
 
-### 3.1 发送消息
+### 发送消息
 
 **方式 1：输入框发送**
 1. 输入消息
@@ -289,7 +377,7 @@ sudo ufw allow 18789/tcp
 3. 点击发送
 4. 自动创建新 Session 并发送消息
 
-### 3.2 管理多个对话
+### 管理多个对话
 
 **创建 Session：**
 - 点击顶部 `+` 按钮
@@ -312,7 +400,7 @@ sudo ufw allow 18789/tcp
 2. 拖拽 Session 调整顺序
 3. 点击 "Done" 保存
 
-### 3.3 快速操作按钮
+### 快速操作按钮
 
 **位置：** 聊天界面右下角
 
@@ -327,7 +415,7 @@ sudo ufw allow 18789/tcp
 - 底部蓝色底条 = 当前选中的 Session
 - 避免多个 Session 同时显示按钮
 
-### 3.4 会话状态指示器 
+### 会话状态指示器 
 
 **状态颜色：**
 - 🟠 **橘黄色** = 处理中（AI 正在回复）
@@ -362,7 +450,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 4.1 配置 Cloudflare（5 分钟搞定）
+### 配置 Cloudflare（5 分钟搞定）
 
 **步骤 1：注册 Cloudflare 账号**
 1. 访问 https://dash.cloudflare.com/sign-up
@@ -413,7 +501,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 4.2 使用同步功能
+### 使用同步功能
 
 **自动同步：**
 - 每次 Session 列表变化时自动同步到云端
@@ -432,7 +520,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 4.3 常见问题
+### 常见问题
 
 #### Q: 测试连接失败？
 
@@ -486,7 +574,7 @@ sudo ufw allow 18789/tcp
 
 ## 故障排除 {#troubleshooting} 
 
-### 5.1 连接问题
+### 连接问题
 
 #### ❌ 无法连接 Gateway
 
@@ -582,7 +670,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 4.2 发送失败
+### 发送失败
 
 #### ❌ 消息发送失败
 
@@ -666,7 +754,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 5.4 Session 问题
+### Session 问题
 
 #### ❌ Session 不显示
 
@@ -773,7 +861,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-### 5.6 其他问题
+### 其他问题
 
 #### ❌ 语音输入不工作
 

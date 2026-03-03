@@ -41,7 +41,7 @@ final class SessionManagementUITests: XCTestCase {
         ).count
         print("  初始会话数：\(initialSessionCount)")
 
-        // 2. 创建 1 个新会话（简化，不输入具体名称）
+        // 2. 创建 1 个新会话
         let newSessionButton = app.buttons["NewSessionButton"].firstMatch
         XCTAssertTrue(newSessionButton.waitForExistence(timeout: 5), "新建会话按钮应该存在")
 
@@ -127,7 +127,7 @@ final class SessionManagementUITests: XCTestCase {
 
     // MARK: - 删除会话测试
 
-    /// 测试：删除会话
+    /// 测试：删除会话（在会话详情页）
     func testSessionDelete() {
         print("🗑️  开始测试：删除会话")
 
@@ -162,25 +162,28 @@ final class SessionManagementUITests: XCTestCase {
             }
         }
 
-        // 3. 删除第一个会话（不是 Welcome 会话）
+        // 3. 点击第一个会话打开详情页
         if sessionButtons.count > 1 {
-            // 点击第一个会话打开详情
+            print("  点击第一个会话打开详情页")
             sessionButtons[0].forceTap()
             sleep(2)
 
-            // 找到删除按钮
+            // 4. 验证详情页已打开（查找删除按钮）
             let deleteButton = app.buttons["deleteSessionButton"].firstMatch
             if deleteButton.waitForExistence(timeout: 5) {
+                print("  ✅ 删除按钮已找到")
+                
+                // 5. 点击删除按钮
                 deleteButton.forceTap()
                 sleep(1)
                 print("  ✅ 删除按钮已点击")
 
-                // 验证确认弹窗出现
+                // 6. 验证确认弹窗出现
                 let deleteAlert = app.alerts.firstMatch
                 if deleteAlert.waitForExistence(timeout: 3) {
                     print("  ✅ 确认弹窗出现")
 
-                    // 点击确认删除
+                    // 7. 点击确认删除
                     let confirmButton = app.buttons["delete"].firstMatch.exists
                         ? app.buttons["delete"].firstMatch
                         : app.buttons["Delete"].firstMatch
@@ -193,12 +196,12 @@ final class SessionManagementUITests: XCTestCase {
                 }
             }
 
-            // 4. 验证会话数量减少
+            // 8. 验证会话数量减少
             let finalCount = app.buttons.matching(
                 NSPredicate(format: "identifier CONTAINS 'Session'")
             ).count
 
-            XCTAssertLessThanOrEqual(finalCount, initialCount, "会话数量应该减少或不变")
+            XCTAssertLessThan(finalCount, initialCount, "会话数量应该减少")
             print("  ✅ 最后剩 \(finalCount) 个会话")
         }
 

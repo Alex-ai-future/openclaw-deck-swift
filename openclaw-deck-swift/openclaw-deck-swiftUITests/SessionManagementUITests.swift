@@ -110,7 +110,6 @@ final class SessionManagementUITests: XCTestCase {
         let nameInput = app.textFields.firstMatch
         XCTAssertTrue(nameInput.waitForExistence(timeout: 3), "输入框应该存在")
         print("  ✅ 输入框存在")
-        }
 
         // 5. 点击创建按钮
         let createButton = app.buttons["创建"].firstMatch.exists

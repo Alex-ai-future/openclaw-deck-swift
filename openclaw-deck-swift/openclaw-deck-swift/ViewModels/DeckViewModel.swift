@@ -302,60 +302,18 @@ class DeckViewModel {
             logger.info("✅ 会话列表已存在，跳过加载（\(self.sessionOrder.count) 个会话）")
         }
 
-        // 创建 GatewayClient
-        var client = diContainer.createGatewayClient(url: gatewayUrl, token: token)
-
-        // 设置事件回调
-        client.onEvent = { [weak self] event in
-            Task { @MainActor in
-                self?.handleGatewayEvent(event)
+        // 使用共用方法连接 Gateway
+        await connectGateway(url: gatewayUrl, token: token) {
+            // 重连时重置所有 session 的处理状态
+            for session in self.sessions.values {
+                session.isProcessing = false
+                session.status = .idle
+                session.activeRunId = nil
             }
+
+            // 连接成功，开始加载流程
+            await self.initializeAfterConnect()
         }
-
-        // 设置连接状态回调
-        client.onConnection = { [weak self] connected in
-            Task { @MainActor in
-                guard let self else { return }
-
-                if connected {
-                    // 重连时重置所有 session 的处理状态
-                    for session in self.sessions.values {
-                        session.isProcessing = false
-                        session.status = .idle
-                        session.activeRunId = nil
-                    }
-
-                    // 连接成功，开始加载流程
-                    await self.initializeAfterConnect()
-                } else {
-                    // ✅ 断开连接时，总是更新状态（但保留数据供离线浏览）
-                    if self.gatewayConnected {
-                        // 已连接状态下断开
-                        logger.info("🔌 Gateway 断开连接")
-                        self.gatewayConnected = false
-                        self.isInitializing = false
-                        self.loadingStage = .idle
-                        self.loadingProgress = 0.0
-                    } else if self.isInitializing {
-                        // 初始化期间连接失败
-                        logger.info("🔌 初始化期间连接失败")
-                        self.isInitializing = false
-                        self.gatewayConnected = false
-                        self.loadingStage = .idle
-                        self.loadingProgress = 0.0
-                    }
-                    // 本来就是断开状态，忽略（避免重复触发）
-                }
-            }
-        }
-
-        gatewayClient = client
-
-        // 连接 Gateway（异步，不等待连接成功）
-        await client.connect()
-
-        // Sync error state from client
-        connectionError = client.connectionError
     }
 
     /// 连接成功后初始化（加载会话列表和消息历史）

@@ -384,6 +384,15 @@ final class SessionManagementUITests: XCTestCase {
         sleep(1)
 
         // 第二步：点击 sessionNameButton（打开详情）
+        // 调试：打印当前所有按钮
+        print("  🔍 当前界面所有按钮：")
+        let allButtons = app.buttons.allElementsBoundByIndex
+        for (i, button) in allButtons.enumerated() {
+            if button.exists {
+                print("    [\(i)] identifier=\(button.identifier), label=\(button.label)")
+            }
+        }
+
         // 查找顶部的 sessionNameButton
         let nameButton = app.buttons["Session-\(sessionName)"].firstMatch
         XCTAssertTrue(

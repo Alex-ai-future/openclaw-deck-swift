@@ -128,7 +128,6 @@ final class SyncButtonUITests: XCTestCase {
         
         print("✅ testSyncButton_MouseClick_macOS 通过")
     }
-}
 
     // MARK: - 创建对话测试
 

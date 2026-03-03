@@ -54,7 +54,7 @@ final class OpenClawCoreTests: XCTestCase {
     func testSendMessage() throws {
         // 跳过需要网络的测试（除非有 Mock Gateway）
         throw XCTSkip("需要 Gateway 服务器，暂时跳过")
-        
+
         // TODO: 当有 Mock Gateway 时，测试流程如下：
         // 2. 输入消息
         // 3. 点击 sendButton

@@ -47,7 +47,7 @@ final class SettingsUITests: XCTestCase {
         print("  ✅ 设置弹窗已出现")
 
         // 3. 验证 Gateway URL 输入框可编辑
-        let urlInput = app.textFields["gatewayUrl"].firstMatch
+        let urlInput = app.textFields["gatewayUrlInput"].firstMatch
         XCTAssertTrue(urlInput.exists, "Gateway URL 输入框应该存在")
 
         // 保存原始值
@@ -60,7 +60,7 @@ final class SettingsUITests: XCTestCase {
         print("  ✅ Gateway URL 输入框可编辑")
 
         // 5. 验证 Token 输入框可编辑
-        let tokenInput = app.secureTextFields["token"].firstMatch
+        let tokenInput = app.secureTextFields["tokenInput"].firstMatch
         XCTAssertTrue(tokenInput.exists, "Token 输入框应该存在")
         print("  ✅ Token 输入框存在")
 

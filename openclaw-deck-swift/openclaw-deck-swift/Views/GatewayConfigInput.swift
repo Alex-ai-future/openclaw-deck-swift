@@ -17,6 +17,7 @@ struct GatewayConfigInput: View {
     var body: some View {
         // Gateway URL
         TextField("gateway_url".localized, text: $gatewayUrl, prompt: Text("ws://host:port"))
+            .accessibilityIdentifier("gatewayUrlInput")
             .textContentType(.URL)
             .focused($isGatewayUrlFocused)
             .submitLabel(.done)
@@ -30,6 +31,7 @@ struct GatewayConfigInput: View {
 
         // Token
         TextField("token_optional".localized, text: $token)
+            .accessibilityIdentifier("tokenInput")
             .textContentType(.none)
             .focused($isTokenFocused)
             .submitLabel(.done)

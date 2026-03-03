@@ -109,6 +109,7 @@ func testSessionCreateAndSort() {
 
     // 4. 输入新会话名称
     let nameInput = app.textFields.firstMatch
+        XCTAssertTrue(nameInput.waitForExistence(timeout: 3), "输入框应该存在")
     if nameInput.exists {
         let newSessionName = "Test Session \(Int.random(in: 1000 ... 9999))"
         nameInput.tap()

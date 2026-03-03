@@ -376,14 +376,27 @@ final class SessionManagementUITests: XCTestCase {
         let sessionName = sessionButtons[0].label
         print("  🗑️  准备删除会话：\(sessionName)")
 
-        // 点击第一个会话
+        // 第一步：点击会话区域（选中会话）
         sessionButtons[0].forceTap()
-        print("  ✅ 已点击会话")
+        print("  ✅ 已选中会话")
 
-        // 等待详情页加载（最多 5 秒）
+        // 等待选中效果
         sleep(1)
 
-        // 查找删除按钮（可能在底部，需要滚动）
+        // 第二步：点击 sessionNameButton（打开详情）
+        // 查找顶部的 sessionNameButton
+        let nameButton = app.buttons["Session-\(sessionName)"].firstMatch
+        XCTAssertTrue(
+            nameButton.waitForExistence(timeout: 5),
+            "会话名称按钮 (Session-\(sessionName)) 必须在 5 秒内出现"
+        )
+        nameButton.forceTap()
+        print("  ✅ 已点击会话名称按钮")
+
+        // 等待详情页加载
+        sleep(1)
+
+        // 第三步：查找删除按钮（可能在底部，需要滚动）
         let deleteButton = app.buttons["deleteSessionButton"]
 
         // 尝试滚动查找

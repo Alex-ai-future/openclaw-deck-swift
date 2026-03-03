@@ -230,3 +230,8 @@
 
 // MARK: - Privacy Policy
 "privacy_policy" = "隐私政策";
+
+// MARK: - First Install Guide
+"first_install" = "首次安装";
+"first_install_guide" = "请先配置 Gateway 连接，详细步骤请查看用户指南。";
+"view_user_guide" = "查看用户指南";

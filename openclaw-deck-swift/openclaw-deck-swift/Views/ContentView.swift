@@ -367,29 +367,58 @@ struct WelcomeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 // Logo and title
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Image(systemName: "message.badge.filled.fill")
-                        .font(.system(size: 64))
+                        .font(.system(size: 72))
                         .foregroundColor(.blue)
 
                     Text("openclaw_deck".localized)
-                        .font(.largeTitle)
+                        .font(.title)
                         .fontWeight(.bold)
 
                     Text("multi_session_chat_client".localized)
-                        .font(.title3)
+                        .font(.body)
                         .foregroundColor(.secondary)
                 }
-                .padding(.top, 60)
+                .padding(.top, 40)
 
-                // Simple guide
-                Text("tap_the_in_the_top_rightnto_get_started".localized)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 40)
+                // First install guide card
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.orange)
+                        Text("first_install".localized)
+                            .font(.headline)
+                    }
+
+                    Text("first_install_guide".localized)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    Link(destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html")!) {
+                        HStack {
+                            Label("view_user_guide".localized, systemImage: "book.fill")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.adaptiveSecondaryBackground)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
 
                 Spacer()
 

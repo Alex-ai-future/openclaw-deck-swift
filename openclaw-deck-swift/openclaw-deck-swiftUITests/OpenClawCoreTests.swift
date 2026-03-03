@@ -93,7 +93,6 @@ final class OpenClawCoreTests: XCTestCase {
         add(attachment)
         print("✅ testSendMessage 通过")
     }
-    }
     /// 测试 3: 连接流程（简化版）
     func testConnectionFlow() {
         // 这个测试需要实际的 Gateway 服务器
@@ -103,7 +102,6 @@ final class OpenClawCoreTests: XCTestCase {
         let settingsExists = settingsButton.waitForExistence(timeout: 10)
 
         if settingsExists {
-            print("✅ 设置按钮存在")
 
             // 截图
             let screenshot = app.windows.firstMatch.screenshot()

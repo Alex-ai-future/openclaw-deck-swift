@@ -8,16 +8,16 @@
 
 ## 目录
 
-1. [5 分钟快速上手](#1-5-分钟快速上手)
-2. [iOS 设备连接 Gateway](#2-ios-设备连接-gateway) ⭐⭐⭐⭐⭐
-3. [核心功能](#3-核心功能)
-4. [Cloudflare 多设备同步](#4-cloudflare-多设备同步) ⭐ NEW
-5. [故障排除](#5-故障排除) ⭐⭐⭐⭐⭐
-6. [常见问题](#6-常见问题)
+1. [5 分钟快速上手](#quick-start)
+2. [iOS 设备连接 Gateway](#ios-connection) ⭐⭐⭐⭐⭐
+3. [核心功能](#core-features)
+4. [Cloudflare 多设备同步](#cloudflare-sync) ⭐ NEW
+5. [故障排除](#troubleshooting) ⭐⭐⭐⭐⭐
+6. [常见问题](#faq)
 
 ---
 
-## 1. 5 分钟快速上手
+## 5 分钟快速上手 {#quick-start}
 
 ### 1.1 安装
 
@@ -85,7 +85,7 @@ pnpm start
 
 ---
 
-## 2. iOS 设备连接 Gateway ⭐⭐⭐⭐⭐
+## iOS 设备连接 Gateway {#ios-connection} ⭐⭐⭐⭐⭐
 
 > 📚 **官方文档：** 详细的移动设备连接说明请查看 [OpenClaw 移动设备连接指南](https://docs.openclaw.ai/guides/mobile-connection)
 
@@ -260,7 +260,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 3. 核心功能
+## 核心功能 {#core-features}
 
 ### 3.1 发送消息
 
@@ -345,7 +345,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 4. Cloudflare 多设备同步 ⭐ NEW
+## Cloudflare 多设备同步 {#cloudflare-sync} ⭐ NEW
 
 **功能说明：**
 - 在多个设备间同步 Session 列表和顺序
@@ -484,7 +484,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 5. 故障排除 ⭐⭐⭐⭐⭐
+## 故障排除 {#troubleshooting} ⭐⭐⭐⭐⭐
 
 ### 5.1 连接问题
 
@@ -828,7 +828,7 @@ sudo ufw allow 18789/tcp
 
 ---
 
-## 6. 常见问题
+## 常见问题 {#faq}
 
 ### Q: Gateway 地址是什么？
 
@@ -896,8 +896,14 @@ sudo ufw allow 18789/tcp
 
 - [GitHub 仓库](https://github.com/Alex-ai-future/openclaw-deck-swift)
 - [OpenClaw 文档](https://docs.openclaw.ai)
-- [技术架构](introduction.md)
+- [技术架构](introduction.html)
+
 
 ---
 
-**需要帮助？** 提交 Issue: [GitHub Issues](https://github.com/Alex-ai-future/openclaw-deck-swift/issues)
+## 📚 相关文档
+
+- [使用样例](USAGE_EXAMPLES.html) - 实际场景示例
+- [技术架构](introduction.html) - 开发者文档
+- [隐私政策](PRIVACY.html) - 数据隐私说明
+---

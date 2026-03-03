@@ -8,19 +8,19 @@
 
 ## 目录
 
-1. [架构概览](#1-架构概览)
-2. [技术选型](#2-技术选型)
-3. [代码结构](#3-代码结构)
-4. [核心组件](#4-核心组件)
-5. [会话状态轮询](#5-会话状态轮询) ⭐ NEW
-6. [开发指南](#6-开发指南)
-7. [测试标准](#7-测试标准)
+1. [架构概览](#architecture)
+2. [技术选型](#tech-stack)
+3. [代码结构](#code-structure)
+4. [核心组件](#core-components)
+5. [会话状态轮询](#session-polling) ⭐ NEW
+6. [开发指南](#development-guide)
+7. [测试标准](#testing)
 
 ---
 
-## 1. 架构概览
+## 架构概览 {#architecture}
 
-### 1.1 整体架构
+### 整体架构
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -67,7 +67,7 @@
                     └────────────────┘
 ```
 
-### 1.2 设计原则
+### 设计原则
 
 1. **单一 Agent** - 使用固定的 Main Agent，不涉及多 Agent 管理
 2. **无本地持久化** - 消息、状态等数据全部存储在 Gateway
@@ -76,9 +76,9 @@
 
 ---
 
-## 2. 技术选型
+## 技术选型 {#tech-stack}
 
-### 2.1 为什么用 SwiftUI？
+### 为什么用 SwiftUI？
 
 **优势：**
 - ✅ 声明式 UI，代码简洁
@@ -90,7 +90,7 @@
 - macOS 15.0+
 - iPadOS 18.0+
 
-### 2.2 为什么用 WebSocket？
+### 为什么用 WebSocket？
 
 **需求：**
 - ✅ 实时双向通信
@@ -101,7 +101,7 @@
 - `URLSessionWebSocketTask`（原生）
 - 自定义协议层（GatewayClient）
 
-### 2.3 为什么用 MVVM？
+### 为什么用 MVVM？
 
 **优势：**
 - ✅ 清晰的职责分离
@@ -115,9 +115,9 @@ View (展示) → ViewModel (状态/逻辑) → Service (网络/存储)
 
 ---
 
-## 3. 代码结构
+## 代码结构 {#code-structure}
 
-### 3.1 目录结构
+### 目录结构
 
 ```
 openclaw-deck-swift/
@@ -147,7 +147,7 @@ openclaw-deck-swift/
 └── docs/                         # 文档
 ```
 
-### 3.2 关键文件说明
+### 关键文件说明
 
 | 文件 | 行数 | 职责 |
 |------|------|------|
@@ -159,9 +159,9 @@ openclaw-deck-swift/
 
 ---
 
-## 4. 核心组件
+## 核心组件 {#core-components}
 
-### 4.1 GlobalInputState
+### GlobalInputState
 
 **设计决策：**
 - 全局唯一实例，管理所有输入状态
@@ -183,7 +183,7 @@ class GlobalInputState {
 }
 ```
 
-### 4.2 CloudflareKV
+### CloudflareKV
 
 **同步机制：**
 - 使用 Cloudflare KV 存储 Session 列表和顺序
@@ -199,7 +199,7 @@ struct SyncData {
 }
 ```
 
-### 4.3 SessionColumnView
+### SessionColumnView
 
 **快速操作按钮组设计：**
 
@@ -222,7 +222,7 @@ if isSelected {
 - 避免多 Session 模式下按钮重复
 - 蓝色底条 = 选中状态视觉反馈
 
-### 4.4 GatewayClient
+### GatewayClient
 
 **认证流程：**
 ```
@@ -245,7 +245,7 @@ private var pendingRequests: [String: PendingRequest] = [:]
 
 ---
 
-### 4.5 会话状态轮询机制 ⭐ NEW
+### 会话状态轮询机制 ⭐ NEW
 
 **设计决策：**
 
@@ -315,9 +315,9 @@ struct GatewaySessionStatus {
 
 ---
 
-## 6. 开发指南
+## 开发指南 {#development-guide}
 
-### 5.1 添加新功能
+### 添加新功能
 
 **步骤：**
 
@@ -339,7 +339,7 @@ struct GatewaySessionStatus {
    swift-format format -i 文件.swift
    ```
 
-### 5.2 调试技巧
+### 调试技巧
 
 **查看日志：**
 ```bash
@@ -359,7 +359,7 @@ ps aux | grep openclaw
 lsof -i :18789
 ```
 
-### 5.3 常见问题
+### 常见问题
 
 **Q: 如何添加新的 UI 组件？**
 
@@ -384,15 +384,15 @@ A:
 
 ---
 
-## 7. 测试标准
+## 测试标准 {#testing}
 
-### 6.1 测试框架
+### 测试框架
 
 - **框架：** XCTest
 - **运行：** `bash script/run_unit_tests.sh`
 - **目标：** 93 个测试，100% 通过
 
-### 6.2 测试覆盖
+### 测试覆盖
 
 | 模块 | 测试文件 | 测试数 | 通过率 |
 |------|---------|--------|--------|
@@ -401,7 +401,7 @@ A:
 | ViewModels | DeckViewModel | 21 | 100% |
 | Utils | UserDefaultsStorage | 13 | 100% |
 
-### 6.3 编写测试
+### 编写测试
 
 **标准：**
 ```swift
@@ -425,7 +425,7 @@ final class MyTests: XCTestCase {
 - ✅ 每个测试独立
 - ✅ 测试名称描述行为
 
-### 6.4 代码质量
+### 代码质量
 
 **格式化：**
 ```bash
@@ -468,3 +468,11 @@ find . -name "*.swift" -exec swift-format format -i {} \;
 ---
 
 **贡献代码：** [GitHub](https://github.com/Alex-ai-future/openclaw-deck-swift)
+
+---
+
+## 📚 相关文档
+
+- [用户指南](USER_GUIDE.html) - 如何使用
+- [使用样例](USAGE_EXAMPLES.html) - 实际场景示例
+- [隐私政策](PRIVACY.html) - 数据隐私说明

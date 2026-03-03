@@ -634,6 +634,13 @@ class DeckViewModel {
         let gatewayUrl = storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
         let token = storage.loadToken()
 
+        guard let url = URL(string: gatewayUrl) else {
+            logger.error("❌ Invalid gateway URL: \(gatewayUrl)")
+            isInitializing = false
+            loadingStage = .idle
+            return
+        }
+
         // 使用共用方法连接 Gateway
         await connectGateway(url: url, token: token) {
             // 连接成功后加载历史

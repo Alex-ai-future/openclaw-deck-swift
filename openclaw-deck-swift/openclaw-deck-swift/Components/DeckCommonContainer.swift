@@ -18,10 +18,8 @@ struct DeckCommonContainer<Content: View>: View {
     var gatewayUrl: Binding<String>?
     var token: Binding<String>?
 
-    // 内部状态管理
+    /// 内部状态管理
     @State private var showingSortSheet = false
-    @State private var showingSyncAlert = false
-    @State private var showingConflictAlert = false
 
     // 本地配置状态（当没有外部传入时使用）
     @State private var localGatewayUrl: String = ""
@@ -112,19 +110,6 @@ struct DeckCommonContainer<Content: View>: View {
             // Sort Sheet
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
-            }
-
-            // Sync Alerts
-            .deckSyncAlerts(
-                viewModel: viewModel,
-                showingSyncAlert: $showingSyncAlert,
-                showingConflictAlert: $showingConflictAlert
-            ) { newValue in
-                if newValue {
-                    showingConflictAlert = true
-                } else {
-                    showingConflictAlert = false
-                }
             }
     }
 }

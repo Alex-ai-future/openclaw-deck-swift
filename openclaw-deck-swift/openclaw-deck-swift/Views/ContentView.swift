@@ -214,7 +214,8 @@ struct ContentView: View {
                 viewModel.isSyncing = false
             }
             Button("sync".localized) {
-                // 点"确定"：开始同步
+                // 点"确定"：先关闭弹窗，再开始同步
+                viewModel.isSyncing = false
                 Task {
                     await viewModel.handleSync()
                 }

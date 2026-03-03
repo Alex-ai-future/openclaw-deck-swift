@@ -813,7 +813,8 @@ class DeckViewModel {
             return .success("Sync complete (mock)")
         }
 
-        isSyncing = true
+        // isSyncing 已经在点击同步按钮时设置为 true
+        // 同步完成后重置为 false
         defer { isSyncing = false }
         return await syncAll()
     }

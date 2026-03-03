@@ -96,6 +96,7 @@ class GlobalInputState: GlobalInputStateProtocol {
     }
 
     /// 发送消息
+    @MainActor
     func sendMessage(to session: SessionState, viewModel: DeckViewModel) async {
         guard !inputText.isEmpty, !isSending else { return }
 
@@ -107,7 +108,7 @@ class GlobalInputState: GlobalInputStateProtocol {
             speechRecognizer.stopListening()
         }
 
-        // 清空输入
+        // 清空输入（在主线程确保 UI 更新）
         clearInput()
 
         // 调用 Session 的发送接口

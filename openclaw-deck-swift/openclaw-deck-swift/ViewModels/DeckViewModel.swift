@@ -612,7 +612,15 @@ class DeckViewModel {
         conflictRemoteData = nil
         conflictInfo = nil
 
-        // ✅ 重置加载状态，避免卡在 100%
+        // ✅ 继续完成初始化流程
+        // 设置 Gateway 已连接
+        gatewayConnected = true
+
+        // 加载所有会话的消息历史
+        await loadAllSessionHistory()
+
+        // 初始化完成
+        isInitializing = false
         loadingStage = .idle
         loadingProgress = 0.0
     }

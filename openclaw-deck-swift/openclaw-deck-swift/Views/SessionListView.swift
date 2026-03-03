@@ -205,7 +205,9 @@ struct SessionListView: View {
                 if let sessionId = deleteSessionId {
                     Task {
                         await viewModel.deleteSession(sessionId: sessionId)
-                        deleteSessionId = nil
+                        await MainActor.run {
+                            deleteSessionId = nil
+                        }
                     }
                 }
             }

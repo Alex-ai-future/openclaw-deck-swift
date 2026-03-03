@@ -314,19 +314,23 @@ struct SessionColumnView: View {
         }
     }
 
-    // MARK: - Top Status Bar (iPad)
+    // MARK: - Top Status Bar
 
     private var topStatusBar: some View {
         HStack {
             Spacer()
 
-            // 中间：对话名字按钮（只在 iPad 上显示）
+            // 中间：对话名字按钮（iPad + macOS）
             #if os(iOS)
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     sessionNameButton
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                 }
+            #elseif os(macOS)
+                sessionNameButton
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
             #endif
 
             Spacer()

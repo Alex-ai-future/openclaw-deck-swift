@@ -5,15 +5,15 @@
 
 import SwiftUI
 
-/// 用户指南视图
+/// 用户指南视图 - 用 WebView 加载 GitHub 文档
 struct UserGuideView: View {
-    /// GitHub raw 文档地址
-    let rawUrl = "https://raw.githubusercontent.com/Alex-ai-future/openclaw-deck-swift/main/docs/USER_GUIDE.md"
+    /// GitHub 文档地址（GitHub 会自动渲染 Markdown）
+    let githubUrl = "https://github.com/Alex-ai-future/openclaw-deck-swift/blob/main/docs/USER_GUIDE.md"
 
     var body: some View {
-        MarkdownDocumentView(
+        WebViewDocumentView(
             title: "user_guide".localized,
-            rawUrl: rawUrl
+            githubUrl: githubUrl
         )
     }
 }

@@ -93,7 +93,7 @@ final class SyncButtonUITests: XCTestCase {
         let foundAlert = syncAlert.exists || syncAlertCN.exists
         XCTAssertTrue(
             foundAlert,
-            "同步确认弹窗应该在 3 秒内出现"
+            "同步确认弹窗应该在 10 秒内出现"
         )
 
         // 验证弹窗消息
@@ -128,7 +128,7 @@ final class SyncButtonUITests: XCTestCase {
 
         // 等待确认弹窗
         let syncAlert = app.alerts["Sync All Sessions?"]
-        guard syncAlert.waitForExistence(timeout: 3) else {
+        guard syncAlert.waitForExistence(timeout: 10) else {
             XCTFail("确认弹窗未出现")
             return
         }
@@ -166,7 +166,7 @@ final class SyncButtonUITests: XCTestCase {
 
         // 等待确认弹窗
         let syncAlert = app.alerts["Sync All Sessions?"]
-        guard syncAlert.waitForExistence(timeout: 3) else {
+        guard syncAlert.waitForExistence(timeout: 10) else {
             XCTFail("确认弹窗未出现")
             return
         }

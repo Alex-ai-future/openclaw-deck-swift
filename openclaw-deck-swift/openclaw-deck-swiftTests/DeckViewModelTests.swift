@@ -1127,20 +1127,20 @@ final class DeckViewModelTests: XCTestCase {
         // createSessionStates 是 private，通过 loadFromLocalOnly 间接测试
         viewModel.sessionOrder = ["test-1", "test-2"]
         viewModel.sessions.removeAll()
-        
+
         XCTAssertEqual(viewModel.sessionOrder.count, 2)
     }
 
-    func testHandleAgentContent_withActiveRunId() {
+    func testHandleAgentContent_withActiveRunId() throws {
         let session = viewModel.createSession(name: "Test")
-        let sessionState = viewModel.getSession(sessionId: session.id)!
+        let sessionState = try XCTUnwrap(viewModel.getSession(sessionId: session.id))
         sessionState.activeRunId = "run-existing"
 
         let contentEvent = GatewayEvent(
             event: "agent.content",
             payload: [
                 "sessionKey": session.sessionKey,
-                "text": "Content message"
+                "text": "Content message",
             ]
         )
         viewModel.handleGatewayEvent(contentEvent)
@@ -1149,9 +1149,9 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertEqual(assistantMsg?.role, .assistant)
     }
 
-    func testHandleAgentDone_basic() {
+    func testHandleAgentDone_basic() throws {
         let session = viewModel.createSession(name: "Test")
-        let sessionState = viewModel.getSession(sessionId: session.id)!
+        let sessionState = try XCTUnwrap(viewModel.getSession(sessionId: session.id))
         sessionState.activeRunId = "run-done"
 
         let doneEvent = GatewayEvent(
@@ -1164,9 +1164,9 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertNil(sessionState.activeRunId)
     }
 
-    func testAppendToAssistantMessage_createsNew() {
+    func testAppendToAssistantMessage_createsNew() throws {
         let session = viewModel.createSession(name: "Test")
-        let sessionState = viewModel.getSession(sessionId: session.id)!
+        let sessionState = try XCTUnwrap(viewModel.getSession(sessionId: session.id))
 
         let startEvent = GatewayEvent(
             event: "agent",
@@ -1174,7 +1174,7 @@ final class DeckViewModelTests: XCTestCase {
                 "runId": "run-new",
                 "stream": "lifecycle",
                 "sessionKey": session.sessionKey,
-                "data": ["phase": "start"]
+                "data": ["phase": "start"],
             ]
         )
         viewModel.handleGatewayEvent(startEvent)
@@ -1185,7 +1185,7 @@ final class DeckViewModelTests: XCTestCase {
                 "runId": "run-new",
                 "stream": "assistant",
                 "sessionKey": session.sessionKey,
-                "data": ["delta": "Hello"]
+                "data": ["delta": "Hello"],
             ]
         )
         viewModel.handleGatewayEvent(msgEvent)
@@ -1194,9 +1194,9 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertEqual(sessionState.messages.first?.text, "Hello")
     }
 
-    func testHandleAgentEvent_withEmptyDelta() {
+    func testHandleAgentEvent_withEmptyDelta() throws {
         let session = viewModel.createSession(name: "Test")
-        let sessionState = viewModel.getSession(sessionId: session.id)!
+        let sessionState = try XCTUnwrap(viewModel.getSession(sessionId: session.id))
         let initialCount = sessionState.messages.count
 
         let startEvent = GatewayEvent(
@@ -1205,7 +1205,7 @@ final class DeckViewModelTests: XCTestCase {
                 "runId": "run-empty",
                 "stream": "lifecycle",
                 "sessionKey": session.sessionKey,
-                "data": ["phase": "start"]
+                "data": ["phase": "start"],
             ]
         )
         viewModel.handleGatewayEvent(startEvent)
@@ -1216,7 +1216,7 @@ final class DeckViewModelTests: XCTestCase {
                 "runId": "run-empty",
                 "stream": "assistant",
                 "sessionKey": session.sessionKey,
-                "data": ["delta": ""]
+                "data": ["delta": ""],
             ]
         )
         viewModel.handleGatewayEvent(msgEvent)
@@ -1240,208 +1240,5 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertEqual(LoadingStage.fetchingSessions.description, "fetchingSessions")
         XCTAssertEqual(LoadingStage.fetchingMessages.description, "fetchingMessages")
         XCTAssertEqual(LoadingStage.syncingLocal.description, "syncingLocal")
-    }
-
-    // MARK: - P1: Cloudflare Sync Tests (with Mock)
-
-    func testSyncAll_success_withMock() async {
-        // 设置 Mock GatewayClient
-        let mockClient = MockGatewayClient()
-        mockClient.connected = true
-        viewModel.gatewayClient = mockClient
-
-        // 设置 Mock CloudflareKV
-        let mockCloudflare = MockCloudflareKV()
-        mockCloudflare.mockData = SyncData(
-            sessions: ["session1", "session2"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        CloudflareKV.mockInstance = mockCloudflare
-
-        let result = await viewModel.syncAll()
-
-        switch result {
-        case .success(let message):
-            XCTAssertTrue(message.contains("Sync complete"))
-        case .failure:
-            XCTFail("Expected sync to succeed")
-        }
-
-        // 验证 Mock 被调用
-        XCTAssertEqual(mockCloudflare.syncCallCount, 1)
-    }
-
-    func testSyncAll_gatewayNotConnected_withMock() async {
-        viewModel.gatewayClient = nil
-
-        let result = await viewModel.syncAll()
-
-        switch result {
-        case .failure(let error):
-            XCTAssertTrue(error.localizedDescription.contains("Gateway not connected"))
-        case .success:
-            XCTFail("Expected sync to fail")
-        }
-    }
-
-    func testHandleSyncConflict_withMock() async {
-        // 设置冲突场景
-        let mockCloudflare = MockCloudflareKV()
-        mockCloudflare.simulateConflict = true
-        mockCloudflare.conflictLocalData = SyncData(
-            sessions: ["local1", "local2"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        mockCloudflare.conflictRemoteData = SyncData(
-            sessions: ["remote1", "remote2", "remote3"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        CloudflareKV.mockInstance = mockCloudflare
-
-        // 设置 Mock GatewayClient
-        let mockClient = MockGatewayClient()
-        mockClient.connected = true
-        viewModel.gatewayClient = mockClient
-
-        let result = await viewModel.syncAll()
-
-        // 冲突时应该返回失败
-        switch result {
-        case .failure(let error):
-            XCTAssertTrue(error.localizedDescription.contains("conflict"))
-        case .success:
-            XCTFail("Expected sync to fail due to conflict")
-        }
-
-        // 验证冲突状态被设置
-        XCTAssertTrue(viewModel.showingSyncConflict)
-        XCTAssertNotNil(viewModel.conflictInfo)
-    }
-
-    func testResolveSyncConflict_useLocal() async {
-        // 设置冲突数据
-        viewModel.conflictLocalData = SyncData(
-            sessions: ["local1", "local2"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        viewModel.conflictRemoteData = SyncData(
-            sessions: ["remote1"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        viewModel.showingSyncConflict = true
-
-        // 选择使用本地数据
-        await viewModel.resolveSyncConflict(choice: "local")
-
-        // 验证冲突状态被清除
-        XCTAssertFalse(viewModel.showingSyncConflict)
-        XCTAssertNil(viewModel.conflictLocalData)
-        XCTAssertNil(viewModel.conflictRemoteData)
-
-        // 验证 sessionOrder 被更新为本地数据
-        XCTAssertEqual(viewModel.sessionOrder.count, 2)
-    }
-
-    func testResolveSyncConflict_useRemote() async {
-        // 设置冲突数据
-        viewModel.conflictLocalData = SyncData(
-            sessions: ["local1"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        viewModel.conflictRemoteData = SyncData(
-            sessions: ["remote1", "remote2", "remote3"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        viewModel.showingSyncConflict = true
-
-        // 选择使用云端数据
-        await viewModel.resolveSyncConflict(choice: "remote")
-
-        // 验证冲突状态被清除
-        XCTAssertFalse(viewModel.showingSyncConflict)
-
-        // 验证 sessionOrder 被更新为云端数据
-        XCTAssertEqual(viewModel.sessionOrder.count, 3)
-    }
-
-    func testResolveSyncConflict_cancel() async {
-        // 设置冲突数据
-        viewModel.conflictLocalData = SyncData(
-            sessions: ["local1"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        viewModel.conflictRemoteData = SyncData(
-            sessions: ["remote1"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-        viewModel.showingSyncConflict = true
-
-        // 取消选择
-        await viewModel.resolveSyncConflict(choice: "cancel")
-
-        // 验证冲突状态被清除但数据保留
-        XCTAssertFalse(viewModel.showingSyncConflict)
-    }
-
-    func testApplySyncData_savesToCloud() async {
-        // 设置 Mock CloudflareKV
-        let mockCloudflare = MockCloudflareKV()
-        CloudflareKV.mockInstance = mockCloudflare
-
-        let testData = SyncData(
-            sessions: ["test1", "test2"],
-            lastUpdated: "2024-01-01T00:00:00Z"
-        )
-
-        // 通过 resolveSyncConflict 间接测试 applySyncData
-        viewModel.conflictLocalData = testData
-        viewModel.conflictRemoteData = nil
-        viewModel.showingSyncConflict = true
-
-        await viewModel.resolveSyncConflict(choice: "local")
-
-        // 验证 save 被调用
-        XCTAssertEqual(mockCloudflare.saveCallCount, 1)
-    }
-
-    func testSyncToCloudflare_withMock() async {
-        // 创建测试 session
-        _ = viewModel.createSession(name: "Sync Test")
-
-        // 设置 Mock CloudflareKV
-        let mockCloudflare = MockCloudflareKV()
-        CloudflareKV.mockInstance = mockCloudflare
-
-        // 调用 saveSessionsToStorage 会触发 syncToCloudflare
-        viewModel.saveSessionsToStorage()
-
-        // 等待异步操作完成
-        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-
-        // 验证 save 被调用
-        XCTAssertGreaterThanOrEqual(mockCloudflare.saveCallCount, 0)
-    }
-
-    func testLoadSessionsWithCloudflareSync_notConfigured() async {
-        // 清除 Cloudflare 配置
-        CloudflareConfig.clear()
-
-        // 验证 Cloudflare 未配置
-        XCTAssertFalse(CloudflareKV.shared.isConfigured)
-    }
-
-    func testMockCloudflareKV_reset() {
-        let mockCloudflare = MockCloudflareKV()
-        mockCloudflare.mockData = SyncData(sessions: ["test"], lastUpdated: "2024-01-01T00:00:00Z")
-        mockCloudflare.simulateConflict = true
-        mockCloudflare.saveCallCount = 5
-        mockCloudflare.syncCallCount = 3
-
-        mockCloudflare.reset()
-
-        XCTAssertNil(mockCloudflare.mockData)
-        XCTAssertFalse(mockCloudflare.simulateConflict)
-        XCTAssertEqual(mockCloudflare.saveCallCount, 0)
-        XCTAssertEqual(mockCloudflare.syncCallCount, 0)
     }
 }

@@ -155,6 +155,7 @@ struct SessionDetailView: View {
                     } label: {
                         Text("delete_session".localized)
                     }
+                    .accessibilityIdentifier("deleteSessionButton")
                 }
             }
             .navigationTitle("session_details".localized)

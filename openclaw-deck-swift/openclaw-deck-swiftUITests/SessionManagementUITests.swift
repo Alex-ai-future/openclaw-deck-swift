@@ -45,7 +45,7 @@ final class SessionManagementUITests: XCTestCase {
         let newSessionButton = app.buttons["NewSessionButton"].firstMatch
         XCTAssertTrue(newSessionButton.waitForExistence(timeout: 5), "新建会话按钮应该存在")
 
-        for i in 1...3 {
+        for i in 1 ... 3 {
             newSessionButton.forceTap()
             sleep(1)
 

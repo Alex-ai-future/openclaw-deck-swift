@@ -45,7 +45,7 @@ final class SendMessageUITests: XCTestCase {
         XCTAssertTrue(messageInput.waitForExistence(timeout: 5), "输入框应该存在")
 
         // 3. 输入测试文本
-        let testMessage = "UI Test Message \(Int.random(in: 1000...9999))"
+        let testMessage = "UI Test Message \(Int.random(in: 1000 ... 9999))"
         messageInput.tap()
         messageInput.typeText(testMessage)
 

@@ -61,7 +61,7 @@ final class SyncButtonUITests: XCTestCase {
         // 5. 等待确认弹窗出现（同步前需要确认）
         sleep(2)
         let syncAlert = app.alerts.firstMatch
-        
+
         // 6. 验证确认弹窗出现
         if syncAlert.waitForExistence(timeout: 5) {
             print("  ✅ 同步确认弹窗出现")

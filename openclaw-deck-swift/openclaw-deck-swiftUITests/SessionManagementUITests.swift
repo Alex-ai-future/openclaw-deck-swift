@@ -146,16 +146,16 @@ final class SessionManagementUITests: XCTestCase {
             if newSessionButton.exists {
                 newSessionButton.forceTap()
                 sleep(1)
-                
+
                 let createButton = app.buttons["创建"].firstMatch.exists
                     ? app.buttons["创建"].firstMatch
                     : app.buttons["Create"].firstMatch
-                
+
                 if createButton.exists {
                     createButton.forceTap()
                     sleep(2)
                 }
-                
+
                 sessionButtons = app.buttons.matching(
                     NSPredicate(format: "identifier CONTAINS 'Session'")
                 ).allElementsBoundByIndex
@@ -172,7 +172,7 @@ final class SessionManagementUITests: XCTestCase {
             let deleteButton = app.buttons["deleteSessionButton"].firstMatch
             if deleteButton.waitForExistence(timeout: 5) {
                 print("  ✅ 删除按钮已找到")
-                
+
                 // 5. 点击删除按钮
                 deleteButton.forceTap()
                 sleep(1)

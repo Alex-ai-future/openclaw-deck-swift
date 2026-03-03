@@ -627,14 +627,19 @@ class DeckViewModel {
         conflictRemoteData = nil
         conflictInfo = nil
 
-        // ✅ 继续完成初始化流程（连接 Gateway）
-        // 从 UserDefaults 读取配置
-        let gatewayUrl = storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
-        let token = storage.loadToken()
+        // ✅ 继续完成初始化流程
+        // 设置 Gateway 已连接
+        gatewayConnected = true
 
-        // 重新调用 initialize() 完成剩余流程
-        // initialize() 会检测到 sessionOrder 已有值，跳过加载会话列表
-        await initialize(url: gatewayUrl, token: token)
+        // 加载所有会话的消息历史
+        await loadAllSessionHistory()
+
+        // 初始化完成
+        isInitializing = false
+        loadingStage = .idle
+        loadingProgress = 0.0
+
+        logger.log("✅ Sync conflict resolved, initialization complete")
     }
 
     /// 应用同步数据

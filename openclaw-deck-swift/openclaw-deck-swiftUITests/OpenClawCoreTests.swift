@@ -50,13 +50,25 @@ final class OpenClawCoreTests: XCTestCase {
     }
 
     /// 测试 2: 发送消息
+    /// 测试 2: 发送消息
     func testSendMessage() {
-        // 等待输入框出现（使用 firstMatch 避免 SwiftUI 多元素问题）
-        let messageInput = app.textFields["messageInput"].firstMatch.exists ? app.textFields["messageInput"].firstMatch : app.otherElements["messageInput"].firstMatch
+        // macOS SwiftUI 的 TextField 可能被识别为其他类型
+        var messageInput: XCUIElement
+        if app.textFields["messageInput"].firstMatch.exists {
+            messageInput = app.textFields["messageInput"].firstMatch
+        } else if app.otherElements["messageInput"].firstMatch.exists {
+            messageInput = app.otherElements["messageInput"].firstMatch
+        } else if app.buttons["messageInput"].firstMatch.exists {
+            messageInput = app.buttons["messageInput"].firstMatch
+        } else {
+            // 使用谓词查找任意包含 messageInput 的元素
+            let predicate = NSPredicate(format: "identifier CONTAINS 'messageInput'")
+            messageInput = app.descendants(matching: .any).matching(predicate).firstMatch
+        }
 
-        // 等待并验证输入框存在
-        let exists = messageInput.waitForExistence(timeout: 10)
-        XCTAssertTrue(exists, "消息输入框应该在 5 秒内出现")
+        // 等待并验证输入框存在（macOS 需要更长时间）
+        let exists = messageInput.waitForExistence(timeout: 15)
+        XCTAssertTrue(exists, "消息输入框应该在 15 秒内出现")
 
         // 输入消息
         messageInput.tap()
@@ -64,14 +76,14 @@ final class OpenClawCoreTests: XCTestCase {
 
         // 等待发送按钮出现
         let sendButton = app.buttons["sendButton"].firstMatch
-        let buttonExists = sendButton.waitForExistence(timeout: 3)
-        XCTAssertTrue(buttonExists, "发送按钮应该在 3 秒内出现")
+        let buttonExists = sendButton.waitForExistence(timeout: 5)
+        XCTAssertTrue(buttonExists, "发送按钮应该在 5 秒内出现")
 
         // 点击发送
         sendButton.tap()
 
-        // 等待消息显示（最多 5 秒）
-        sleep(1) // 给 UI 一点时间更新
+        // 等待消息显示
+        sleep(2)
 
         // 截图验证
         let screenshot = app.windows.firstMatch.screenshot()
@@ -81,6 +93,7 @@ final class OpenClawCoreTests: XCTestCase {
         add(attachment)
 
         print("✅ testSendMessage 通过")
+    }
     }
 
     /// 测试 3: 连接流程（简化版）

@@ -111,6 +111,7 @@ struct SessionDetailView: View {
                             Spacer()
                             Text("\(formatRelativeDate(lastActivity)) (\(formatDateTime(lastActivity)))")
                                 .foregroundColor(.secondary)
+                                .font(.caption2)
                         }
                     }
 
@@ -120,6 +121,7 @@ struct SessionDetailView: View {
                             Spacer()
                             Text("\(formatRelativeDate(firstMessage.timestamp)) (\(formatDateTime(firstMessage.timestamp)))")
                                 .foregroundColor(.secondary)
+                                .font(.caption2)
                         }
                     }
                 }

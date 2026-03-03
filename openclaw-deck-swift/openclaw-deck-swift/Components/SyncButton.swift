@@ -11,9 +11,9 @@ struct SyncButton: View {
 
     var body: some View {
         Button {
-            Task {
-                await viewModel.handleSync()
-            }
+            // 只显示同步确认弹窗，不开始同步
+            // 用户点"确定"后才会调用 handleSync()
+            viewModel.isSyncing = true
         } label: {
             Image(systemName: "arrow.clockwise")
                 .rotationEffect(.degrees(viewModel.isSyncing ? 360 : 0))

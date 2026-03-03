@@ -202,10 +202,19 @@ struct ContentView: View {
         // 同步确认弹窗（全局）
         .alert("sync_all_sessions".localized, isPresented: .init(
             get: { viewModel.isSyncing && !viewModel.showingSyncConflict },
-            set: { _ in }
+            set: { newValue in
+                // 用户点"取消"或关闭弹窗时，重置 isSyncing
+                if !newValue {
+                    viewModel.isSyncing = false
+                }
+            }
         )) {
-            Button("cancel".localized, role: .cancel) {}
+            Button("cancel".localized, role: .cancel) {
+                // 点"取消"：重置 isSyncing，不同步
+                viewModel.isSyncing = false
+            }
             Button("sync".localized) {
+                // 点"确定"：开始同步
                 Task {
                     await viewModel.handleSync()
                 }

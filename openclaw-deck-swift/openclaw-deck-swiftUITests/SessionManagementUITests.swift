@@ -71,10 +71,23 @@ final class SessionManagementUITests: XCTestCase {
         // ========== 阶段 0：清理现有会话 ==========
         print("\n📍 阶段 0：清理现有会话")
 
+        // 打印所有按钮的 identifier 用于调试
+        let allButtons = app.buttons.allElementsBoundByIndex
+        print("  🔍 当前界面所有按钮：")
+        for (index, button) in allButtons.enumerated() {
+            if button.exists {
+                print("    [\(index)] identifier=\"\(button.identifier)\", label=\"\(button.label)\")
+            }
+        }
+
         var initialSessionCount = 0
         while true {
             let sessionButtons = getSessionButtons()
             initialSessionCount = sessionButtons.count
+            print("  📊 当前会话数量：\(sessionButtons.count)")
+            for (index, button) in sessionButtons.enumerated() {
+                print("    [\(index)] identifier=\"\(button.identifier)\", label=\"\(button.label)\")
+            }
 
             // 只剩 1 个会话时停止（系统自动保留）
             if sessionButtons.count <= 1 {

@@ -67,12 +67,16 @@ final class SyncButtonUITests: XCTestCase {
         print("  ✅ 确认弹窗出现")
 
         // 5. 点击取消按钮（完整交互）
-        if cancelButton.exists {
-            cancelButton.forceTap()
-        } else if cancelENButton.exists {
-            cancelENButton.forceTap()
-        }
+        // 使用键盘 ESC 键关闭弹窗（更可靠）
+        app.typeKey(XCUIKeyboardKey.escape, modifierFlags: [])
+        sleep(1)
 
+        // 验证弹窗关闭
+        let stillExists = cancelButton.exists || cancelENButton.exists
+        XCTAssertFalse(stillExists, "弹窗应该已关闭")
+        // if cancelButton.exists {
+            // cancelButton.forceTap()
+        // } else if cancelENButton.exists {
         // 验证弹窗关闭
         sleep(1)
         XCTAssertFalse(cancelButton.exists && cancelENButton.exists, "弹窗应该已关闭")
@@ -80,4 +84,3 @@ final class SyncButtonUITests: XCTestCase {
         print("✅ testSyncButtonCompleteFlow 通过")
     }
 }
-

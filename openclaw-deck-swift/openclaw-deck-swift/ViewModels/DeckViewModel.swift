@@ -457,17 +457,23 @@ class DeckViewModel {
     /// 删除 Session
     /// - Parameter sessionId: 要删除的 Session ID
     func deleteSession(sessionId: String) {
+        logger.log("🗑️ 删除会话：\(sessionId)")
+
         // 1. 从 sessions 中移除（使用小写 key）
         sessions.removeValue(forKey: sessionId.lowercased())
 
         // 2. 从 sessionOrder 中移除
         sessionOrder.removeAll { $0 == sessionId.lowercased() }
 
-        // 3. 保存到 UserDefaults
+        logger.log("✅ 会话已从本地删除，剩余 \(sessionOrder.count) 个会话")
+
+        // 3. 保存到 UserDefaults（会自动同步到云端）
         saveSessionsToStorage()
+        logger.log("📡 已触发云端同步（异步）")
 
         // 4. 如果删除后没有 session 了，创建 welcome session
         if sessions.isEmpty {
+            logger.log("📭 没有会话了，创建 Welcome session")
             createWelcomeSession()
         }
 
@@ -790,14 +796,16 @@ class DeckViewModel {
 
     /// 同步到 Cloudflare KV
     private func syncToCloudflare() async {
+        logger.log("☁️ 开始同步到 Cloudflare KV，共 \(sessionOrder.count) 个会话...")
+
         do {
             let syncData = SyncData(
                 sessions: sessionOrder, lastUpdated: ISO8601DateFormatter().string(from: Date())
             )
             try await CloudflareKV.shared.save(syncData)
-            logger.info("Synced to Cloudflare KV")
+            logger.log("✅ 成功同步到 Cloudflare KV")
         } catch {
-            logger.error("Cloudflare sync failed: \(error.localizedDescription)")
+            logger.error("❌ Cloudflare sync failed: \(error.localizedDescription)")
         }
     }
 

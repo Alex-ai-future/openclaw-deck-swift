@@ -91,11 +91,9 @@ final class OpenClawCoreTests: XCTestCase {
         attachment.name = "MessageSent"
         attachment.lifetime = .keepAlways
         add(attachment)
-
         print("✅ testSendMessage 通过")
     }
     }
-
     /// 测试 3: 连接流程（简化版）
     func testConnectionFlow() {
         // 这个测试需要实际的 Gateway 服务器

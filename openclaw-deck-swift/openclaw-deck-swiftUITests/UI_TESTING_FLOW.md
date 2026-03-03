@@ -190,6 +190,180 @@ XCTAssertEqual(sessions[2].label, "测试会话 1")
 
 ---
 
+### 流程 2：设置页面完整测试流程
+
+**测试文件：** `SettingsUITests.swift`  
+**测试方法：** `testSettingsCompleteFlow()`
+
+> 💡 **说明：** 测试设置页面的所有输入框修改、取消不保存、保存生效的完整流程。
+
+#### 前置条件
+- 应用已启动，进入主界面（DeckView）
+- 已有保存的 Gateway 配置（URL 和 Token）
+
+---
+
+#### 阶段 0：打开设置页面
+
+| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
+|------|------|----------------|-----------|
+| 0.1 | 点击设置按钮 | `settingsButton` (gear 图标) | 左上角 |
+| 0.2 | 验证设置弹窗出现 | `sheet` | 屏幕中央 |
+| 0.3 | 验证连接状态显示 | Text "Connected" 或 "Not Connected" | 顶部 Section |
+
+**验证：**
+- ✅ 设置按钮存在
+- ✅ 设置弹窗打开
+- ✅ 连接状态正确显示
+
+---
+
+#### 阶段 1：记录并修改输入框内容（第一次）
+
+**界面：设置弹窗**
+
+| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
+|------|------|----------------|-----------|
+| 1.1 | 获取 Gateway URL 输入框 | `gatewayUrlInput` (TextField) | Gateway Section |
+| 1.2 | 记录原始 URL 值 | `originalUrl` | - |
+| 1.3 | 获取 Token 输入框 | `tokenInput` (SecureTextField) | Gateway Section |
+| 1.4 | 记录原始 Token 值 | `originalToken` | - |
+| 1.5 | 修改 Gateway URL | 输入："ws://test-host:12345" | `gatewayUrlInput` |
+| 1.6 | 修改 Token | 输入："test-token-123" | `tokenInput` |
+| 1.7 | 验证 "Apply & Reconnect" 按钮出现 | "Apply & Reconnect" 按钮 | 有修改时显示 |
+
+**代码示例：**
+```swift
+// 记录原始值
+let originalUrl = app.textFields["gatewayUrlInput"].value as! String
+let originalToken = app.secureTextFields["tokenInput"].value as! String
+
+// 修改 URL
+let urlField = app.textFields["gatewayUrlInput"]
+urlField.tap()
+urlField.typeText("ws://test-host:12345")
+
+// 修改 Token
+let tokenField = app.secureTextFields["tokenInput"]
+tokenField.tap()
+tokenField.typeText("test-token-123")
+
+// 验证 Apply & Reconnect 按钮出现
+let applyButton = app.buttons["Apply & Reconnect"].firstMatch
+XCTAssertTrue(applyButton.exists, "修改后应该显示 Apply & Reconnect 按钮")
+```
+
+**验证：**
+- ✅ Gateway URL 输入框可编辑
+- ✅ Token 输入框可编辑
+- ✅ 修改后出现 "Apply & Reconnect" 按钮
+
+---
+
+#### 阶段 2：点击取消并验证不保存
+
+| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
+|------|------|----------------|-----------|
+| 2.1 | 点击取消按钮 | "Cancel" / "取消" | 左上角 |
+| 2.2 | 验证弹窗关闭 | `sheet` 消失 | - |
+| 2.3 | 再次点击设置按钮 | `settingsButton` | 左上角 |
+| 2.4 | 验证弹窗重新打开 | `sheet` 出现 | - |
+| 2.5 | 检查 Gateway URL 输入框 | `gatewayUrlInput` | 应该是原始值 |
+| 2.6 | 验证 URL 未保存 | `gatewayUrlInput.value == originalUrl` | - |
+| 2.7 | 检查 Token 输入框 | `tokenInput` | 应该是原始值 |
+| 2.8 | 验证 Token 未保存 | `tokenInput.value == originalToken` | - |
+
+**代码示例：**
+```swift
+// 点击取消
+app.buttons["Cancel"].firstMatch.forceTap()
+
+// 重新打开设置
+app.buttons["settingsButton"].firstMatch.forceTap()
+
+// 验证值未改变
+let currentUrl = app.textFields["gatewayUrlInput"].value as! String
+let currentToken = app.secureTextFields["tokenInput"].value as! String
+
+XCTAssertEqual(currentUrl, originalUrl, "取消后 URL 应该保持不变")
+XCTAssertEqual(currentToken, originalToken, "取消后 Token 应该保持不变")
+```
+
+**验证：**
+- ✅ 点击取消后弹窗关闭
+- ✅ 重新打开后 URL 保持原始值
+- ✅ 重新打开后 Token 保持原始值
+
+---
+
+#### 阶段 3：修改并保存（第二次修改）
+
+| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
+|------|------|----------------|-----------|
+| 3.1 | 修改 Gateway URL | 输入："ws://new-host:99999" | `gatewayUrlInput` |
+| 3.2 | 修改 Token | 输入："new-token-999" | `tokenInput` |
+| 3.3 | 点击完成按钮 | "Done" / "完成" | 右上角 |
+| 3.4 | 验证弹窗关闭 | `sheet` 消失 | - |
+
+**代码示例：**
+```swift
+// 清空并输入新 URL
+let urlField = app.textFields["gatewayUrlInput"]
+urlField.tap()
+urlField.typeText(XCUIKeyboardKey.delete)  // 清空
+urlField.typeText("ws://new-host:99999")
+
+// 清空并输入新 Token
+let tokenField = app.secureTextFields["tokenInput"]
+tokenField.tap()
+tokenField.typeText(XCUIKeyboardKey.delete)  // 清空
+tokenField.typeText("new-token-999")
+
+// 点击 Done 保存
+app.buttons["Done"].firstMatch.forceTap()
+```
+
+**验证：**
+- ✅ 修改后可以点击 Done 保存
+- ✅ 弹窗关闭
+
+---
+
+#### 阶段 4：验证保存成功
+
+| 步骤 | 操作 | 按钮/元素标识符 | 位置/说明 |
+|------|------|----------------|-----------|
+| 4.1 | 再次点击设置按钮 | `settingsButton` | 左上角 |
+| 4.2 | 验证弹窗打开 | `sheet` 出现 | - |
+| 4.3 | 检查 Gateway URL | `gatewayUrlInput` | 应该是 "ws://new-host:99999" |
+| 4.4 | 验证 URL 已保存 | `gatewayUrlInput.value == "ws://new-host:99999"` | - |
+| 4.5 | 检查 Token | `tokenInput` | 应该是 "new-token-999" |
+| 4.6 | 验证 Token 已保存 | `tokenInput.value == "new-token-999"` | - |
+| 4.7 | 点击取消按钮 | "Cancel" | 左上角 |
+| 4.8 | 关闭设置页面 | - | - |
+
+**代码示例：**
+```swift
+// 重新打开设置
+app.buttons["settingsButton"].firstMatch.forceTap()
+
+// 验证保存后的值
+let savedUrl = app.textFields["gatewayUrlInput"].value as! String
+let savedToken = app.secureTextFields["tokenInput"].value as! String
+
+XCTAssertEqual(savedUrl, "ws://new-host:99999", "URL 应该已保存")
+XCTAssertEqual(savedToken, "new-token-999", "Token 应该已保存")
+
+// 关闭设置
+app.buttons["Cancel"].firstMatch.forceTap()
+```
+
+**验证：**
+- ✅ URL 已保存为新值
+- ✅ Token 已保存为新值
+
+---
+
 ### 按钮标识符汇总
 
 | 按钮/元素 | Identifier | 类型 | 位置 |
@@ -200,36 +374,13 @@ XCTAssertEqual(sessions[2].label, "测试会话 1")
 | 发送按钮 | `sendButton` | Button | 输入框右侧 |
 | 消息输入框 | `messageInput` | TextField | 底部 |
 | 删除按钮 | `deleteSessionButton` | Button | 详情页底部 |
+| Gateway URL 输入框 | `gatewayUrlInput` | TextField | 设置弹窗 |
+| Token 输入框 | `tokenInput` | SecureTextField | 设置弹窗 |
+| 取消按钮 | "Cancel" / "取消" | Button | 设置弹窗左上角 |
+| 完成按钮 | "Done" / "完成" | Button | 设置弹窗右上角 |
+| Apply & Reconnect | "Apply & Reconnect" | Button | 设置弹窗 |
 | 拖拽手柄 | `line.3.horizontal` | Image | 排序弹窗 |
 | 会话按钮 | 包含 "Session" | Button | 会话列表 |
-
----
-
-### 流程 2：首次启动和连接流程
-
-**测试文件：** `SettingsUITests.swift`  
-**测试方法：** `testFirstLaunchAndConnection()`
-
-> 💡 **说明：** 测试首次启动时的欢迎界面和 Gateway 连接流程。
-
-**流程步骤：**
-- [ ] 应用启动，显示欢迎界面
-- [ ] 验证 Logo 和标题显示
-- [ ] 验证首次安装引导卡片显示
-- [ ] 验证登录引导卡片显示
-- [ ] 点击右上角设置按钮（`settingsButton`）
-- [ ] 验证设置页面打开
-- [ ] 输入 Gateway URL
-- [ ] 输入 Token（可选）
-- [ ] 点击连接按钮
-- [ ] 验证连接成功/失败提示
-- [ ] 验证配置保存
-
-**边界情况：**
-- [ ] URL 格式错误时的错误提示
-- [ ] 连接失败时的错误显示
-- [ ] 点击取消不保存配置
-- [ ] 点击确定保存配置
 
 ---
 
@@ -256,29 +407,7 @@ XCTAssertEqual(sessions[2].label, "测试会话 1")
 
 ---
 
-### 流程 4：设置页面流程
-
-**测试文件：** `SettingsUITests.swift`  
-**测试方法：** `testSettingsPage()`
-
-> 💡 **说明：** 测试设置页面的各项功能。
-
-**流程步骤：**
-- [ ] 打开设置页面（`settingsButton`）
-- [ ] 验证连接状态显示
-- [ ] 修改 Gateway URL
-- [ ] 修改 Token
-- [ ] 点击 Apply & Reconnect
-- [ ] 验证重新连接
-- [ ] 语言选择
-- [ ] 通知开关
-- [ ] Cloudflare KV 同步配置
-- [ ] 重置设备身份
-- [ ] 断开连接
-
----
-
-### 流程 5：应用启动流程
+### 流程 4：应用启动流程
 
 **测试文件：** `AppLaunchUITests.swift`  
 **测试方法：** `testAppLaunchAndResume()`
@@ -300,9 +429,8 @@ XCTAssertEqual(sessions[2].label, "测试会话 1")
 | 流程 | 测试文件 | 测试方法 | 状态 |
 |------|---------|---------|------|
 | 完整会话生命周期 | SessionManagementUITests.swift | testCompleteSessionLifecycle() | 🔄 待实现 |
-| 首次启动和连接 | SettingsUITests.swift | testFirstLaunchAndConnection() | 🔄 待实现 |
+| 设置页面完整流程 | SettingsUITests.swift | testSettingsCompleteFlow() | 🔄 待实现 |
 | 同步功能 | SyncButtonUITests.swift | testSyncAndConflict() | ✅ |
-| 设置页面 | SettingsUITests.swift | testSettingsPage() | 🔄 待实现 |
 | 应用启动 | AppLaunchUITests.swift | testAppLaunchAndResume() | ✅ |
 
 > ✅ = 已有测试 | 🔄 = 待实现/优化
@@ -343,6 +471,9 @@ A: 确保设置了 `UITESTING=YES` 和 `--disable-animations`
 
 ### Q: 为什么无法完全删除所有会话？
 A: 系统会自动保留至少 1 个会话，这是预期行为。测试时应验证"只剩 1 个会话"而非"列表为空"。
+
+### Q: 设置页面的 Token 输入框找不到？
+A: Token 输入框是 `secureTextFields` 类型，不是 `textFields`。使用 `app.secureTextFields["tokenInput"]` 访问。
 
 ---
 

@@ -11,7 +11,7 @@ final class AppLaunchUITests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        
+
         app = XCUIApplication()
         app.launchEnvironment["UITESTING"] = "YES"
         continueAfterFailure = true
@@ -48,7 +48,7 @@ final class AppLaunchUITests: XCTestCase {
     // MARK: - 性能测试
 
     /// 测试：启动性能
-    func testLaunchPerformance() throws {
+    func testLaunchPerformance() {
         // 测量启动时间
         self.measure {
             _ = XCUIApplication()

@@ -20,6 +20,20 @@ struct GlobalInputView: View {
             DictationButton(text: $state.inputText, speechRecognizer: state.speechRecognizer)
                 .frame(width: 36, height: 36)
 
+            // 收起键盘按钮（仅 iOS 且键盘弹出时显示）
+            #if os(iOS) || os(visionOS)
+                if isInputFocused {
+                    Button {
+                        isInputFocused = false
+                    } label: {
+                        Image(systemName: "keyboard.chevron.compact.down")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.glass)
+                    .frame(width: 36, height: 36)
+                }
+            #endif
+
             // 输入框
             ZStack(alignment: .trailing) {
                 TextField("message".localized, text: $state.inputText, axis: .vertical)
@@ -68,17 +82,6 @@ struct GlobalInputView: View {
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
         .padding(.top, 8)
-        .toolbar {
-            // 键盘工具栏 - 仅在 iOS 显示
-            #if os(iOS) || os(visionOS)
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("完成") {
-                        isInputFocused = false
-                    }
-                }
-            #endif
-        }
     }
 }
 

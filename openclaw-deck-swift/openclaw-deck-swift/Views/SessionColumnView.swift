@@ -315,17 +315,15 @@ struct SessionColumnView: View {
             #if os(iOS)
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     sessionNameButton
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
                 }
             #elseif os(macOS)
                 sessionNameButton
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
             #endif
 
             Spacer()
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .padding(.horizontal, 16)
         .padding(.top, 2)
     }

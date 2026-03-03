@@ -121,15 +121,8 @@ struct SessionColumnView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // macOS 顶部显示会话名称按钮
-            #if os(macOS)
-                HStack {
-                    sessionNameButton
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            #endif
+            // 顶部状态条（iPad + macOS）
+            topStatusBar
 
             // 消息列表和浮动按钮 - 使用 ZStack 但让消息列表可以压缩
             ZStack(alignment: .bottom) {

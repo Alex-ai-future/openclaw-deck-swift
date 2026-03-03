@@ -371,35 +371,66 @@ final class SessionManagementUITests: XCTestCase {
     /// 删除第一个会话
     private func deleteFirstSession() {
         let sessionButtons = getSessionButtons()
-        guard !sessionButtons.isEmpty else { return }
+        guard !sessionButtons.isEmpty else {
+            print("  ⚠️  没有会话可删除")
+            return
+        }
+
+        let sessionName = sessionButtons[0].label
+        print("  🗑️  准备删除会话：\(sessionName)")
 
         // 点击第一个会话
         sessionButtons[0].forceTap()
+        print("  ✅ 已点击会话")
 
-        // 进入详情页后，找到删除按钮
+        // 等待详情页加载（最多 5 秒）
+        sleep(1)
+
+        // 查找删除按钮（可能在底部，需要滚动）
         let deleteButton = app.buttons["deleteSessionButton"]
-        if deleteButton.waitForExistence(timeout: 3) {
-            deleteButton.forceTap()
 
-            // 确认删除弹窗
-            let alert = app.alerts.firstMatch
-            XCTAssertTrue(
-                alert.waitForExistence(timeout: 3),
-                "删除确认弹窗必须出现"
-            )
-
-            let confirmButton = app.buttons["Delete"].firstMatch.exists ? app.buttons["Delete"] : app.buttons["删除"]
-            XCTAssertTrue(
-                confirmButton.waitForExistence(timeout: 3),
-                "删除确认按钮必须存在"
-            )
-            confirmButton.forceTap()
-
-            // 验证弹窗关闭
-            XCTAssertFalse(
-                alert.waitForExistence(timeout: 3),
-                "删除后弹窗必须关闭"
-            )
+        // 尝试滚动查找
+        if !deleteButton.exists {
+            print("  ⚠️  删除按钮未显示，尝试滚动...")
+            app.swipeUp(velocity: .slow)
+            sleep(1)
         }
+
+        // 验证删除按钮存在
+        XCTAssertTrue(
+            deleteButton.waitForExistence(timeout: 5),
+            "删除按钮 (deleteSessionButton) 必须在 5 秒内出现"
+        )
+        print("  ✅ 删除按钮已找到")
+
+        // 点击删除按钮
+        deleteButton.forceTap()
+        print("  ✅ 已点击删除按钮")
+
+        // 确认删除弹窗
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(
+            alert.waitForExistence(timeout: 3),
+            "删除确认弹窗必须出现"
+        )
+        print("  ✅ 删除确认弹窗已显示")
+
+        let confirmButton = app.buttons["Delete"].firstMatch.exists ? app.buttons["Delete"] : app.buttons["删除"]
+        XCTAssertTrue(
+            confirmButton.waitForExistence(timeout: 3),
+            "删除确认按钮必须存在"
+        )
+        confirmButton.forceTap()
+        print("  ✅ 已确认删除")
+
+        // 验证弹窗关闭
+        XCTAssertFalse(
+            alert.waitForExistence(timeout: 3),
+            "删除后弹窗必须关闭"
+        )
+        print("  ✅ 删除弹窗已关闭")
+
+        // 等待返回列表
+        sleep(1)
     }
 }

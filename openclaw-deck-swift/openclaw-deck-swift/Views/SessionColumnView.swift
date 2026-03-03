@@ -126,6 +126,7 @@ struct SessionColumnView: View {
                 // 消息列表 - 使用 maxHeight: .infinity 但不设置 minHeight
                 messageList
                     .frame(maxHeight: .infinity)
+                    .accessibilityIdentifier("Session-\(session.sessionId)")
 
                 // 底部浮动按钮组
                 VStack {

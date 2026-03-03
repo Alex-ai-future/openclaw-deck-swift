@@ -205,3 +205,25 @@
 "confirm_new_session" = "Confirm New Session";
 "confirm" = "Confirm";
 "new_session_confirm_message" = "This will start a new conversation and clear the current context. Are you sure you want to continue?";
+
+// MARK: - Session Details (补充)
+"session_id_label" = "Session ID";
+"session_key_label" = "Session Key";
+"session_context_label" = "Notes";
+"processing_label" = "Processing";
+"unread_messages_label" = "Unread Messages";
+"active_run_label" = "Active Run";
+"total_messages_label" = "Total Messages";
+"user_messages_label" = "User Messages";
+"assistant_messages_label" = "Assistant Messages";
+"last_activity_label" = "Last Activity";
+"first_message_label" = "First Message";
+"history_load_label" = "History Load";
+"history_loaded_status" = "Loaded";
+"history_not_loaded_status" = "Not Loaded";
+"loading_history_ellipsis" = "Loading history...";
+"loading_messages_ellipsis" = "Loading messages...";
+"idle" = "Idle";
+"thinking" = "Thinking";
+"streaming" = "Streaming";
+"error_prefix" = "Error: ";

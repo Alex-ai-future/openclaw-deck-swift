@@ -19,62 +19,129 @@ struct SessionDetailView: View {
                 // MARK: - 基础信息
 
                 Section("basic_info".localized) {
-                    Text("ID: \(session.sessionId)")
-                    Text("Key: \(session.sessionKey)")
-                        .font(.caption.monospaced())
-                        .textSelection(.enabled)
+                    HStack {
+                        Text("session_id_label".localized)
+                        Spacer()
+                        Text(session.sessionId)
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("session_key_label".localized)
+                        Spacer()
+                        Text(session.sessionKey)
+                            .font(.caption.monospaced())
+                            .foregroundColor(.secondary)
+                            .textSelection(.enabled)
+                    }
 
                     if let context = session.context, !context.isEmpty {
-                        Text("备注：\(context)")
-                            .textSelection(.enabled)
+                        HStack {
+                            Text("session_context_label".localized)
+                            Spacer()
+                            Text(context)
+                                .foregroundColor(.secondary)
+                                .textSelection(.enabled)
+                        }
                     }
                 }
 
                 // MARK: - 状态
 
                 Section("status".localized) {
-                    Text("状态：\(sessionStatusText)")
-                    Text("处理中：\(session.isProcessing ? "是" : "否")")
-                    Text("未读消息：\(session.hasUnreadMessage ? "是" : "否")")
+                    HStack {
+                        Text("status".localized)
+                        Spacer()
+                        Text(sessionStatusText)
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("processing_label".localized)
+                        Spacer()
+                        Text(session.isProcessing ? "yes".localized : "no".localized)
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("unread_messages_label".localized)
+                        Spacer()
+                        Text(session.hasUnreadMessage ? "yes".localized : "no".localized)
+                            .foregroundColor(.secondary)
+                    }
 
                     if let runId = session.activeRunId {
-                        Text("活跃 Run: \(runId)")
-                            .font(.caption.monospaced())
-                            .textSelection(.enabled)
+                        HStack {
+                            Text("active_run_label".localized)
+                            Spacer()
+                            Text(runId)
+                                .font(.caption.monospaced())
+                                .foregroundColor(.secondary)
+                                .textSelection(.enabled)
+                        }
                     }
                 }
 
                 // MARK: - 消息统计
 
                 Section("message_stats".localized) {
-                    Text("总消息数：\(session.messages.count)")
-                    Text("User 消息：\(userMessageCount)")
-                    Text("Assistant 消息：\(assistantMessageCount)")
+                    HStack {
+                        Text("total_messages_label".localized)
+                        Spacer()
+                        Text("\(session.messages.count)")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("user_messages_label".localized)
+                        Spacer()
+                        Text("\(userMessageCount)")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("assistant_messages_label".localized)
+                        Spacer()
+                        Text("\(assistantMessageCount)")
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 // MARK: - 时间
 
                 Section("timeline".localized) {
                     if let lastActivity = session.lastMessageAt {
-                        Text("最后活动：\(formatRelativeDate(lastActivity)) (\(formatDateTime(lastActivity)))")
+                        HStack {
+                            Text("last_activity_label".localized)
+                            Spacer()
+                            Text("\(formatRelativeDate(lastActivity)) (\(formatDateTime(lastActivity)))")
+                                .foregroundColor(.secondary)
+                        }
                     }
 
                     if let firstMessage = session.messages.first {
-                        Text("第一条消息：\(formatRelativeDate(firstMessage.timestamp)) (\(formatDateTime(firstMessage.timestamp)))")
+                        HStack {
+                            Text("first_message_label".localized)
+                            Spacer()
+                            Text("\(formatRelativeDate(firstMessage.timestamp)) (\(formatDateTime(firstMessage.timestamp)))")
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
 
                 // MARK: - 加载状态
 
                 Section("load_status".localized) {
-                    Text("历史加载：\(session.historyLoaded ? "已完成" : "未完成")")
+                    HStack {
+                        Text("history_load_label".localized)
+                        Spacer()
+                        Text(session.historyLoaded ? "history_loaded_status".localized : "history_not_loaded_status".localized)
+                            .foregroundColor(.secondary)
+                    }
 
                     if session.isHistoryLoading {
-                        Text("状态：正在加载历史...")
+                        Text("loading_history_ellipsis".localized)
+                            .foregroundColor(.secondary)
                     }
 
                     if session.isLoadingMessages {
-                        Text("状态：正在加载消息...")
+                        Text("loading_messages_ellipsis".localized)
+                            .foregroundColor(.secondary)
                     }
                 }
 

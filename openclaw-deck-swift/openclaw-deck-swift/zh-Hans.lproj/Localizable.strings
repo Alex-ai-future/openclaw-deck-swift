@@ -205,3 +205,25 @@
 "confirm_new_session" = "确认新建对话";
 "confirm" = "确定";
 "new_session_confirm_message" = "这将开始一个新的对话，当前上下文将被清空。确定继续吗？";
+
+// MARK: - Session Details (补充)
+"session_id_label" = "会话 ID";
+"session_key_label" = "会话 Key";
+"session_context_label" = "备注";
+"processing_label" = "处理中";
+"unread_messages_label" = "未读消息";
+"active_run_label" = "活跃 Run";
+"total_messages_label" = "总消息数";
+"user_messages_label" = "用户消息";
+"assistant_messages_label" = "助手消息";
+"last_activity_label" = "最后活动";
+"first_message_label" = "第一条消息";
+"history_load_label" = "历史加载";
+"history_loaded_status" = "已完成";
+"history_not_loaded_status" = "未完成";
+"loading_history_ellipsis" = "正在加载历史...";
+"loading_messages_ellipsis" = "正在加载消息...";
+"idle" = "空闲";
+"thinking" = "思考中";
+"streaming" = "输出中";
+"error_prefix" = "错误：";

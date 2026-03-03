@@ -233,6 +233,8 @@ class DeckViewModel {
                     self.gatewayConnected = false
                     self.isInitializing = false
                     self.loadingStage = .idle
+                    // 获取错误信息
+                    self.connectionError = client.connectionError ?? "Unknown connection error"
                 }
             }
         }

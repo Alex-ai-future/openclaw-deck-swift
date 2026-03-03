@@ -1,7 +1,7 @@
 // SessionManagementUITests.swift
 // OpenClaw Deck Swift
 //
-// 会话管理 UI 测试
+// 会话管理 UI 测试（深度测试）
 
 import XCTest
 
@@ -29,106 +29,143 @@ final class SessionManagementUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    // MARK: - 会话创建和排序测试
+    // MARK: - 会话创建（填写所有字段）和排序测试
 
-    /// 测试：会话创建（验证完整字段 UI）和排序
-    func testSessionCreateWithFields() {
-        print("📋 开始测试：会话创建（验证完整字段 UI）和排序")
+    /// 测试：创建会话（填写完整字段）和拖动排序
+    func testSessionCreateWithFieldsAndSort() {
+        print("📋 开始测试：创建会话（完整字段）和拖动排序")
 
-        // 1. 记录初始会话数量
-        let initialSessionCount = app.buttons.matching(
+        // 1. 记录初始会话数量和顺序
+        var sessionButtons = app.buttons.matching(
             NSPredicate(format: "identifier CONTAINS 'Session'")
-        ).count
-        print("  初始会话数：\(initialSessionCount)")
+        ).allElementsBoundByIndex
+        
+        let initialCount = sessionButtons.count
+        let initialOrder = sessionButtons.map { $0.identifier }
+        print("  初始会话数：\(initialCount)")
+        print("  初始顺序：\(initialOrder)")
 
-        // 2. 点击新建会话
-        let newSessionButton = app.buttons["NewSessionButton"].firstMatch
-        XCTAssertTrue(newSessionButton.waitForExistence(timeout: 5), "新建会话按钮应该存在")
-        newSessionButton.forceTap()
-        sleep(1)
-        print("  ✅ 新建会话按钮已点击")
+        // 2. 创建 3 个不同名称的会话
+        let sessionNames = ["测试会话 A", "测试会话 B", "测试会话 C"]
+        
+        for (index, sessionName) in sessionNames.enumerated() {
+            print("  创建第 \(index + 1) 个会话：\(sessionName)")
+            
+            // 点击新建会话
+            let newSessionButton = app.buttons["NewSessionButton"].firstMatch
+            XCTAssertTrue(newSessionButton.exists, "新建会话按钮应该存在")
+            newSessionButton.forceTap()
+            sleep(1)
 
-        // 3. 验证创建弹窗出现
-        let createSheet = app.sheets.firstMatch
-        XCTAssertTrue(createSheet.waitForExistence(timeout: 3), "创建会话弹窗应该出现")
-        print("  ✅ 创建弹窗已出现")
+            // 验证创建弹窗出现
+            let createSheet = app.sheets.firstMatch
+            XCTAssertTrue(createSheet.waitForExistence(timeout: 3), "创建会话弹窗应该出现")
 
-        // 4. 验证名称输入框存在
-        let nameInput = app.textFields.firstMatch
-        XCTAssertTrue(nameInput.waitForExistence(timeout: 3), "名称输入框应该存在")
-        print("  ✅ 名称输入框存在")
+            // 填写会话名称（macOS 限制，只验证 UI）
+            let nameInput = app.textFields.firstMatch
+            XCTAssertTrue(nameInput.waitForExistence(timeout: 3), "名称输入框应该存在")
+            nameInput.forceTap()
+            sleep(1)
+            
+            // 验证输入框可以获取焦点
+            XCTAssertTrue(nameInput.hasFocus, "输入框应该可以获取焦点")
+            print("  ✅ 名称输入框可以获取焦点")
 
-        // 5. 验证输入框可以获取焦点（macOS 限制，不实际输入）
-        nameInput.forceTap()
-        sleep(1)
-        XCTAssertTrue(nameInput.hasFocus, "输入框应该可以获取焦点")
-        print("  ✅ 输入框可以获取焦点")
+            // 点击创建按钮
+            let createButton = app.buttons["创建"].firstMatch.exists
+                ? app.buttons["创建"].firstMatch
+                : app.buttons["Create"].firstMatch
 
-        // 6. 点击创建按钮（使用默认名称）
-        let createButton = app.buttons["创建"].firstMatch.exists
-            ? app.buttons["创建"].firstMatch
-            : app.buttons["Create"].firstMatch
-
-        if createButton.exists {
-            createButton.forceTap()
-            sleep(2)
-        } else {
-            app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
-            sleep(2)
+            if createButton.exists {
+                createButton.forceTap()
+                sleep(2)
+            } else {
+                app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
+                sleep(2)
+            }
+            print("  ✅ 会话 \(sessionName) 创建成功")
         }
-        print("  ✅ 会话创建成功")
 
-        // 7. 验证会话数量增加
-        let newSessionCount = app.buttons.matching(
+        // 3. 验证会话数量增加
+        sessionButtons = app.buttons.matching(
             NSPredicate(format: "identifier CONTAINS 'Session'")
-        ).count
-        XCTAssertGreaterThanOrEqual(newSessionCount, initialSessionCount, "会话数量应该增加或不变")
-        print("  ✅ 会话列表已更新：\(newSessionCount) 个会话")
+        ).allElementsBoundByIndex
+        
+        let newCount = sessionButtons.count
+        XCTAssertEqual(newCount, initialCount + 3, "应该创建 3 个新会话")
+        print("  ✅ 会话列表已更新：\(newCount) 个会话")
 
-        // 8. 点击排序按钮
+        // 4. 点击排序按钮
         let sortButton = app.buttons["SortButton"].firstMatch
         XCTAssertTrue(sortButton.waitForExistence(timeout: 5), "排序按钮应该存在")
         sortButton.forceTap()
         sleep(2)
         print("  ✅ 排序按钮已点击")
 
-        // 9. 验证排序视图出现
+        // 5. 验证排序视图出现
         let sortSheet = app.sheets.firstMatch
         XCTAssertTrue(sortSheet.waitForExistence(timeout: 5), "排序视图应该出现")
+        print("  ✅ 排序视图已出现")
 
-        // 10. 验证拖拽手柄图标存在
+        // 6. 验证拖拽手柄图标存在
         let dragHandles = app.images.matching(
             NSPredicate(format: "identifier == 'line.3.horizontal'")
         )
-        XCTAssertGreaterThanOrEqual(dragHandles.count, 1, "应该有拖拽手柄图标")
+        XCTAssertGreaterThanOrEqual(dragHandles.count, 3, "应该有至少 3 个拖拽手柄")
         print("  ✅ 拖拽手柄图标存在")
 
-        // 11. 验证 Cancel 和 Done 按钮存在
-        let cancelButton = app.buttons["cancel"].firstMatch.exists
-            ? app.buttons["cancel"].firstMatch
-            : app.buttons["Cancel"].firstMatch
+        // 7. 记录排序前顺序
+        let beforeSortOrder = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS 'Session'")
+        ).allElementsBoundByIndex.map { $0.identifier }
+        print("  排序前顺序：\(beforeSortOrder)")
+
+        // 8. 拖动第一个会话到最后（macOS 使用 coordinate 拖动）
+        let firstSession = sessionButtons.first
+        let lastSession = sessionButtons.last
+        
+        if let first = firstSession, let last = lastSession {
+            // 获取坐标
+            let firstCoord = first.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let lastCoord = last.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            
+            // 拖动
+            firstCoord.press(forDuration: 0.5, thenDragTo: lastCoord)
+            sleep(2)
+            print("  ✅ 已拖动第一个会话到最后")
+        }
+
+        // 9. 验证顺序已改变
+        let afterDragOrder = app.buttons.matching(
+            NSPredicate(format: "identifier CONTAINS 'Session'")
+        ).allElementsBoundByIndex.map { $0.identifier }
+        print("  拖动后顺序：\(afterDragOrder)")
+        
+        XCTAssertNotEqual(beforeSortOrder, afterDragOrder, "顺序应该已改变")
+        print("  ✅ 顺序已改变")
+
+        // 10. 点击 Done 保存
         let doneButton = app.buttons["done"].firstMatch.exists
             ? app.buttons["done"].firstMatch
             : app.buttons["Done"].firstMatch
-
-        XCTAssertTrue(cancelButton.exists, "Cancel 按钮应该存在")
+        
         XCTAssertTrue(doneButton.exists, "Done 按钮应该存在")
-        print("  ✅ Cancel 和 Done 按钮存在")
+        doneButton.forceTap()
+        sleep(2)
+        print("  ✅ 已点击 Done 保存")
 
-        // 12. 点击 Cancel 关闭排序视图
-        cancelButton.forceTap()
-        sleep(1)
+        // 11. 验证排序视图已关闭
         XCTAssertFalse(sortSheet.exists, "排序视图应该已关闭")
         print("  ✅ 排序视图已关闭")
 
-        print("✅ testSessionCreateWithFields 通过")
+        print("✅ testSessionCreateWithFieldsAndSort 通过")
     }
 
-    // MARK: - 删除会话测试
+    // MARK: - 删除所有会话测试
 
-    /// 测试：删除会话（在会话详情页）
-    func testSessionDelete() {
-        print("🗑️  开始测试：删除会话")
+    /// 测试：逐个删除所有会话
+    func testDeleteAllSessions() {
+        print("🗑️  开始测试：逐个删除所有会话")
 
         // 1. 记录当前会话数量
         var sessionButtons = app.buttons.matching(
@@ -138,51 +175,50 @@ final class SessionManagementUITests: XCTestCase {
         let initialCount = sessionButtons.count
         print("  当前会话数：\(initialCount)")
 
-        // 2. 确保有至少 2 个会话（1 个 Welcome + 1 个可删除）
+        // 2. 确保有至少 2 个会话
         if initialCount < 2 {
-            print("  会话数不足，先创建一个新会话")
+            print("  会话数不足，先创建 3 个新会话")
             let newSessionButton = app.buttons["NewSessionButton"].firstMatch
-            if newSessionButton.exists {
-                newSessionButton.forceTap()
-                sleep(1)
-                
-                let createButton = app.buttons["创建"].firstMatch.exists
-                    ? app.buttons["创建"].firstMatch
-                    : app.buttons["Create"].firstMatch
-                
-                if createButton.exists {
-                    createButton.forceTap()
-                    sleep(2)
+            for _ in 1...3 {
+                if newSessionButton.exists {
+                    newSessionButton.forceTap()
+                    sleep(1)
+                    
+                    let createButton = app.buttons["创建"].firstMatch.exists
+                        ? app.buttons["创建"].firstMatch
+                        : app.buttons["Create"].firstMatch
+                    
+                    if createButton.exists {
+                        createButton.forceTap()
+                        sleep(2)
+                    }
                 }
-                
-                sessionButtons = app.buttons.matching(
-                    NSPredicate(format: "identifier CONTAINS 'Session'")
-                ).allElementsBoundByIndex
             }
+            
+            sessionButtons = app.buttons.matching(
+                NSPredicate(format: "identifier CONTAINS 'Session'")
+            ).allElementsBoundByIndex
         }
 
-        // 3. 点击最后一个会话（通常是最新创建的，可以删除）
-        if sessionButtons.count >= 2 {
-            print("  点击最后一个会话打开详情页")
-            sessionButtons[sessionButtons.count - 1].forceTap()
+        // 3. 逐个删除所有会话（保留 Welcome 会话）
+        var deleteCount = 0
+        while sessionButtons.count > 1 && deleteCount < 10 {
+            print("  删除第 \(deleteCount + 1) 个会话（剩余：\(sessionButtons.count)）")
+            
+            // 点击最后一个会话（最新创建的）
+            let lastSession = sessionButtons[sessionButtons.count - 1]
+            lastSession.forceTap()
             sleep(2)
 
-            // 4. 验证详情页已打开（查找删除按钮）
+            // 找到删除按钮
             let deleteButton = app.buttons["deleteSessionButton"].firstMatch
             if deleteButton.waitForExistence(timeout: 5) {
-                print("  ✅ 删除按钮已找到")
-                
-                // 5. 点击删除按钮
                 deleteButton.forceTap()
                 sleep(1)
-                print("  ✅ 删除按钮已点击")
 
-                // 6. 验证确认弹窗出现
+                // 验证确认弹窗
                 let deleteAlert = app.alerts.firstMatch
                 if deleteAlert.waitForExistence(timeout: 3) {
-                    print("  ✅ 确认弹窗出现")
-
-                    // 7. 点击确认删除
                     let confirmButton = app.buttons["delete"].firstMatch.exists
                         ? app.buttons["delete"].firstMatch
                         : app.buttons["Delete"].firstMatch
@@ -190,25 +226,23 @@ final class SessionManagementUITests: XCTestCase {
                     if confirmButton.exists {
                         confirmButton.forceTap()
                         sleep(2)
-                        print("  ✅ 已确认删除")
+                        deleteCount += 1
+                        print("  ✅ 已删除 \(deleteCount) 个会话")
                     }
                 }
             }
 
-            // 8. 验证会话数量减少
-            let finalCount = app.buttons.matching(
+            // 重新获取会话列表
+            sessionButtons = app.buttons.matching(
                 NSPredicate(format: "identifier CONTAINS 'Session'")
-            ).count
-
-            print("  删除后会话数：\(finalCount) (初始：\(initialCount))")
-            
-            // 宽松验证：只要数量不变或减少即可
-            XCTAssertLessThanOrEqual(finalCount, initialCount, "会话数量不应该增加")
-            print("  ✅ 会话数量验证通过")
-        } else {
-            print("  ⚠️ 会话数不足，跳过删除测试")
+            ).allElementsBoundByIndex
         }
 
-        print("✅ testSessionDelete 通过")
+        // 4. 验证最后只剩 1 个 Welcome 会话
+        let finalCount = sessionButtons.count
+        XCTAssertEqual(finalCount, 1, "应该只剩 1 个 Welcome 会话")
+        print("  ✅ 最后剩 \(finalCount) 个会话")
+
+        print("✅ testDeleteAllSessions 通过")
     }
 }

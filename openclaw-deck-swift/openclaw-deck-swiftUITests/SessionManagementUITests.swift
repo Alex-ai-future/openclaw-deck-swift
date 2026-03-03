@@ -86,14 +86,3 @@ final class SessionManagementUITests: XCTestCase {
     }
 }
 
-// MARK: - Helper Extensions
-
-extension XCUIElement {
-    /// macOS 强制点击（绕过某些辅助功能限制）
-    func forceTap() {
-        if self.exists {
-            let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            coordinate.tap()
-        }
-    }
-}

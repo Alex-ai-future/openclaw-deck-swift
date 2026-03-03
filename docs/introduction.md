@@ -1,5 +1,9 @@
 # OpenClaw Deck Swift - 技术架构
 
+> 💡 **普通用户？** 先看 [用户指南](USER_GUIDE.html) 了解如何使用
+> 
+> **想看看实际用法？** 查看 [使用样例](USAGE_EXAMPLES.html)
+
 **版本：** 1.5  
 **最后更新：** 2026-02-28  
 **目标读者：** 开发者、贡献者
@@ -473,6 +477,8 @@ find . -name "*.swift" -exec swift-format format -i {} \;
 
 ## 📚 相关文档
 
-- [用户指南](USER_GUIDE.html) - 如何使用
-- [使用样例](USAGE_EXAMPLES.html) - 实际场景示例
-- [隐私政策](PRIVACY.html) - 数据隐私说明
+| 文档 | 说明 |
+|------|------|
+| [用户指南](USER_GUIDE.html) | 功能介绍、安装步骤、故障排除 |
+| [使用样例](USAGE_EXAMPLES.html) | 实际使用场景、对话示例 |
+| [隐私政策](PRIVACY.html) | 数据隐私说明 |

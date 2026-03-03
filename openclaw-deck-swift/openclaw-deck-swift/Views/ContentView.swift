@@ -199,10 +199,26 @@ struct ContentView: View {
                 viewModel: viewModel
             )
         }
-        // 同步冲突弹窗（全局，无论哪个视图都显示）
+        // 同步确认弹窗（全局）
+        .alert("sync_all_sessions".localized, isPresented: .init(
+            get: { viewModel.isSyncing && !viewModel.showingSyncConflict },
+            set: { _ in }
+        )) {
+            Button("cancel".localized, role: .cancel) {}
+            Button("sync".localized) {
+                Task {
+                    await viewModel.handleSync()
+                }
+            }
+            .tint(.blue)
+        } message: {
+            Text("this_will_sync_all_sessions_with_the_gateway_continue".localized)
+        }
+
+        // 同步冲突弹窗（全局）
         .alert("sync_conflict".localized, isPresented: .init(
             get: { viewModel.showingSyncConflict },
-            set: { _ in } // 只读，通过 resolveSyncConflict 关闭
+            set: { _ in }
         )) {
             Button("use_local_overwrite_cloud".localized, role: .destructive) {
                 Task {

@@ -33,10 +33,8 @@ struct SessionListView: View {
         }
     }
 
-    // 内部状态管理
+    /// 内部状态管理
     @State private var showingSortSheet = false
-    @State private var showingSyncAlert = false
-    @State private var showingConflictAlert = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -170,17 +168,6 @@ struct SessionListView: View {
             }
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
-            }
-            .deckSyncAlerts(
-                viewModel: viewModel,
-                showingSyncAlert: $showingSyncAlert,
-                showingConflictAlert: $showingConflictAlert
-            ) { newValue in
-                if newValue {
-                    showingConflictAlert = true
-                } else {
-                    showingConflictAlert = false
-                }
             }
             // 消息发送失败弹窗
             .alert("message_send_failed".localized, isPresented: $viewModel.showMessageSendError) {

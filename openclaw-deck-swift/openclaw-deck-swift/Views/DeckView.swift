@@ -24,10 +24,8 @@ struct DeckView: View {
     @State private var gatewayUrl: String
     @State private var token: String
 
-    // 内部状态管理
+    /// 内部状态管理
     @State private var showingSortSheet = false
-    @State private var showingSyncAlert = false
-    @State private var showingConflictAlert = false
 
     init(
         viewModel: DeckViewModel, showingSettings: Binding<Bool>, showingNewSessionSheet: Binding<Bool>
@@ -131,17 +129,6 @@ struct DeckView: View {
             }
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
-            }
-            .deckSyncAlerts(
-                viewModel: viewModel,
-                showingSyncAlert: $showingSyncAlert,
-                showingConflictAlert: $showingConflictAlert
-            ) { newValue in
-                if newValue {
-                    showingConflictAlert = true
-                } else {
-                    showingConflictAlert = false
-                }
             }
             // 消息发送失败弹窗
             .alert("message_send_failed".localized, isPresented: $viewModel.showMessageSendError) {

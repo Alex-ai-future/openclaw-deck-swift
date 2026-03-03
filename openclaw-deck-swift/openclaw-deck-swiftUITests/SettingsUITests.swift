@@ -113,7 +113,7 @@ final class SettingsUITests: XCTestCase {
         print("  ✏️  修改 Token: \(testToken)")
 
         // 验证 Apply & Reconnect 按钮出现
-        let applyButton = app.buttons["apply_reconnect".localized]
+        let applyButton = app.buttons["Apply & Reconnect"]
         XCTAssertTrue(
             applyButton.waitForExistence(timeout: 3),
             "修改配置后必须显示 'Apply & Reconnect' 按钮"
@@ -124,7 +124,7 @@ final class SettingsUITests: XCTestCase {
         print("\n📍 阶段 2：点击取消并验证配置未保存")
 
         // 点击取消按钮
-        let cancelButton = app.buttons["cancel".localized]
+        let cancelButton = app.buttons["Cancel"]
         XCTAssertTrue(
             cancelButton.waitForExistence(timeout: 3),
             "取消按钮必须存在"
@@ -186,7 +186,7 @@ final class SettingsUITests: XCTestCase {
         print("  ✏️  新 Token: \(newToken)")
 
         // 点击 Done 按钮保存
-        let doneButton = app.buttons["done".localized]
+        let doneButton = app.buttons["Done"]
         XCTAssertTrue(
             doneButton.waitForExistence(timeout: 3),
             "完成按钮必须存在"

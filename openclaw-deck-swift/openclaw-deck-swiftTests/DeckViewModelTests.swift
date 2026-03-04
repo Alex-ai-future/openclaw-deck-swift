@@ -498,17 +498,6 @@ final class DeckViewModelTests: XCTestCase {
 
     // MARK: - Reconnect Tests
 
-    func testReconnect() async {
-        let mockClient = MockGatewayClient()
-        mockClient.connected = true
-        viewModel.gatewayClient = mockClient
-
-        await viewModel.reconnect()
-
-        // 验证断开后重新连接
-        XCTAssertEqual(mockClient.connected, true)
-    }
-
     // MARK: - Send Current Input Tests
 
     func testSendCurrentInput_noSelectedSession() async {

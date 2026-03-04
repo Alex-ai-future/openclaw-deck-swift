@@ -915,7 +915,6 @@ class DeckViewModel {
     // 在 DeckViewModel.swift 中添加枚举和修改方法
 
     @MainActor
-    @MainActor
     func loadAllSessionHistory() async {
         // 开始加载
         loadingStage = .fetchingMessages

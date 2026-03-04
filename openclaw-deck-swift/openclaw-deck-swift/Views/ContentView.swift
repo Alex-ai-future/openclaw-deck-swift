@@ -72,36 +72,37 @@ struct ContentView: View {
                         stage: viewModel.loadingStage,
                         progress: viewModel.loadingProgress
                     )
-                }
-
-                // 根据设备类型选择布局（加载完成后才显示）
-                #if os(macOS)
-                    // macOS - 多列布局（类似 iPad）
-                    DeckView(
-                        viewModel: viewModel,
-                        showingSettings: $showingSettings,
-                        showingNewSessionSheet: $showingNewSessionSheet
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                #elseif os(iOS)
-                    if isIPad {
-                        // iPad - 多列布局
+                } else {
+                    // 加载完成 → 显示聊天界面
+                    // 根据设备类型选择布局
+                    #if os(macOS)
+                        // macOS - 多列布局（类似 iPad）
                         DeckView(
                             viewModel: viewModel,
                             showingSettings: $showingSettings,
                             showingNewSessionSheet: $showingNewSessionSheet
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        // iPhone - 单列布局
+                    #elseif os(iOS)
+                        if isIPad {
+                            // iPad - 多列布局
+                            DeckView(
+                                viewModel: viewModel,
+                                showingSettings: $showingSettings,
+                                showingNewSessionSheet: $showingNewSessionSheet
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            // iPhone - 单列布局
+                            SessionListView(viewModel: viewModel)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    #else
+                        // 其他平台 - 单列布局
                         SessionListView(viewModel: viewModel)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                #else
-                    // 其他平台 - 单列布局
-                    SessionListView(viewModel: viewModel)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                #endif
+                    #endif
+                }
             } else {
                 // Welcome screen - show settings
                 WelcomeView(

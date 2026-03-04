@@ -65,24 +65,15 @@ struct ContentView: View {
     var body: some View {
         Group {
             // ✅ 优先检查加载状态，确保加载完成前不显示主界面
-            if viewModel.loadingStage != .idle {
-                // 加载中 - 显示详细加载状态
-                LoadingView(
-                    stage: viewModel.loadingStage,
-                    progress: viewModel.loadingProgress
-                )
+            if viewModel.gatewayConnected || ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+                // 加载中时显示 LoadingView（跳过 connecting 状态）
+                if viewModel.loadingStage != .idle && viewModel.loadingStage != .connecting {
+                    LoadingView(
+                        stage: viewModel.loadingStage,
+                        progress: viewModel.loadingProgress
+                    )
+                }
 
-            } else if viewModel.isReconnecting {
-                // Reconnecting state - show reconnecting view
-                ReconnectingView(
-                    attempts: viewModel.reconnectAttempts,
-                    maxAttempts: 5,
-                    onCancel: {
-                        viewModel.disconnect()
-                    }
-                )
-
-            } else if viewModel.gatewayConnected {
                 // 根据设备类型选择布局（加载完成后才显示）
                 #if os(macOS)
                     // macOS - 多列布局（类似 iPad）
@@ -267,34 +258,6 @@ struct ConnectingView: View {
             Text("connecting_to_gateway".localized)
                 .font(.headline)
                 .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.adaptiveBackground)
-    }
-}
-
-// MARK: - Reconnecting View
-
-struct ReconnectingView: View {
-    let attempts: Int
-    let maxAttempts: Int
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-
-            Text("reconnecting".localized)
-                .font(.headline)
-
-            Text("Attempt \(attempts)/\(maxAttempts)")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-
-            Button("cancel".localized, action: onCancel)
-                .buttonStyle(.bordered)
-                .padding(.top, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.adaptiveBackground)

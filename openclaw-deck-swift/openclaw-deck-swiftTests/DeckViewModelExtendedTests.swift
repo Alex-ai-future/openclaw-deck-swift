@@ -300,15 +300,6 @@ final class DeckViewModelExtendedTests: XCTestCase {
         XCTAssertFalse(saved)
     }
 
-    // MARK: - Reconnection Tests
-
-    func testIsReconnecting_defaultValue() {
-        XCTAssertFalse(viewModel.isReconnecting)
-    }
-
-    func testReconnectAttempts_defaultValue() {
-        XCTAssertEqual(viewModel.reconnectAttempts, 0)
-    }
 
     func testIsSyncing_defaultValue() {
         XCTAssertFalse(viewModel.isSyncing)

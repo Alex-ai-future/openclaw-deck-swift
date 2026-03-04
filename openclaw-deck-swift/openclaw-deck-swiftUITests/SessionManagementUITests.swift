@@ -227,6 +227,21 @@ final class SessionManagementUITests: XCTestCase {
     }
 
     // MARK: - 辅助方法
+    /// 通过 Pasteboard 设置文本（绕过键盘焦点问题）
+    /// 这是解决 SwiftUI TextField 焦点竞争问题的最可靠方案
+    private func setTextViaPasteboard(_ element: XCUIElement, text: String) {
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+#else
+        UIPasteboard.general.string = text
+#endif
+        element.doubleTap()
+        sleep(1) // 等待上下文菜单出现
+        app.menuItems["Paste"].firstMatch.tap()
+        sleep(1) // 等待粘贴完成
+    }
+
 
     /// 获取所有会话按钮
     private func getSessionButtons() -> [XCUIElement] {
@@ -326,7 +341,7 @@ final class SessionManagementUITests: XCTestCase {
 
         // 调试打印
         print("  🔍 消息输入框：label='\(messageInput.label)', identifier='\(messageInput.identifier)'")
-        messageInput.typeText(message)
+        setTextViaPasteboard(messageInput, text: message)
 
         // 点击发送按钮
         let sendButton = app.buttons["sendButton"]

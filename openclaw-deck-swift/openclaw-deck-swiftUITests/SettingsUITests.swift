@@ -201,7 +201,7 @@ final class SettingsUITests: XCTestCase {
         print("  ✏️  新 Token: \(newToken)")
 
         // 点击 Done 按钮保存
-        let doneButton = app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
+        let doneButton = app.buttons.matching(NSPredicate(format: "label == 'Done' OR label == '完成'")).firstMatch
         XCTAssertTrue(
             doneButton.waitForExistence(timeout: 3),
             "完成按钮必须存在"

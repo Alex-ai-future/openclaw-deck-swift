@@ -414,18 +414,11 @@ final class SessionManagementUITests: XCTestCase {
         nameButton.forceTap()
         print("  ✅ 已点击会话名称按钮")
 
-        // 等待详情页加载
-        sleep(1)
+        // 等待详情页加载（给更多时间）
+        sleep(3)
 
-        // 第三步：查找删除按钮（可能在底部，需要滚动）
-        var deleteButton = app.buttons["deleteSessionButton"]
-
-        // 尝试滚动查找
-        if !deleteButton.exists {
-            print("  ⚠️  删除按钮未显示，尝试滚动...")
-            app.swipeUp(velocity: .slow)
-            sleep(1)
-        }
+        // 第三步：查找删除按钮
+        let deleteButton = app.buttons["deleteSessionButton"]
 
         // 验证删除按钮存在
         XCTAssertTrue(
@@ -441,34 +434,76 @@ final class SessionManagementUITests: XCTestCase {
         // 等待弹窗出现（给更多时间）
         sleep(2)
 
-        // 确认删除弹窗
-        let alert = app.alerts.firstMatch
-        XCTAssertTrue(
-            alert.waitForExistence(timeout: 5),
-            "删除确认弹窗必须出现"
-        )
-        print("  ✅ 删除确认弹窗已显示")
+        // 确认删除弹窗（macOS 上使用 dialogs 或 sheets）
+        // 先尝试 dialogs，再尝试 sheets，最后尝试 alerts
+        var dialog: XCUIElement
+        var dialogType = ""
 
-        # 调试：打印弹窗中所有按钮
+        // 调试：打印所有 dialogs 和 sheets
+        print("  🔍 查找弹窗...")
+        print("  🔍 Dialogs 数量：\(app.dialogs.allElementsBoundByIndex.count)")
+        print("  🔍 Sheets 数量：\(app.sheets.allElementsBoundByIndex.count)")
+        print("  🔍 Alerts 数量：\(app.alerts.allElementsBoundByIndex.count)")
+
+        // 打印所有 dialogs 的按钮
+        for (i, dialogElem) in app.dialogs.allElementsBoundByIndex.enumerated() {
+            print("  🔍 Dialog [\(i)]: identifier=\(dialogElem.identifier), label=\(dialogElem.label)")
+            for (j, btn) in dialogElem.buttons.allElementsBoundByIndex.enumerated() {
+                print("    Button [\(j)]: identifier=\(btn.identifier), label=\(btn.label)")
+            }
+        }
+
+        // 打印所有 sheets 的按钮
+        for (i, sheetElem) in app.sheets.allElementsBoundByIndex.enumerated() {
+            print("  🔍 Sheet [\(i)]: identifier=\(sheetElem.identifier), label=\(sheetElem.label)")
+            for (j, btn) in sheetElem.buttons.allElementsBoundByIndex.enumerated() {
+                print("    Button [\(j)]: identifier=\(btn.identifier), label=\(btn.label)")
+            }
+        }
+
+        if app.dialogs.firstMatch.exists {
+            dialog = app.dialogs.firstMatch
+            dialogType = "Dialog"
+        } else if app.sheets.firstMatch.exists {
+            dialog = app.sheets.firstMatch
+            dialogType = "Sheet"
+        } else {
+            dialog = app.alerts.firstMatch
+            dialogType = "Alert"
+        }
+
+        XCTAssertTrue(
+            dialog.waitForExistence(timeout: 5),
+            "删除确认弹窗 (\(dialogType)) 必须出现"
+        )
+        print("  ✅ 删除确认弹窗已显示 (类型：\(dialogType))")
+
+        // 调试：打印弹窗中所有按钮
         print("  🔍 弹窗中的按钮：")
-        let alertButtons = alert.buttons.allElementsBoundByIndex
+        let alertButtons = dialog.buttons.allElementsBoundByIndex
         for (i, button) in alertButtons.enumerated() {
             print("    [\(i)] identifier=\(button.identifier), label=\(button.label)")
         }
 
-        # 查找删除确认按钮（使用谓词匹配 label）
-        let deletePredicate = NSPredicate(format: "label == 'Delete' OR label == '删除'")
-        let confirmDeleteButton = app.buttons.matching(deletePredicate).firstMatch
+        // 查找删除确认按钮（使用 identifier 和 label）
+        // macOS 上 SwiftUI alert 的按钮 identifier 是 action-button-1 (Delete) 和 action-button-2 (Cancel)
+        let confirmDeleteButton = dialog.buttons["action-button-1"].firstMatch
         XCTAssertTrue(
             confirmDeleteButton.waitForExistence(timeout: 3),
-            "删除确认按钮必须存在"
+            "删除确认按钮 (action-button-1) 必须存在"
         )
+        print("  ✅ 删除确认按钮已找到：identifier=action-button-1, label=Delete")
         confirmDeleteButton.forceTap()
-        print("  ✅ 已确认删除")
+        print("  ✅ 已点击删除确认按钮")
 
-        // 验证弹窗关闭
+        // 等待弹窗关闭（给动画时间）
+        sleep(1)
+
+        // 验证删除确认弹窗关闭（使用特定的 sheet，不是 firstMatch）
+        // 删除确认弹窗是第二个 sheet（索引 1），第一个是详情页
+        let deleteDialog = app.sheets.element(boundBy: 1)
         XCTAssertFalse(
-            alert.waitForExistence(timeout: 3),
+            deleteDialog.exists,
             "删除后弹窗必须关闭"
         )
         print("  ✅ 删除弹窗已关闭")

@@ -449,7 +449,14 @@ final class SessionManagementUITests: XCTestCase {
         )
         print("  ✅ 删除确认弹窗已显示")
 
-        // 查找删除确认按钮（使用谓词匹配 label）
+        # 调试：打印弹窗中所有按钮
+        print("  🔍 弹窗中的按钮：")
+        let alertButtons = alert.buttons.allElementsBoundByIndex
+        for (i, button) in alertButtons.enumerated() {
+            print("    [\(i)] identifier=\(button.identifier), label=\(button.label)")
+        }
+
+        # 查找删除确认按钮（使用谓词匹配 label）
         let deletePredicate = NSPredicate(format: "label == 'Delete' OR label == '删除'")
         let confirmDeleteButton = app.buttons.matching(deletePredicate).firstMatch
         XCTAssertTrue(

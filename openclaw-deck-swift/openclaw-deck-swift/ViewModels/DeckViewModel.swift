@@ -628,17 +628,51 @@ class DeckViewModel {
             return
         }
 
-        // 使用共用方法连接 Gateway
-        await connectGateway(url: url, token: token) {
-            // 连接成功后加载历史
-            await self.loadAllSessionHistory()
-            // 初始化完成
-            self.gatewayConnected = true
-            self.isInitializing = false
-            self.loadingStage = .idle
-            self.loadingProgress = 0.0
-            logger.log("✅ Sync conflict resolved, initialization complete")
+        // 🔧 内联 connectGateway 的逻辑
+        // 先断开旧连接
+        gatewayClient?.disconnect()
+
+        // 创建新客户端
+        var client = diContainer.createGatewayClient(url: url, token: token)
+
+        // 设置事件回调
+        client.onEvent = { [weak self] event in
+            Task { @MainActor in
+                self?.handleGatewayEvent(event)
+            }
         }
+
+        // 设置连接状态回调
+        client.onConnection = { [weak self] connected in
+            Task { @MainActor in
+                guard let self else { return }
+                if connected {
+                    logger.log("✅ Gateway 连接成功")
+
+                    // 连接成功后加载历史
+                    await self.loadAllSessionHistory()
+                    // 初始化完成
+                    self.gatewayConnected = true
+                    self.isInitializing = false
+                    self.loadingStage = .idle
+                    self.loadingProgress = 0.0
+                    logger.log("✅ Sync conflict resolved, initialization complete")
+
+                } else {
+                    logger.error("❌ Gateway 连接失败")
+                    self.gatewayConnected = false
+                    self.isInitializing = false
+                    self.loadingStage = .idle
+                    self.connectionError = client.connectionError ?? "Unknown connection error"
+                }
+            }
+        }
+
+        gatewayClient = client
+        connectionError = client.connectionError
+
+        // 异步连接 Gateway
+        await client.connect()
     }
 
     /// 应用同步数据

@@ -108,7 +108,8 @@ struct SettingsView: View {
                         isOn: .init(
                             get: { viewModel?.playSoundOnMessage ?? true },
                             set: { viewModel?.playSoundOnMessage = $0 }
-                        ))
+                        )
+                    )
 
                     // Cloudflare KV Sync
                     NavigationLink {
@@ -116,7 +117,8 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Label(
-                                "multi_device_sync".localized, systemImage: "icloud.and.arrow.down")
+                                "multi_device_sync".localized, systemImage: "icloud.and.arrow.down"
+                            )
                             Spacer()
                             if CloudflareKV.shared.isConfigured {
                                 Circle()
@@ -144,8 +146,7 @@ struct SettingsView: View {
                         }
                     }
                     .tint(.orange)
-                    .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert)
-                    {
+                    .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
                         Button("cancel".localized, role: .cancel) {}
                         Button("reset".localized, role: .destructive) {
                             onResetDeviceIdentity?()
@@ -153,7 +154,8 @@ struct SettingsView: View {
                     } message: {
                         Text(
                             "this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered"
-                                .localized)
+                                .localized
+                        )
                     }
                 } header: {
                     Label("device".localized, systemImage: "iphone")
@@ -186,7 +188,7 @@ struct SettingsView: View {
                     Link(
                         destination: URL(
                             string:
-                                "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html"
+                            "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html"
                         )!
                     ) {
                         Label("user_guide".localized, systemImage: "book.fill")
@@ -195,7 +197,7 @@ struct SettingsView: View {
                     Link(
                         destination: URL(
                             string:
-                                "https://alex-ai-future.github.io/openclaw-deck-swift/USAGE_EXAMPLES.html"
+                            "https://alex-ai-future.github.io/openclaw-deck-swift/USAGE_EXAMPLES.html"
                         )!
                     ) {
                         Label("usage_examples".localized, systemImage: "list.bullet.rectangle")
@@ -204,7 +206,8 @@ struct SettingsView: View {
                     Link(
                         destination: URL(
                             string:
-                                "https://alex-ai-future.github.io/openclaw-deck-swift/PRIVACY.html")!
+                            "https://alex-ai-future.github.io/openclaw-deck-swift/PRIVACY.html"
+                        )!
                     ) {
                         Label("privacy_policy".localized, systemImage: "shield.fill")
                     }

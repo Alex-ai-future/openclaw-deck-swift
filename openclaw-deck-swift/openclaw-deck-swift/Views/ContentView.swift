@@ -158,10 +158,6 @@ struct ContentView: View {
                     viewModel.disconnect()
                     showingWelcomeSettings = false
                 },
-                onApplyAndReconnect: {
-                    viewModel.disconnect()
-                    showingWelcomeSettings = false
-                },
                 onConnect: {
                     Task {
                         await viewModel.initialize(url: UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789", token: UserDefaultsStorage.shared.loadToken())
@@ -405,7 +401,7 @@ struct WelcomeView: View {
                 // Login guide card
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Image(systemName: "hand.point.up.right.fill")
+                        Image(systemName: "hand.point.up.fill")
                             .foregroundColor(.blue)
                         Text("login_required".localized)
                             .font(.headline)

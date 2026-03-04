@@ -287,7 +287,7 @@ final class SessionManagementUITests: XCTestCase {
             createSheet.waitForExistence(timeout: 3),
             "创建后会话弹窗必须关闭"
         )
-        
+
         // 等待焦点重置
         sleep(2)
 
@@ -319,16 +319,14 @@ final class SessionManagementUITests: XCTestCase {
             messageInput.waitForExistence(timeout: 3),
             "消息输入框 (messageInput) 必须存在"
         )
-        
+
         // 点击输入框并等待获得焦点
         messageInput.tap()
-        sleep(2)  // 增加等待时间
-        
+        sleep(2) // 增加等待时间
 
         // 调试打印
         print("  🔍 消息输入框：label='\(messageInput.label)', identifier='\(messageInput.identifier)'")
         messageInput.typeText(message)
-
 
         // 点击发送按钮
         let sendButton = app.buttons["sendButton"]

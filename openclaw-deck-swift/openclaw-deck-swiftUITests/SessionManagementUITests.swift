@@ -15,9 +15,9 @@ final class SessionManagementUITests: XCTestCase {
         app = XCUIApplication()
         app.launchEnvironment["UITESTING"] = "YES"
         app.launchArguments.append("--disable-animations")
-        continueAfterFailure = false // 失败立即停止
+        continueAfterFailure = false  // 失败立即停止
         app.launch()
-        app.activate() // ✅ 显式激活应用到前台
+        app.activate()  // ✅ 显式激活应用到前台
 
         print("🚀 应用已启动，等待加载...")
 
@@ -113,7 +113,7 @@ final class SessionManagementUITests: XCTestCase {
         // ========== 阶段 2：每个会话发送消息（触发连接失败） ==========
         print("\n📍 阶段 2：每个会话发送消息（测试模式会触发连接失败）")
 
-        for index in 0 ..< 3 {
+        for index in 0..<3 {
             print("  💬 会话 \(index + 1)/3: 发送测试消息")
             sendMessageToSession(at: index, message: "测试消息 \(index + 1)")
         }
@@ -168,7 +168,8 @@ final class SessionManagementUITests: XCTestCase {
         reverseSessionOrder()
 
         // 点击完成按钮
-        let doneButton = app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
+        let doneButton =
+            app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
         XCTAssertTrue(
             doneButton.waitForExistence(timeout: 3),
             "完成按钮必须存在"
@@ -231,7 +232,8 @@ final class SessionManagementUITests: XCTestCase {
     private func getSessionButtons() -> [XCUIElement] {
         // 排除 NewSessionButton 和 SortButton，查找所有包含 Session 的元素（不限于 Button）
         let predicate = NSPredicate(
-            format: "identifier CONTAINS 'Session' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
+            format:
+                "identifier CONTAINS 'Session' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
         )
         return app.descendants(matching: .any)
             .matching(predicate)
@@ -272,7 +274,8 @@ final class SessionManagementUITests: XCTestCase {
         }
 
         // 点击创建按钮
-        let createButton = app.buttons["Create"].firstMatch.exists ? app.buttons["Create"] : app.buttons["创建"]
+        let createButton =
+            app.buttons["Create"].firstMatch.exists ? app.buttons["Create"] : app.buttons["创建"]
         XCTAssertTrue(
             createButton.waitForExistence(timeout: 3),
             "创建按钮必须存在"
@@ -328,7 +331,8 @@ final class SessionManagementUITests: XCTestCase {
             )
 
             // 点击取消
-            let cancelButton = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
+            let cancelButton =
+                app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
             XCTAssertTrue(
                 cancelButton.waitForExistence(timeout: 3),
                 "取消按钮必须存在"
@@ -375,21 +379,35 @@ final class SessionManagementUITests: XCTestCase {
         }
 
         // 从 identifier 中提取 sessionId (去掉 "SessionView-" 前缀)
-        let sessionId = sessionButtons[0].identifier.replacingOccurrences(of: "SessionView-", with: "")
+        let sessionId = sessionButtons[0].identifier.replacingOccurrences(
+            of: "SessionView-", with: "")
         print("  🗑️  准备删除会话：\(sessionId)")
 
         // 第一步：点击会话区域（选中会话）
         sessionButtons[0].forceTap()
         print("  ✅ 已选中会话")
 
-        // 等待选中效果
-        sleep(1)
-
         // 第二步：点击 sessionNameButton（打开详情）
         print("  ✅ 已点击会话名称按钮")
 
         // 等待详情页加载（给更多时间）
-        sleep(3)
+        sleep(1)
+
+        // 调试 1：打印所有按钮
+        print("  🔍 当前界面所有按钮：")
+        let allButtons = app.buttons.allElementsBoundByIndex
+
+        print("  🔍 所有包含 Session 的元素：")
+        let sessionPredicate = NSPredicate(format: "identifier CONTAINS 'Session'")
+        let sessionElements = app.descendants(matching: .any).matching(sessionPredicate)
+            .allElementsBoundByIndex
+
+        let nameButton = app.buttons["Session-\(sessionId)"].firstMatch
+        XCTAssertTrue(
+            nameButton.waitForExistence(timeout: 5),
+            "会话名称按钮 (Session-\(sessionId)) 必须在 5 秒内出现"
+        )
+        nameButton.forceTap()
 
         // 第三步：查找删除按钮
         let deleteButton = app.buttons["deleteSessionButton"]
@@ -421,7 +439,8 @@ final class SessionManagementUITests: XCTestCase {
 
         // 打印所有 dialogs 的按钮
         for (i, dialogElem) in app.dialogs.allElementsBoundByIndex.enumerated() {
-            print("  🔍 Dialog [\(i)]: identifier=\(dialogElem.identifier), label=\(dialogElem.label)")
+            print(
+                "  🔍 Dialog [\(i)]: identifier=\(dialogElem.identifier), label=\(dialogElem.label)")
             for (j, btn) in dialogElem.buttons.allElementsBoundByIndex.enumerated() {
                 print("    Button [\(j)]: identifier=\(btn.identifier), label=\(btn.label)")
             }

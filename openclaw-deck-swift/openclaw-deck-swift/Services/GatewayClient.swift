@@ -480,7 +480,6 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 接收消息循环
     private func receiveMessage() async {
-
         // 等待 750ms 让网络稳定（给 TCP 和 WebSocket 握手缓冲时间）
         try? await Task.sleep(nanoseconds: 750_000_000)
         webSocket?.receive { [weak self] result in
@@ -505,8 +504,8 @@ class GatewayClient: GatewayClientProtocol {
                 Task { @MainActor in
                     await self.receiveMessage()
 
-        // 等待 750ms 让网络稳定（给 TCP 和 WebSocket 握手缓冲时间）
-        try? await Task.sleep(nanoseconds: 750_000_000)
+                    // 等待 750ms 让网络稳定（给 TCP 和 WebSocket 握手缓冲时间）
+                    try? await Task.sleep(nanoseconds: 750_000_000)
                 }
 
             case let .failure(error):

@@ -38,23 +38,25 @@ struct SessionSortView: View {
             }
             .listStyle(.plain)
             .navigationTitle("sort_sessions".localized)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
-                        dismiss()
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("cancel".localized) {
+                            dismiss()
+                        }
+                        .foregroundColor(.secondary)
                     }
-                    .foregroundColor(.secondary)
-                }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        applySortOrder()
-                        dismiss()
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
+                            applySortOrder()
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
                     }
-                    .fontWeight(.semibold)
                 }
-            }
         }
         #if os(macOS)
         .frame(width: 400, height: 500)
@@ -106,7 +108,7 @@ struct SessionSortRow: View {
                 } else {
                     Text("No messages")
                         .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.tertiary)
+                        .foregroundColor(.secondary.opacity(0.6))
                 }
             }
 

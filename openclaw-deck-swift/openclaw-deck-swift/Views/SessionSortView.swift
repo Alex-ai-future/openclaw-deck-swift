@@ -80,7 +80,7 @@ struct SessionSortRow: View {
             // 拖拽手柄 - subtle
             Image(systemName: "line.3.horizontal")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.tertiary)
+                .foregroundStyle(.tertiary)
                 .frame(width: 20)
 
             // Session 图标

@@ -220,9 +220,8 @@ struct SessionColumnView: View {
                 }
             #endif
         }
-        .accessibilityElement()
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("SessionView-\(session.sessionId)")
-        .accessibilityLabel(session.sessionId)
         .contentShape(Rectangle())
         .onTapGesture {
             onSelect()

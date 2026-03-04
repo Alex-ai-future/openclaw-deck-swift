@@ -135,8 +135,8 @@ class GatewayClient: GatewayClientProtocol {
 
     // MARK: - Constants
 
-    private let requestTimeout: TimeInterval = 30
-    private let connectChallengeTimeout: TimeInterval = 6
+    private let requestTimeout: TimeInterval = 60
+    private let connectChallengeTimeout: TimeInterval = 15
     private let operatorScopes = ["operator.read", "operator.write", "operator.admin"]
     private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
     private let deviceTokenStorageKeyPrefix = "openclaw.deck.deviceToken.v1:"
@@ -181,7 +181,10 @@ class GatewayClient: GatewayClientProtocol {
         webSocket?.resume()
 
         // 开始接收消息
-        receiveMessage()
+        await receiveMessage()
+
+        // 等待 750ms 让网络稳定（给 TCP 和 WebSocket 握手缓冲时间）
+        try? await Task.sleep(nanoseconds: 750_000_000)
 
         // Wait for connect challenge before sending request
         do {
@@ -476,7 +479,10 @@ class GatewayClient: GatewayClientProtocol {
     // MARK: - Private Methods
 
     /// 接收消息循环
-    private func receiveMessage() {
+    private func receiveMessage() async {
+
+        // 等待 750ms 让网络稳定（给 TCP 和 WebSocket 握手缓冲时间）
+        try? await Task.sleep(nanoseconds: 750_000_000)
         webSocket?.receive { [weak self] result in
             guard let self else { return }
 
@@ -497,7 +503,10 @@ class GatewayClient: GatewayClientProtocol {
 
                 // 继续接收下一条消息
                 Task { @MainActor in
-                    self.receiveMessage()
+                    await self.receiveMessage()
+
+        // 等待 750ms 让网络稳定（给 TCP 和 WebSocket 握手缓冲时间）
+        try? await Task.sleep(nanoseconds: 750_000_000)
                 }
 
             case let .failure(error):

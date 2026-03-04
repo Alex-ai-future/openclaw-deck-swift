@@ -461,7 +461,7 @@ class DeckViewModel {
     /// 创建 Welcome Session（当没有 session 时自动创建）
     private func createWelcomeSession() {
         // 使用 createSession 方法创建
-        _ = createSession(name: "Welcome")
+        _ = createSession(name: "main")
     }
 
     /// 删除 Session

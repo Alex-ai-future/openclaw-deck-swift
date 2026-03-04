@@ -973,8 +973,7 @@ class DeckViewModel {
     ///   - text: 消息文本
     func sendMessage(sessionId: String, text: String) async {
         guard let client = gatewayClient, client.connected else {
-            messageSendErrorText = "Gateway 未连接"
-            showMessageSendError = true
+            showConnectionErrorAlert()
             return
         }
 
@@ -983,19 +982,15 @@ class DeckViewModel {
             return
         }
 
-        // 1. 添加用户消息
-        let userMsg = ChatMessage(
-            id: UUID().uuidString,
-            role: .user,
-            text: text,
-            timestamp: Date()
-        )
-        session.messages.append(userMsg)
+        // 1. 先设置状态（不添加消息）
         session.status = .thinking
+        session.isProcessing = true
+        session.activeRunId = "pending-\(UUID().uuidString)"
 
-        // 2. 调用 runAgent（不阻塞 UI，不创建占位消息）
-        // Gateway 返回内容时会自动创建 assistant 消息
-        Task {
+        // 2. 调用 runAgent
+        Task { [weak self] in
+            guard let self else { return }
+
             do {
                 _ = try await client.runAgent(
                     agentId: config.mainAgentId,
@@ -1003,20 +998,42 @@ class DeckViewModel {
                     sessionKey: session.sessionKey
                 )
 
+                // 3. 成功后添加用户消息
+                await MainActor.run {
+                    let userMsg = ChatMessage(
+                        id: UUID().uuidString,
+                        role: .user,
+                        text: text,
+                        timestamp: Date()
+                    )
+                    session.messages.append(userMsg)
+                }
+
                 // Agent run started
                 // activeRunId 会在 lifecycle.start 事件中设置
+
             } catch {
                 logger.error("Failed to send message: \(error.localizedDescription)")
                 await MainActor.run {
-                    session.status = .error("Failed to send message: \(error.localizedDescription)")
+                    // 4. 失败时调用 disconnect()，触发 onConnection?(false)
+                    self.gatewayClient?.disconnect()
+
+                    // 5. 显示连接错误弹窗
+                    self.showConnectionErrorAlert()
+
+                    // 6. 重置状态
+                    session.status = .idle
+                    session.isProcessing = false
+                    session.activeRunId = nil
                 }
             }
         }
+    }
 
-        // ✅ 立即设置处理中状态，避免 OK 按钮闪现
-        // lifecycle.start 事件到达后会更新为真实的 runId
-        session.isProcessing = true
-        session.activeRunId = "pending-\(UUID().uuidString)"
+    /// 显示连接错误弹窗（多语言）
+    private func showConnectionErrorAlert() {
+        messageSendErrorText = "connection_error_please_reconnect".localized
+        showMessageSendError = true
     }
 
     // MARK: - Event Handling

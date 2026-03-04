@@ -635,9 +635,12 @@ class GatewayClient: GatewayClientProtocol {
                 logger.info("📤 [Request] \(prettyString)")
             }
 
-            webSocket.send(.string(string)) { error in
+            webSocket.send(.string(string)) { [weak self] error in
                 if let error {
                     logger.error("Send error: \(error.localizedDescription)")
+                    Task { @MainActor in
+                        self?.handleDisconnect()
+                    }
                 }
             }
         } catch {

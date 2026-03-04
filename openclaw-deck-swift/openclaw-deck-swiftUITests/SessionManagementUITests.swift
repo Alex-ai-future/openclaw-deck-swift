@@ -374,8 +374,9 @@ final class SessionManagementUITests: XCTestCase {
             return
         }
 
-        let sessionName = sessionButtons[0].label
-        print("  🗑️  准备删除会话：\(sessionName)")
+        // 从 identifier 中提取 sessionId (去掉 "SessionView-" 前缀)
+        let sessionId = sessionButtons[0].identifier.replacingOccurrences(of: "SessionView-", with: "")
+        print("  🗑️  准备删除会话：\(sessionId)")
 
         // 第一步：点击会话区域（选中会话）
         sessionButtons[0].forceTap()
@@ -395,7 +396,7 @@ final class SessionManagementUITests: XCTestCase {
         }
 
         // 查找顶部的 sessionNameButton
-        let nameButton = app.buttons["Session-\(sessionName)"].firstMatch
+        let nameButton = app.buttons["Session-\(sessionId)"].firstMatch
         XCTAssertTrue(
             nameButton.waitForExistence(timeout: 5),
             "会话名称按钮 (Session-\(sessionName)) 必须在 5 秒内出现"

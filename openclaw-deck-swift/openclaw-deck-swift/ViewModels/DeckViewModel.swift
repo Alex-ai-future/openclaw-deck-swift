@@ -182,7 +182,7 @@ class DeckViewModel {
 
     /// 初始化（使用 DI 容器）
     /// - Parameter diContainer: 依赖容器（默认为共享实例）
-    @MainActor init(diContainer: DIContainer? = nil) {
+    init(diContainer: DIContainer? = nil) {
         self.diContainer = diContainer ?? DIContainer.shared
         self.storage = self.diContainer.storage
         self.globalInputState = self.diContainer.createGlobalInputState()
@@ -907,13 +907,6 @@ class DeckViewModel {
     // MARK: - Load History
 
     /// 加载所有 Session 的历史消息
-    /// 历史加载模式
-    /// 加载所有 Session 的历史消息
-    /// - Parameter mode: 加载模式（.full 全量加载 / .lazy 懒加载）
-    /// 加载所有 Session 的历史消息
-    @MainActor
-    // 在 DeckViewModel.swift 中添加枚举和修改方法
-
     @MainActor
     func loadAllSessionHistory() async {
         // 开始加载

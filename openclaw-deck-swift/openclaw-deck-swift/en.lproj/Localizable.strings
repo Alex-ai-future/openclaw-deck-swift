@@ -241,3 +241,19 @@
 
 // MARK: - Session Name Validation
 "session_name_taken" = "This name is already in use, please choose another";
+
+// MARK: - Session Status
+"processing_status" = "Processing";
+"new_status" = "New";
+
+// MARK: - Messages
+"no_messages_yet" = "No messages yet";
+"no_messages" = "No messages";
+"messages_count_format" = "%d messages";
+
+// MARK: - Settings
+"gateway_url_format" = "Gateway: %@";
+"app_version" = "1.0.0";
+
+// MARK: - Dictation
+"dictated_text_format" = "Dictated: %@";

@@ -164,7 +164,7 @@ struct SessionRowView: View {
                             Circle()
                                 .fill(Color.orange)
                                 .frame(width: 6, height: 6)
-                            Text("Processing")
+                            Text("processing_status".localized)
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(.orange)
                         }
@@ -173,7 +173,7 @@ struct SessionRowView: View {
                             Circle()
                                 .fill(Color.green)
                                 .frame(width: 6, height: 6)
-                            Text("New")
+                            Text("new_status".localized)
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(.green)
                         }
@@ -186,7 +186,7 @@ struct SessionRowView: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text("No messages yet")
+                    Text("no_messages_yet".localized)
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(.tertiary)
                 }

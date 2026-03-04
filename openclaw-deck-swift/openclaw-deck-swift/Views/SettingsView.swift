@@ -54,7 +54,7 @@ struct SettingsView: View {
                     Label("connection".localized, systemImage: "network")
                 } footer: {
                     if isConnected {
-                        Text("Gateway: \(gatewayUrl)")
+                        Text(String(format: "gateway_url_format".localized, gatewayUrl))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -212,7 +212,7 @@ struct SettingsView: View {
                     HStack {
                         Text("version".localized)
                         Spacer()
-                        Text("1.0.0")
+                        Text("app_version".localized)
                             .foregroundColor(.secondary)
                     }
                     .font(.caption)

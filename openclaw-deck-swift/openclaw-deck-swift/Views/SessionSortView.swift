@@ -102,11 +102,11 @@ struct SessionSortRow: View {
                     .lineLimit(1)
 
                 if session.messageCount > 0 {
-                    Text("\(session.messageCount) messages")
+                    Text(String(format: "messages_count_format".localized, session.messageCount))
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.secondary)
                 } else {
-                    Text("No messages")
+                    Text("no_messages".localized)
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.secondary.opacity(0.6))
                 }

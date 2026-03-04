@@ -76,8 +76,8 @@ final class SessionManagementUITests: XCTestCase {
         print("  📊 初始会话数量：\(initialSessions.count)")
 
         // 测试模式下可能没有预置会话，这是正常的
-        // 如果有会话，清理到只剩 0 个
-        if initialSessions.count > 0 {
+        // 如果有会话，清理到只剩 1 个
+        if initialSessions.count > 1 {
             print("  🗑️  清理 \(initialSessions.count) 个现有会话...")
             while getSessionButtons().count > 0 {
                 deleteFirstSession()
@@ -233,7 +233,7 @@ final class SessionManagementUITests: XCTestCase {
         // 排除 NewSessionButton 和 SortButton，查找所有包含 Session 的元素（不限于 Button）
         let predicate = NSPredicate(
             format:
-            "identifier CONTAINS 'Session' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
+            "identifier CONTAINS 'SessionView' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
         )
         return app.descendants(matching: .any)
             .matching(predicate)

@@ -212,7 +212,7 @@ class DeckViewModel {
         if isUITesting {
             logger.info("🧪 UI 测试模式，跳过 Gateway 连接")
             loadingStage = .idle
-            loadingProgress = 0.0
+            loadingProgress = 0.3
             gatewayConnected = true
             isInitializing = false
             // 加载本地会话（测试环境 storage.isTesting 应该为 true）
@@ -221,7 +221,7 @@ class DeckViewModel {
         }
 
         loadingStage = .connecting
-        loadingProgress = 0.0
+        loadingProgress = 0.3
 
         // 保存到 UserDefaults
         storage.saveGatewayUrl(url)
@@ -655,7 +655,7 @@ class DeckViewModel {
                     self.gatewayConnected = true
                     self.isInitializing = false
                     self.loadingStage = .idle
-                    self.loadingProgress = 0.0
+                    self.loadingProgress = 0.3
                     logger.log("✅ Sync conflict resolved, initialization complete")
 
                 } else {
@@ -719,7 +719,7 @@ class DeckViewModel {
             createWelcomeSession()
             // ✅ 重置加载状态，避免卡在 100%
             loadingStage = .idle
-            loadingProgress = 0.0
+            loadingProgress = 0.3
             return
         }
 
@@ -755,7 +755,7 @@ class DeckViewModel {
 
         // ✅ 重置加载状态，避免卡在 100%
         loadingStage = .idle
-        loadingProgress = 0.0
+        loadingProgress = 0.3
     }
 
     /// 创建 Session 状态（从 sessionOrder）
@@ -900,7 +900,7 @@ class DeckViewModel {
 
             // ✅ 重置加载状态，避免卡在 100%
             loadingStage = .idle
-            loadingProgress = 0.0
+            loadingProgress = 0.3
 
             return .success("Sync complete: \(result.data.sessions.count) sessions")
         } catch {

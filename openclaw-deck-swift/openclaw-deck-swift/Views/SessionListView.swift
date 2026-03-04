@@ -126,34 +126,14 @@ struct SessionListView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
-                    gatewayUrl: $gatewayUrl,
-                    token: $token,
                     isConnected: $viewModel.gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false
                     },
-                    onApplyAndReconnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onConnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
+                    onApplyAndReconnect: {},
+                    onConnect: {},
                     onResetDeviceIdentity: {
-                        viewModel.resetDeviceIdentity()
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
                         showingSettings = false
                     },
                     onClose: {

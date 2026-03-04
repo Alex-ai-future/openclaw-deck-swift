@@ -6,8 +6,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @Binding var gatewayUrl: String
-    @Binding var token: String
+    @State private var gatewayUrl: String
+    @State private var token: String
     @Binding var isConnected: Bool
     var onDisconnect: () -> Void
     var onApplyAndReconnect: () -> Void
@@ -24,6 +24,28 @@ struct SettingsView: View {
     @State private var originalUrl = ""
     @State private var originalToken = ""
     @State private var showingResetAlert = false
+
+    init(
+        isConnected: Binding<Bool>,
+        onDisconnect: @escaping () -> Void,
+        onApplyAndReconnect: @escaping () -> Void,
+        onConnect: @escaping () -> Void,
+        onResetDeviceIdentity: (() -> Void)? = nil,
+        onClose: (() -> Void)? = nil,
+        viewModel: DeckViewModel? = nil
+    ) {
+        // 从 UserDefaults 加载初始值
+        let storage = UserDefaultsStorage.shared
+        _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
+        _token = State(initialValue: storage.loadToken() ?? "")
+        _isConnected = isConnected
+        self.onDisconnect = onDisconnect
+        self.onApplyAndReconnect = onApplyAndReconnect
+        self.onConnect = onConnect
+        self.onResetDeviceIdentity = onResetDeviceIdentity
+        self.onClose = onClose
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         NavigationStack {
@@ -211,6 +233,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
+                        // 直接关闭（本地状态，不需要恢复）
                         onClose?()
                     }
                 }
@@ -250,11 +273,12 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView(
-        gatewayUrl: .constant("ws://127.0.0.1:18789"),
-        token: .constant(""),
         isConnected: .constant(true),
         onDisconnect: {},
         onApplyAndReconnect: {},
-        onConnect: {}
+        onConnect: {},
+        onResetDeviceIdentity: {},
+        onClose: {},
+        viewModel: nil
     )
 }

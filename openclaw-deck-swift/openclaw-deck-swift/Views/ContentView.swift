@@ -134,38 +134,14 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(
-                gatewayUrl: $gatewayUrl,
-                token: $token,
                 isConnected: $viewModel.gatewayConnected,
                 onDisconnect: {
                     viewModel.disconnect()
                     showingSettings = false
                 },
-                onApplyAndReconnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                    }
-                    showingSettings = false
-                },
-                onConnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 连接成功后关闭设置页面
-                        await MainActor.run {
-                            showingSettings = false
-                        }
-                    }
-                },
-                onResetDeviceIdentity: {
-                    viewModel.resetDeviceIdentity()
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 重置成功后关闭设置页面
-                        await MainActor.run {
-                            showingSettings = false
-                        }
-                    }
-                },
+                onApplyAndReconnect: {},
+                onConnect: {},
+                onResetDeviceIdentity: {},
                 onClose: {
                     showingSettings = false
                 },
@@ -174,38 +150,14 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingWelcomeSettings) {
             SettingsView(
-                gatewayUrl: $gatewayUrl,
-                token: $token,
                 isConnected: .constant(false),
                 onDisconnect: {
                     viewModel.disconnect()
                     showingWelcomeSettings = false
                 },
-                onApplyAndReconnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                    }
-                    showingWelcomeSettings = false
-                },
-                onConnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 连接成功后关闭设置页面
-                        await MainActor.run {
-                            showingWelcomeSettings = false
-                        }
-                    }
-                },
-                onResetDeviceIdentity: {
-                    viewModel.resetDeviceIdentity()
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 重置成功后关闭设置页面
-                        await MainActor.run {
-                            showingWelcomeSettings = false
-                        }
-                    }
-                },
+                onApplyAndReconnect: {},
+                onConnect: {},
+                onResetDeviceIdentity: {},
                 onClose: {
                     showingWelcomeSettings = false
                 },

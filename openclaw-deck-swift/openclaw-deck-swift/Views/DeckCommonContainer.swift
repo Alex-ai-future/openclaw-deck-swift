@@ -42,55 +42,19 @@ struct DeckCommonContainer<Content: View>: View {
             // Settings Sheet
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
-                    gatewayUrl: gatewayUrl ?? $localGatewayUrl,
-                    token: token ?? $localToken,
                     isConnected: $viewModel.gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false
                     },
                     onApplyAndReconnect: {
-                        // 使用当前配置（外部传入或本地状态）
-                        let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
-                        let tokenToUse = token?.wrappedValue ?? localToken
-
-                        // Save new config first
-                        UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
-                        UserDefaultsStorage.shared.saveToken(tokenToUse)
-
-                        Task {
-                            await viewModel.initialize(url: urlToUse, token: tokenToUse)
-                        }
                         showingSettings = false
                     },
                     onConnect: {
-                        // 使用当前配置（外部传入或本地状态）
-                        let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
-                        let tokenToUse = token?.wrappedValue ?? localToken
-
-                        // Save new config first
-                        UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
-                        UserDefaultsStorage.shared.saveToken(tokenToUse)
-
-                        Task {
-                            await viewModel.initialize(url: urlToUse, token: tokenToUse)
-                            showingSettings = false
-                        }
+                        showingSettings = false
                     },
                     onResetDeviceIdentity: {
-                        // 使用当前配置（外部传入或本地状态）
-                        let urlToUse = gatewayUrl?.wrappedValue ?? localGatewayUrl
-                        let tokenToUse = token?.wrappedValue ?? localToken
-
-                        // Save new config first
-                        UserDefaultsStorage.shared.saveGatewayUrl(urlToUse)
-                        UserDefaultsStorage.shared.saveToken(tokenToUse)
-
-                        viewModel.resetDeviceIdentity()
-                        Task {
-                            await viewModel.initialize(url: urlToUse, token: tokenToUse)
-                            showingSettings = false
-                        }
+                        showingSettings = false
                     },
                     onClose: {
                         showingSettings = false

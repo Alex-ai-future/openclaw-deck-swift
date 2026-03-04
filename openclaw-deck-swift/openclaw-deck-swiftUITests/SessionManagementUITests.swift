@@ -15,9 +15,9 @@ final class SessionManagementUITests: XCTestCase {
         app = XCUIApplication()
         app.launchEnvironment["UITESTING"] = "YES"
         app.launchArguments.append("--disable-animations")
-        continueAfterFailure = false  // 失败立即停止
+        continueAfterFailure = false // 失败立即停止
         app.launch()
-        app.activate()  // ✅ 显式激活应用到前台
+        app.activate() // ✅ 显式激活应用到前台
 
         print("🚀 应用已启动，等待加载...")
 
@@ -113,7 +113,7 @@ final class SessionManagementUITests: XCTestCase {
         // ========== 阶段 2：每个会话发送消息（触发连接失败） ==========
         print("\n📍 阶段 2：每个会话发送消息（测试模式会触发连接失败）")
 
-        for index in 0..<3 {
+        for index in 0 ..< 3 {
             print("  💬 会话 \(index + 1)/3: 发送测试消息")
             sendMessageToSession(at: index, message: "测试消息 \(index + 1)")
         }
@@ -233,7 +233,7 @@ final class SessionManagementUITests: XCTestCase {
         // 排除 NewSessionButton 和 SortButton，查找所有包含 Session 的元素（不限于 Button）
         let predicate = NSPredicate(
             format:
-                "identifier CONTAINS 'Session' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
+            "identifier CONTAINS 'Session' AND identifier != 'NewSessionButton' AND identifier != 'SortButton'"
         )
         return app.descendants(matching: .any)
             .matching(predicate)
@@ -380,7 +380,8 @@ final class SessionManagementUITests: XCTestCase {
 
         // 从 identifier 中提取 sessionId (去掉 "SessionView-" 前缀)
         let sessionId = sessionButtons[0].identifier.replacingOccurrences(
-            of: "SessionView-", with: "")
+            of: "SessionView-", with: ""
+        )
         print("  🗑️  准备删除会话：\(sessionId)")
 
         // 第一步：点击会话区域（选中会话）
@@ -440,7 +441,8 @@ final class SessionManagementUITests: XCTestCase {
         // 打印所有 dialogs 的按钮
         for (i, dialogElem) in app.dialogs.allElementsBoundByIndex.enumerated() {
             print(
-                "  🔍 Dialog [\(i)]: identifier=\(dialogElem.identifier), label=\(dialogElem.label)")
+                "  🔍 Dialog [\(i)]: identifier=\(dialogElem.identifier), label=\(dialogElem.label)"
+            )
             for (j, btn) in dialogElem.buttons.allElementsBoundByIndex.enumerated() {
                 print("    Button [\(j)]: identifier=\(btn.identifier), label=\(btn.label)")
             }

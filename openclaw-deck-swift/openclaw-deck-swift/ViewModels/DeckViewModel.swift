@@ -241,7 +241,7 @@ class DeckViewModel {
         if sessionOrder.isEmpty {
             logger.info("📥 加载会话列表...")
             loadingStage = .fetchingSessions
-            loadingProgress = 0.4
+            loadingProgress = 0.3
             await loadSessionsFromStorage()
 
             // ❗ 检测是否有冲突（冲突时 showingSyncConflict 会被设置）
@@ -290,7 +290,7 @@ class DeckViewModel {
                     // 🔧 内联 initializeAfterConnect() 的逻辑
                     // 连接成功，更新进度
                     self.loadingStage = .connecting
-                    self.loadingProgress = 0.2
+                    self.loadingProgress = 0.5
 
                     // 检查是否有会话列表
                     if self.sessionOrder.isEmpty {
@@ -504,11 +504,11 @@ class DeckViewModel {
     /// 测试专用：加载 Sessions（测试用）
     @MainActor func loadSessionsFromStorageForTesting() async {
         loadingStage = .fetchingSessions
-        loadingProgress = 0.4
+        loadingProgress = 0.3
         await loadSessionsFromStorage()
         // 恢复为 connecting 状态，等待连接成功
         loadingStage = .connecting
-        loadingProgress = 0.2
+        loadingProgress = 0.5
     }
 
     /// 从 Cloudflare 同步加载 Sessions

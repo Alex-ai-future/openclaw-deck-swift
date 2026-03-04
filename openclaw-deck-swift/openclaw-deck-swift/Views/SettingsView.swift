@@ -10,7 +10,6 @@ struct SettingsView: View {
     @State private var token: String
     @Binding var isConnected: Bool
     var onDisconnect: () -> Void
-    var onConnect: () -> Void
     var onResetDeviceIdentity: (() -> Void)?
     var onClose: (() -> Void)?
 
@@ -27,7 +26,7 @@ struct SettingsView: View {
     init(
         isConnected: Binding<Bool>,
         onDisconnect: @escaping () -> Void,
-        onConnect: @escaping () -> Void,
+        onConnect _: @escaping () -> Void,
         onResetDeviceIdentity: (() -> Void)? = nil,
         onClose: (() -> Void)? = nil,
         viewModel: DeckViewModel? = nil
@@ -38,7 +37,6 @@ struct SettingsView: View {
         _token = State(initialValue: storage.loadToken() ?? "")
         _isConnected = isConnected
         self.onDisconnect = onDisconnect
-        self.onConnect = onConnect
         self.onResetDeviceIdentity = onResetDeviceIdentity
         self.onClose = onClose
         self.viewModel = viewModel
@@ -260,7 +258,10 @@ struct SettingsView: View {
                             if !token.isEmpty {
                                 UserDefaultsStorage.shared.saveToken(token)
                             }
-                            onConnect()
+                            // 直接调用 initialize
+                            Task {
+                                await viewModel?.initialize(url: gatewayUrl, token: token)
+                            }
                         }
                         .fontWeight(.semibold)
                         .keyboardShortcut(.defaultAction)
@@ -291,7 +292,6 @@ struct SettingsView: View {
     SettingsView(
         isConnected: .constant(true),
         onDisconnect: {},
-        onConnect: {},
         onResetDeviceIdentity: {},
         onClose: {},
         viewModel: nil

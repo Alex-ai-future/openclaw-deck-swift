@@ -202,55 +202,6 @@ class DeckViewModel {
 
     /// 连接 Gateway（共用方法）
     /// - Parameters:
-    ///   - url: Gateway URL
-    ///   - token: Token
-    ///   - onConnect: 连接成功后的回调
-    private func connectGateway(
-        url: URL,
-        token: String?,
-        onConnect: @escaping () async -> Void
-    ) async {
-        // 🔧 先断开旧连接
-        gatewayClient?.disconnect()
-
-        // 创建新客户端
-        var client = diContainer.createGatewayClient(url: url, token: token)
-
-        // 设置事件回调
-        client.onEvent = { [weak self] event in
-            Task { @MainActor in
-                self?.handleGatewayEvent(event)
-            }
-        }
-
-        // 设置连接状态回调
-        client.onConnection = { [weak self] connected in
-            Task { @MainActor in
-                guard let self else { return }
-                if connected {
-                    logger.log("✅ Gateway 连接成功")
-                    // 调用连接成功后的回调
-                    await onConnect()
-                } else {
-                    logger.error("❌ Gateway 连接失败")
-                    self.gatewayConnected = false
-                    self.isInitializing = false
-                    self.loadingStage = .idle
-                    // 获取错误信息
-                    self.connectionError = client.connectionError ?? "Unknown connection error"
-                }
-            }
-        }
-
-        gatewayClient = client
-        connectionError = client.connectionError
-
-        // 异步连接 Gateway
-        await client.connect()
-    }
-
-    // MARK: - Gateway Connection
-
     /// 初始化并连接 Gateway
     /// 初始化并连接 Gateway
     func initialize(url: String, token: String?) async {
@@ -307,50 +258,78 @@ class DeckViewModel {
             logger.info("✅ 会话列表已存在，跳过加载（\(self.sessionOrder.count) 个会话）")
         }
 
-        // 使用共用方法连接 Gateway
-        await connectGateway(url: gatewayUrl, token: token) {
-            // 重连时重置所有 session 的处理状态
-            for session in self.sessions.values {
-                session.isProcessing = false
-                session.status = .idle
-                session.activeRunId = nil
+        // 🔧 内联 connectGateway 的逻辑
+        // 先断开旧连接
+        gatewayClient?.disconnect()
+
+        // 创建新客户端
+        var client = diContainer.createGatewayClient(url: gatewayUrl, token: token)
+
+        // 设置事件回调
+        client.onEvent = { [weak self] event in
+            Task { @MainActor in
+                self?.handleGatewayEvent(event)
             }
-
-            // 连接成功，开始加载流程
-            await self.initializeAfterConnect()
-        }
-    }
-
-    /// 连接成功后初始化（加载会话列表和消息历史）
-    @MainActor
-    private func initializeAfterConnect() async {
-        // 连接成功，更新进度
-        loadingStage = .connecting
-        loadingProgress = 0.2
-
-        // ✅ sessionOrder 已经在 initialize() 中加载完成，直接使用
-
-        // 检查是否有会话列表
-        if sessionOrder.isEmpty {
-            logger.warning("⚠️ 没有会话列表，跳过消息加载")
-        } else {
-            // 加载所有历史
-            loadingStage = .fetchingMessages
-            loadingProgress = 0.8
-            await loadAllSessionHistory()
         }
 
-        // 所有数据加载完成，设置 100%
-        loadingStage = .syncingLocal
-        loadingProgress = 1.0
+        // 设置连接状态回调
+        client.onConnection = { [weak self] connected in
+            Task { @MainActor in
+                guard let self else { return }
+                if connected {
+                    logger.log("✅ Gateway 连接成功")
 
-        // 稍作延迟，让用户看到 100% 进度（避免闪动）
-        try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+                    // 🔧 内联 onConnect 回调的逻辑
+                    // 重连时重置所有 session 的处理状态
+                    for session in self.sessions.values {
+                        session.isProcessing = false
+                        session.status = .idle
+                        session.activeRunId = nil
+                    }
 
-        // 初始化完成
-        isInitializing = false
-        gatewayConnected = true
-        loadingStage = .idle
+                    // 🔧 内联 initializeAfterConnect() 的逻辑
+                    // 连接成功，更新进度
+                    self.loadingStage = .connecting
+                    self.loadingProgress = 0.2
+
+                    // 检查是否有会话列表
+                    if self.sessionOrder.isEmpty {
+                        self.logger.warning("⚠️ 没有会话列表，跳过消息加载")
+                    } else {
+                        // 加载所有历史
+                        self.loadingStage = .fetchingMessages
+                        self.loadingProgress = 0.8
+                        Task { @MainActor in
+                            await self.loadAllSessionHistory()
+                        }
+                    }
+
+                    // 所有数据加载完成，设置 100%
+                    self.loadingStage = .syncingLocal
+                    self.loadingProgress = 1.0
+                    try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+
+                    // 初始化完成
+                    self.isInitializing = false
+                    self.gatewayConnected = true
+                    self.loadingStage = .idle
+
+                } else {
+                    logger.error("❌ Gateway 连接失败")
+                    self.gatewayConnected = false
+                    self.isInitializing = false
+                    self.loadingStage = .idle
+                    // 获取错误信息
+                    self.connectionError = client.connectionError ?? "Unknown connection error"
+                }
+            }
+        }
+
+        gatewayClient = client
+        connectionError = client.connectionError
+
+        // 异步连接 Gateway
+        await client.connect()
     }
 
     /// 清除连接错误
@@ -365,17 +344,6 @@ class DeckViewModel {
         // 只断开连接，不清空 Session 消息（保留离线浏览能力）
         gatewayClient?.disconnect()
         gatewayConnected = false
-    }
-
-    /// 重新连接 Gateway
-    func reconnect() async {
-        guard let client = gatewayClient else { return }
-
-        // 断开现有连接
-        client.disconnect()
-
-        // 重新连接
-        await client.connect()
     }
 
     /// 重置设备身份（清除 device identity 和 device token）

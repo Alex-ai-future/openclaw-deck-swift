@@ -418,7 +418,7 @@ final class SessionManagementUITests: XCTestCase {
         sleep(1)
 
         // 第三步：查找删除按钮（可能在底部，需要滚动）
-        let deleteButton = app.buttons["deleteSessionButton"]
+        var deleteButton = app.buttons["deleteSessionButton"]
 
         // 尝试滚动查找
         if !deleteButton.exists {

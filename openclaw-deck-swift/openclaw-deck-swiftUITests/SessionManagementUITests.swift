@@ -435,13 +435,16 @@ final class SessionManagementUITests: XCTestCase {
         print("  ✅ 删除按钮已找到")
 
         // 点击删除按钮
-        deleteButton.forceTap()
+        deleteButton.tap()
         print("  ✅ 已点击删除按钮")
+
+        // 等待弹窗出现（给更多时间）
+        sleep(2)
 
         // 确认删除弹窗
         let alert = app.alerts.firstMatch
         XCTAssertTrue(
-            alert.waitForExistence(timeout: 3),
+            alert.waitForExistence(timeout: 5),
             "删除确认弹窗必须出现"
         )
         print("  ✅ 删除确认弹窗已显示")

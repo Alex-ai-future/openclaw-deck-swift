@@ -984,12 +984,21 @@ class DeckViewModel {
             return
         }
 
-        // 1. 先设置状态（不添加消息）
+        // ✅ 1. 先添加用户消息到 UI（乐观更新）
+        let userMsg = ChatMessage(
+            id: UUID().uuidString,
+            role: .user,
+            text: text,
+            timestamp: Date()
+        )
+        session.messages.append(userMsg)
+
+        // 2. 设置状态
         session.status = .thinking
         session.isProcessing = true
         session.activeRunId = "pending-\(UUID().uuidString)"
 
-        // 2. 调用 runAgent
+        // 3. 后台调用 runAgent
         Task { [weak self] in
             guard let self else { return }
 
@@ -999,32 +1008,24 @@ class DeckViewModel {
                     message: text,
                     sessionKey: session.sessionKey
                 )
-
-                // 3. 成功后添加用户消息
-                await MainActor.run {
-                    let userMsg = ChatMessage(
-                        id: UUID().uuidString,
-                        role: .user,
-                        text: text,
-                        timestamp: Date()
-                    )
-                    session.messages.append(userMsg)
-                }
-
-                // Agent run started
-                // activeRunId 会在 lifecycle.start 事件中设置
+                // ✅ 发送成功，不需要额外操作（消息已显示）
 
             } catch {
                 logger.error("Failed to send message: \(error.localizedDescription)")
                 await MainActor.run {
-                    // 1. 显示连接错误弹窗
+                    // ❌ 失败时移除用户消息
+                    if let index = session.messages.firstIndex(where: { \$0.id == userMsg.id }) {
+                        session.messages.remove(at: index)
+                    }
+
+                    // 显示连接错误弹窗
                     self.showConnectionErrorAlert()
 
-                    // 2. 恢复输入框内容（让用户不需要重新输入）
+                    // 恢复输入框内容（让用户不需要重新输入）
                     self.globalInputState.inputText = text
                     self.globalInputState.calculateTextHeight()
 
-                    // 3. 重置 session 状态（避免 UI 卡住）
+                    // 重置 session 状态（避免 UI 卡住）
                     session.status = .idle
                     session.isProcessing = false
                     session.activeRunId = nil

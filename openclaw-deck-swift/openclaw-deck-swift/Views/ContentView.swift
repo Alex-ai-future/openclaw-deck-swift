@@ -222,6 +222,13 @@ struct ContentView: View {
             }
         }
 
+        // 消息发送失败弹窗（全局统一）
+        .alert("connection_error".localized, isPresented: $viewModel.showMessageSendError) {
+            Button("ok".localized, role: .cancel) {}
+        } message: {
+            Text(viewModel.messageSendErrorText)
+        }
+
         .task {
             // 首先加载保存的配置到 @State 变量
             if !hasLoadedSavedConfig {

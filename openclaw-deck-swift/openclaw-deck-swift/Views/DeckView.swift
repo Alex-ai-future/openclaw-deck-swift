@@ -105,12 +105,6 @@ struct DeckView: View {
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
             }
-            // 连接错误弹窗（发送失败时显示）
-            .alert("connection_error".localized, isPresented: $viewModel.showMessageSendError) {
-                Button("ok".localized, role: .cancel) {}
-            } message: {
-                Text(viewModel.messageSendErrorText)
-            }
             // Stop 失败弹窗
             .alert("stop_failed".localized, isPresented: $viewModel.showStopError) {
                 Button("ok".localized, role: .cancel) {}

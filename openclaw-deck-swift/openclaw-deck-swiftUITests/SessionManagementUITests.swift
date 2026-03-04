@@ -399,7 +399,7 @@ final class SessionManagementUITests: XCTestCase {
         let nameButton = app.buttons["Session-\(sessionId)"].firstMatch
         XCTAssertTrue(
             nameButton.waitForExistence(timeout: 5),
-            "会话名称按钮 (Session-\(sessionName)) 必须在 5 秒内出现"
+            "会话名称按钮 (Session-\(sessionId)) 必须在 5 秒内出现"
         )
         nameButton.forceTap()
         print("  ✅ 已点击会话名称按钮")

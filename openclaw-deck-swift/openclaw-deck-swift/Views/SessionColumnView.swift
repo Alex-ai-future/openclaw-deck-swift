@@ -121,9 +121,6 @@ struct SessionColumnView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部状态条（iPad + macOS）- 放在 ZStack 外面确保可见
-            topStatusBar
-
             // 消息列表和浮动按钮 - 使用 ZStack 但让消息列表可以压缩
             ZStack(alignment: .bottom) {
                 // 消息列表 - 使用 maxHeight: .infinity 但不设置 minHeight
@@ -131,6 +128,8 @@ struct SessionColumnView: View {
                     .frame(maxHeight: .infinity)
                 // 底部浮动按钮组
                 VStack {
+                    // 顶部状态条（iPad + macOS）
+                    topStatusBar
                     Spacer()
 
                     HStack(spacing: 16) {
@@ -280,9 +279,7 @@ struct SessionColumnView: View {
                 )
         }
         .buttonStyle(.glass)
-        .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("Session-\(session.sessionId)")
-        .accessibilityLabel(session.sessionId)
         .sheet(isPresented: $showingSessionDetails) {
             SessionDetailView(
                 session: session,
@@ -325,8 +322,10 @@ struct SessionColumnView: View {
 
             Spacer()
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 2)
     }
 
     // MARK: - Message List

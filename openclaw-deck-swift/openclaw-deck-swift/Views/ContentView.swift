@@ -130,28 +130,12 @@ struct ContentView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView(
                 isConnected: $viewModel.gatewayConnected,
-                onDisconnect: {
-                    viewModel.disconnect()
-                    showingSettings = false
-                },
-                onResetDeviceIdentity: {},
-                onClose: {
-                    showingSettings = false
-                },
                 viewModel: viewModel
             )
         }
         .sheet(isPresented: $showingWelcomeSettings) {
             SettingsView(
                 isConnected: .constant(false),
-                onDisconnect: {
-                    viewModel.disconnect()
-                    showingWelcomeSettings = false
-                },
-                onResetDeviceIdentity: {},
-                onClose: {
-                    showingWelcomeSettings = false
-                },
                 viewModel: viewModel
             )
         }

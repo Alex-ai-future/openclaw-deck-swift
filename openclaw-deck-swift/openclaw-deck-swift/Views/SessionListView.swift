@@ -127,16 +127,6 @@ struct SessionListView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
                     isConnected: $viewModel.gatewayConnected,
-                    onDisconnect: {
-                        viewModel.disconnect()
-                        showingSettings = false
-                    },
-                    onResetDeviceIdentity: {
-                        showingSettings = false
-                    },
-                    onClose: {
-                        showingSettings = false
-                    },
                     viewModel: viewModel
                 )
             }

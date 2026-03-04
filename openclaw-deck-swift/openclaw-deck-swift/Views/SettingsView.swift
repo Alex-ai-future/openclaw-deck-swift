@@ -6,12 +6,10 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var gatewayUrl: String
     @State private var token: String
     @Binding var isConnected: Bool
-    var onDisconnect: () -> Void
-    var onResetDeviceIdentity: (() -> Void)?
-    var onClose: (() -> Void)?
 
     /// ViewModel binding for settings
     var viewModel: DeckViewModel?
@@ -25,9 +23,6 @@ struct SettingsView: View {
 
     init(
         isConnected: Binding<Bool>,
-        onDisconnect: @escaping () -> Void,
-        onResetDeviceIdentity: (() -> Void)? = nil,
-        onClose: (() -> Void)? = nil,
         viewModel: DeckViewModel? = nil
     ) {
         // 从 UserDefaults 加载初始值
@@ -35,9 +30,6 @@ struct SettingsView: View {
         _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
         _token = State(initialValue: storage.loadToken() ?? "")
         _isConnected = isConnected
-        self.onDisconnect = onDisconnect
-        self.onResetDeviceIdentity = onResetDeviceIdentity
-        self.onClose = onClose
         self.viewModel = viewModel
     }
 
@@ -163,7 +155,8 @@ struct SettingsView: View {
 
                 Section {
                     Button {
-                        onDisconnect()
+                        viewModel?.disconnect()
+                        dismiss()
                     } label: {
                         HStack {
                             Image(systemName: "xmark.square.fill")
@@ -237,8 +230,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
-                        // 直接关闭（本地状态，不需要恢复）
-                        onClose?()
+                        dismiss()
                     }
                 }
 
@@ -256,9 +248,10 @@ struct SettingsView: View {
                             if !token.isEmpty {
                                 UserDefaultsStorage.shared.saveToken(token)
                             }
-                            // 直接调用 initialize
+                            // 直接调用 initialize，完成后关闭
                             Task {
                                 await viewModel?.initialize(url: gatewayUrl, token: token)
+                                dismiss()
                             }
                         }
                         .fontWeight(.semibold)
@@ -289,9 +282,6 @@ struct SettingsView: View {
 #Preview {
     SettingsView(
         isConnected: .constant(true),
-        onDisconnect: {},
-        onResetDeviceIdentity: {},
-        onClose: {},
         viewModel: nil
     )
 }

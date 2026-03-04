@@ -448,12 +448,12 @@ final class SessionManagementUITests: XCTestCase {
 
         // 查找删除确认按钮（使用谓词匹配 label）
         let deletePredicate = NSPredicate(format: "label == 'Delete' OR label == '删除'")
-        let deleteButton = app.buttons.matching(deletePredicate).firstMatch
+        let confirmDeleteButton = app.buttons.matching(deletePredicate).firstMatch
         XCTAssertTrue(
-            deleteButton.waitForExistence(timeout: 3),
+            confirmDeleteButton.waitForExistence(timeout: 3),
             "删除确认按钮必须存在"
         )
-        deleteButton.forceTap()
+        confirmDeleteButton.forceTap()
         print("  ✅ 已确认删除")
 
         // 验证弹窗关闭

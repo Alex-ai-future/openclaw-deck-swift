@@ -457,7 +457,7 @@ struct WelcomeView: View {
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .topBarLeading) {
                         Button {
                             onShowSettings()
                         } label: {
@@ -468,7 +468,7 @@ struct WelcomeView: View {
                 }
             #else
                 .toolbar {
-                        ToolbarItem {
+                        ToolbarItem(placement: .automatic) {
                             Button {
                                 onShowSettings()
                             } label: {

@@ -89,23 +89,6 @@ struct SettingsView: View {
                     Text("modify_and_apply_to_reconnect_with_new_settings".localized)
                 }
 
-                // Apply & Reconnect button (only when changes exist)
-                if hasChanges {
-                    Section {
-                        Button {
-                            onApplyAndReconnect()
-                        } label: {
-                            HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                Text("apply_reconnect".localized)
-                                    .fontWeight(.medium)
-                            }
-                        }
-                    } footer: {
-                        Text("save_changes_and_reconnect_to_gateway".localized)
-                    }
-                }
-
                 // MARK: - 3. APP SETTINGS
 
                 Section {
@@ -244,6 +227,10 @@ struct SettingsView: View {
                         UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
                         if !token.isEmpty {
                             UserDefaultsStorage.shared.saveToken(token)
+                        }
+                        // 如果有改动，先重连再关闭
+                        if hasChanges {
+                            onApplyAndReconnect()
                         }
                         onClose?()
                     }

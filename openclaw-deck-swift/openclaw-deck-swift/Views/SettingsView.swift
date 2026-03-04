@@ -10,7 +10,6 @@ struct SettingsView: View {
     @State private var token: String
     @Binding var isConnected: Bool
     var onDisconnect: () -> Void
-    var onApplyAndReconnect: () -> Void
     var onConnect: () -> Void
     var onResetDeviceIdentity: (() -> Void)?
     var onClose: (() -> Void)?
@@ -28,6 +27,7 @@ struct SettingsView: View {
     init(
         isConnected: Binding<Bool>,
         onDisconnect: @escaping () -> Void,
+        onApplyAndReconnect: @escaping () -> Void,
         onConnect: @escaping () -> Void,
         onResetDeviceIdentity: (() -> Void)? = nil,
         onClose: (() -> Void)? = nil,
@@ -39,6 +39,7 @@ struct SettingsView: View {
         _token = State(initialValue: storage.loadToken() ?? "")
         _isConnected = isConnected
         self.onDisconnect = onDisconnect
+        self.onApplyAndReconnect = onApplyAndReconnect
         self.onConnect = onConnect
         self.onResetDeviceIdentity = onResetDeviceIdentity
         self.onClose = onClose
@@ -264,6 +265,8 @@ struct SettingsView: View {
     SettingsView(
         isConnected: .constant(true),
         onDisconnect: {},
+        onApplyAndReconnect: {},
+        onApplyAndReconnect: {},
         onConnect: {},
         onResetDeviceIdentity: {},
         onClose: {},

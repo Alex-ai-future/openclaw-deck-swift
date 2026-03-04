@@ -242,3 +242,6 @@
 "tap_settings_to_configure" = "Tap the settings icon to configure";
 "connection_error_please_reconnect" = "Connection error, please reconnect";
 "connection_error" = "Connection Error";
+
+// MARK: - Session Name Validation
+"session_name_taken" = "This name is already in use, please choose another";

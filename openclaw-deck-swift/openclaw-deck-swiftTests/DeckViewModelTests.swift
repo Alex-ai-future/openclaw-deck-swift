@@ -245,10 +245,13 @@ final class DeckViewModelTests: XCTestCase {
     }
 
     func testMultipleSessionsWithSameName() {
+        // 相同名字现在会生成相同 ID（UI 层会防止重名创建）
         let session1 = viewModel.createSession(name: "Same Name")
         let session2 = viewModel.createSession(name: "Same Name")
 
-        XCTAssertNotEqual(session1.id, session2.id)
+        // 现在 ID 相同（后创建的会覆盖先创建的）
+        XCTAssertEqual(session1.id, session2.id)
+        XCTAssertEqual(session1.id, "same-name")
     }
 
     // MARK: - Gateway Event Handling Tests (Core)

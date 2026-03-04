@@ -21,8 +21,6 @@ struct DeckView: View {
     @Binding var showingSettings: Bool
     @Binding var showingNewSessionSheet: Bool
     @State private var selectedSessionId: String?
-    @State private var gatewayUrl: String
-    @State private var token: String
 
     /// 内部状态管理
     @State private var showingSortSheet = false
@@ -33,11 +31,6 @@ struct DeckView: View {
         self.viewModel = viewModel
         _showingSettings = showingSettings
         _showingNewSessionSheet = showingNewSessionSheet
-
-        // 从 UserDefaults 加载配置
-        let storage = UserDefaultsStorage.shared
-        _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
-        _token = State(initialValue: storage.loadToken() ?? "")
     }
 
     var body: some View {
@@ -83,34 +76,18 @@ struct DeckView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
-                    gatewayUrl: $gatewayUrl,
-                    token: $token,
                     isConnected: $viewModel.gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
                         showingSettings = false
                     },
                     onApplyAndReconnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
                         showingSettings = false
                     },
                     onConnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
                         showingSettings = false
                     },
                     onResetDeviceIdentity: {
-                        viewModel.resetDeviceIdentity()
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
                         showingSettings = false
                     },
                     onClose: {
@@ -196,6 +173,7 @@ struct NewSessionSheet: View {
 
     @State private var name = "default"
     @State private var context = ""
+    @State private var isNameTaken = false
     @FocusState private var isNameFieldFocused: Bool
 
     var body: some View {
@@ -206,9 +184,17 @@ struct NewSessionSheet: View {
                     TextField("session_name".localized, text: $name)
                         .focused($isNameFieldFocused)
                         .textContentType(.name)
+                        .onChange(of: name) { _, newValue in
+                            isNameTaken = viewModel.isSessionNameTaken(name: newValue)
+                        }
                         .onSubmit {
                             createSession()
                         }
+                    if isNameTaken, !name.isEmpty {
+                        Text("session_name_taken".localized)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
                 } footer: {
                     Text("a_unique_identifier_for_this_session".localized)
                 }
@@ -238,7 +224,7 @@ struct NewSessionSheet: View {
                     Button("create".localized) {
                         createSession()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(name.isEmpty || isNameTaken)
                     .fontWeight(.semibold)
                 }
             }

@@ -398,12 +398,20 @@ class DeckViewModel {
 
     // MARK: - Session Management
 
-    /// 创建新 Session
-    /// - Parameters:
-    ///   - name: Session 名称
-    ///   - icon: 可选的图标
-    ///   - context: 可选的上下文描述
-    /// - Returns: 创建的 SessionConfig
+    // 创建新 Session
+    // - Parameters:
+    //   - name: Session 名称
+    //   - icon: 可选的图标
+    //   - context: 可选的上下文描述
+    // - Returns: 创建的 SessionConfig
+
+    /// 检查 Session 名称是否已被使用
+    /// - Parameter name: 要检查的名称
+    /// - Returns: 如果名称已存在返回 true
+    func isSessionNameTaken(name: String) -> Bool {
+        SessionConfig.isNameTaken(name: name, existingSessions: sessions)
+    }
+
     func createSession(
         name: String,
         icon: String? = nil,

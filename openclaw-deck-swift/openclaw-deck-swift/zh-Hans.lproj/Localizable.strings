@@ -242,3 +242,6 @@
 "tap_settings_to_configure" = "点击右上角设置图标进行配置";
 "connection_error_please_reconnect" = "连接错误，请重新连接";
 "connection_error" = "连接错误";
+
+// MARK: - Session Name Validation
+"session_name_taken" = "这个名字已存在，请使用其他名称";

@@ -8,7 +8,6 @@ import SwiftUI
 struct GatewayConfigInput: View {
     @Binding var gatewayUrl: String
     @Binding var token: String
-    var onConnect: () -> Void
     var isConnected: Bool = false
 
     @FocusState private var isGatewayUrlFocused: Bool
@@ -48,7 +47,6 @@ struct GatewayConfigInput: View {
     GatewayConfigInput(
         gatewayUrl: .constant("ws://127.0.0.1:18789"),
         token: .constant(""),
-        onConnect: {},
         isConnected: false
     )
     .padding()

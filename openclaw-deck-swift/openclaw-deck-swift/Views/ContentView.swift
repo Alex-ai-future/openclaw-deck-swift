@@ -118,11 +118,6 @@ struct ContentView: View {
                     token: $token,
                     connectionError: viewModel.connectionError,
                     isConnecting: viewModel.isInitializing,
-                    onConnect: {
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                    },
                     onClearError: {
                         viewModel.clearConnectionError()
                     },
@@ -329,7 +324,6 @@ struct WelcomeView: View {
     @Binding var token: String
     let connectionError: String?
     let isConnecting: Bool
-    let onConnect: () -> Void
     let onClearError: () -> Void
     let onShowSettings: () -> Void
 

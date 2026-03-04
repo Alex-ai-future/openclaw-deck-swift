@@ -48,16 +48,6 @@ struct DeckCommonContainer<Content: View>: View {
                         viewModel.disconnect()
                         showingSettings = false
                     },
-                    onConnect: {
-                        Task {
-                            await viewModel.initialize(
-                                url: UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789",
-                                token: UserDefaultsStorage.shared.loadToken()
-                            )
-                            // 连接成功后关闭设置页面
-                            showingSettings = false
-                        }
-                    },
                     onResetDeviceIdentity: {
                         showingSettings = false
                     },

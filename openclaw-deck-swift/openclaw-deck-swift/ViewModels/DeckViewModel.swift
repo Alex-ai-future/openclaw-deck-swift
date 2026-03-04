@@ -1025,18 +1025,17 @@ class DeckViewModel {
             } catch {
                 logger.error("Failed to send message: \(error.localizedDescription)")
                 await MainActor.run {
-                    // 4. 失败时调用 disconnect()，触发 onConnection?(false)
-                    self.gatewayClient?.disconnect()
-
-                    // 5. 显示连接错误弹窗
+                    // 1. 显示连接错误弹窗
                     self.showConnectionErrorAlert()
 
-                    // 6. 恢复输入框内容（让用户不需要重新输入）
+                    // 2. 恢复输入框内容（让用户不需要重新输入）
                     self.globalInputState.inputText = text
                     self.globalInputState.calculateTextHeight()
 
-                    // 注意：不重置 session 状态，避免 UI 跳动
-                    // 用户看到弹窗后，会自己去设置里解决连接问题
+                    // 3. 重置 session 状态（避免 UI 卡住）
+                    session.status = .idle
+                    session.isProcessing = false
+                    session.activeRunId = nil
                 }
             }
         }

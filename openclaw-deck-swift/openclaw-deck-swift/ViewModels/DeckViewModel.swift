@@ -210,7 +210,10 @@ class DeckViewModel {
         token: String?,
         onConnect: @escaping () async -> Void
     ) async {
-        // 创建客户端
+        // 🔧 先断开旧连接
+        gatewayClient?.disconnect()
+
+        // 创建新客户端
         var client = diContainer.createGatewayClient(url: url, token: token)
 
         // 设置事件回调

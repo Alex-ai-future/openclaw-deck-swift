@@ -121,6 +121,9 @@ struct SessionColumnView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // 顶部状态条（iPad + macOS）- 临时移到外面测试 accessibility
+            topStatusBar
+
             // 消息列表和浮动按钮 - 使用 ZStack 但让消息列表可以压缩
             ZStack(alignment: .bottom) {
                 // 消息列表 - 使用 maxHeight: .infinity 但不设置 minHeight
@@ -128,8 +131,6 @@ struct SessionColumnView: View {
                     .frame(maxHeight: .infinity)
                 // 底部浮动按钮组
                 VStack {
-                    // 顶部状态条（iPad + macOS）
-                    topStatusBar
                     Spacer()
 
                     HStack(spacing: 16) {

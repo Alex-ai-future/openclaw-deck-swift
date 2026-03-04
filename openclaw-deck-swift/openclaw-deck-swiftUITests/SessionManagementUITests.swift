@@ -17,6 +17,7 @@ final class SessionManagementUITests: XCTestCase {
         app.launchArguments.append("--disable-animations")
         continueAfterFailure = false // 失败立即停止
         app.launch()
+        app.activate() // ✅ 显式激活应用到前台
 
         print("🚀 应用已启动，等待加载...")
 

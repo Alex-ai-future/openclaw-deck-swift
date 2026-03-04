@@ -151,7 +151,9 @@ struct SessionDetailView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        showingDeleteAlert = true
+                        // 直接删除，不显示确认弹窗（避免和父视图的弹窗冲突）
+                        onDelete()
+                        dismiss()
                     } label: {
                         Text("delete_session".localized)
                     }
@@ -168,15 +170,6 @@ struct SessionDetailView: View {
                             dismiss()
                         }
                     }
-                }
-                .alert("confirm_delete".localized, isPresented: $showingDeleteAlert) {
-                    Button("cancel".localized, role: .cancel) {}
-                    Button("delete".localized, role: .destructive) {
-                        onDelete()
-                        dismiss()
-                    }
-                } message: {
-                    Text("delete_session_confirm_message".localized)
                 }
         }
     }

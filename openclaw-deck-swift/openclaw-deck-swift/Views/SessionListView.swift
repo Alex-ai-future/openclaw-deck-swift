@@ -38,33 +38,24 @@ struct SessionListView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            Group {
-                if viewModel.sessionOrder.isEmpty {
-                    // 空状态
-                    EmptySessionListView(onCreateNew: {
-                        showingNewSessionSheet = true
-                    })
-                } else {
-                    // Session 列表
-                    List {
-                        ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-                            if let session = viewModel.getSession(sessionId: sessionId) {
-                                NavigationLink(value: session) {
-                                    SessionRowView(
-                                        session: session,
-                                        onRequestDelete: {
-                                            deleteSessionId = session.sessionId
-                                            showingDeleteAlert = true
-                                        }
-                                    )
+            // Session 列表
+            List {
+                ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+                    if let session = viewModel.getSession(sessionId: sessionId) {
+                        NavigationLink(value: session) {
+                            SessionRowView(
+                                session: session,
+                                onRequestDelete: {
+                                    deleteSessionId = session.sessionId
+                                    showingDeleteAlert = true
                                 }
-                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            }
+                            )
                         }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
-                    .listStyle(.plain)
                 }
             }
+            .listStyle(.plain)
             .navigationTitle("openclaw_deck".localized)
             .navigationBarTitleDisplayMode(.large)
             .accessibilityIdentifier("SessionList")
@@ -124,49 +115,6 @@ struct SessionListView: View {
         logger.debug(
             "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
         )
-    }
-}
-
-// MARK: - Empty State View
-
-/// 空状态视图 - 引导用户创建第一个 Session
-struct EmptySessionListView: View {
-    let onCreateNew: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            Image(systemName: "message.badge.filled.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.blue.opacity(0.8))
-
-            Text("No sessions yet")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("Create your first session to start chatting")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button(action: onCreateNew) {
-                HStack {
-                    Image(systemName: "plus")
-                    Text("New Session")
-                }
-                .fontWeight(.medium)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-            }
-            .padding(.top, 8)
-
-            Spacer()
-        }
-        .padding()
     }
 }
 

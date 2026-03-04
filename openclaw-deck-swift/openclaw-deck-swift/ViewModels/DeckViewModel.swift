@@ -294,7 +294,7 @@ class DeckViewModel {
 
                     // 检查是否有会话列表
                     if self.sessionOrder.isEmpty {
-                        self.logger.warning("⚠️ 没有会话列表，跳过消息加载")
+                        logger.warning("⚠️ 没有会话列表，跳过消息加载")
                     } else {
                         // 加载所有历史
                         self.loadingStage = .fetchingMessages

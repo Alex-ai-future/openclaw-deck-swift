@@ -389,21 +389,21 @@ final class SessionManagementUITests: XCTestCase {
         // 调试 1：打印所有按钮
         print("  🔍 当前界面所有按钮：")
         let allButtons = app.buttons.allElementsBoundByIndex
-        for (i, button) in allButtons.enumerated() {
-            if button.exists {
-                print("    [\(i)] type=Button, identifier=\(button.identifier), label=\(button.label)")
-            }
-        }
+//        for (i, button) in allButtons.enumerated() {
+//            if button.exists {
+//                print("    [\(i)] type=Button, identifier=\(button.identifier), label=\(button.label)")
+//            }
+//        }
 
         // 调试 2：打印所有包含 Session 的元素（不限于 Button）
         print("  🔍 所有包含 Session 的元素：")
         let sessionPredicate = NSPredicate(format: "identifier CONTAINS 'Session'")
         let sessionElements = app.descendants(matching: .any).matching(sessionPredicate).allElementsBoundByIndex
-        for (i, elem) in sessionElements.enumerated() {
-            if elem.exists {
-                print("    [\(i)] type=\(elem.elementType), identifier=\(elem.identifier), label=\(elem.label)")
-            }
-        }
+//        for (i, elem) in sessionElements.enumerated() {
+//            if elem.exists {
+//                print("    [\(i)] type=\(elem.elementType), identifier=\(elem.identifier), label=\(elem.label)")
+//            }
+//        }
 
         // 查找顶部的 sessionNameButton
         let nameButton = app.buttons["Session-\(sessionId)"].firstMatch
@@ -446,12 +446,14 @@ final class SessionManagementUITests: XCTestCase {
         )
         print("  ✅ 删除确认弹窗已显示")
 
-        let confirmButton = app.buttons["Delete"].firstMatch.exists ? app.buttons["Delete"] : app.buttons["删除"]
+        // 查找删除确认按钮（使用谓词匹配 label）
+        let deletePredicate = NSPredicate(format: "label == 'Delete' OR label == '删除'")
+        let deleteButton = app.buttons.matching(deletePredicate).firstMatch
         XCTAssertTrue(
-            confirmButton.waitForExistence(timeout: 3),
+            deleteButton.waitForExistence(timeout: 3),
             "删除确认按钮必须存在"
         )
-        confirmButton.forceTap()
+        deleteButton.forceTap()
         print("  ✅ 已确认删除")
 
         // 验证弹窗关闭

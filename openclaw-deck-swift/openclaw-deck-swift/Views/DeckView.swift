@@ -26,7 +26,8 @@ struct DeckView: View {
     @State private var showingSortSheet = false
 
     init(
-        viewModel: DeckViewModel, showingSettings: Binding<Bool>, showingNewSessionSheet: Binding<Bool>
+        viewModel: DeckViewModel, showingSettings: Binding<Bool>,
+        showingNewSessionSheet: Binding<Bool>
     ) {
         self.viewModel = viewModel
         _showingSettings = showingSettings
@@ -79,9 +80,6 @@ struct DeckView: View {
                     isConnected: $viewModel.gatewayConnected,
                     onDisconnect: {
                         viewModel.disconnect()
-                        showingSettings = false
-                    },
-                    onApplyAndReconnect: {
                         showingSettings = false
                     },
                     onConnect: {
@@ -157,7 +155,9 @@ struct DeckView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
+            .animation(
+                .spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder
+            )
             .background(Color.adaptiveBackground)
         }
     }

@@ -386,12 +386,22 @@ final class SessionManagementUITests: XCTestCase {
         sleep(1)
 
         // 第二步：点击 sessionNameButton（打开详情）
-        // 调试：打印当前所有按钮
+        // 调试 1：打印所有按钮
         print("  🔍 当前界面所有按钮：")
         let allButtons = app.buttons.allElementsBoundByIndex
         for (i, button) in allButtons.enumerated() {
             if button.exists {
-                print("    [\(i)] identifier=\(button.identifier), label=\(button.label)")
+                print("    [\(i)] type=Button, identifier=\(button.identifier), label=\(button.label)")
+            }
+        }
+
+        // 调试 2：打印所有包含 Session 的元素（不限于 Button）
+        print("  🔍 所有包含 Session 的元素：")
+        let sessionPredicate = NSPredicate(format: "identifier CONTAINS 'Session'")
+        let sessionElements = app.descendants(matching: .any).matching(sessionPredicate).allElementsBoundByIndex
+        for (i, elem) in sessionElements.enumerated() {
+            if elem.exists {
+                print("    [\(i)] type=\(elem.elementType), identifier=\(elem.identifier), label=\(elem.label)")
             }
         }
 

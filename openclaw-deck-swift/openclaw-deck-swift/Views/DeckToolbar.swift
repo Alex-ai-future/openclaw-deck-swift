@@ -70,8 +70,9 @@ struct DeckToolbar: ToolbarContent {
                 showingNewSessionSheet = true
             } label: {
                 Image(systemName: "plus")
-                    .accessibilityIdentifier("NewSessionButton")
+                    .accessibilityHidden(true)
             }
+            .accessibilityIdentifier("NewSessionButton")
             .disabled(!viewModel.gatewayConnected)
 
             // 同步按钮
@@ -82,8 +83,9 @@ struct DeckToolbar: ToolbarContent {
                 showingSortSheet = true
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
-                    .accessibilityIdentifier("SortButton")
+                    .accessibilityHidden(true)
             }
+            .accessibilityIdentifier("SortButton")
         }
     }
 }

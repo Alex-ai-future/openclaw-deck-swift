@@ -222,20 +222,35 @@ struct SettingsView: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isConnected && !hasChanges ? "done".localized : "connect".localized) {
-                        // 保存配置
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        if !token.isEmpty {
-                            UserDefaultsStorage.shared.saveToken(token)
+                    if isConnected && hasChanges {
+                        Button("apply_reconnect".localized) {
+                            // 保存配置
+                            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                            if !token.isEmpty {
+                                UserDefaultsStorage.shared.saveToken(token)
+                            }
+                            onApplyAndReconnect()
                         }
-                        // 如果未连接或有改动，执行连接
-                        if !isConnected || hasChanges {
+                        .fontWeight(.semibold)
+                        .keyboardShortcut(.defaultAction)
+                    } else if isConnected && !hasChanges {
+                        Button("done".localized) {
+                            onClose?()
+                        }
+                        .fontWeight(.semibold)
+                        .keyboardShortcut(.defaultAction)
+                    } else {
+                        Button("connect".localized) {
+                            // 保存配置
+                            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                            if !token.isEmpty {
+                                UserDefaultsStorage.shared.saveToken(token)
+                            }
                             onConnect()
                         }
-                        onClose?()
+                        .fontWeight(.semibold)
+                        .keyboardShortcut(.defaultAction)
                     }
-                    .fontWeight(.semibold)
-                    .keyboardShortcut(.defaultAction)
                 }
             }
         }

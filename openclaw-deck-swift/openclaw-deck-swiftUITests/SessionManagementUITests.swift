@@ -33,7 +33,7 @@ final class SessionManagementUITests: XCTestCase {
         sleep(2)
 
         // 检查当前界面状态
-        let newSessionButton = app.buttons["NewSessionButton"]
+        let newSessionButton = app.buttons["NewSessionButton"].firstMatch
         let settingsButton = app.buttons["settingsButton"]
 
         if newSessionButton.exists {
@@ -137,7 +137,7 @@ final class SessionManagementUITests: XCTestCase {
         print("\n📍 阶段 4：排序 - 完全反转会话顺序")
 
         // 点击排序按钮
-        let sortButton = app.buttons["SortButton"]
+        let sortButton = app.buttons["SortButton"].firstMatch
         XCTAssertTrue(
             sortButton.waitForExistence(timeout: 5),
             "排序按钮 (SortButton) 必须存在"
@@ -243,7 +243,7 @@ final class SessionManagementUITests: XCTestCase {
     /// 创建会话
     private func createSession(name: String, note: String) {
         // 点击新建会话按钮
-        let newSessionButton = app.buttons["NewSessionButton"]
+        let newSessionButton = app.buttons["NewSessionButton"].firstMatch
         XCTAssertTrue(
             newSessionButton.waitForExistence(timeout: 5),
             "新建会话按钮 (NewSessionButton) 必须存在"
@@ -287,6 +287,9 @@ final class SessionManagementUITests: XCTestCase {
             createSheet.waitForExistence(timeout: 3),
             "创建后会话弹窗必须关闭"
         )
+        
+        // 等待焦点重置
+        sleep(2)
 
         // 验证会话出现在列表中
         let sessionButtons = getSessionButtons()
@@ -308,6 +311,7 @@ final class SessionManagementUITests: XCTestCase {
 
         // 点击选中会话
         sessionButtons[index].forceTap()
+        sleep(1)
 
         // 在消息输入框输入
         let messageInput = app.textFields["messageInput"]
@@ -315,7 +319,11 @@ final class SessionManagementUITests: XCTestCase {
             messageInput.waitForExistence(timeout: 3),
             "消息输入框 (messageInput) 必须存在"
         )
-        messageInput.tap()
+        
+        // 双击确保获得焦点
+        messageInput.doubleTap()
+        sleep(1)
+        
         messageInput.typeText(message)
 
         // 点击发送按钮

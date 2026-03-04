@@ -65,9 +65,9 @@ struct ContentView: View {
     var body: some View {
         Group {
             // ✅ 优先检查加载状态，确保加载完成前不显示主界面
-            if viewModel.gatewayConnected || ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
-                // 加载中时显示 LoadingView（跳过 connecting 状态）
-                if viewModel.loadingStage != .idle && viewModel.loadingStage != .connecting {
+            if viewModel.gatewayConnected || viewModel.isInitializing || ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+                // 加载中时显示 LoadingView（包括 connecting 状态）
+                if viewModel.loadingStage != .idle {
                     LoadingView(
                         stage: viewModel.loadingStage,
                         progress: viewModel.loadingProgress

@@ -300,7 +300,6 @@ final class DeckViewModelExtendedTests: XCTestCase {
         XCTAssertFalse(saved)
     }
 
-
     func testIsSyncing_defaultValue() {
         XCTAssertFalse(viewModel.isSyncing)
     }

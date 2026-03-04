@@ -1014,7 +1014,7 @@ class DeckViewModel {
                 logger.error("Failed to send message: \(error.localizedDescription)")
                 await MainActor.run {
                     // ❌ 失败时移除用户消息
-                    if let index = session.messages.firstIndex(where: { \$0.id == userMsg.id }) {
+                    if let index = session.messages.firstIndex(where: { $0.id == userMsg.id }) {
                         session.messages.remove(at: index)
                     }
 

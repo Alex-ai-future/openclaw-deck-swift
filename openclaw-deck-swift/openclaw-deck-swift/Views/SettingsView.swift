@@ -101,7 +101,7 @@ struct SettingsView: View {
 
                     // Cloudflare KV Sync
                     NavigationLink {
-                        CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
+                        CloudflareSettingsView(onClose: nil, viewModel: viewModel)
                     } label: {
                         HStack {
                             Label(
@@ -137,7 +137,7 @@ struct SettingsView: View {
                     .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
                         Button("cancel".localized, role: .cancel) {}
                         Button("reset".localized, role: .destructive) {
-                            onResetDeviceIdentity?()
+                            viewModel?.resetDeviceIdentity(); dismiss()
                         }
                     } message: {
                         Text(
@@ -237,7 +237,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     if isConnected, !hasChanges {
                         Button("done".localized) {
-                            onClose?()
+                            dismiss()
                         }
                         .fontWeight(.semibold)
                         .keyboardShortcut(.defaultAction)

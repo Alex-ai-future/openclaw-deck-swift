@@ -134,12 +134,6 @@ class DeckViewModel {
     /// 连接错误信息
     var connectionError: String?
 
-    /// 是否正在重连
-    var isReconnecting: Bool = false
-
-    /// 重连尝试次数
-    var reconnectAttempts: Int = 0
-
     /// 应用配置
     var config: AppConfig = .default
 
@@ -299,9 +293,7 @@ class DeckViewModel {
                         // 加载所有历史
                         self.loadingStage = .fetchingMessages
                         self.loadingProgress = 0.8
-                        Task { @MainActor in
-                            await self.loadAllSessionHistory()
-                        }
+                        await self.loadAllSessionHistory()
                     }
 
                     // 所有数据加载完成，设置 100%

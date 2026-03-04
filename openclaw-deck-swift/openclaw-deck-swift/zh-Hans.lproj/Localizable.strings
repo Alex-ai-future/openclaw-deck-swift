@@ -177,7 +177,6 @@
 // MARK: - Session Details
 "session_details" = "会话详情";
 "basic_info" = "基础信息";
-"status" = "状态";
 "message_stats" = "消息统计";
 "timeline" = "时间线";
 "load_status" = "加载状态";
@@ -185,7 +184,6 @@
 "last_activity" = "最后活动";
 "first_message" = "第一条消息";
 "history_loaded" = "历史已加载";
-"loading_history" = "正在加载历史...";
 "loading_messages" = "正在加载消息...";
 "confirm_delete" = "确认删除";
 "delete_session_confirm_message" = "确定要删除这个会话吗？此操作不可恢复。";
@@ -203,7 +201,6 @@
 
 // MARK: - New Session Confirmation
 "confirm_new_session" = "确认新建对话";
-"confirm" = "确定";
 "new_session_confirm_message" = "这将开始一个新的对话，当前上下文将被清空。确定继续吗？";
 
 // MARK: - Session Details (补充)

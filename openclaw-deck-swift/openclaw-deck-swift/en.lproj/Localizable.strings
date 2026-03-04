@@ -151,7 +151,6 @@
 "view_complete_usage_instructions_and_troubleshooting_guide" = "View complete usage instructions and troubleshooting guide";
 "welcome" = "Welcome";
 "wshostport" = "ws://host:port";
-"保存到本地存储" = "保存到本地存储";
 "sound_on_message" = "Sound on Message";
 "this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered" = "This will clear the stored device identity and token, then reconnect using the token you entered.";
 "this_will_remove_the_session_from_the_deck_messages_are_stored_in_gateway_and_can_be_reloaded" = "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded.";
@@ -177,7 +176,6 @@
 // MARK: - Session Details
 "session_details" = "Session Details";
 "basic_info" = "Basic Info";
-"status" = "Status";
 "message_stats" = "Message Stats";
 "timeline" = "Timeline";
 "load_status" = "Load Status";
@@ -185,7 +183,6 @@
 "last_activity" = "Last Activity";
 "first_message" = "First Message";
 "history_loaded" = "History loaded";
-"loading_history" = "Loading history...";
 "loading_messages" = "Loading messages...";
 "confirm_delete" = "Confirm Delete";
 "delete_session_confirm_message" = "Are you sure you want to delete this session? This action cannot be undone.";
@@ -203,7 +200,6 @@
 
 // MARK: - New Session Confirmation
 "confirm_new_session" = "Confirm New Session";
-"confirm" = "Confirm";
 "new_session_confirm_message" = "This will start a new conversation and clear the current context. Are you sure you want to continue?";
 
 // MARK: - Session Details (补充)

@@ -48,7 +48,6 @@ struct DeckCommonContainer<Content: View>: View {
                         viewModel.disconnect()
                         showingSettings = false
                     },
-
                     onConnect: {
                         Task {
                             await viewModel.initialize(

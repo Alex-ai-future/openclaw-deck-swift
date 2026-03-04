@@ -131,7 +131,6 @@ struct SessionListView: View {
                         viewModel.disconnect()
                         showingSettings = false
                     },
-                    onApplyAndReconnect: {},
                     onConnect: {
                         Task {
                             await viewModel.initialize(

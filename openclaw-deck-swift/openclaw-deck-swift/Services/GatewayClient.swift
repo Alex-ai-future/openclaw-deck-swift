@@ -125,6 +125,23 @@ class GatewayClient: GatewayClientProtocol {
     /// Whether challenge has been completed (success or timeout)
     private var challengeCompleted: Bool = false
 
+    // MARK: - Auto Reconnect
+
+    /// 是否正在自动重连
+    private var isAutoReconnecting: Bool = false
+
+    /// 重连尝试次数
+    private var reconnectAttempts: Int = 0
+
+    /// 最多重连次数
+    private let maxReconnectAttempts: Int = 3
+
+    /// 重连任务
+    private var reconnectTask: Task<Void, Never>?
+
+    /// 重连延迟（纳秒）
+    private let reconnectDelayNs: UInt64 = 2_000_000_000 // 2 秒
+
     // MARK: - Callbacks
 
     /// 事件回调（接收来自 Gateway 的事件）
@@ -252,8 +269,14 @@ class GatewayClient: GatewayClientProtocol {
         }
     }
 
-    /// 断开连接
+    /// 断开连接（手动断开，取消自动重连）
     func disconnect() {
+        // ✅ 取消自动重连任务（手动断开时不重连）
+        isAutoReconnecting = false
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        reconnectAttempts = 0
+
         let wasConnected = connected
         connected = false
         isConnecting = false
@@ -670,7 +693,8 @@ class GatewayClient: GatewayClientProtocol {
     }
 
     /// 发送 connect 握手
-    private func sendConnect() async {
+    /// - Parameter silent: 是否静默连接（不触发 onConnection 回调）
+    private func sendConnect(silent: Bool = false) async {
         if connectSent {
             return
         }
@@ -722,13 +746,21 @@ class GatewayClient: GatewayClientProtocol {
             connected = true
             connectionError = nil
             isConnecting = false
-            onConnection?(true)
+
+            // ✅ 静默模式不触发回调（用于自动重连）
+            if !silent {
+                onConnection?(true)
+            } else {
+                logger.debug("🔇 Silent connect: skipping onConnection callback")
+            }
 
         } catch {
             logger.error("❌ connect 握手失败：\(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
-            onConnection?(false)
+            if !silent {
+                onConnection?(false)
+            }
             disconnect()
         }
     }
@@ -945,25 +977,103 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 处理断开连接
     private func handleDisconnect() {
-        let wasConnected = connected
-        connected = false
-        isConnecting = false
+        // ✅ 启动静默重连，不立即通知 UI
+        startSilentReconnect()
+    }
 
-        if wasConnected {
-            onConnection?(false)
+    /// 启动静默重连（后台自动重连，不影响 UI）
+    private func startSilentReconnect() {
+        guard !isAutoReconnecting else {
+            logger.warning("⚠️ Already reconnecting, skipping")
+            return
         }
 
-        // 拒绝所有待处理请求
-        for (_, pending) in pendingRequests {
-            pending.continuation.resume(
-                throwing: NSError(
-                    domain: "GatewayClient",
-                    code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
-                )
-            )
+        isAutoReconnecting = true
+        reconnectTask?.cancel()
+
+        reconnectTask = Task { [weak self] in
+            guard let self else { return }
+
+            // 等待重连延迟（给网络恢复的时间）
+            do {
+                try await Task.sleep(nanoseconds: self.reconnectDelayNs)
+            } catch {
+                // Task cancelled
+                return
+            }
+
+            // 检查是否还需要重连
+            guard self.isAutoReconnecting else { return }
+
+            await self.reconnect()
         }
-        pendingRequests.removeAll()
+    }
+
+    /// 执行重连（静默）
+    private func reconnect() async {
+        reconnectAttempts += 1
+        logger.info("🔄 Auto-reconnecting (attempt \(self.reconnectAttempts)/\(self.maxReconnectAttempts))...")
+
+        // 重置 WebSocket 连接
+        webSocket?.cancel(with: .normalClosure, reason: nil)
+        webSocket = nil
+
+        do {
+            let session = URLSession.shared
+            var request = URLRequest(url: url)
+            let origin = url.absoluteString
+                .replacingOccurrences(of: "ws://", with: "http://")
+                .replacingOccurrences(of: "wss://", with: "https://")
+            request.setValue(origin, forHTTPHeaderField: "Origin")
+            webSocket = session.webSocketTask(with: request)
+            webSocket?.resume()
+
+            // 开始接收消息
+            await receiveMessage()
+
+            // 等待连接挑战
+            try await waitForChallenge()
+
+            // 发送 connect 握手（静默模式，不触发 UI 回调）
+            await sendConnect(silent: true)
+
+            // ✅ 重连成功：重置状态，不调用回调（UI 无感知）
+            isAutoReconnecting = false
+            reconnectAttempts = 0
+            connected = true
+            logger.info("✅ Auto-reconnect succeeded (silent)")
+
+        } catch {
+            logger.error("❌ Auto-reconnect attempt \(self.reconnectAttempts) failed: \(error.localizedDescription)")
+
+            // 检查是否达到最大重试次数
+            if reconnectAttempts >= maxReconnectAttempts {
+                // ❌ 重连彻底失败，通知 UI
+                logger.error("❌ Auto-reconnect failed after \(self.maxReconnectAttempts) attempts, notifying UI")
+                isAutoReconnecting = false
+                connected = false
+                isConnecting = false
+                connectionError = "网络断开，请检查连接"
+
+                // 拒绝所有待处理请求
+                for (_, pending) in pendingRequests {
+                    pending.continuation.resume(
+                        throwing: NSError(
+                            domain: "GatewayClient",
+                            code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
+                        )
+                    )
+                }
+                pendingRequests.removeAll()
+
+                onConnection?(false) // ← 现在才通知 UI
+            } else {
+                // 继续下一次重连
+                isAutoReconnecting = false
+                startSilentReconnect()
+            }
+        }
     }
 
     /// 处理请求超时

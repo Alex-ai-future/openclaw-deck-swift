@@ -57,57 +57,61 @@ struct SessionListView: View {
             }
             .listStyle(.plain)
             .navigationTitle("openclaw_deck".localized)
-            .navigationBarTitleDisplayMode(.large)
-            .accessibilityIdentifier("SessionList")
-            .toolbar {
-                DeckToolbar(
-                    viewModel: viewModel,
-                    showingSettings: $showingSettings,
-                    showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet
-                )
-            }
-            .navigationDestination(for: SessionState.self) { session in
-                SessionColumnView(
-                    session: session,
-                    viewModel: viewModel,
-                    isSelected: true
-                )
-                .navigationBarTitleDisplayMode(.inline)
-                .onAppear {
-                    session.hasUnreadMessage = false
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.large)
+            #endif
+                .accessibilityIdentifier("SessionList")
+                .toolbar {
+                    DeckToolbar(
+                        viewModel: viewModel,
+                        showingSettings: $showingSettings,
+                        showingNewSessionSheet: $showingNewSessionSheet,
+                        showingSortSheet: $showingSortSheet
+                    )
                 }
-            }
-            .task {
-                guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
-                hasAttemptedAutoConnect = true
-
-                if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
-                    let savedToken = UserDefaultsStorage.shared.loadToken()
-                    await viewModel.initialize(url: savedUrl, token: savedToken)
+                .navigationDestination(for: SessionState.self) { session in
+                    SessionColumnView(
+                        session: session,
+                        viewModel: viewModel,
+                        isSelected: true
+                    )
+                    #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                    #endif
+                    .onAppear {
+                        session.hasUnreadMessage = false
+                    }
                 }
+                .task {
+                    guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
+                    hasAttemptedAutoConnect = true
 
-                logSessionData()
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView(isConnected: $viewModel.gatewayConnected, viewModel: viewModel)
-            }
-            .sheet(isPresented: $showingNewSessionSheet) {
-                NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
-            }
-            .sheet(isPresented: $showingSortSheet) {
-                SessionSortView(viewModel: viewModel)
-            }
-            .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                if let sessionId = deleteSessionId {
-                    Task.detached { [weak viewModel] in
-                        await viewModel?.deleteSession(sessionId: sessionId)
-                        await MainActor.run {
-                            deleteSessionId = nil
+                    if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
+                        let savedToken = UserDefaultsStorage.shared.loadToken()
+                        await viewModel.initialize(url: savedUrl, token: savedToken)
+                    }
+
+                    logSessionData()
+                }
+                .sheet(isPresented: $showingSettings) {
+                    SettingsView(isConnected: $viewModel.gatewayConnected, viewModel: viewModel)
+                }
+                .sheet(isPresented: $showingNewSessionSheet) {
+                    NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
+                }
+                .sheet(isPresented: $showingSortSheet) {
+                    SessionSortView(viewModel: viewModel)
+                }
+                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+                    if let sessionId = deleteSessionId {
+                        Task.detached { [weak viewModel] in
+                            await viewModel?.deleteSession(sessionId: sessionId)
+                            await MainActor.run {
+                                deleteSessionId = nil
+                            }
                         }
                     }
                 }
-            }
         }
     }
 
@@ -184,7 +188,7 @@ struct SessionRowView: View {
                 } else {
                     Text("No messages yet")
                         .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(.tertiary)
+                        .foregroundStyle(.tertiary)
                 }
             }
 

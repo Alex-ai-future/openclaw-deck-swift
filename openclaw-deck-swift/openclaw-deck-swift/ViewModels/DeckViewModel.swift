@@ -319,9 +319,7 @@ class DeckViewModel {
     }
 
     /// 连接成功后初始化（加载会话列表和消息历史）
-    /// 连接成功后初始化（加载会话列表和消息历史）
     /// - Parameter mode: 历史加载模式（默认 .full）
-    @MainActor
     @MainActor
     private func initializeAfterConnect(mode: HistoryLoadMode = .full) async {
         // 连接成功，更新进度

@@ -41,21 +41,6 @@ struct GatewayConfigInput: View {
         #if os(iOS) || os(visionOS)
             .autocapitalization(.none)
         #endif
-
-        // Connect Button (只在初始页面显示)
-        if !isConnected {
-            Button {
-                onConnect()
-            } label: {
-                HStack {
-                    Image(systemName: "plug")
-                    Text("connect".localized)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-        }
     }
 }
 

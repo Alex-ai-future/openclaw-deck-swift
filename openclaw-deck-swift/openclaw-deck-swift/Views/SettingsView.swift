@@ -222,15 +222,15 @@ struct SettingsView: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
+                    Button(isConnected && !hasChanges ? "done".localized : "connect".localized) {
                         // 保存配置
                         UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
                         if !token.isEmpty {
                             UserDefaultsStorage.shared.saveToken(token)
                         }
-                        // 如果有改动，先重连再关闭
-                        if hasChanges {
-                            onApplyAndReconnect()
+                        // 如果未连接或有改动，执行连接
+                        if !isConnected || hasChanges {
+                            onConnect()
                         }
                         onClose?()
                     }

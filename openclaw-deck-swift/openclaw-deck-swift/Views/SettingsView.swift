@@ -28,7 +28,6 @@ struct SettingsView: View {
     init(
         isConnected: Binding<Bool>,
         onDisconnect: @escaping () -> Void,
-        onApplyAndReconnect: @escaping () -> Void,
         onConnect: @escaping () -> Void,
         onResetDeviceIdentity: (() -> Void)? = nil,
         onClose: (() -> Void)? = nil,
@@ -40,7 +39,6 @@ struct SettingsView: View {
         _token = State(initialValue: storage.loadToken() ?? "")
         _isConnected = isConnected
         self.onDisconnect = onDisconnect
-        self.onApplyAndReconnect = onApplyAndReconnect
         self.onConnect = onConnect
         self.onResetDeviceIdentity = onResetDeviceIdentity
         self.onClose = onClose
@@ -222,18 +220,7 @@ struct SettingsView: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    if isConnected && hasChanges {
-                        Button("apply_reconnect".localized) {
-                            // 保存配置
-                            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                            if !token.isEmpty {
-                                UserDefaultsStorage.shared.saveToken(token)
-                            }
-                            onApplyAndReconnect()
-                        }
-                        .fontWeight(.semibold)
-                        .keyboardShortcut(.defaultAction)
-                    } else if isConnected && !hasChanges {
+                    if isConnected, !hasChanges {
                         Button("done".localized) {
                             onClose?()
                         }

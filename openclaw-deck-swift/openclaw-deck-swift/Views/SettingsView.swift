@@ -26,7 +26,6 @@ struct SettingsView: View {
     init(
         isConnected: Binding<Bool>,
         onDisconnect: @escaping () -> Void,
-        onConnect _: @escaping () -> Void,
         onResetDeviceIdentity: (() -> Void)? = nil,
         onClose: (() -> Void)? = nil,
         viewModel: DeckViewModel? = nil
@@ -75,7 +74,6 @@ struct SettingsView: View {
                     GatewayConfigInput(
                         gatewayUrl: $gatewayUrl,
                         token: $token,
-                        onConnect: onConnect,
                         isConnected: isConnected
                     )
                 } header: {

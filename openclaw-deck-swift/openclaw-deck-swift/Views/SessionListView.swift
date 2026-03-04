@@ -72,15 +72,7 @@ struct SessionListView: View {
                     SessionColumnView(
                         session: session,
                         viewModel: viewModel,
-                        isSelected: true,
-                        onSelect: {
-                            viewModel.selectSession(session.sessionId)
-                        },
-                        onDelete: {
-                            Task.detached { [weak viewModel] in
-                                await viewModel?.deleteSession(sessionId: session.sessionId)
-                            }
-                        }
+                        isSelected: true
                     )
                     .navigationBarTitleDisplayMode(.inline)
                     .onAppear {
@@ -91,15 +83,7 @@ struct SessionListView: View {
                     SessionColumnView(
                         session: session,
                         viewModel: viewModel,
-                        isSelected: true,
-                        onSelect: {
-                            viewModel.selectSession(session.sessionId)
-                        },
-                        onDelete: {
-                            Task.detached { [weak viewModel] in
-                                await viewModel?.deleteSession(sessionId: session.sessionId)
-                            }
-                        }
+                        isSelected: true
                     )
                     .onAppear {
                         // 进入对话时自动标记为已读

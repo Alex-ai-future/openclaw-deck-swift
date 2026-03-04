@@ -17,9 +17,7 @@ import SwiftUI
 struct SessionColumnView: View {
     var session: SessionState
     var viewModel: DeckViewModel
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onDelete: () -> Void
+    var isSelected: Bool
 
     @State private var showingDeleteAlert = false
     @State private var showingNewAlert = false
@@ -225,7 +223,7 @@ struct SessionColumnView: View {
         .accessibilityIdentifier("SessionView-\(session.sessionId)")
         .contentShape(Rectangle())
         .onTapGesture {
-            onSelect()
+            viewModel.selectSession(session.sessionId)
             // 点击整个 Session 视图时消除未读状态
             session.hasUnreadMessage = false
         }
@@ -251,7 +249,7 @@ struct SessionColumnView: View {
         }
         #endif
         .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-            onDelete()
+            viewModel.deleteSession(sessionId: session.sessionId)
         }
         .alert("confirm_new_session".localized, isPresented: $showingNewAlert) {
             Button("cancel".localized, role: .cancel) {}
@@ -284,10 +282,7 @@ struct SessionColumnView: View {
         .sheet(isPresented: $showingSessionDetails) {
             SessionDetailView(
                 session: session,
-                onDelete: {
-                    showingDeleteAlert = true
-                    showingSessionDetails = false
-                }
+                viewModel: viewModel
             )
         }
     }
@@ -620,8 +615,6 @@ struct SessionColumnView: View {
         session: createSampleSession(),
         viewModel: DeckViewModel(),
         isSelected: true,
-        onSelect: {},
-        onDelete: {}
     )
 }
 
@@ -630,8 +623,6 @@ struct SessionColumnView: View {
         session: SessionState(sessionId: "empty", sessionKey: "agent:main:empty"),
         viewModel: DeckViewModel(),
         isSelected: true,
-        onSelect: {},
-        onDelete: {}
     )
 }
 
@@ -640,8 +631,6 @@ struct SessionColumnView: View {
         session: createStreamingSession(),
         viewModel: DeckViewModel(),
         isSelected: true,
-        onSelect: {},
-        onDelete: {}
     )
 }
 

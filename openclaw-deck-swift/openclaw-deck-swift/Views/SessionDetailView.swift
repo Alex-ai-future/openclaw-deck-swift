@@ -9,7 +9,7 @@ import SwiftUI
 /// Session 详情视图 - 极简布局
 struct SessionDetailView: View {
     let session: SessionState
-    let onDelete: () -> Void
+    var viewModel: DeckViewModel?
     @Environment(\.dismiss) var dismiss
     @State private var showingDeleteAlert = false
 
@@ -152,7 +152,7 @@ struct SessionDetailView: View {
                 Section {
                     Button(role: .destructive) {
                         // 直接删除，不显示确认弹窗（避免和父视图的弹窗冲突）
-                        onDelete()
+                        viewModel?.deleteSession(sessionId: session.sessionId)
                         dismiss()
                     } label: {
                         Text("delete_session".localized)
@@ -209,9 +209,7 @@ struct SessionDetailView: View {
 #Preview {
     SessionDetailView(
         session: createSampleSession(),
-        onDelete: {
-            print("Delete session (preview)")
-        }
+        viewModel: nil
     )
 }
 

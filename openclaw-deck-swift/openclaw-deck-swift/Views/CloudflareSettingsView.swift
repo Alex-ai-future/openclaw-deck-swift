@@ -29,7 +29,6 @@ struct CloudflareSettingsView: View {
         case apiToken
     }
 
-    var onClose: (() -> Void)?
     var viewModel: DeckViewModel?
 
     var body: some View {

@@ -120,7 +120,7 @@ final class SessionManagementUITests: XCTestCase {
 
         print("  ✅ 所有会话消息发送完成（连接失败已取消）")
 
-        // ========== 阶段 3：记录当前顺序 ==========
+        // ========== 阶段 3：排序 - 完全反转（移到发送消息后）==========
         print("\n📍 阶段 3：记录当前会话顺序")
 
         let sessionsBeforeSort = getSessionButtons()
@@ -133,7 +133,7 @@ final class SessionManagementUITests: XCTestCase {
             "排序前应该至少有 3 个会话"
         )
 
-        // ========== 阶段 4：排序 - 完全反转 ==========
+        // ========== 阶段 4：记录当前顺序（移到排序后）==========
         print("\n📍 阶段 4：排序 - 完全反转会话顺序")
 
         // 点击排序按钮
@@ -215,7 +215,7 @@ final class SessionManagementUITests: XCTestCase {
             print("  ✅ 已关闭排序弹窗")
         }
 
-        // ========== 阶段 5：删除所有新建会话 ==========
+        // ========== 阶段 5：删除所有新建会话（先检查数量）==========
         print("\n📍 阶段 5：删除所有新建会话")
 
         // 记录初始会话数量，只删除我们创建的会话

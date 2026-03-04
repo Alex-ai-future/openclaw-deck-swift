@@ -110,21 +110,7 @@ struct DeckView: View {
                         SessionColumnView(
                             session: session,
                             viewModel: viewModel,
-                            isSelected: sessionId == selectedSessionId,
-                            onSelect: {
-                                withAnimation {
-                                    selectedSessionId = sessionId
-                                    // hasUnreadMessage 在 .onChange 中统一处理
-                                }
-                            },
-                            onDelete: {
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
-                                    viewModel.deleteSession(sessionId: sessionId)
-                                    if selectedSessionId == sessionId {
-                                        selectedSessionId = nil
-                                    }
-                                }
-                            }
+                            isSelected: sessionId == selectedSessionId
                         )
                         .frame(width: 400)
                         .transition(

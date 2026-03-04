@@ -101,7 +101,7 @@ struct SettingsView: View {
 
                     // Cloudflare KV Sync
                     NavigationLink {
-                        CloudflareSettingsView(onClose: nil, viewModel: viewModel)
+                        CloudflareSettingsView(viewModel: viewModel)
                     } label: {
                         HStack {
                             Label(

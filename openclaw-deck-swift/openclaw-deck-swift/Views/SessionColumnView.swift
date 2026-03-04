@@ -277,11 +277,9 @@ struct SessionColumnView: View {
                     session.isProcessing
                         ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
                 )
+                .accessibilityIdentifier("Session-\(session.sessionId)")
         }
         .buttonStyle(.glass)
-        .accessibilityElement()
-        .accessibilityIdentifier("Session-\(session.sessionId)")
-        .accessibilityLabel(session.sessionId)
         .sheet(isPresented: $showingSessionDetails) {
             SessionDetailView(
                 session: session,

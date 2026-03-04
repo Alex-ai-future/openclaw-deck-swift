@@ -27,7 +27,6 @@ struct SettingsView: View {
     init(
         isConnected: Binding<Bool>,
         onDisconnect: @escaping () -> Void,
-        onApplyAndReconnect: @escaping () -> Void,
         onConnect: @escaping () -> Void,
         onResetDeviceIdentity: (() -> Void)? = nil,
         onClose: (() -> Void)? = nil,
@@ -39,7 +38,6 @@ struct SettingsView: View {
         _token = State(initialValue: storage.loadToken() ?? "")
         _isConnected = isConnected
         self.onDisconnect = onDisconnect
-        self.onApplyAndReconnect = onApplyAndReconnect
         self.onConnect = onConnect
         self.onResetDeviceIdentity = onResetDeviceIdentity
         self.onClose = onClose
@@ -92,28 +90,33 @@ struct SettingsView: View {
 
                 Section {
                     // Language Selector
-                    Picker("language".localized, selection: Binding(
-                        get: { languageManager.selectedLanguage },
-                        set: { languageManager.setLanguage($0) }
-                    )) {
+                    Picker(
+                        "language".localized,
+                        selection: Binding(
+                            get: { languageManager.selectedLanguage },
+                            set: { languageManager.setLanguage($0) }
+                        )
+                    ) {
                         ForEach(LanguageManager.Language.allCases) { language in
                             Text(language.displayName).tag(language)
                         }
                     }
 
                     // Notifications
-                    Toggle("sound_on_message".localized, systemImage: "speaker.wave.2",
-                           isOn: .init(
-                               get: { viewModel?.playSoundOnMessage ?? true },
-                               set: { viewModel?.playSoundOnMessage = $0 }
-                           ))
+                    Toggle(
+                        "sound_on_message".localized, systemImage: "speaker.wave.2",
+                        isOn: .init(
+                            get: { viewModel?.playSoundOnMessage ?? true },
+                            set: { viewModel?.playSoundOnMessage = $0 }
+                        ))
 
                     // Cloudflare KV Sync
                     NavigationLink {
                         CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
                     } label: {
                         HStack {
-                            Label("multi_device_sync".localized, systemImage: "icloud.and.arrow.down")
+                            Label(
+                                "multi_device_sync".localized, systemImage: "icloud.and.arrow.down")
                             Spacer()
                             if CloudflareKV.shared.isConfigured {
                                 Circle()
@@ -141,13 +144,16 @@ struct SettingsView: View {
                         }
                     }
                     .tint(.orange)
-                    .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
+                    .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert)
+                    {
                         Button("cancel".localized, role: .cancel) {}
                         Button("reset".localized, role: .destructive) {
                             onResetDeviceIdentity?()
                         }
                     } message: {
-                        Text("this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered".localized)
+                        Text(
+                            "this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered"
+                                .localized)
                     }
                 } header: {
                     Label("device".localized, systemImage: "iphone")
@@ -177,15 +183,29 @@ struct SettingsView: View {
                 // MARK: - 6. HELP
 
                 Section {
-                    Link(destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html")!) {
+                    Link(
+                        destination: URL(
+                            string:
+                                "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html"
+                        )!
+                    ) {
                         Label("user_guide".localized, systemImage: "book.fill")
                     }
 
-                    Link(destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/USAGE_EXAMPLES.html")!) {
+                    Link(
+                        destination: URL(
+                            string:
+                                "https://alex-ai-future.github.io/openclaw-deck-swift/USAGE_EXAMPLES.html"
+                        )!
+                    ) {
                         Label("usage_examples".localized, systemImage: "list.bullet.rectangle")
                     }
 
-                    Link(destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/PRIVACY.html")!) {
+                    Link(
+                        destination: URL(
+                            string:
+                                "https://alex-ai-future.github.io/openclaw-deck-swift/PRIVACY.html")!
+                    ) {
                         Label("privacy_policy".localized, systemImage: "shield.fill")
                     }
                 } header: {
@@ -205,8 +225,11 @@ struct SettingsView: View {
                     }
                     .font(.caption)
 
-                    Link("OpenClaw Documentation", destination: URL(string: "https://docs.openclaw.ai")!)
-                        .font(.caption)
+                    Link(
+                        "OpenClaw Documentation",
+                        destination: URL(string: "https://docs.openclaw.ai")!
+                    )
+                    .font(.caption)
                 } header: {
                     Label("about".localized, systemImage: "info.circle")
                 }
@@ -265,8 +288,6 @@ struct SettingsView: View {
     SettingsView(
         isConnected: .constant(true),
         onDisconnect: {},
-        onApplyAndReconnect: {},
-        onApplyAndReconnect: {},
         onConnect: {},
         onResetDeviceIdentity: {},
         onClose: {},

@@ -320,11 +320,15 @@ final class SessionManagementUITests: XCTestCase {
             "消息输入框 (messageInput) 必须存在"
         )
         
-        // 双击确保获得焦点
-        messageInput.doubleTap()
-        sleep(1)
+        // 点击输入框并等待获得焦点
+        messageInput.tap()
+        sleep(2)  // 增加等待时间
         
+
+        // 调试打印
+        print("  🔍 消息输入框：label='\(messageInput.label)', identifier='\(messageInput.identifier)'")
         messageInput.typeText(message)
+
 
         // 点击发送按钮
         let sendButton = app.buttons["sendButton"]

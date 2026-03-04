@@ -139,6 +139,10 @@ struct ContentView: View {
                     viewModel.disconnect()
                     showingSettings = false
                 },
+                onApplyAndReconnect: {
+                    viewModel.disconnect()
+                    showingSettings = false
+                },
                 onConnect: {
                     Task {
                         await viewModel.initialize(url: UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789", token: UserDefaultsStorage.shared.loadToken())
@@ -155,6 +159,10 @@ struct ContentView: View {
             SettingsView(
                 isConnected: .constant(false),
                 onDisconnect: {
+                    viewModel.disconnect()
+                    showingWelcomeSettings = false
+                },
+                onApplyAndReconnect: {
                     viewModel.disconnect()
                     showingWelcomeSettings = false
                 },

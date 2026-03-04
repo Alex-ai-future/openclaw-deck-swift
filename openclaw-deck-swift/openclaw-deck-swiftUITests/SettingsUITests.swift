@@ -124,7 +124,12 @@ final class SettingsUITests: XCTestCase {
             applyButton.waitForExistence(timeout: 3),
             "修改配置后必须显示 'Connect' 或 '连接' 按钮"
         )
-        print("  ✅ 连接按钮已显示：label=\(applyButton.label), identifier=\(applyButton.identifier)")
+        // 调试打印：显示实际找到的按钮信息
+        print("  🔍 连接按钮调试信息：")
+        print("     - label: '\(applyButton.label)'")
+        print("     - identifier: '\(applyButton.identifier)'")
+        print("     - exists: \(applyButton.exists)")
+        print("  ✅ 连接按钮已显示")
 
         // ========== 阶段 2：点击取消并验证不保存 ==========
         print("\n📍 阶段 2：点击取消并验证配置未保存")

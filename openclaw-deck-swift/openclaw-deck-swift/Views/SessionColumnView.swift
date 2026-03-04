@@ -24,7 +24,7 @@ struct SessionColumnView: View {
     @State private var showingDeleteAlert = false
     @State private var showingNewAlert = false
     @State private var showingSessionDetails = false
-    @State private var scrollTargetId: String?  // 待滚动的目标消息 ID
+    @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
     /// 滚动到底部（手动点击按钮）
     private func scrollToBottom() {
@@ -121,7 +121,6 @@ struct SessionColumnView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-
             // 消息列表和浮动按钮 - 使用 ZStack 但让消息列表可以压缩
             ZStack(alignment: .bottom) {
                 // 顶部状态条（iPad + macOS）- 临时移到外面测试 accessibility
@@ -240,14 +239,14 @@ struct SessionColumnView: View {
         }
         // iPhone 上使用 NavigationBar 工具栏显示对话名字
         #if os(iOS)
-            .toolbar {
-                if UIDevice.current.userInterfaceIdiom == .phone {
-                    // 中间：对话名字按钮（玻璃按钮，本身是 Menu）
-                    ToolbarItem(placement: .principal) {
-                        sessionNameButton
-                    }
+        .toolbar {
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                // 中间：对话名字按钮（玻璃按钮，本身是 Menu）
+                ToolbarItem(placement: .principal) {
+                    sessionNameButton
                 }
             }
+        }
         #endif
         .deleteSessionAlert(isPresented: $showingDeleteAlert) {
             onDelete()
@@ -667,34 +666,34 @@ private func createSampleSession() -> SessionState {
             id: "msg-2",
             role: .assistant,
             text: """
-                **SwiftUI** is Apple's modern declarative UI framework for building user interfaces across all Apple platforms.
+            **SwiftUI** is Apple's modern declarative UI framework for building user interfaces across all Apple platforms.
 
-                ## Key Features
+            ## Key Features
 
-                - **Declarative Syntax**: Describe your UI in a straightforward manner
-                - **Cross-platform**: Works on iOS, iPadOS, macOS, watchOS, and tvOS
-                - **State-driven**: Automatically updates UI when data changes
-                - **Preview support**: See your UI in real-time while coding
+            - **Declarative Syntax**: Describe your UI in a straightforward manner
+            - **Cross-platform**: Works on iOS, iPadOS, macOS, watchOS, and tvOS
+            - **State-driven**: Automatically updates UI when data changes
+            - **Preview support**: See your UI in real-time while coding
 
-                Here's a simple example:
+            Here's a simple example:
 
-                ```swift
-                struct ContentView: View {
-                    @State private var count = 0
+            ```swift
+            struct ContentView: View {
+                @State private var count = 0
 
-                    var body: some View {
-                        VStack {
-                            Text("Count: \\(count)")
-                            Button("increment".localized) {
-                                count += 1
-                            }
+                var body: some View {
+                    VStack {
+                        Text("Count: \\(count)")
+                        Button("increment".localized) {
+                            count += 1
                         }
                     }
                 }
-                ```
+            }
+            ```
 
-                Would you like to know more about any specific SwiftUI feature?
-                """,
+            Would you like to know more about any specific SwiftUI feature?
+            """,
             timestamp: Date().addingTimeInterval(-240)
         )
     )
@@ -714,32 +713,32 @@ private func createSampleSession() -> SessionState {
             id: "msg-4",
             role: .assistant,
             text: """
-                `@State` is a property wrapper that manages **local state** in SwiftUI views.
+            `@State` is a property wrapper that manages **local state** in SwiftUI views.
 
-                ## How it works
+            ## How it works
 
-                1. **Value type storage**: Stores value types (structs, enums)
-                2. **Source of truth**: The view owns this data
-                3. **Automatic updates**: When `@State` changes, SwiftUI re-renders the view
+            1. **Value type storage**: Stores value types (structs, enums)
+            2. **Source of truth**: The view owns this data
+            3. **Automatic updates**: When `@State` changes, SwiftUI re-renders the view
 
-                ## Example
+            ## Example
 
-                ```swift
-                struct CounterView: View {
-                    @State private var count = 0
+            ```swift
+            struct CounterView: View {
+                @State private var count = 0
 
-                    var body: some View {
-                        Text("Count: \\(count)")
-                            .onTapGesture { count += 1 }
-                    }
+                var body: some View {
+                    Text("Count: \\(count)")
+                        .onTapGesture { count += 1 }
                 }
-                ```
+            }
+            ```
 
-                ## When to use
+            ## When to use
 
-                - ✅ Local UI state (toggle, text field, selection)
-                - ❌ Shared state between views (use `@Binding` or `@Observable`)
-                """,
+            - ✅ Local UI state (toggle, text field, selection)
+            - ❌ Shared state between views (use `@Binding` or `@Observable`)
+            """,
             timestamp: Date().addingTimeInterval(-60)
         )
     )
@@ -759,32 +758,32 @@ private func createSampleSession() -> SessionState {
             id: "msg-6",
             role: .assistant,
             text: """
-                `@Observable` is the **new macro** introduced in iOS 17/macOS 14 for managing observable data.
+            `@Observable` is the **new macro** introduced in iOS 17/macOS 14 for managing observable data.
 
-                ## Key differences from ObservableObject
+            ## Key differences from ObservableObject
 
-                | Feature | @Observable | ObservableObject |
-                |---------|-------------|------------------|
-                | Protocol | None needed | ObservableObject |
-                | Wrappers | No @Published | @Published required |
-                | Performance | Better | Good |
-                | iOS Support | iOS 17+ | iOS 13+ |
+            | Feature | @Observable | ObservableObject |
+            |---------|-------------|------------------|
+            | Protocol | None needed | ObservableObject |
+            | Wrappers | No @Published | @Published required |
+            | Performance | Better | Good |
+            | iOS Support | iOS 17+ | iOS 13+ |
 
-                ## Example
+            ## Example
 
-                ```swift
-                @Observable
-                class UserStore {
-                    var users: [User] = []
+            ```swift
+            @Observable
+            class UserStore {
+                var users: [User] = []
 
-                    func addUser(_ user: User) {
-                        users.append(user)
-                    }
+                func addUser(_ user: User) {
+                    users.append(user)
                 }
-                ```
+            }
+            ```
 
-                No `@Published` needed - the macro handles everything automatically!
-                """,
+            No `@Published` needed - the macro handles everything automatically!
+            """,
             timestamp: Date().addingTimeInterval(-15)
         )
     )
@@ -812,53 +811,53 @@ private func createStreamingSession() -> SessionState {
             id: "msg-2",
             role: .assistant,
             text: """
-                Swift's **async/await** is a modern concurrency model introduced in Swift 5.5.
+            Swift's **async/await** is a modern concurrency model introduced in Swift 5.5.
 
-                ## Basics
+            ## Basics
 
-                - `async` functions can be suspended without blocking threads
-                - `await` marks suspension points where you wait for async results
+            - `async` functions can be suspended without blocking threads
+            - `await` marks suspension points where you wait for async results
 
-                ```swift
-                func fetchData() async throws -> Data {
-                    let (data, _) = try await URLSession.shared.data(from: url)
-                    return data
-                }
-                ```
+            ```swift
+            func fetchData() async throws -> Data {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                return data
+            }
+            ```
 
-                ## Structured Concurrency
+            ## Structured Concurrency
 
-                Swift uses **structured concurrency** with tasks and task groups:
+            Swift uses **structured concurrency** with tasks and task groups:
 
-                ```swift
-                Task {
-                    let (image, data) = try await (
-                        loadImage(from: url1),
-                        loadImage(from: url2)
-                    )
-                }
-                ```
+            ```swift
+            Task {
+                let (image, data) = try await (
+                    loadImage(from: url1),
+                    loadImage(from: url2)
+                )
+            }
+            ```
 
-                ## Actors
+            ## Actors
 
-                Actors provide thread-safe access to mutable state:
+            Actors provide thread-safe access to mutable state:
 
-                ```swift
-                actor Counter {
-                    var value = 0
-                    func increment() { value += 1 }
-                }
-                ```
+            ```swift
+            actor Counter {
+                var value = 0
+                func increment() { value += 1 }
+            }
+            ```
 
-                ---
+            ---
 
-                The framework also includes:
-                - **Sendable** types for safe concurrent access
-                - **MainActor** for UI updates
-                - **Task priorities** for resource management
+            The framework also includes:
+            - **Sendable** types for safe concurrent access
+            - **MainActor** for UI updates
+            - **Task priorities** for resource management
 
-                Would you like examples of any specific concurrency pattern?
-                """,
+            Would you like examples of any specific concurrency pattern?
+            """,
             timestamp: Date().addingTimeInterval(-45),
             streaming: true
         )
@@ -890,7 +889,7 @@ private func createStreamingSession() -> SessionState {
                         .padding(.vertical, 4)
                         .padding(.trailing, 40)
                         .multilineTextAlignment(.leading)
-                        .lineLimit(1...7)
+                        .lineLimit(1 ... 7)
                         .frame(minHeight: 36, maxHeight: 150)
                         .tint(.accentColor)
 
@@ -950,7 +949,7 @@ private func createStreamingSession() -> SessionState {
                         .padding(.vertical, 4)
                         .padding(.trailing, 40)
                         .multilineTextAlignment(.leading)
-                        .lineLimit(1...7)
+                        .lineLimit(1 ... 7)
                         .frame(minHeight: 36, maxHeight: 150)
                         .tint(.accentColor)
 
@@ -1001,7 +1000,7 @@ private func createStreamingSession() -> SessionState {
                         .padding(.vertical, 4)
                         .padding(.trailing, 40)
                         .multilineTextAlignment(.leading)
-                        .lineLimit(1...7)
+                        .lineLimit(1 ... 7)
                         .frame(minHeight: 36, maxHeight: 150)
                         .tint(.accentColor)
 
@@ -1053,7 +1052,7 @@ private func createStreamingSession() -> SessionState {
                         .padding(.vertical, 4)
                         .padding(.trailing, 40)
                         .multilineTextAlignment(.leading)
-                        .lineLimit(1...7)
+                        .lineLimit(1 ... 7)
                         .frame(minHeight: 36, maxHeight: 150)
                         .tint(.accentColor)
 
@@ -1132,8 +1131,7 @@ struct HeightPreference: PreferenceKey {
 
                     // 测试不同颜色
                     HStack(spacing: 10) {
-                        Button(role: .none) {
-                        } label: {
+                        Button(role: .none) {} label: {
                             Text("orange".localized)
                                 .font(.caption)
                                 .padding(8)
@@ -1141,8 +1139,7 @@ struct HeightPreference: PreferenceKey {
                         .buttonStyle(.glass)
                         .tint(Color.orange)
 
-                        Button(role: .none) {
-                        } label: {
+                        Button(role: .none) {} label: {
                             Text("blue".localized)
                                 .font(.caption)
                                 .padding(8)
@@ -1150,8 +1147,7 @@ struct HeightPreference: PreferenceKey {
                         .buttonStyle(.glass)
                         .tint(Color.blue)
 
-                        Button(role: .none) {
-                        } label: {
+                        Button(role: .none) {} label: {
                             Text("red".localized)
                                 .font(.caption)
                                 .padding(8)
@@ -1162,8 +1158,7 @@ struct HeightPreference: PreferenceKey {
 
                     // 测试不同透明度
                     HStack(spacing: 10) {
-                        Button(role: .none) {
-                        } label: {
+                        Button(role: .none) {} label: {
                             Text("0.3")
                                 .font(.caption)
                                 .padding(8)
@@ -1171,8 +1166,7 @@ struct HeightPreference: PreferenceKey {
                         .buttonStyle(.glass)
                         .tint(Color.orange.opacity(0.3))
 
-                        Button(role: .none) {
-                        } label: {
+                        Button(role: .none) {} label: {
                             Text("0.5")
                                 .font(.caption)
                                 .padding(8)
@@ -1180,8 +1174,7 @@ struct HeightPreference: PreferenceKey {
                         .buttonStyle(.glass)
                         .tint(Color.orange.opacity(0.5))
 
-                        Button(role: .none) {
-                        } label: {
+                        Button(role: .none) {} label: {
                             Text("0.7")
                                 .font(.caption)
                                 .padding(8)

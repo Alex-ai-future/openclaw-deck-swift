@@ -1,10 +1,10 @@
-import SwiftUI
-
 // SessionListView.swift
 // OpenClaw Deck Swift
 //
-// Session 列表视图 - 用于 iPhone 单列布局
+// Session 列表视图 - iPhone 单列布局（简洁现代设计）
+
 import os.log
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "SessionListView")
 
@@ -38,25 +38,35 @@ struct SessionListView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            List {
-                // Session 列表
-                ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-                    if let session = viewModel.getSession(sessionId: sessionId) {
-                        NavigationLink(value: session) {
-                            SessionRowView(
-                                session: session,
-                                onRequestDelete: {
-                                    // 请求删除：设置待删除的 sessionId，显示弹窗
-                                    deleteSessionId = session.sessionId
-                                    showingDeleteAlert = true
+            Group {
+                if viewModel.sessionOrder.isEmpty {
+                    // 空状态
+                    EmptySessionListView(onCreateNew: {
+                        showingNewSessionSheet = true
+                    })
+                } else {
+                    // Session 列表
+                    List {
+                        ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
+                            if let session = viewModel.getSession(sessionId: sessionId) {
+                                NavigationLink(value: session) {
+                                    SessionRowView(
+                                        session: session,
+                                        onRequestDelete: {
+                                            deleteSessionId = session.sessionId
+                                            showingDeleteAlert = true
+                                        }
+                                    )
                                 }
-                            )
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            }
                         }
                     }
+                    .listStyle(.plain)
                 }
             }
-            .listStyle(.plain)
             .navigationTitle("openclaw_deck".localized)
+            .navigationBarTitleDisplayMode(.large)
             .accessibilityIdentifier("SessionList")
             .toolbar {
                 DeckToolbar(
@@ -67,32 +77,17 @@ struct SessionListView: View {
                 )
             }
             .navigationDestination(for: SessionState.self) { session in
-                // 跳转到聊天详情页面（使用现有的 SessionColumnView）
-                #if os(iOS)
-                    SessionColumnView(
-                        session: session,
-                        viewModel: viewModel,
-                        isSelected: true
-                    )
-                    .navigationBarTitleDisplayMode(.inline)
-                    .onAppear {
-                        // 进入对话时自动标记为已读
-                        session.hasUnreadMessage = false
-                    }
-                #else
-                    SessionColumnView(
-                        session: session,
-                        viewModel: viewModel,
-                        isSelected: true
-                    )
-                    .onAppear {
-                        // 进入对话时自动标记为已读
-                        session.hasUnreadMessage = false
-                    }
-                #endif
+                SessionColumnView(
+                    session: session,
+                    viewModel: viewModel,
+                    isSelected: true
+                )
+                .navigationBarTitleDisplayMode(.inline)
+                .onAppear {
+                    session.hasUnreadMessage = false
+                }
             }
             .task {
-                // Auto-connect on first launch if credentials exist
                 guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
                 hasAttemptedAutoConnect = true
 
@@ -101,30 +96,18 @@ struct SessionListView: View {
                     await viewModel.initialize(url: savedUrl, token: savedToken)
                 }
 
-                // 调试：打印会话数据
-                logSessionData()
-            }
-            .onAppear {
-                // 调试：每次视图出现时打印会话数据
                 logSessionData()
             }
             .sheet(isPresented: $showingSettings) {
-                SettingsView(
-                    isConnected: $viewModel.gatewayConnected,
-                    viewModel: viewModel
-                )
+                SettingsView(isConnected: $viewModel.gatewayConnected, viewModel: viewModel)
             }
             .sheet(isPresented: $showingNewSessionSheet) {
-                NewSessionSheet(
-                    viewModel: viewModel,
-                    isPresented: $showingNewSessionSheet
-                )
+                NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
             }
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
             }
             .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                // 用户确认删除
                 if let sessionId = deleteSessionId {
                     Task.detached { [weak viewModel] in
                         await viewModel?.deleteSession(sessionId: sessionId)
@@ -137,8 +120,6 @@ struct SessionListView: View {
         }
     }
 
-    // MARK: - Debug
-
     private func logSessionData() {
         logger.debug(
             "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
@@ -146,90 +127,154 @@ struct SessionListView: View {
     }
 }
 
+// MARK: - Empty State View
+
+/// 空状态视图 - 引导用户创建第一个 Session
+struct EmptySessionListView: View {
+    let onCreateNew: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "message.badge.filled.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.blue.opacity(0.8))
+
+            Text("No sessions yet")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Text("Create your first session to start chatting")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: onCreateNew) {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("New Session")
+                }
+                .fontWeight(.medium)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            .padding(.top, 8)
+
+            Spacer()
+        }
+        .padding()
+    }
+}
+
 // MARK: - Session Row View
 
-/// Session 行视图 - 用于列表展示
+/// Session 行视图 - 简洁现代设计
 struct SessionRowView: View {
     @Bindable var session: SessionState
     var onRequestDelete: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            // Session 图标
+            // Session 图标 - 圆角方形
             ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.1))
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue.opacity(0.15), Color.blue.opacity(0.05)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: 44, height: 44)
 
                 Text(session.sessionId.prefix(1).uppercased())
-                    .font(.headline)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.blue)
             }
 
             // Session 信息
             VStack(alignment: .leading, spacing: 4) {
-                Text(session.sessionId)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-                    .accessibilityIdentifier("Session-\(session.sessionId)")
+                HStack {
+                    Text(session.sessionId)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    // 状态指示器
+                    if session.isProcessing {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(Color.orange)
+                                .frame(width: 6, height: 6)
+                            Text("Processing")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.orange)
+                        }
+                    } else if session.hasUnreadMessage {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                            Text("New")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.green)
+                        }
+                    }
+                }
 
                 if let lastMessage = session.messages.last {
                     Text(lastMessage.text)
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text("no_messages".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text("No messages yet")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.tertiary)
                 }
             }
 
             Spacer()
-
-            // 状态标记：进行中（黄色）优先于未读消息（绿色）
-            if session.isProcessing {
-                Circle()
-                    .fill(Color.orange)
-                    .frame(width: 8, height: 8)
-            } else if session.hasUnreadMessage {
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 8, height: 8)
-            }
         }
         .padding(.vertical, 4)
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
-            // 左滑：根据当前状态显示已读/未读
             if session.hasUnreadMessage {
-                // 当前是未读 → 显示"已读"按钮
                 Button {
-                    session.hasUnreadMessage = false
+                    withAnimation(.spring(response: 0.3)) {
+                        session.hasUnreadMessage = false
+                    }
                 } label: {
-                    Label("mark_as_read".localized, systemImage: "checkmark.circle")
+                    Label("Read", systemImage: "checkmark.circle")
                 }
                 .tint(.green)
             } else {
-                // 当前是已读 → 显示"未读"按钮
                 Button {
-                    session.hasUnreadMessage = true
+                    withAnimation(.spring(response: 0.3)) {
+                        session.hasUnreadMessage = true
+                    }
                 } label: {
-                    Label("mark_as_unread".localized, systemImage: "circle")
+                    Label("Unread", systemImage: "circle")
                 }
                 .tint(.orange)
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            // 右滑：删除按钮（全滑动）
             Button(role: .destructive) {
                 onRequestDelete()
             } label: {
-                Label("delete_session_action".localized, systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         }
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     SessionListView(viewModel: DeckViewModel())

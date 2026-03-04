@@ -614,7 +614,7 @@ struct SessionColumnView: View {
     SessionColumnView(
         session: createSampleSession(),
         viewModel: DeckViewModel(),
-        isSelected: true,
+        isSelected: true
     )
 }
 
@@ -622,7 +622,7 @@ struct SessionColumnView: View {
     SessionColumnView(
         session: SessionState(sessionId: "empty", sessionKey: "agent:main:empty"),
         viewModel: DeckViewModel(),
-        isSelected: true,
+        isSelected: true
     )
 }
 
@@ -630,7 +630,7 @@ struct SessionColumnView: View {
     SessionColumnView(
         session: createStreamingSession(),
         viewModel: DeckViewModel(),
-        isSelected: true,
+        isSelected: true
     )
 }
 

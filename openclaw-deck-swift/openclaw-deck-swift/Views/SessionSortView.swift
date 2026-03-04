@@ -1,7 +1,7 @@
 // SessionSortView.swift
 // OpenClaw Deck Swift
 //
-// Session 排序表单视图
+// Session 排序表单视图 - 简洁现代设计
 
 import SwiftUI
 
@@ -25,50 +25,26 @@ struct SessionSortView: View {
                 Section {
                     ForEach(sortedOrder, id: \.self) { sessionId in
                         if let session = viewModel.sessions[sessionId] {
-                            HStack {
-                                // 拖拽手柄图标
-                                Image(systemName: "line.3.horizontal")
-                                    .font(.title3)
-                                    .foregroundColor(.secondary)
-                                    .padding(.trailing, 8)
-
-                                // Session 名称
-                                Text(session.sessionId)
-                                    .lineLimit(1)
-
-                                Spacer()
-
-                                // 消息数量徽章
-                                if session.messageCount > 0 {
-                                    Text("\(session.messageCount)")
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.secondary)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.secondary.opacity(0.1))
-                                        .cornerRadius(8)
-                                }
-                            }
-                            .padding(.vertical, 4)
+                            SessionSortRow(session: session)
+                                .padding(.vertical, 2)
                         }
                     }
                     .onMove { indices, newOffset in
-                        sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
+                        }
                     }
-                } footer: {
-                    Text("drag_to_reorder".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
             }
             .listStyle(.plain)
             .navigationTitle("sort_sessions".localized)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
                         dismiss()
                     }
+                    .foregroundColor(.secondary)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -88,6 +64,55 @@ struct SessionSortView: View {
     private func applySortOrder() {
         viewModel.sessionOrder = sortedOrder
         viewModel.saveSessionsToStorage()
+    }
+}
+
+// MARK: - Session Sort Row
+
+/// 排序行视图 - 简洁设计
+struct SessionSortRow: View {
+    let session: SessionState
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // 拖拽手柄 - subtle
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.tertiary)
+                .frame(width: 20)
+
+            // Session 图标
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 40, height: 40)
+
+                Text(session.sessionId.prefix(1).uppercased())
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.blue)
+            }
+
+            // Session 信息
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.sessionId)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+
+                if session.messageCount > 0 {
+                    Text("\(session.messageCount) messages")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("No messages")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.tertiary)
+                }
+            }
+
+            Spacer()
+        }
+        .contentShape(Rectangle())
     }
 }
 

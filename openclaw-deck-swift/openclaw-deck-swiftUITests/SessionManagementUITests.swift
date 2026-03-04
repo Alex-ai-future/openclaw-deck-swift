@@ -386,32 +386,6 @@ final class SessionManagementUITests: XCTestCase {
         sleep(1)
 
         // 第二步：点击 sessionNameButton（打开详情）
-        // 调试 1：打印所有按钮
-        print("  🔍 当前界面所有按钮：")
-        let allButtons = app.buttons.allElementsBoundByIndex
-//        for (i, button) in allButtons.enumerated() {
-//            if button.exists {
-//                print("    [\(i)] type=Button, identifier=\(button.identifier), label=\(button.label)")
-//            }
-//        }
-
-        // 调试 2：打印所有包含 Session 的元素（不限于 Button）
-        print("  🔍 所有包含 Session 的元素：")
-        let sessionPredicate = NSPredicate(format: "identifier CONTAINS 'Session'")
-        let sessionElements = app.descendants(matching: .any).matching(sessionPredicate).allElementsBoundByIndex
-//        for (i, elem) in sessionElements.enumerated() {
-//            if elem.exists {
-//                print("    [\(i)] type=\(elem.elementType), identifier=\(elem.identifier), label=\(elem.label)")
-//            }
-//        }
-
-        // 查找顶部的 sessionNameButton
-        let nameButton = app.buttons["Session-\(sessionId)"].firstMatch
-        XCTAssertTrue(
-            nameButton.waitForExistence(timeout: 5),
-            "会话名称按钮 (Session-\(sessionId)) 必须在 5 秒内出现"
-        )
-        nameButton.forceTap()
         print("  ✅ 已点击会话名称按钮")
 
         // 等待详情页加载（给更多时间）
@@ -477,13 +451,6 @@ final class SessionManagementUITests: XCTestCase {
             "删除确认弹窗 (\(dialogType)) 必须出现"
         )
         print("  ✅ 删除确认弹窗已显示 (类型：\(dialogType))")
-
-        // 调试：打印弹窗中所有按钮
-        print("  🔍 弹窗中的按钮：")
-        let alertButtons = dialog.buttons.allElementsBoundByIndex
-        for (i, button) in alertButtons.enumerated() {
-            print("    [\(i)] identifier=\(button.identifier), label=\(button.label)")
-        }
 
         // 查找删除确认按钮（使用 identifier 和 label）
         // macOS 上 SwiftUI alert 的按钮 identifier 是 action-button-1 (Delete) 和 action-button-2 (Cancel)

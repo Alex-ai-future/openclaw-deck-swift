@@ -314,14 +314,13 @@ class DeckViewModel {
             }
 
             // 连接成功，开始加载流程
-            await self.initializeAfterConnect(mode: .lazy)
+            await self.initializeAfterConnect()
         }
     }
 
     /// 连接成功后初始化（加载会话列表和消息历史）
-    /// - Parameter mode: 历史加载模式（默认 .full）
     @MainActor
-    private func initializeAfterConnect(mode: HistoryLoadMode = .full) async {
+    private func initializeAfterConnect() async {
         // 连接成功，更新进度
         loadingStage = .connecting
         loadingProgress = 0.2
@@ -335,7 +334,7 @@ class DeckViewModel {
             // 加载所有历史
             loadingStage = .fetchingMessages
             loadingProgress = 0.8
-            await loadAllSessionHistory(mode: mode)
+            await loadAllSessionHistory()
         }
 
         // 所有数据加载完成，设置 100%
@@ -909,39 +908,25 @@ class DeckViewModel {
 
     /// 加载所有 Session 的历史消息
     /// 历史加载模式
+    /// 加载所有 Session 的历史消息
+    /// - Parameter mode: 加载模式（.full 全量加载 / .lazy 懒加载）
+    /// 加载所有 Session 的历史消息
     @MainActor
     // 在 DeckViewModel.swift 中添加枚举和修改方法
 
-    // MARK: - History Load Mode
-
-    enum HistoryLoadMode {
-        case full // 全量加载（启动、手动同步）
-        case lazy // 懒加载（网络重连）
-    }
-
-    /// 加载所有 Session 的历史消息
-    /// - Parameter mode: 加载模式（.full 全量加载 / .lazy 懒加载）
     @MainActor
-    func loadAllSessionHistory(mode: HistoryLoadMode = .full) async {
+    @MainActor
+    func loadAllSessionHistory() async {
         // 开始加载
         loadingStage = .fetchingMessages
         loadingProgress = 0.8
 
         let totalCount = sessionOrder.count
         var loadedCount = 0
-        var skippedCount = 0
 
-        logger.info("📥 开始加载所有会话历史（模式：\(mode == .full ? "全量" : "懒加载")），共 \(totalCount) 个会话...")
+        logger.info("📥 开始加载所有会话历史，共 \(totalCount) 个会话...")
 
         for session in sessionOrder.compactMap({ sessions[$0] }) {
-            // 懒加载模式：如果已加载过且有消息，跳过
-            if mode == .lazy, session.historyLoaded, !session.messages.isEmpty {
-                logger.info("⏭️ 跳过会话 \(session.sessionId)（已有缓存）")
-                skippedCount += 1
-                loadedCount += 1
-                continue
-            }
-
             logger.info("📥 [\(loadedCount + 1)/\(totalCount)] 加载会话：\(session.sessionId)")
             await loadSessionHistory(sessionKey: session.sessionKey)
             loadedCount += 1
@@ -956,11 +941,7 @@ class DeckViewModel {
         }
 
         // 所有历史加载完成（不设置 100%，由调用方统一设置）
-        if skippedCount > 0 {
-            logger.info("✅ 所有会话历史加载完成（跳过 \(skippedCount) 个已有缓存的会话）")
-        } else {
-            logger.info("✅ 所有会话历史加载完成")
-        }
+        logger.info("✅ 所有会话历史加载完成")
     }
 
     func loadSessionHistory(sessionKey: String) async {

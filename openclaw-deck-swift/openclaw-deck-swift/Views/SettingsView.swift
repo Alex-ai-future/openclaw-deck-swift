@@ -264,7 +264,6 @@ struct SettingsView: View {
     SettingsView(
         isConnected: .constant(true),
         onDisconnect: {},
-        onApplyAndReconnect: {},
         onConnect: {},
         onResetDeviceIdentity: {},
         onClose: {},

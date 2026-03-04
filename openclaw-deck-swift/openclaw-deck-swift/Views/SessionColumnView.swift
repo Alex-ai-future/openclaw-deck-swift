@@ -323,7 +323,8 @@ struct SessionColumnView: View {
 
             Spacer()
         }
-        .padding(.top, 2)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Message List

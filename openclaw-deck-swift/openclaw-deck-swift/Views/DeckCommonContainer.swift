@@ -33,7 +33,8 @@ struct DeckCommonContainer<Content: View>: View {
             .onAppear {
                 // 初始化本地配置（如果没有外部传入）
                 if gatewayUrl == nil {
-                    localGatewayUrl = UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
+                    localGatewayUrl =
+                        UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789"
                 }
                 if token == nil {
                     localToken = UserDefaultsStorage.shared.loadToken() ?? ""
@@ -47,11 +48,14 @@ struct DeckCommonContainer<Content: View>: View {
                         viewModel.disconnect()
                         showingSettings = false
                     },
-                    onApplyAndReconnect: {
-                        showingSettings = false
-                    },
+
                     onConnect: {
-                        showingSettings = false
+                        Task {
+                            await viewModel.initialize(
+                                url: UserDefaultsStorage.shared.loadGatewayUrl() ?? "ws://127.0.0.1:18789",
+                                token: UserDefaultsStorage.shared.loadToken()
+                            )
+                        }
                     },
                     onResetDeviceIdentity: {
                         showingSettings = false

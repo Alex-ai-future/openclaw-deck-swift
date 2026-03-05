@@ -151,13 +151,15 @@ struct SessionDetailView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        // 直接删除，不显示确认弹窗（避免和父视图的弹窗冲突）
-                        viewModel?.deleteSession(sessionId: session.sessionId)
-                        dismiss()
+                        showingDeleteAlert = true
                     } label: {
                         Text("delete_session".localized)
                     }
                     .accessibilityIdentifier("deleteSessionButton")
+                }
+                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+                    viewModel?.deleteSession(sessionId: session.sessionId)
+                    dismiss()
                 }
             }
             .navigationTitle("session_details".localized)

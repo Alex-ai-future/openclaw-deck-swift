@@ -19,7 +19,6 @@ struct SessionColumnView: View {
     var viewModel: DeckViewModel
     var isSelected: Bool
 
-    @State private var showingDeleteAlert = false
     @State private var showingNewAlert = false
     @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
@@ -248,9 +247,6 @@ struct SessionColumnView: View {
             }
         }
         #endif
-        .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-            viewModel.deleteSession(sessionId: session.sessionId)
-        }
         .alert("confirm_new_session".localized, isPresented: $showingNewAlert) {
             Button("cancel".localized, role: .cancel) {}
             Button("confirm".localized, role: .destructive) {
@@ -288,18 +284,6 @@ struct SessionColumnView: View {
     }
 
     // MARK: - Session Menu Content (简化版 - 只保留快捷操作)
-
-    private var sessionMenuContent: some View {
-        Group {
-            Section {
-                Button(role: .destructive) {
-                    showingDeleteAlert = true
-                } label: {
-                    Label("delete_session".localized, systemImage: "trash.fill")
-                }
-            }
-        }
-    }
 
     // MARK: - Top Status Bar
 

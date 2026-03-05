@@ -1024,6 +1024,10 @@ class GatewayClient: GatewayClientProtocol {
         webSocket?.cancel(with: .normalClosure, reason: nil)
         webSocket = nil
 
+        // ✅ 重置 connectNonce，让重连时重新等待新的 nonce
+        connectNonce = nil
+        connectSent = false
+
         do {
             let session = URLSession.shared
             var request = URLRequest(url: url)

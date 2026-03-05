@@ -211,7 +211,7 @@ struct SessionDetailView: View {
                     Text(String(format: "archive_confirm_message".localized, session.messages.count))
                 }
                 .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                    viewModel?.deleteSession(sessionId: session.sessionId)
+                    viewModel?.deleteSession(id: session.sessionId)
                     dismiss()
                 }
         }
@@ -263,7 +263,7 @@ struct SessionDetailView: View {
 
 #Preview {
     SessionDetailView(
-        session: SessionState(sessionId: "test", sessionKey: "agent:main:test"),
+        session: SessionState(id: "test", sessionKey: "agent:main:test"),
         viewModel: DeckViewModel()
     )
 }

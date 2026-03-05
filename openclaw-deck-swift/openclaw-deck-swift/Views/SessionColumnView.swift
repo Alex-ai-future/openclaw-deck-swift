@@ -579,7 +579,7 @@ struct SessionColumnView: View {
 
 #Preview("Empty Session") {
     SessionColumnView(
-        session: SessionState(sessionId: "empty", sessionKey: "agent:main:empty"),
+        session: SessionState(id: "empty", sessionKey: "agent:main:empty"),
         viewModel: DeckViewModel(),
         isSelected: true
     )
@@ -597,7 +597,7 @@ struct SessionColumnView: View {
 
 private func createSampleSession() -> SessionState {
     let session = SessionState(
-        sessionId: "demo",
+        id: "demo",
         sessionKey: "agent:main:demo"
     )
 
@@ -743,7 +743,7 @@ private func createSampleSession() -> SessionState {
 
 private func createStreamingSession() -> SessionState {
     let session = SessionState(
-        sessionId: "streaming",
+        id: "streaming",
         sessionKey: "agent:main:streaming"
     )
 

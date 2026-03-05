@@ -207,7 +207,7 @@ extension View {
 
 #Preview("List Style") {
     SessionRowView(
-        session: SessionState(sessionId: "main", sessionKey: "agent:main:test"),
+        session: SessionState(id: "main", sessionKey: "agent:main:test"),
         style: .list,
         showStatus: true,
         showLastMessage: true
@@ -217,7 +217,7 @@ extension View {
 
 #Preview("Sort Style") {
     SessionRowView(
-        session: SessionState(sessionId: "main", sessionKey: "agent:main:test"),
+        session: SessionState(id: "main", sessionKey: "agent:main:test"),
         style: .sort,
         showStatus: false,
         showLastMessage: false

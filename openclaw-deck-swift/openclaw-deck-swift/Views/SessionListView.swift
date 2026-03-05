@@ -3,23 +3,23 @@
 //
 // Session 列表视图 - 使用 SwiftData @Query
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct SessionListView: View {
     @Bindable var viewModel: DeckViewModel
-    
+
     /// ✅ 一行代码绑定 DB，自动按 sortOrder 排序
     @Query(sort: \SessionState.sortOrder)
     private var sessions: [SessionState]
-    
+
     @State private var navigationPath = NavigationPath()
     @State private var showingSettings = false
     @State private var showingNewSessionSheet = false
     @State private var showingSortSheet = false
     @State private var showingDeleteAlert = false
     @State private var deleteSessionId: String?
-    
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             List {

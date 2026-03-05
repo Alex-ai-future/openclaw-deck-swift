@@ -295,7 +295,7 @@ class CloudflareKV: CloudflareKVProtocol {
         guard let config = CloudflareConfig.load(), config.isValid else {
             throw CloudflareError.notConfigured
         }
-        
+
         if let data = try await loadFromKV(config: config) {
             return data
         }
@@ -402,7 +402,6 @@ enum KeychainError: LocalizedError {
     }
 }
 
-
 // MARK: - Sync Extensions (SessionState helpers)
 
 @MainActor
@@ -416,8 +415,8 @@ extension CloudflareKV {
         guard let config = CloudflareConfig.load(), config.isValid else {
             throw CloudflareError.notConfigured
         }
-        
-        let sessionIds = sessions.map { $0.id }
+
+        let sessionIds = sessions.map(\.id)
         let syncData = SyncData(
             sessions: sessionIds,
             lastUpdated: ISO8601DateFormatter().string(from: Date())
@@ -425,7 +424,7 @@ extension CloudflareKV {
         try await saveToKV(syncData, config: config)
         saveLocalData(syncData)
     }
-    
+
     /// 从云端获取 Session ID 列表，并转换为 SessionState（仅 ID，其他字段为空）
     func fetchSessions() async throws -> [SessionState] {
         // 测试模式使用 Mock 实例
@@ -435,13 +434,13 @@ extension CloudflareKV {
         guard let config = CloudflareConfig.load(), config.isValid else {
             throw CloudflareError.notConfigured
         }
-        
+
         guard let syncData = try await loadFromKV(config: config) else {
             return []
         }
-        
+
         // 仅从 ID 创建 SessionState（其他字段需要本地填充）
-        return syncData.sessions.enumerated().map { (index, id) in
+        return syncData.sessions.enumerated().map { index, id in
             SessionState(
                 id: id,
                 sessionKey: "",

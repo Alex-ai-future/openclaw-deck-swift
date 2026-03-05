@@ -14,7 +14,7 @@ struct LoadingView: View {
         VStack(spacing: 24) {
             // 进度指示器
             Group {
-                if stage == .idle {
+                if stage == .ready {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.green)
@@ -27,14 +27,14 @@ struct LoadingView: View {
             }
 
             // 主标题
-            Text(stage.title)
+            Text(stage.description)
                 .font(.headline)
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
-                .animation(.easeInOut(duration: 0.3), value: stage.title)
+                .animation(.easeInOut(duration: 0.3), value: stage.description)
 
             // 进度条
-            if stage != .idle {
+            if stage != .ready && stage != .idle {
                 VStack(spacing: 8) {
                     ProgressView(value: progress)
                         .progressViewStyle(LinearProgressViewStyle())
@@ -48,15 +48,6 @@ struct LoadingView: View {
                 }
                 .transition(.opacity)
             }
-
-            // 副标题
-            if let subtitle = stage.subtitle {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .transition(.opacity)
-            }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,10 +60,10 @@ struct LoadingView: View {
 #if DEBUG
     #Preview {
         Group {
-            LoadingView(stage: .connecting, progress: 0.2)
-            LoadingView(stage: .fetchingSessions, progress: 0.5)
-            LoadingView(stage: .fetchingMessages, progress: 0.8)
-            LoadingView(stage: .syncingLocal, progress: 1.0)
+            LoadingView(stage: .initializing, progress: 0.2)
+            LoadingView(stage: .loadingSessions, progress: 0.5)
+            LoadingView(stage: .connectingToGateway, progress: 0.8)
+            LoadingView(stage: .ready, progress: 1.0)
         }
     }
 #endif

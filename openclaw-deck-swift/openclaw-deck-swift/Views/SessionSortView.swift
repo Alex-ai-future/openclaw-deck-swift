@@ -25,8 +25,14 @@ struct SessionSortView: View {
                 Section {
                     ForEach(sortedOrder, id: \.self) { sessionId in
                         if let session = viewModel.sessions[sessionId] {
-                            SessionSortRow(session: session)
-                                .padding(.vertical, 2)
+                            SessionRowView(
+                                session: session,
+                                style: .sort,
+                                showStatus: false,
+                                showLastMessage: false,
+                                onRequestDelete: nil
+                            )
+                            .padding(.vertical, 2)
                         }
                     }
                     .onMove { indices, newOffset in
@@ -66,55 +72,6 @@ struct SessionSortView: View {
     private func applySortOrder() {
         viewModel.sessionOrder = sortedOrder
         viewModel.saveSessionsToStorage()
-    }
-}
-
-// MARK: - Session Sort Row
-
-/// 排序行视图 - 简洁设计
-struct SessionSortRow: View {
-    let session: SessionState
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // 拖拽手柄 - subtle
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.tertiary)
-                .frame(width: 20)
-
-            // Session 图标
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 40, height: 40)
-
-                Text(session.sessionId.prefix(1).uppercased())
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.blue)
-            }
-
-            // Session 信息
-            VStack(alignment: .leading, spacing: 2) {
-                Text(session.sessionId)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-
-                if session.messageCount > 0 {
-                    Text(String(format: "messages_count_format".localized, session.messageCount))
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("no_messages".localized)
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.secondary.opacity(0.6))
-                }
-            }
-
-            Spacer()
-        }
-        .contentShape(Rectangle())
     }
 }
 

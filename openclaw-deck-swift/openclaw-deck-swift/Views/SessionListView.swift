@@ -45,6 +45,9 @@ struct SessionListView: View {
                         NavigationLink(value: session) {
                             SessionRowView(
                                 session: session,
+                                style: .list,
+                                showStatus: true,
+                                showLastMessage: true,
                                 onRequestDelete: {
                                     deleteSessionId = session.sessionId
                                     showingDeleteAlert = true
@@ -119,110 +122,6 @@ struct SessionListView: View {
         logger.debug(
             "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
         )
-    }
-}
-
-// MARK: - Session Row View
-
-/// Session 行视图 - 简洁现代设计
-struct SessionRowView: View {
-    @Bindable var session: SessionState
-    var onRequestDelete: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Session 图标 - 圆角方形
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue.opacity(0.15), Color.blue.opacity(0.05)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 44, height: 44)
-
-                Text(session.sessionId.prefix(1).uppercased())
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.blue)
-            }
-
-            // Session 信息
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(session.sessionId)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    // 状态指示器
-                    if session.isProcessing {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color.orange)
-                                .frame(width: 6, height: 6)
-                            Text("processing_status".localized)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.orange)
-                        }
-                    } else if session.hasUnreadMessage {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 6, height: 6)
-                            Text("new_status".localized)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.green)
-                        }
-                    }
-                }
-
-                if let lastMessage = session.messages.last {
-                    Text(lastMessage.text)
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Text("no_messages_yet".localized)
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(.tertiary)
-                }
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-            if session.hasUnreadMessage {
-                Button {
-                    withAnimation(.spring(response: 0.3)) {
-                        session.hasUnreadMessage = false
-                    }
-                } label: {
-                    Label("Read", systemImage: "checkmark.circle")
-                }
-                .tint(.green)
-            } else {
-                Button {
-                    withAnimation(.spring(response: 0.3)) {
-                        session.hasUnreadMessage = true
-                    }
-                } label: {
-                    Label("Unread", systemImage: "circle")
-                }
-                .tint(.orange)
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(role: .destructive) {
-                onRequestDelete()
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
     }
 }
 

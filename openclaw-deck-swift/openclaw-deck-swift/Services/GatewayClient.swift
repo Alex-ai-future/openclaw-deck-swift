@@ -214,7 +214,7 @@ class GatewayClient: GatewayClientProtocol {
             try await waitForChallenge()
         } catch {
             logger.error("Failed to receive connect challenge: \(error.localizedDescription)")
-            connectionError = "connection_challenge_failed".localized
+            connectionError = error.localizedDescription
             isConnecting = false
             onConnection?(false)
             disconnect()
@@ -757,7 +757,7 @@ class GatewayClient: GatewayClientProtocol {
 
         } catch {
             logger.error("❌ connect 握手失败：\(error.localizedDescription)")
-            connectionError = "connection_handshake_failed".localized
+            connectionError = error.localizedDescription
             isConnecting = false
             if !silent {
                 onConnection?(false)

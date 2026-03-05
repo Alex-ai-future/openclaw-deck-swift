@@ -1,131 +1,147 @@
 // SessionListView.swift
 // OpenClaw Deck Swift
 //
-// Session 列表视图 - iPhone 单列布局（简洁现代设计）
+// Session 列表视图 - 使用 SwiftData @Query
 
-import os.log
 import SwiftUI
+import SwiftData
 
-private let logger = Logger(subsystem: "com.openclaw.deck", category: "SessionListView")
-
-/// Session 列表视图 - iPhone 专用
 struct SessionListView: View {
-    @State private var viewModel: DeckViewModel
+    @Bindable var viewModel: DeckViewModel
+    
+    /// ✅ 一行代码绑定 DB，自动按 sortOrder 排序
+    @Query(sort: \SessionState.sortOrder)
+    private var sessions: [SessionState]
+    
     @State private var navigationPath = NavigationPath()
     @State private var showingSettings = false
     @State private var showingNewSessionSheet = false
-    @State private var gatewayUrl = "ws://127.0.0.1:18789"
-    @State private var token = ""
-    @State private var hasAttemptedAutoConnect = false
+    @State private var showingSortSheet = false
     @State private var showingDeleteAlert = false
     @State private var deleteSessionId: String?
-
-    init(viewModel: DeckViewModel) {
-        _viewModel = State(initialValue: viewModel)
-
-        // 从 UserDefaults 加载配置
-        let storage = UserDefaultsStorage.shared
-        if let savedUrl = storage.loadGatewayUrl() {
-            _gatewayUrl = State(initialValue: savedUrl)
-        }
-        if let savedToken = storage.loadToken() {
-            _token = State(initialValue: savedToken)
-        }
-    }
-
-    /// 内部状态管理
-    @State private var showingSortSheet = false
-
+    
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            // Session 列表
             List {
-                ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-                    if let session = viewModel.getSession(sessionId: sessionId) {
-                        NavigationLink(value: session) {
-                            SessionRowView(
-                                session: session,
-                                style: .list,
-                                showStatus: true,
-                                showLastMessage: true,
-                                onRequestDelete: {
-                                    deleteSessionId = session.sessionId
-                                    showingDeleteAlert = true
-                                }
-                            )
-                        }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                ForEach(sessions.filter { !$0.isHidden }) { session in
+                    NavigationLink(value: session) {
+                        SessionRowView(
+                            session: session,
+                            onRequestDelete: {
+                                deleteSessionId = session.id
+                                showingDeleteAlert = true
+                            }
+                        )
                     }
                 }
             }
             .listStyle(.plain)
             .navigationTitle("openclaw_deck".localized)
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.large)
-            #endif
-                .accessibilityIdentifier("SessionList")
-                .toolbar {
-                    DeckToolbar(
-                        viewModel: viewModel,
-                        showingSettings: $showingSettings,
-                        showingNewSessionSheet: $showingNewSessionSheet,
-                        showingSortSheet: $showingSortSheet
-                    )
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                DeckToolbar(
+                    viewModel: viewModel,
+                    showingSettings: $showingSettings,
+                    showingNewSessionSheet: $showingNewSessionSheet,
+                    showingSortSheet: $showingSortSheet
+                )
+            }
+            .navigationDestination(for: SessionState.self) { session in
+                SessionColumnView(
+                    session: session,
+                    viewModel: viewModel,
+                    isSelected: true
+                )
+                .navigationBarTitleDisplayMode(.inline)
+                .onAppear {
+                    session.hasUnreadMessage = false
                 }
-                .navigationDestination(for: SessionState.self) { session in
-                    SessionColumnView(
-                        session: session,
-                        viewModel: viewModel,
-                        isSelected: true
-                    )
-                    #if os(iOS)
-                    .navigationBarTitleDisplayMode(.inline)
-                    #endif
-                    .onAppear {
-                        session.hasUnreadMessage = false
-                    }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView(isConnected: .constant(false), viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingNewSessionSheet) {
+                NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
+            }
+            .sheet(isPresented: $showingSortSheet) {
+                SessionSortView(viewModel: viewModel)
+            }
+            .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+                if let sessionId = deleteSessionId {
+                    viewModel.deleteSession(id: sessionId)
+                    deleteSessionId = nil
                 }
-                .task {
-                    guard !hasAttemptedAutoConnect, !(viewModel.gatewayClient?.connected ?? false) else { return }
-                    hasAttemptedAutoConnect = true
-
-                    if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
-                        let savedToken = UserDefaultsStorage.shared.loadToken()
-                        await viewModel.initialize(url: savedUrl, token: savedToken)
-                    }
-
-                    logSessionData()
-                }
-                .sheet(isPresented: $showingSettings) {
-                    SettingsView(isConnected: (viewModel.gatewayClient?.connected ?? false), viewModel: viewModel)
-                }
-                .sheet(isPresented: $showingNewSessionSheet) {
-                    NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
-                }
-                .sheet(isPresented: $showingSortSheet) {
-                    SessionSortView(viewModel: viewModel)
-                }
-                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                    if let sessionId = deleteSessionId {
-                        Task.detached { [weak viewModel] in
-                            await viewModel?.deleteSession(sessionId: sessionId)
-                            await MainActor.run {
-                                deleteSessionId = nil
-                            }
-                        }
-                    }
-                }
+            }
         }
-    }
-
-    private func logSessionData() {
-        logger.debug(
-            "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\((viewModel.gatewayClient?.connected ?? false))"
-        )
     }
 }
 
-// MARK: - Preview
+// MARK: - Session Row View
+
+struct SessionRowView: View {
+    let session: SessionState
+    var onRequestDelete: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Session 图标
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue.opacity(0.15), Color.blue.opacity(0.05)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+                
+                Text(session.name.prefix(1).uppercased())
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.blue)
+            }
+            
+            // Session 信息
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(session.name)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    if session.hasUnreadMessage {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                
+                if let lastMessage = session.messages.last {
+                    Text(lastMessage.text)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text("No messages yet")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 4)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                onRequestDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+}
 
 #Preview {
     SessionListView(viewModel: DeckViewModel())

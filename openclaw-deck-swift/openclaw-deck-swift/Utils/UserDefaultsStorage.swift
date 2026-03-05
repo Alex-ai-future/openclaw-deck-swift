@@ -115,6 +115,14 @@ class UserDefaultsStorage: UserDefaultsStorageProtocol {
         defaults.array(forKey: StorageKeys.sessionOrder.rawValue) as? [String] ?? []
     }
 
+    // MARK: - Clear Sessions
+
+    /// 清除 Session 数据（迁移后调用）
+    func clearSessions() {
+        defaults.removeObject(forKey: StorageKeys.sessionConfigs.rawValue)
+        defaults.removeObject(forKey: StorageKeys.sessionOrder.rawValue)
+    }
+
     // MARK: - Clear All
 
     /// 清除所有存储数据

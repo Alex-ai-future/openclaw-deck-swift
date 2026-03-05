@@ -60,7 +60,7 @@ final class DeckViewModelTests: XCTestCase {
     // MARK: - Connection Tests
 
     func testClearConnectionError() {
-        viewModel.gatewayClient?.connectionError = "Test error"  // Note: this is setting on gatewayClient
+        viewModel.gatewayClient?.connectionError = "Test error" // Note: this is setting on gatewayClient
         XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
         viewModel.clearConnectionError()
         XCTAssertNil(viewModel.gatewayClient?.connectionError)
@@ -79,13 +79,13 @@ final class DeckViewModelTests: XCTestCase {
         // 2. 手动设置 onConnection 回调（模拟 DeckViewModel.connectGateway() 的行为）
         // 注意：直接同步更新，不使用 Task，因为 MockGatewayClient.disconnect() 是同步调用回调
         var callbackExecuted = false
-        mockClient.onConnection = { [weak viewModel] connected in
-            viewModel?.gatewayClient = mockClient  // Update the mock client directly
+        mockClient.onConnection = { [weak viewModel] _ in
+            viewModel?.gatewayClient = mockClient // Update the mock client directly
             callbackExecuted = true
         }
 
         // 3. 设置初始状态
-        mockClient.connected = true  // Set on mock client directly
+        mockClient.connected = true // Set on mock client directly
         viewModel.gatewayClient = mockClient
 
         // 验证初始状态
@@ -565,7 +565,7 @@ final class DeckViewModelTests: XCTestCase {
         let mockClient = MockGatewayClient()
         mockClient.connectionError = "Test client error"
         viewModel.gatewayClient = mockClient
-        viewModel.gatewayClient?.connectionError = "Test error"  // Note: this is setting on gatewayClient
+        viewModel.gatewayClient?.connectionError = "Test error" // Note: this is setting on gatewayClient
 
         viewModel.clearConnectionError()
 
@@ -577,7 +577,7 @@ final class DeckViewModelTests: XCTestCase {
         let mockClient = MockGatewayClient()
         mockClient.connected = true
         viewModel.gatewayClient = mockClient
-        mockClient.connected = true  // Set on mock client directly
+        mockClient.connected = true // Set on mock client directly
 
         viewModel.disconnect()
 

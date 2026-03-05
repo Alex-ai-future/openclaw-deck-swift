@@ -30,7 +30,7 @@ struct SyncButton: View {
                     value: viewModel.isSyncing
                 )
         }
-        .disabled(((viewModel.gatewayClient?.connected ?? false)) == false || viewModel.isSyncing)
+        .disabled((viewModel.gatewayClient?.connected ?? false) == false || viewModel.isSyncing)
         .accessibilityIdentifier("SyncButton")
     }
 }

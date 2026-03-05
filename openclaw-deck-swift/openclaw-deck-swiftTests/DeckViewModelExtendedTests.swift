@@ -189,8 +189,8 @@ final class DeckViewModelExtendedTests: XCTestCase {
         // 设置 mock gateway client
         let mockClient = MockGatewayClient()
         viewModel.gatewayClient = mockClient
-        
-        mockClient.connectionError = "Test error"  // Note: this is setting on gatewayClient
+
+        mockClient.connectionError = "Test error" // Note: this is setting on gatewayClient
         XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
 
         // 清除错误

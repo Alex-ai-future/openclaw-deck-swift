@@ -13,23 +13,23 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewM
 
 /// 应用状态（统一连接状态 + 加载状态）
 enum AppState: Equatable {
-    case disconnected                          // 未连接（欢迎页面）
-    case connecting(LoadingStage, Double)      // 连接中（阶段 + 进度）
-    case connected                             // 已连接（主界面）
-    case error(String)                         // 错误状态
-    
+    case disconnected // 未连接（欢迎页面）
+    case connecting(LoadingStage, Double) // 连接中（阶段 + 进度）
+    case connected // 已连接（主界面）
+    case error(String) // 错误状态
+
     var isLoading: Bool {
         if case .connecting = self { return true }
         return false
     }
-    
+
     var progress: Double {
-        if case .connecting(_, let progress) = self { return progress }
+        if case let .connecting(_, progress) = self { return progress }
         return 0.0
     }
-    
+
     var loadingStage: LoadingStage? {
-        if case .connecting(let stage, _) = self { return stage }
+        if case let .connecting(stage, _) = self { return stage }
         return nil
     }
 }
@@ -38,10 +38,10 @@ enum AppState: Equatable {
 
 /// 加载阶段枚举
 enum LoadingStage: Equatable {
-    case connecting         // 连接 Gateway
-    case fetchingSessions   // 从云端获取会话列表
-    case fetchingMessages   // 从后端获取消息历史
-    case syncingLocal       // 同步到本地存储
+    case connecting // 连接 Gateway
+    case fetchingSessions // 从云端获取会话列表
+    case fetchingMessages // 从后端获取消息历史
+    case syncingLocal // 同步到本地存储
 }
 
 // MARK: - LoadingStage: CustomStringConvertible
@@ -168,8 +168,6 @@ class DeckViewModel {
     /// 应用配置
     var config: AppConfig = .default
 
-
-
     /// 是否正在同步
     var isSyncing: Bool = false
 
@@ -230,7 +228,7 @@ class DeckViewModel {
         if isUITesting {
             logger.info("🧪 UI 测试模式，跳过 Gateway 连接")
             appState = .connected
-            
+
             appState = .connected
             // 加载本地会话（测试环境 storage.isTesting 应该为 true）
             await loadSessionsFromStorage()
@@ -238,7 +236,6 @@ class DeckViewModel {
         }
 
         appState = .connecting(.connecting, 0.5)
-        
 
         // 保存到 UserDefaults
         storage.saveGatewayUrl(url)
@@ -258,7 +255,7 @@ class DeckViewModel {
         if sessionOrder.isEmpty {
             logger.info("📥 加载会话列表...")
             appState = .connecting(.fetchingSessions, 0.3)
-            
+
             await loadSessionsFromStorage()
 
             // ❗ 检测是否有冲突（冲突时 showingSyncConflict 会被设置）
@@ -311,7 +308,7 @@ class DeckViewModel {
                         // 🔧 内联 initializeAfterConnect() 的逻辑
                         // 连接成功，更新进度
                         self.appState = .connecting(.connecting, 0.5)
-                                                // 检查是否有会话列表
+                        // 检查是否有会话列表
                         if self.sessionOrder.isEmpty {
                             logger.warning("⚠️ 没有会话列表，跳过消息加载")
                         } else {
@@ -319,15 +316,19 @@ class DeckViewModel {
                             await self.loadAllSessionHistory()
                         }
 
-                        // 所有数据加载完成，设置 100%
+                        // 所有数据加载完成，设置 100% 进度
+                        if case let .connecting(stage, _) = self.appState {
+                            self.appState = .connecting(stage, 1.0)
+                        }
+                        
+                        // 短暂延迟，让用户看到 100%
                         try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 
-                        // 初始化完成
+                        // 初始化完成，切换到 connected 状态
                         self.appState = .connected
-                                                self.appState = .connected
                     } else {
                         // ✅ 重连成功，不显示加载动画
-                                                self.appState = .connected
+                        self.appState = .connected
                         logger.log("✅ 重连成功，保持当前界面")
                     }
 
@@ -519,11 +520,10 @@ class DeckViewModel {
     /// 测试专用：加载 Sessions（测试用）
     @MainActor func loadSessionsFromStorageForTesting() async {
         appState = .connecting(.fetchingSessions, 0.3)
-        
+
         await loadSessionsFromStorage()
         // 恢复为 connecting 状态，等待连接成功
         appState = .connecting(.connecting, 0.5)
-        
     }
 
     /// 从 Cloudflare 同步加载 Sessions
@@ -728,7 +728,7 @@ class DeckViewModel {
             createWelcomeSession()
             // ✅ 重置加载状态，避免卡在 100%
             appState = .connected
-            
+
             return
         }
 
@@ -766,7 +766,6 @@ class DeckViewModel {
 
         // ✅ 重置加载状态，避免卡在 100%
         appState = .connected
-        
     }
 
     /// 创建 Session 状态（从 sessionOrder）
@@ -871,7 +870,6 @@ class DeckViewModel {
 
             // ✅ 立即显示加载动画
             appState = .connecting(.fetchingSessions, 0.3)
-            
 
             // 1. 从 Cloudflare 同步 Session 列表
             let result = try await CloudflareKV.shared.syncAndGet()
@@ -911,7 +909,6 @@ class DeckViewModel {
 
             // ✅ 重置加载状态，避免卡在 100%
             appState = .connected
-            
 
             return .success("Sync complete: \(result.data.sessions.count) sessions")
         } catch {
@@ -927,7 +924,6 @@ class DeckViewModel {
     func loadAllSessionHistory() async {
         // 开始加载
         appState = .connecting(.fetchingMessages, 0.8)
-        
 
         let totalCount = sessionOrder.count
         var loadedCount = 0
@@ -941,9 +937,15 @@ class DeckViewModel {
 
             // 更新进度（按会话数量）
             if totalCount > 0 {
-                if case .connecting(let stage, _) = appState { appState = .connecting(stage, 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)) }
+                let progress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
+                if case let .connecting(stage, _) = appState {
+                    appState = .connecting(stage, progress)
+                } else {
+                    // 如果 appState 不是 connecting，说明可能被中断了
+                    logger.warning("⚠️ 加载进度更新时 appState 不是 connecting: \(appState)")
+                }
                 logger.info(
-                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.appState.progress * 100))%"
+                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(progress * 100))%"
                 )
             }
         }
@@ -979,8 +981,7 @@ class DeckViewModel {
             logger.error("❌ 加载 Session \(sessionKey) 历史失败：\(error.localizedDescription)")
             if let session = sessions.values.first(where: {
                 $0.sessionKey.lowercased() == sessionKey.lowercased()
-            }) {
-            }
+            }) {}
         }
     }
 

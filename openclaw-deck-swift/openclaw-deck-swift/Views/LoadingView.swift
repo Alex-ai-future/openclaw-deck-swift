@@ -8,9 +8,14 @@ import SwiftUI
 /// 通用加载视图组件
 struct LoadingView: View {
     let appState: AppState
-    
-    var stage: LoadingStage? { appState.loadingStage }
-    var progress: Double { appState.progress }
+
+    var stage: LoadingStage? {
+        appState.loadingStage
+    }
+
+    var progress: Double {
+        appState.progress
+    }
 
     var body: some View {
         VStack(spacing: 24) {

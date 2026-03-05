@@ -8,10 +8,10 @@ import Foundation
 
 /// 消息加载状态
 enum MessageLoadState: Equatable {
-    case notLoaded        // 未加载
-    case loading          // 加载中
-    case loaded           // 已加载
-    case error(String)    // 加载失败
+    case notLoaded // 未加载
+    case loading // 加载中
+    case loaded // 已加载
+    case error(String) // 加载失败
 }
 
 /// Session 运行时状态

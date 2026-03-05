@@ -86,7 +86,7 @@ struct SessionListView: View {
                     }
                 }
                 .task {
-                    guard !hasAttemptedAutoConnect, !((viewModel.gatewayClient?.connected ?? false)) else { return }
+                    guard !hasAttemptedAutoConnect, !(viewModel.gatewayClient?.connected ?? false) else { return }
                     hasAttemptedAutoConnect = true
 
                     if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {

@@ -35,46 +35,54 @@ class DeckViewModel {
     var loadingStage: LoadingStage = .idle
     var loadingProgress: Double = 0.0
 
+    /// 选择 Session
+    func selectSession(_ sessionId: String?) async {
+        globalInputState.selectedSessionId = sessionId
+    }
+    
+    /// 获取 Session
+    func getSession(id: String) -> SessionState? {
+        try? modelContext.fetch(FetchDescriptor<SessionState>(
+            predicate: #Predicate { $0.id == id }
+        )).first
+    }
+    
     /// 配置
     var config: AppConfig = .default
     var playSoundOnMessage: Bool = true
 
     /// Session 字典（计算属性，从 SwiftData 读取）
     var sessions: [String: SessionState] {
-        get {
-            do {
-                let allSessions = try modelContext.fetch(FetchDescriptor<SessionState>())
-                var dict: [String: SessionState] = [:]
-                for session in allSessions {
-                    dict[session.id] = session
-                }
-                return dict
-            } catch {
-                return [:]
+        do {
+            let allSessions = try modelContext.fetch(FetchDescriptor<SessionState>())
+            var dict: [String: SessionState] = [:]
+            for session in allSessions {
+                dict[session.id] = session
             }
+            return dict
+        } catch {
+            return [:]
         }
     }
-    
+
     /// Session 顺序（计算属性，从 SwiftData 读取）
     var sessionOrder: [String] {
-        get {
-            do {
-                var descriptor = FetchDescriptor<SessionState>()
-                descriptor.sortBy = [SortDescriptor(\.sortOrder)]
-                let allSessions = try modelContext.fetch(descriptor)
-                return allSessions.map { $0.id }
-            } catch {
-                return []
-            }
+        do {
+            var descriptor = FetchDescriptor<SessionState>()
+            descriptor.sortBy = [SortDescriptor(\.sortOrder)]
+            let allSessions = try modelContext.fetch(descriptor)
+            return allSessions.map(\.id)
+        } catch {
+            return []
         }
     }
-    
+
     /// 检查 Session 名称是否已被使用
     func isSessionNameTaken(name: String) -> Bool {
-        let allNames = sessions.values.map { $0.name }
+        let allNames = sessions.values.map(\.name)
         return allNames.contains(name)
     }
-    
+
     init() {
         let schema = Schema([SessionState.self])
         let configuration = ModelConfiguration(

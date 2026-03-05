@@ -185,9 +185,9 @@ final class SessionStateTests: XCTestCase {
     func testStatusEquatable() {
         let status1: SessionStatus = .idle
         let status2: SessionStatus = .idle
-        let status3: SessionStatus = SessionStatus.thinking
-        let status4: SessionStatus = SessionStatus.error("Error 1")
-        let status5: SessionStatus = SessionStatus.error("Error 2")
+        let status3 = SessionStatus.thinking
+        let status4 = SessionStatus.error("Error 1")
+        let status5 = SessionStatus.error("Error 2")
 
         XCTAssertEqual(status1, status2)
         XCTAssertNotEqual(status1, status3)

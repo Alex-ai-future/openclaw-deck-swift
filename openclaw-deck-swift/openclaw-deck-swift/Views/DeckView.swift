@@ -49,11 +49,11 @@ struct DeckView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onChange(of: selectedSessionId) { _, newId in
                 // Session 切换时通知 ViewModel
-                viewModel.selectSession(newId)
+                Task { await viewModel.selectSession(newId) }
 
                 // 新选中的 Session 标记为已读
                 if let sessionId = newId,
-                   let session = viewModel.sessions[sessionId]
+                   let session = viewModel.getSession(id: sessionId)
                 {
                     session.hasUnreadMessage = false
                 }
@@ -67,7 +67,7 @@ struct DeckView: View {
                 if viewModel.globalInputState.selectedSessionId == nil,
                    let firstSessionId = viewModel.sessionOrder.first
                 {
-                    viewModel.selectSession(firstSessionId)
+                    Task { await viewModel.selectSession(firstSessionId) }
                 }
                 selectedSessionId = viewModel.globalInputState.selectedSessionId
             }
@@ -110,7 +110,7 @@ struct DeckView: View {
             HStack(alignment: .top, spacing: 0) {
                 // Session columns
                 ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
-                    if let session = viewModel.sessions[sessionId] {
+                    if let session = viewModel.getSession(id: sessionId) {
                         SessionColumnView(
                             session: session,
                             viewModel: viewModel,
@@ -208,8 +208,8 @@ struct NewSessionSheet: View {
         }
     }
 
-    private func createSession() {
-        _ = viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
+    private func createSession() async {
+        await viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
         dismiss()
     }
 }

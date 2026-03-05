@@ -3,6 +3,7 @@
 //
 // Deck ViewModel - 使用 SwiftData（简化版 + 同步）
 
+import Foundation
 import os.log
 import SwiftData
 
@@ -120,5 +121,13 @@ class DeckViewModel {
 
             logger.info("🗑️ Deleted session: \(id)")
         }
+    }
+
+    // MARK: - Send Message
+
+    /// 发送消息到 Session
+    func sendMessage(sessionId: String, text: String) async {
+        // TODO: Implement message sending logic
+        logger.info("📤 Send message to session \(sessionId): \(text)")
     }
 }

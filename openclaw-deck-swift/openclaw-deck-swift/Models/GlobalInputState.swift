@@ -112,7 +112,7 @@ class GlobalInputState: GlobalInputStateProtocol {
         clearInput()
 
         // 调用 Session 的发送接口
-        await viewModel.sendMessage(sessionId: session.sessionId, text: text)
+        await viewModel.sendMessage(sessionId: session.id, text: text)
 
         isSending = false
     }

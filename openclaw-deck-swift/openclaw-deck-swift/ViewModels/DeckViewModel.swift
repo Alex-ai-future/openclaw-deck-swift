@@ -745,7 +745,9 @@ class DeckViewModel {
             let idLower = config.id.lowercased()
             sessions[idLower] = SessionState(
                 sessionId: config.id,
-                sessionKey: config.sessionKey
+                sessionKey: config.sessionKey,
+                context: config.context,
+                name: config.name
             )
         }
 

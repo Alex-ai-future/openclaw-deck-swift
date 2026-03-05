@@ -64,7 +64,33 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if viewModel.gatewayConnected {
+            // 🧪 UI Test 模式：跳过连接检查，直接显示主界面
+            if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+                // UI Test 模式，显示主界面
+                #if os(macOS)
+                    DeckView(
+                        viewModel: viewModel,
+                        showingSettings: $showingSettings,
+                        showingNewSessionSheet: $showingNewSessionSheet
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                #elseif os(iOS)
+                    if isIPad {
+                        DeckView(
+                            viewModel: viewModel,
+                            showingSettings: $showingSettings,
+                            showingNewSessionSheet: $showingNewSessionSheet
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        SessionListView(viewModel: viewModel)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                #else
+                    SessionListView(viewModel: viewModel)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                #endif
+            } else if viewModel.gatewayConnected {
                 // ✅ 已连接
                 if viewModel.loadingStage == .idle {
                     // 加载完成 → 显示聊天界面

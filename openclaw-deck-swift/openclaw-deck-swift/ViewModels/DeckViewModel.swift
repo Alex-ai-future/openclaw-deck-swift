@@ -1089,12 +1089,10 @@ class DeckViewModel {
                 // ✅ 发送成功
 
             } catch {
-                logger.error("❌ 发送失败：\(error.localizedDescription)")
+                logger.error("❌ 发送失败，加入队列重试：\(error.localizedDescription)")
                 await MainActor.run {
-                    // ❌ 失败时移除用户消息
-                    if let index = session.messages.firstIndex(where: { $0.id == userMsg.id }) {
-                        session.messages.remove(at: index)
-                    }
+                    // ✅ 保留消息，不移除
+                    // 消息会保持显示，等待队列重发成功
 
                     // ✅ 重新加入队列（等待重连后重发）
                     self.messageQueue.append((sessionId, text))

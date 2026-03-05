@@ -79,14 +79,14 @@ struct SettingsView: View {
                                 Text("open_web_client".localized)
                             }
                         }
-
-                        Text("web_client_description".localized)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 } header: {
                     Label("gateway".localized, systemImage: "server.rack")
-                } footer: {}
+                } footer: {
+                    Text("web_client_description".localized)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
 
                 // MARK: - 3. APP SETTINGS
 

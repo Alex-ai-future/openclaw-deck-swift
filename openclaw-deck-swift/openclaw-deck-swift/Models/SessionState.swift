@@ -74,6 +74,9 @@ class SessionState: Hashable, Identifiable {
     /// 可选的上下文描述（备注）
     var context: String?
 
+    /// 🆕 用户自定义名称（显示在 UI 上）
+    var name: String?
+
     /// 最后一条消息的时间
     var lastMessageAt: Date? {
         messages.last?.timestamp
@@ -84,10 +87,11 @@ class SessionState: Hashable, Identifiable {
         messages.count
     }
 
-    init(sessionId: String, sessionKey: String, context: String? = nil) {
+    init(sessionId: String, sessionKey: String, context: String? = nil, name: String? = nil) {
         self.sessionId = sessionId
         self.sessionKey = sessionKey
         self.context = context
+        self.name = name
     }
 
     // MARK: - Message Management

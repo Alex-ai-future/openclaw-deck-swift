@@ -239,7 +239,7 @@ struct SessionColumnView: View {
         Button {
             showingSessionDetails = true
         } label: {
-            Text(session.sessionId)
+            Text(session.name ?? session.sessionId)
                 .font(.body)
                 .fontWeight(.medium)
                 .lineLimit(1)

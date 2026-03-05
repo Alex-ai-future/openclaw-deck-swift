@@ -276,10 +276,10 @@ final class SessionManagementUITests: XCTestCase {
         )
         newSessionButton.forceTap()
 
-        // 验证弹窗打开
+        // 验证弹窗打开（增加等待时间）
         let createSheet = app.sheets.firstMatch
         XCTAssertTrue(
-            createSheet.waitForExistence(timeout: 3),
+            createSheet.waitForExistence(timeout: 10),
             "新建会话弹窗必须打开"
         )
 

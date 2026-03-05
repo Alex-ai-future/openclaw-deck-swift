@@ -60,7 +60,10 @@ final class DeckViewModelTests: XCTestCase {
     // MARK: - Connection Tests
 
     func testClearConnectionError() {
-        viewModel.gatewayClient?.connectionError = "Test error" // Note: this is setting on gatewayClient
+        // 设置 Mock GatewayClient
+        let mockClient = MockGatewayClient()
+        mockClient.connectionError = "Test error"
+        viewModel.gatewayClient = mockClient
         XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
         viewModel.clearConnectionError()
         XCTAssertNil(viewModel.gatewayClient?.connectionError)
@@ -635,7 +638,6 @@ final class DeckViewModelTests: XCTestCase {
 
     func testLoadingStageTransitions() {
         // 测试 LoadingStage 枚举的各种状态
-        XCTAssertEqual(LoadingStage.connecting.description, "idle")
         XCTAssertEqual(LoadingStage.connecting.description, "connecting")
         XCTAssertEqual(LoadingStage.fetchingSessions.description, "fetchingSessions")
         XCTAssertEqual(LoadingStage.fetchingMessages.description, "fetchingMessages")
@@ -644,7 +646,6 @@ final class DeckViewModelTests: XCTestCase {
 
     func testLoadingStageTitles() {
         // 测试 LoadingStage 的 title 属性
-        XCTAssertEqual(LoadingStage.connecting.title, "")
         XCTAssertFalse(LoadingStage.connecting.title.isEmpty)
         XCTAssertFalse(LoadingStage.fetchingSessions.title.isEmpty)
         XCTAssertFalse(LoadingStage.fetchingMessages.title.isEmpty)
@@ -1262,7 +1263,6 @@ final class DeckViewModelTests: XCTestCase {
     }
 
     func testLoadingStage_allDescriptions() {
-        XCTAssertEqual(LoadingStage.connecting.description, "idle")
         XCTAssertEqual(LoadingStage.connecting.description, "connecting")
         XCTAssertEqual(LoadingStage.fetchingSessions.description, "fetchingSessions")
         XCTAssertEqual(LoadingStage.fetchingMessages.description, "fetchingMessages")

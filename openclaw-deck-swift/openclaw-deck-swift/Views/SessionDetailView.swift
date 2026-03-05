@@ -1,8 +1,7 @@
 // SessionDetailView.swift
 // OpenClaw Deck Swift
 //
-// Created by jihuihuang on 3/2/2026.
-// Copyright © 2026 OpenClaw. All rights reserved.
+// Session 详情视图 - 极简布局
 
 import SwiftUI
 
@@ -12,6 +11,7 @@ struct SessionDetailView: View {
     var viewModel: DeckViewModel?
     @Environment(\.dismiss) var dismiss
     @State private var showingDeleteAlert = false
+    @State private var showingArchiveAlert = false
 
     var body: some View {
         NavigationStack {
@@ -147,19 +147,53 @@ struct SessionDetailView: View {
                     }
                 }
 
-                // MARK: - 删除会话
+                // MARK: - 归档并继续
+
+                Section {
+                    Button {
+                        showingArchiveAlert = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "archivebox.fill")
+                            Text("archive_button".localized)
+                            Spacer()
+                        }
+                    }
+
+                    Text("archive_description".localized)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    HStack {
+                        Image(systemName: session.messages.count > 200 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                            .foregroundColor(session.messages.count > 200 ? .orange : .green)
+                        Text(String(format: "archive_recommendation".localized, session.messages.count))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                } header: {
+                    Text("archive_section_header".localized)
+                }
+
+                // MARK: - 危险操作
 
                 Section {
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
-                        Text("delete_session".localized)
+                        HStack {
+                            Image(systemName: "trash.fill")
+                            Text("delete_session".localized)
+                            Spacer()
+                        }
                     }
                     .accessibilityIdentifier("deleteSessionButton")
-                }
-                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                    viewModel?.deleteSession(sessionId: session.sessionId)
-                    dismiss()
+
+                    Text("delete_description".localized)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } header: {
+                    Text("delete_section_header".localized)
                 }
             }
             .navigationTitle("session_details".localized)
@@ -173,7 +207,31 @@ struct SessionDetailView: View {
                         }
                     }
                 }
+                .alert("confirm_archive".localized, isPresented: $showingArchiveAlert) {
+                    Button("cancel".localized, role: .cancel) {}
+                    Button("archive_action".localized) {
+                        sendArchiveCommand()
+                    }
+                } message: {
+                    Text(String(format: "archive_confirm_message".localized, session.messages.count))
+                }
+                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+                    viewModel?.deleteSession(sessionId: session.sessionId)
+                    dismiss()
+                }
         }
+    }
+
+    // MARK: - Actions
+
+    private func sendArchiveCommand() {
+        // 发送 /new 命令来归档当前历史
+        viewModel?.globalInputState.selectedSessionId = session.sessionId
+        viewModel?.globalInputState.inputText = "/new"
+        Task {
+            await viewModel?.sendCurrentInput()
+        }
+        dismiss()
     }
 
     // MARK: - Helpers
@@ -203,49 +261,15 @@ struct SessionDetailView: View {
 
     private func formatDateTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 }
 
 #Preview {
     SessionDetailView(
-        session: createSampleSession(),
-        viewModel: nil
+        session: SessionState(sessionId: "test", sessionKey: "agent:main:test"),
+        viewModel: DeckViewModel()
     )
-}
-
-// MARK: - Preview Helper
-
-private func createSampleSession() -> SessionState {
-    let session = SessionState(
-        sessionId: "demo-session",
-        sessionKey: "agent:main:demo-session-key-12345",
-        context: "这是一个测试会话的上下文描述。"
-    )
-
-    session.messages.append(
-        ChatMessage(
-            id: "msg-1",
-            role: .user,
-            text: "Hello",
-            timestamp: Date().addingTimeInterval(-3600)
-        )
-    )
-
-    session.messages.append(
-        ChatMessage(
-            id: "msg-2",
-            role: .assistant,
-            text: "Hi there!",
-            timestamp: Date().addingTimeInterval(-3500)
-        )
-    )
-
-    session.status = .idle
-    session.isProcessing = false
-    session.hasUnreadMessage = true
-    session.historyLoaded = true
-
-    return session
 }

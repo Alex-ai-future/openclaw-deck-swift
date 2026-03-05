@@ -261,3 +261,16 @@
 // MARK: - Web Client
 "open_web_client" = "Open Web Client";
 "web_client_description" = "Open the OpenClaw web-based control panel to manage agents, sessions, and advanced settings.";
+
+// MARK: - Archive & Continue
+"archive_section_header" = "Archive & Continue";
+"archive_button" = "Archive Current";
+"archive_description" = "Save history & start fresh";
+"archive_recommendation" = "%d messages recommended";
+"confirm_archive" = "Archive Current History?";
+"archive_confirm_message" = "Current: %d messages. History will be saved and searchable.";
+"archive_action" = "Archive & Continue";
+
+// MARK: - Danger Zone
+"delete_section_header" = "Danger Zone";
+"delete_description" = "Permanently remove this session and all history";

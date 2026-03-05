@@ -262,3 +262,16 @@
 // MARK: - Web Client
 "open_web_client" = "打开 Web 客户端";
 "web_client_description" = "在浏览器中打开 OpenClaw 控制面板，管理 Agent、会话和高级设置。";
+
+// MARK: - Archive & Continue
+"archive_section_header" = "归档并继续";
+"archive_button" = "归档当前会话";
+"archive_description" = "保存历史并开始新阶段";
+"archive_recommendation" = "建议 %d 条消息以内";
+"confirm_archive" = "归档当前历史？";
+"archive_confirm_message" = "当前：%d 条消息。历史将被保存并可搜索。";
+"archive_action" = "归档并继续";
+
+// MARK: - Danger Zone
+"delete_section_header" = "危险操作";
+"delete_description" = "永久删除此会话及所有历史记录";

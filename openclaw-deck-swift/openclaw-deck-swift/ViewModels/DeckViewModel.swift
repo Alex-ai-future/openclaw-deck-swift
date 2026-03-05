@@ -88,7 +88,7 @@ class DeckViewModel {
         guard !isInitializing else { return }
         isInitializing = true
 
-        loadingStage = .connecting
+        loadingStage = .connectingToGateway
         loadingProgress = 0.3
 
         // 保存到 UserDefaults

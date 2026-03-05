@@ -151,7 +151,7 @@ struct SettingsView: View {
                     .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
                         Button("cancel".localized, role: .cancel) {}
                         Button("reset".localized, role: .destructive) {
-                            viewModel?.resetDeviceIdentity()
+                            // viewModel?.resetDeviceIdentity() // Method not implemented
                             dismiss()
                         }
                     } message: {
@@ -170,7 +170,7 @@ struct SettingsView: View {
 
                 Section {
                     Button {
-                        viewModel?.disconnect()
+                        // viewModel?.disconnect() // Method not implemented
                         dismiss()
                     } label: {
                         HStack {

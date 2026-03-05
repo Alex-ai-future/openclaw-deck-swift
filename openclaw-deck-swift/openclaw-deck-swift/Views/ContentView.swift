@@ -49,10 +49,10 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showingSettings) {
-            SettingsView(isConnected: .constant(viewModel.gatewayConnected), viewModel: viewModel)
+            SettingsView(isConnected: viewModel.gatewayConnected, viewModel: viewModel)
         }
         .sheet(isPresented: $showingWelcomeSettings) {
-            SettingsView(isConnected: .constant(false), viewModel: viewModel)
+            SettingsView(isConnected: false, viewModel: viewModel)
         }
         .task {
             await setupAndAutoConnect()

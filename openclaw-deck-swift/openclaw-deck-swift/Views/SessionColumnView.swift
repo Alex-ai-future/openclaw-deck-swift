@@ -339,7 +339,7 @@ struct SessionColumnView: View {
                 }
             }
         }
-        .background(Color.adaptiveBackground)
+        .background(Color.clear)
     }
 
     // MARK: - Helper Functions
@@ -461,9 +461,9 @@ struct SessionColumnView: View {
             case .user:
                 Color.blue
             case .assistant:
-                Color.adaptiveSecondaryBackground
+                Color.secondary.opacity(0.3)
             default:
-                Color.adaptiveSecondaryBackground
+                Color.secondary.opacity(0.3)
             }
         }
 
@@ -553,9 +553,9 @@ struct SessionColumnView: View {
             case .user:
                 Color.blue
             case .assistant:
-                Color.adaptiveSecondaryBackground
+                Color.secondary.opacity(0.3)
             default:
-                Color.adaptiveSecondaryBackground
+                Color.secondary.opacity(0.3)
             }
         }
 

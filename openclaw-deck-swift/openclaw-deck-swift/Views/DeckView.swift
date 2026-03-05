@@ -130,7 +130,7 @@ struct DeckView: View {
             .animation(
                 .spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder
             )
-            .background(Color.adaptiveBackground)
+            .background(Color.clear)
         }
     }
 }

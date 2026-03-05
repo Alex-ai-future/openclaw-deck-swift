@@ -68,7 +68,7 @@ struct WelcomeView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.systemBackground))
+            .background(Color.clear)
             .navigationTitle("")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)

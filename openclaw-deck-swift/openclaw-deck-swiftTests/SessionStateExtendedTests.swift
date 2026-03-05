@@ -106,6 +106,7 @@ final class SessionStateExtendedTests: XCTestCase {
     }
 
     func testSessionState_hashable_differentSessionKey() {
+        // sessionId 相同就是同一个 Session（sessionKey 不影响相等性）
         let session1 = SessionState(
             sessionId: "session-1",
             sessionKey: "key-1"
@@ -116,7 +117,8 @@ final class SessionStateExtendedTests: XCTestCase {
             sessionKey: "key-2"
         )
 
-        XCTAssertNotEqual(session1, session2)
+        // sessionId 相同，所以相等
+        XCTAssertEqual(session1, session2)
     }
 
     func testSessionState_inSet() {

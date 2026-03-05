@@ -87,32 +87,32 @@ class DeckViewModel {
     func initialize(url: String, token: String?) async {
         guard !isInitializing else { return }
         isInitializing = true
-        
+
         loadingStage = .connecting
         loadingProgress = 0.3
-        
+
         // 保存到 UserDefaults
         let storage = UserDefaultsStorage.shared
         storage.saveGatewayUrl(url)
         if let token {
             storage.saveToken(token)
         }
-        
+
         // TODO: 实现 Gateway 连接逻辑
         // 暂时设置为已连接
         gatewayConnected = true
         isInitializing = false
         loadingStage = .idle
-        
+
         // 从 SwiftData 加载 Session
         await loadSessions()
     }
-    
+
     /// 从 SwiftData 加载 Session
     func loadSessions() async {
         // 从 SwiftData 读取，自动通过计算属性
     }
-    
+
     init() {
         let schema = Schema([SessionState.self])
         let configuration = ModelConfiguration(

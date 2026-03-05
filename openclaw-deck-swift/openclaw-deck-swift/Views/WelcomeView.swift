@@ -68,7 +68,7 @@ struct WelcomeView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.adaptiveBackground)
+            .background(Color(.systemBackground))
             .navigationTitle("")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
@@ -82,13 +82,13 @@ struct WelcomeView: View {
                 }
             #else
                 .toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        Button(action: onShowSettings) {
-                            Image(systemName: "gear")
-                                .font(.title2)
+                        ToolbarItem(placement: .automatic) {
+                            Button(action: onShowSettings) {
+                                Image(systemName: "gear")
+                                    .font(.title2)
+                            }
                         }
                     }
-                }
             #endif
         }
     }

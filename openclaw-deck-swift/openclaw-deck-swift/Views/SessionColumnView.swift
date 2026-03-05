@@ -345,11 +345,11 @@ struct SessionColumnView: View {
                                 MessageView(message: message)
                                     .id(message.id)
                             }
+                            .animation(.easeOut(duration: 0.05), value: session.messages)
                         }
                     }
                 }
                 .padding()
-                .id("messages-container-\(session.messages.count)")
             }
             .onChange(of: session.messages.last?.id) { _, newLastMessageId in
                 if let lastId = newLastMessageId {

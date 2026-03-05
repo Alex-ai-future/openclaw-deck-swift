@@ -258,3 +258,7 @@
 
 // MARK: - Dictation
 "dictated_text_format" = "听写：%@";
+
+// MARK: - Web Client
+"open_web_client" = "打开 Web 客户端";
+"web_client_description" = "在浏览器中打开 OpenClaw 控制面板，管理 Agent、会话和高级设置。";

@@ -257,3 +257,7 @@
 
 // MARK: - Dictation
 "dictated_text_format" = "Dictated: %@";
+
+// MARK: - Web Client
+"open_web_client" = "Open Web Client";
+"web_client_description" = "Open the OpenClaw web-based control panel to manage agents, sessions, and advanced settings.";

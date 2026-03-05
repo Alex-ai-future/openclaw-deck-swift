@@ -68,6 +68,23 @@ struct SettingsView: View {
                         token: $token,
                         isConnected: isConnected
                     )
+
+                    // Open Web Client
+                    if let webUrl = webClientUrl {
+                        Link(
+                            destination: webUrl
+                        ) {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("open_web_client".localized)
+                                    .fontWeight(.medium)
+                            }
+                        }
+
+                        Text("web_client_description".localized)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 } header: {
                     Label("gateway".localized, systemImage: "server.rack")
                 } footer: {
@@ -137,7 +154,8 @@ struct SettingsView: View {
                     .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
                         Button("cancel".localized, role: .cancel) {}
                         Button("reset".localized, role: .destructive) {
-                            viewModel?.resetDeviceIdentity(); dismiss()
+                            viewModel?.resetDeviceIdentity()
+                            dismiss()
                         }
                     } message: {
                         Text(
@@ -212,7 +230,7 @@ struct SettingsView: View {
                     HStack {
                         Text("version".localized)
                         Spacer()
-                        Text("app_version".localized)
+                        Text("1.0.0")
                             .foregroundColor(.secondary)
                     }
                     .font(.caption)
@@ -228,34 +246,12 @@ struct SettingsView: View {
             }
             .navigationTitle("settings".localized)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    if isConnected, !hasChanges {
+                ToolbarItem(placement: .primaryAction) {
+                    if isConnected {
                         Button("done".localized) {
                             dismiss()
                         }
                         .fontWeight(.semibold)
-                        .keyboardShortcut(.defaultAction)
-                    } else {
-                        Button("connect".localized) {
-                            // 保存配置
-                            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                            if !token.isEmpty {
-                                UserDefaultsStorage.shared.saveToken(token)
-                            }
-                            // 直接调用 initialize，完成后关闭
-                            Task {
-                                await viewModel?.initialize(url: gatewayUrl, token: token)
-                                dismiss()
-                            }
-                        }
-                        .fontWeight(.semibold)
-                        .keyboardShortcut(.defaultAction)
                     }
                 }
             }
@@ -276,6 +272,16 @@ struct SettingsView: View {
 
     private func checkChanges() {
         hasChanges = (gatewayUrl != originalUrl || token != originalToken)
+    }
+
+    // MARK: - Computed Properties
+
+    /// Web Client URL (converted from WebSocket URL)
+    private var webClientUrl: URL? {
+        let httpUrl = gatewayUrl
+            .replacingOccurrences(of: "ws://", with: "http://")
+            .replacingOccurrences(of: "wss://", with: "https://")
+        return URL(string: httpUrl)
     }
 }
 

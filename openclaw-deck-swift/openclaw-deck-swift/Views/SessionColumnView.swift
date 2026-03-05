@@ -19,7 +19,6 @@ struct SessionColumnView: View {
     var viewModel: DeckViewModel
     var isSelected: Bool
 
-    @State private var showingNewAlert = false
     @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
@@ -78,11 +77,6 @@ struct SessionColumnView: View {
                 }
             }
         }
-    }
-
-    /// 发送 /new 消息（先显示确认弹窗）
-    private func sendNewMessage() {
-        showingNewAlert = true
     }
 
     /// 确认发送 /new 消息
@@ -172,18 +166,8 @@ struct SessionColumnView: View {
                                 .buttonStyle(.glass)
                                 .frame(height: 40)
                             }
-                            // new/OK 按钮 - 输入框为空且 AI 未处理时显示
+                            // OK 按钮 - 输入框为空且 AI 未处理时显示
                             else {
-                                Button {
-                                    sendNewMessage()
-                                } label: {
-                                    Text("new".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(height: 40)
-
                                 Button {
                                     sendOKMessage()
                                 } label: {

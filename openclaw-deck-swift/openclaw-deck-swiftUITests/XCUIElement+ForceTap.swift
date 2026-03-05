@@ -3,6 +3,7 @@
 //
 // XCUIElement 扩展 - macOS 强制点击
 
+import Foundation
 import XCTest
 
 extension XCUIElement {

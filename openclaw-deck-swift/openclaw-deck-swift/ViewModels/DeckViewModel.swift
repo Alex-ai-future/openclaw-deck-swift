@@ -955,7 +955,7 @@ class DeckViewModel {
                     appState = .connecting(stage, progress)
                 } else {
                     // 如果 appState 不是 connecting，说明可能被中断了
-                    logger.warning("⚠️ 加载进度更新时 appState 不是 connecting: \(appState)")
+                    logger.warning("⚠️ 加载进度更新时 appState 不是 connecting: \(self.appState)")
                 }
                 logger.info(
                     "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(progress * 100))%"

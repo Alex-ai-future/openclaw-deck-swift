@@ -415,9 +415,8 @@ final class DeckViewModelTests: XCTestCase {
 
         await viewModel.sendMessage(sessionId: session.id, text: "Test message")
 
-        // 验证显示错误弹窗
-        XCTAssertEqual(viewModel.showMessageSendError, true)
-        XCTAssertEqual(viewModel.messageSendErrorText, "Connection error, please reconnect")
+        // 验证消息入队
+        XCTAssertEqual(viewModel.messageQueueCount, 1)
     }
 
     // MARK: - Load History Tests

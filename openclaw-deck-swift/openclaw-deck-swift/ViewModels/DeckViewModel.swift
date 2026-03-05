@@ -12,7 +12,7 @@ private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewM
 // MARK: - App State
 
 /// 应用状态（统一连接状态 + 加载状态）
-enum AppState: Equatable {
+enum AppState: Equatable, CustomStringConvertible {
     case disconnected // 未连接（欢迎页面）
     case connecting(LoadingStage, Double) // 连接中（阶段 + 进度）
     case connected // 已连接（主界面）
@@ -31,6 +31,19 @@ enum AppState: Equatable {
     var loadingStage: LoadingStage? {
         if case let .connecting(stage, _) = self { return stage }
         return nil
+    }
+
+    var description: String {
+        switch self {
+        case .disconnected:
+            "disconnected"
+        case let .connecting(stage, progress):
+            "connecting(\(stage), \(Int(progress * 100))%)"
+        case .connected:
+            "connected"
+        case let .error(message):
+            "error(\(message))"
+        }
     }
 }
 
@@ -320,7 +333,7 @@ class DeckViewModel {
                         if case let .connecting(stage, _) = self.appState {
                             self.appState = .connecting(stage, 1.0)
                         }
-                        
+
                         // 短暂延迟，让用户看到 100%
                         try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 

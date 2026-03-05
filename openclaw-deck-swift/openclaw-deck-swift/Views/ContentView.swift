@@ -101,7 +101,6 @@ struct ContentView: View {
         #endif
     }
 
-    @ViewBuilder
     private var welcomeInterface: some View {
         WelcomeView(
             gatewayUrl: $gatewayUrl,

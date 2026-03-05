@@ -16,7 +16,7 @@ final class SessionState: Hashable, Identifiable, Codable {
     var isHidden: Bool
     var sortOrder: Int
     var createdAt: Date
-    var lastActivityAt: Date
+    var lastActivityAt: Date = Date()
 
     // 内存属性（不持久化，不编码）
     @Transient var messages: [ChatMessage] = []
@@ -62,12 +62,12 @@ final class SessionState: Hashable, Identifiable, Codable {
     init(
         id: String,
         sessionKey: String,
-        name: String,
-        context: String?,
-        isHidden: Bool,
-        sortOrder: Int,
-        createdAt: Date,
-        lastActivityAt: Date
+        name: String = "",
+        context: String? = nil,
+        isHidden: Bool = false,
+        sortOrder: Int = 0,
+        createdAt: Date = Date(),
+        lastActivityAt: Date = Date()
     ) {
         self.id = id
         self.sessionKey = sessionKey

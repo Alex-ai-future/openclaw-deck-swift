@@ -34,7 +34,7 @@ struct LoadingView: View {
                 .animation(.easeInOut(duration: 0.3), value: stage.description)
 
             // 进度条
-            if stage != .ready && stage != .idle {
+            if stage != .ready, stage != .idle {
                 VStack(spacing: 8) {
                     ProgressView(value: progress)
                         .progressViewStyle(LinearProgressViewStyle())

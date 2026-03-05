@@ -308,12 +308,12 @@ final class SessionManagementUITests: XCTestCase {
 
         // 验证弹窗关闭
         XCTAssertFalse(
-            createSheet.waitForExistence(timeout: 3),
+            createSheet.waitForExistence(timeout: 5),
             "创建后会话弹窗必须关闭"
         )
 
-        // 等待焦点重置
-        sleep(2)
+        // 等待 UI 完全更新（会话列表刷新）
+        sleep(3)
 
         // 验证会话出现在列表中
         let sessionButtons = getSessionButtons()

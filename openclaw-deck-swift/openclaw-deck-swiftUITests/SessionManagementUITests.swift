@@ -369,12 +369,14 @@ final class SessionManagementUITests: XCTestCase {
             sendButton.forceTap()
 
             // 等待并关闭连接错误弹窗
+            sleep(1)
             let alert = app.alerts.firstMatch
-            if alert.waitForExistence(timeout: 5) {
-                let cancelButton = app.buttons["Cancel"].firstMatch.exists ?
-                    app.buttons["Cancel"] : app.buttons["取消"]
-                if cancelButton.exists {
-                    cancelButton.forceTap()
+            if alert.waitForExistence(timeout: 3) {
+                // 弹窗只有一个"确定"按钮
+                let okButton = app.buttons["ok"].firstMatch.exists ?
+                    app.buttons["ok"] : app.buttons["确定"]
+                if okButton.exists {
+                    okButton.forceTap()
                     sleep(1)
                     print("  ✅ 连接错误弹窗已关闭")
                 }

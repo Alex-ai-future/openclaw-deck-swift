@@ -16,6 +16,11 @@ class NotificationService {
 
     /// 请求通知权限
     func requestPermission() {
+        // 测试模式下跳过通知权限请求
+        if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+            logger.info("🧪 测试模式：跳过通知权限请求")
+            return
+        }
         UNUserNotificationCenter.current().requestAuthorization(
             options: [.alert, .sound, .badge]
         ) { granted, error in

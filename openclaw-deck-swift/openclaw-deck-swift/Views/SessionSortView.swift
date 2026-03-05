@@ -1,7 +1,7 @@
 // SessionSortView.swift
 // OpenClaw Deck Swift
 //
-// Session 排序表单视图
+// Session 排序表单视图 - 简洁现代设计
 
 import SwiftUI
 
@@ -25,60 +25,44 @@ struct SessionSortView: View {
                 Section {
                     ForEach(sortedOrder, id: \.self) { sessionId in
                         if let session = viewModel.sessions[sessionId] {
-                            HStack {
-                                // 拖拽手柄图标
-                                Image(systemName: "line.3.horizontal")
-                                    .font(.title3)
-                                    .foregroundColor(.secondary)
-                                    .padding(.trailing, 8)
-
-                                // Session 名称
-                                Text(session.sessionId)
-                                    .lineLimit(1)
-
-                                Spacer()
-
-                                // 消息数量徽章
-                                if session.messageCount > 0 {
-                                    Text("\(session.messageCount)")
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.secondary)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.secondary.opacity(0.1))
-                                        .cornerRadius(8)
-                                }
-                            }
-                            .padding(.vertical, 4)
+                            SessionRowView(
+                                session: session,
+                                style: .sort,
+                                showStatus: false,
+                                showLastMessage: false,
+                                onRequestDelete: nil
+                            )
+                            .padding(.vertical, 2)
                         }
                     }
                     .onMove { indices, newOffset in
-                        sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            sortedOrder.move(fromOffsets: indices, toOffset: newOffset)
+                        }
                     }
-                } footer: {
-                    Text("drag_to_reorder".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
             }
             .listStyle(.plain)
             .navigationTitle("sort_sessions".localized)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
-                        dismiss()
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("cancel".localized) {
+                            dismiss()
+                        }
+                        .foregroundColor(.secondary)
                     }
-                }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        applySortOrder()
-                        dismiss()
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
+                            applySortOrder()
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
                     }
-                    .fontWeight(.semibold)
                 }
-            }
         }
         #if os(macOS)
         .frame(width: 400, height: 500)

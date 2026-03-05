@@ -6,14 +6,10 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @Binding var gatewayUrl: String
-    @Binding var token: String
-    @Binding var isConnected: Bool
-    var onDisconnect: () -> Void
-    var onApplyAndReconnect: () -> Void
-    var onConnect: () -> Void
-    var onResetDeviceIdentity: (() -> Void)?
-    var onClose: (() -> Void)?
+    @Environment(\.dismiss) private var dismiss
+    @State private var gatewayUrl: String
+    @State private var token: String
+    var isConnected: Bool
 
     /// ViewModel binding for settings
     var viewModel: DeckViewModel?
@@ -24,6 +20,18 @@ struct SettingsView: View {
     @State private var originalUrl = ""
     @State private var originalToken = ""
     @State private var showingResetAlert = false
+
+    init(
+        isConnected: Bool,
+        viewModel: DeckViewModel? = nil
+    ) {
+        // 从 UserDefaults 加载初始值
+        let storage = UserDefaultsStorage.shared
+        _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
+        _token = State(initialValue: storage.loadToken() ?? "")
+        self.isConnected = isConnected
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         NavigationStack {
@@ -46,7 +54,7 @@ struct SettingsView: View {
                     Label("connection".localized, systemImage: "network")
                 } footer: {
                     if isConnected {
-                        Text("Gateway: \(gatewayUrl)")
+                        Text(String(format: "gateway_url_format".localized, gatewayUrl))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -58,58 +66,61 @@ struct SettingsView: View {
                     GatewayConfigInput(
                         gatewayUrl: $gatewayUrl,
                         token: $token,
-                        onConnect: onConnect,
                         isConnected: isConnected
                     )
+
+                    // Open Web Client
+                    if let webUrl = webClientUrl {
+                        Link(
+                            destination: webUrl
+                        ) {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("open_web_client".localized)
+                            }
+                        }
+                    }
                 } header: {
                     Label("gateway".localized, systemImage: "server.rack")
                 } footer: {
-                    Text("modify_and_apply_to_reconnect_with_new_settings".localized)
-                }
-
-                // Apply & Reconnect button (only when changes exist)
-                if hasChanges {
-                    Section {
-                        Button {
-                            onApplyAndReconnect()
-                        } label: {
-                            HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                Text("apply_reconnect".localized)
-                                    .fontWeight(.medium)
-                            }
-                        }
-                    } footer: {
-                        Text("save_changes_and_reconnect_to_gateway".localized)
-                    }
+                    Text("web_client_description".localized)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
                 // MARK: - 3. APP SETTINGS
 
                 Section {
                     // Language Selector
-                    Picker("language".localized, selection: Binding(
-                        get: { languageManager.selectedLanguage },
-                        set: { languageManager.setLanguage($0) }
-                    )) {
+                    Picker(
+                        "language".localized,
+                        selection: Binding(
+                            get: { languageManager.selectedLanguage },
+                            set: { languageManager.setLanguage($0) }
+                        )
+                    ) {
                         ForEach(LanguageManager.Language.allCases) { language in
                             Text(language.displayName).tag(language)
                         }
                     }
 
                     // Notifications
-                    Toggle("sound_on_message".localized, systemImage: "speaker.wave.2",
-                           isOn: .init(
-                               get: { viewModel?.playSoundOnMessage ?? true },
-                               set: { viewModel?.playSoundOnMessage = $0 }
-                           ))
+                    Toggle(
+                        "sound_on_message".localized, systemImage: "speaker.wave.2",
+                        isOn: .init(
+                            get: { viewModel?.playSoundOnMessage ?? true },
+                            set: { viewModel?.playSoundOnMessage = $0 }
+                        )
+                    )
 
                     // Cloudflare KV Sync
                     NavigationLink {
-                        CloudflareSettingsView(onClose: onClose, viewModel: viewModel)
+                        CloudflareSettingsView(viewModel: viewModel)
                     } label: {
                         HStack {
-                            Label("multi_device_sync".localized, systemImage: "icloud.and.arrow.down")
+                            Label(
+                                "multi_device_sync".localized, systemImage: "icloud.and.arrow.down"
+                            )
                             Spacer()
                             if CloudflareKV.shared.isConfigured {
                                 Circle()
@@ -140,10 +151,14 @@ struct SettingsView: View {
                     .alert("reset_device_identity_alert".localized, isPresented: $showingResetAlert) {
                         Button("cancel".localized, role: .cancel) {}
                         Button("reset".localized, role: .destructive) {
-                            onResetDeviceIdentity?()
+                            viewModel?.resetDeviceIdentity()
+                            dismiss()
                         }
                     } message: {
-                        Text("this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered".localized)
+                        Text(
+                            "this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered"
+                                .localized
+                        )
                     }
                 } header: {
                     Label("device".localized, systemImage: "iphone")
@@ -155,7 +170,8 @@ struct SettingsView: View {
 
                 Section {
                     Button {
-                        onDisconnect()
+                        viewModel?.disconnect()
+                        dismiss()
                     } label: {
                         HStack {
                             Image(systemName: "xmark.square.fill")
@@ -173,10 +189,31 @@ struct SettingsView: View {
                 // MARK: - 6. HELP
 
                 Section {
-                    NavigationLink {
-                        UserGuideView()
-                    } label: {
-                        Label("user_guide".localized, systemImage: "book")
+                    Link(
+                        destination: URL(
+                            string:
+                            "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html"
+                        )!
+                    ) {
+                        Label("user_guide".localized, systemImage: "book.fill")
+                    }
+
+                    Link(
+                        destination: URL(
+                            string:
+                            "https://alex-ai-future.github.io/openclaw-deck-swift/USAGE_EXAMPLES.html"
+                        )!
+                    ) {
+                        Label("usage_examples".localized, systemImage: "list.bullet.rectangle")
+                    }
+
+                    Link(
+                        destination: URL(
+                            string:
+                            "https://alex-ai-future.github.io/openclaw-deck-swift/PRIVACY.html"
+                        )!
+                    ) {
+                        Label("privacy_policy".localized, systemImage: "shield.fill")
                     }
                 } header: {
                     Label("help".localized, systemImage: "questionmark.circle")
@@ -195,8 +232,11 @@ struct SettingsView: View {
                     }
                     .font(.caption)
 
-                    Link("OpenClaw Documentation", destination: URL(string: "https://docs.openclaw.ai")!)
-                        .font(.caption)
+                    Link(
+                        "OpenClaw Documentation",
+                        destination: URL(string: "https://docs.openclaw.ai")!
+                    )
+                    .font(.caption)
                 } header: {
                     Label("about".localized, systemImage: "info.circle")
                 }
@@ -205,16 +245,47 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
-                        onClose?()
+                        dismiss()
                     }
+                    .foregroundColor(.secondary)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        onClose?()
+                ToolbarItem(placement: .primaryAction) {
+                    if isConnected {
+                        if hasChanges {
+                            // 已连接 + 有修改：显示"连接"，保存并重新连接
+                            Button("connect".localized) {
+                                UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                                UserDefaultsStorage.shared.saveToken(token)
+                                Task {
+                                    await viewModel?.initialize(url: gatewayUrl, token: token)
+                                    // 延迟关闭，让用户看到加载动画
+                                    try? await Task.sleep(nanoseconds: 500_000_000)
+                                    dismiss()
+                                }
+                            }
+                            .fontWeight(.semibold)
+                        } else {
+                            // 已连接 + 无修改：显示"完成"，只关闭
+                            Button("done".localized) {
+                                dismiss()
+                            }
+                            .fontWeight(.semibold)
+                        }
+                    } else {
+                        // 未连接：始终显示"连接"按钮
+                        Button("connect".localized) {
+                            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                            UserDefaultsStorage.shared.saveToken(token)
+                            Task {
+                                await viewModel?.initialize(url: gatewayUrl, token: token)
+                                // 延迟关闭，让用户看到加载动画
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                dismiss()
+                            }
+                        }
+                        .fontWeight(.semibold)
                     }
-                    .fontWeight(.semibold)
-                    .keyboardShortcut(.defaultAction)
                 }
             }
         }
@@ -235,15 +306,21 @@ struct SettingsView: View {
     private func checkChanges() {
         hasChanges = (gatewayUrl != originalUrl || token != originalToken)
     }
+
+    // MARK: - Computed Properties
+
+    /// Web Client URL (converted from WebSocket URL)
+    private var webClientUrl: URL? {
+        let httpUrl = gatewayUrl
+            .replacingOccurrences(of: "ws://", with: "http://")
+            .replacingOccurrences(of: "wss://", with: "https://")
+        return URL(string: httpUrl)
+    }
 }
 
 #Preview {
     SettingsView(
-        gatewayUrl: .constant("ws://127.0.0.1:18789"),
-        token: .constant(""),
-        isConnected: .constant(true),
-        onDisconnect: {},
-        onApplyAndReconnect: {},
-        onConnect: {}
+        isConnected: true,
+        viewModel: nil
     )
 }

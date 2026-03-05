@@ -14,6 +14,9 @@ final class MockGlobalInputState: GlobalInputStateProtocol {
   var textHeight: CGFloat = 36
   var selectedSessionId: String?
   var inputWidth: CGFloat = 300
+  
+  // 追踪发送的消息
+  var sentMessages: [(message: String, session: SessionState)] = []
 
   var calculateTextHeightCalled = false
   var clearInputCalled = false
@@ -33,6 +36,7 @@ final class MockGlobalInputState: GlobalInputStateProtocol {
 
   func sendMessage(to session: SessionState, viewModel: DeckViewModel) async {
     sendMessageCalled = true
-    // Mock 实现：不真正发送消息
+    // 记录发送的消息
+    sentMessages.append((message: inputText, session: session))
   }
 }

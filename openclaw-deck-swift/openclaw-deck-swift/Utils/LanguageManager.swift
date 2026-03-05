@@ -34,9 +34,6 @@ class LanguageManager: ObservableObject {
     /// 当前选中的语言（使用 @Published 触发 UI 更新）
     @Published var selectedLanguage: Language
 
-    /// 用于触发 UI 刷新的 ID（语言改变时变化）
-    @Published var updateID: UUID = .init()
-
     /// 获取当前语言的 Locale
     var currentLocale: Locale {
         selectedLanguage.locale
@@ -55,9 +52,9 @@ class LanguageManager: ObservableObject {
     }
 
     /// 切换语言
+    /// SwiftUI 会通过 .environment(\.locale) 自动刷新文本，无需手动触发视图重建
     func setLanguage(_ language: Language) {
         selectedLanguage = language
-        updateID = UUID() // 触发 UI 刷新
         UserDefaults.standard.set(language.rawValue, forKey: selectedLanguageKey)
         NotificationCenter.default.post(name: .languageDidChange, object: nil)
     }

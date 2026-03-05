@@ -46,16 +46,30 @@ open openclaw-deck-swift/openclaw-deck-swift.xcodeproj
 ## 文档
 
 - [📱 用户指南](docs/USER_GUIDE.md) - 使用说明和故障排除
+- [📋 使用样例](docs/USAGE_EXAMPLES.md) - 实际使用场景示例
 - [🏛️ 架构文档](docs/introduction.md) - 技术细节和实现
 - [🤖 OpenClaw 文档](https://docs.openclaw.ai) - Gateway 配置
 
-## 测试
+## 脚本工具
 
 ```bash
+# 编译项目
+bash script/build.sh macos|ios|ipados
+
+# 运行单元测试
 bash script/run_unit_tests.sh
+
+# 运行 UI 测试
+bash script/run_ui_tests.sh
+
+# 代码格式化
+bash script/format.sh
+
+# 安全提交（自动格式化）
+./script/committer "[类型] 描述" 文件 1 文件 2...
 ```
 
-93 个测试，100% 通过
+**提交类型：** `[feature]` `[fix]` `[ui]` `[refactor]` `[docs]`
 
 ## 系统要求
 

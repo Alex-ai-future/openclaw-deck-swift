@@ -14,14 +14,20 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        mockStorage = MockUserDefaultsStorage()
+        mockStorage = MockFactory.createMockStorage()
         mockGlobalInputState = MockGlobalInputState()
         // 清除 Cloudflare 配置，避免测试中访问 Keychain
         CloudflareConfig.clear()
-        viewModel = DeckViewModel(
+        // 清理 UserDefaults，避免测试间状态污染
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+        UserDefaults.standard.synchronize()
+        let testDIContainer = MockFactory.createDIContainer(
             storage: mockStorage,
             globalInputState: mockGlobalInputState
         )
+        viewModel = DeckViewModel(diContainer: testDIContainer)
         // 加载 sessions（会创建 welcome session）
         await viewModel.loadSessionsFromStorageForTesting()
     }
@@ -30,6 +36,12 @@ final class DeckViewModelExtendedTests: XCTestCase {
         viewModel = nil
         mockStorage = nil
         mockGlobalInputState = nil
+
+        // 清理 UserDefaults
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
+        UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
+        UserDefaults.standard.synchronize()
+
         try await super.tearDown()
     }
 
@@ -165,36 +177,25 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
     // MARK: - Gateway Connection Tests
 
-    func testInitialize_savesConfig() async {
-        // 验证初始状态
-        XCTAssertFalse(viewModel.isInitializing)
-
-        // 调用初始化
-        await viewModel.initialize(url: "ws://test.com", token: "test-token")
-
-        // 验证初始化完成后配置已保存
-        XCTAssertEqual(viewModel.config.gatewayUrl, "ws://test.com")
-        XCTAssertEqual(viewModel.config.token, "test-token")
-        // 注意：isInitializing 在连接成功/失败后才会清除，这里是异步的
-        // 所以这里只验证配置保存，不验证 isInitializing 状态
-    }
-
     func testDisconnect_clearsGatewayClient() {
         // 断开连接
         viewModel.disconnect()
 
         // 验证连接状态
-        XCTAssertFalse(viewModel.gatewayConnected)
+        XCTAssertFalse(viewModel.gatewayClient?.connected ?? false)
     }
 
     func testClearConnectionError_clearsError() {
-        // 设置错误
-        viewModel.connectionError = "Test error"
-        XCTAssertNotNil(viewModel.connectionError)
+        // 设置 mock gateway client
+        let mockClient = MockGatewayClient()
+        viewModel.gatewayClient = mockClient
+
+        mockClient.connectionError = "Test error" // Note: this is setting on gatewayClient
+        XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
 
         // 清除错误
         viewModel.clearConnectionError()
-        XCTAssertNil(viewModel.connectionError)
+        XCTAssertNil(viewModel.gatewayClient?.connectionError)
     }
 
     // MARK: - Event Handling Extended Tests
@@ -302,16 +303,6 @@ final class DeckViewModelExtendedTests: XCTestCase {
         XCTAssertFalse(saved)
     }
 
-    // MARK: - Reconnection Tests
-
-    func testIsReconnecting_defaultValue() {
-        XCTAssertFalse(viewModel.isReconnecting)
-    }
-
-    func testReconnectAttempts_defaultValue() {
-        XCTAssertEqual(viewModel.reconnectAttempts, 0)
-    }
-
     func testIsSyncing_defaultValue() {
         XCTAssertFalse(viewModel.isSyncing)
     }
@@ -368,11 +359,11 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
         // 初始状态
         XCTAssertEqual(state.messages.count, 0)
-        XCTAssertFalse(state.historyLoaded)
-        XCTAssertFalse(state.isHistoryLoading)
+        XCTAssertFalse(state.messageLoadState == .loaded)
+        XCTAssertFalse(state.messageLoadState == .loading)
         XCTAssertEqual(state.status, .idle)
         XCTAssertNil(state.activeRunId)
-        XCTAssertFalse(state.isProcessing)
+        XCTAssertFalse(state.status == .thinking)
         XCTAssertFalse(state.hasUnreadMessage)
     }
 

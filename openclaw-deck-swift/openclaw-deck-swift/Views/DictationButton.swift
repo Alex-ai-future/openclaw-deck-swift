@@ -88,7 +88,7 @@ struct DictationButton: View {
                 }
                 .padding()
 
-                Text("Dictated: \(text)")
+                Text(String(format: "dictated_text_format".localized, text))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

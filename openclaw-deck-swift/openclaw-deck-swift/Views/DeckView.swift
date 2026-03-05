@@ -21,25 +21,17 @@ struct DeckView: View {
     @Binding var showingSettings: Bool
     @Binding var showingNewSessionSheet: Bool
     @State private var selectedSessionId: String?
-    @State private var gatewayUrl: String
-    @State private var token: String
 
-    // 内部状态管理
+    /// 内部状态管理
     @State private var showingSortSheet = false
-    @State private var showingSyncAlert = false
-    @State private var showingConflictAlert = false
 
     init(
-        viewModel: DeckViewModel, showingSettings: Binding<Bool>, showingNewSessionSheet: Binding<Bool>
+        viewModel: DeckViewModel, showingSettings: Binding<Bool>,
+        showingNewSessionSheet: Binding<Bool>
     ) {
         self.viewModel = viewModel
         _showingSettings = showingSettings
         _showingNewSessionSheet = showingNewSessionSheet
-
-        // 从 UserDefaults 加载配置
-        let storage = UserDefaultsStorage.shared
-        _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
-        _token = State(initialValue: storage.loadToken() ?? "")
     }
 
     var body: some View {
@@ -66,6 +58,10 @@ struct DeckView: View {
                     session.hasUnreadMessage = false
                 }
             }
+            .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
+                // ViewModel 的选中状态变化时，同步到本地 State
+                selectedSessionId = newId
+            }
             .task {
                 // 初始化选中状态：确保 ViewModel 有选中的 Session
                 if viewModel.globalInputState.selectedSessionId == nil,
@@ -80,46 +76,12 @@ struct DeckView: View {
                     viewModel: viewModel,
                     showingSettings: $showingSettings,
                     showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet,
-                    showingSyncAlert: $showingSyncAlert,
-                    showingConflictAlert: $showingConflictAlert
+                    showingSortSheet: $showingSortSheet
                 )
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
-                    gatewayUrl: $gatewayUrl,
-                    token: $token,
-                    isConnected: .constant(viewModel.gatewayConnected),
-                    onDisconnect: {
-                        viewModel.disconnect()
-                        showingSettings = false
-                    },
-                    onApplyAndReconnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onConnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onResetDeviceIdentity: {
-                        viewModel.resetDeviceIdentity()
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onClose: {
-                        showingSettings = false
-                    },
+                    isConnected: (viewModel.gatewayClient?.connected ?? false),
                     viewModel: viewModel
                 )
             }
@@ -132,16 +94,11 @@ struct DeckView: View {
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
             }
-            .deckSyncAlerts(
-                viewModel: viewModel,
-                showingSyncAlert: $showingSyncAlert,
-                showingConflictAlert: $showingConflictAlert
-            ) { newValue in
-                if newValue {
-                    showingConflictAlert = true
-                } else {
-                    showingConflictAlert = false
-                }
+            // Stop 失败弹窗
+            .alert("stop_failed".localized, isPresented: $viewModel.showStopError) {
+                Button("ok".localized, role: .cancel) {}
+            } message: {
+                Text(String(format: "stop_failed_message".localized, viewModel.stopErrorText))
             }
         }
     }
@@ -157,21 +114,7 @@ struct DeckView: View {
                         SessionColumnView(
                             session: session,
                             viewModel: viewModel,
-                            isSelected: sessionId == selectedSessionId,
-                            onSelect: {
-                                withAnimation {
-                                    selectedSessionId = sessionId
-                                    // hasUnreadMessage 在 .onChange 中统一处理
-                                }
-                            },
-                            onDelete: {
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.65)) {
-                                    viewModel.deleteSession(sessionId: sessionId)
-                                    if selectedSessionId == sessionId {
-                                        selectedSessionId = nil
-                                    }
-                                }
-                            }
+                            isSelected: sessionId == selectedSessionId
                         )
                         .frame(width: 400)
                         .transition(
@@ -184,7 +127,9 @@ struct DeckView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(.spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder)
+            .animation(
+                .spring(response: 0.45, dampingFraction: 0.65), value: viewModel.sessionOrder
+            )
             .background(Color.adaptiveBackground)
         }
     }
@@ -199,6 +144,7 @@ struct NewSessionSheet: View {
 
     @State private var name = "default"
     @State private var context = ""
+    @State private var isNameTaken = false
     @FocusState private var isNameFieldFocused: Bool
 
     var body: some View {
@@ -209,9 +155,17 @@ struct NewSessionSheet: View {
                     TextField("session_name".localized, text: $name)
                         .focused($isNameFieldFocused)
                         .textContentType(.name)
+                        .onChange(of: name) { _, newValue in
+                            isNameTaken = viewModel.isSessionNameTaken(name: newValue)
+                        }
                         .onSubmit {
                             createSession()
                         }
+                    if isNameTaken, !name.isEmpty {
+                        Text("session_name_taken".localized)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
                 } footer: {
                     Text("a_unique_identifier_for_this_session".localized)
                 }
@@ -241,7 +195,7 @@ struct NewSessionSheet: View {
                     Button("create".localized) {
                         createSession()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(name.isEmpty || isNameTaken)
                     .fontWeight(.semibold)
                 }
             }

@@ -51,19 +51,26 @@ class SpeechRecognizer: ObservableObject {
     private var recognizer: SFSpeechRecognizer?
 
     init() {
+        // 🧪 测试环境跳过权限检查，避免弹窗
+        // 使用环境变量（UI 测试中通过 launchEnvironment 设置）
+        if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+            // UI 测试模式：不初始化 SFSpeechRecognizer，避免权限请求
+            isAvailable = false
+            return
+        }
+
         // 使用中文普通话识别器
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
         isAvailable = recognizer?.isAvailable ?? false
 
-        // 测试环境跳过权限检查，避免弹窗
-        #if !TESTING
-            // Speech recognizer initialized
-            checkPermissions()
-        #endif
+        checkPermissions()
     }
 
     /// 检查语音识别权限
     private func checkPermissions() {
+        // 🧪 跳过权限检查（测试模式）
+        guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else { return }
+
         SFSpeechRecognizer.requestAuthorization { authStatus in
             Task { @MainActor in
                 switch authStatus {

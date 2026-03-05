@@ -869,6 +869,32 @@ AI: "现在可以编译吗？有没有其他 AI 在编译？"
 - **测试位置**: 与源码同目录，`*Tests.swift` 命名
 - **测试数量**: 93 个单元测试，100% 通过
 
+### 📝 测试脚本使用
+
+**单元测试**:
+```bash
+bash script/run_unit_tests.sh
+```
+
+**UI 测试**:
+```bash
+# macOS (最快，推荐用于开发)
+bash script/run_ui_tests.sh macos
+
+# iOS 模拟器
+bash script/run_ui_tests.sh ios
+
+# iPadOS 模拟器
+bash script/run_ui_tests.sh ipados
+```
+
+**使用子代理运行测试**（推荐）:
+```
+任务：运行 macOS UI 测试
+命令：bash script/run_ui_tests.sh macos
+汇报：测试结果、失败的用例、错误信息、日志路径
+```
+
 ### 测试运行规则
 
 **⚠️ 主代理禁止直接运行测试（耗时 2-10 分钟）**

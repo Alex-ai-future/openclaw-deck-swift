@@ -15,13 +15,11 @@ import SwiftUI
 
 /// Session 列视图 - 单个聊天会话（只负责展示）
 struct SessionColumnView: View {
-    @Bindable var session: SessionState
-    @Bindable var viewModel: DeckViewModel
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onDelete: () -> Void
+    var session: SessionState
+    var viewModel: DeckViewModel
+    var isSelected: Bool
 
-    @State private var showingDeleteAlert = false
+    @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
     /// 滚动到底部（手动点击按钮）
@@ -53,24 +51,35 @@ struct SessionColumnView: View {
 
     /// 发送 Stop 请求 - 中断当前对话
     private func sendStopMessage() {
-        guard let runId = session.activeRunId else {
+        guard let client = viewModel.gatewayClient else {
+            // Gateway 未连接，显示错误
+            viewModel.stopErrorText = "Gateway 未连接"
+            viewModel.showStopError = true
             return
         }
 
         Task {
             do {
-                try await viewModel.gatewayClient?.abortChat(
-                    sessionKey: session.sessionKey,
-                    runId: runId
-                )
+                // 不传 runId，让 Gateway 中止该 session 的所有活跃 run
+                // 这样更可靠，因为 runId 可能已经过期或不匹配
+                try await client.abortChat(sessionKey: session.sessionKey, runId: nil)
+                // 成功后更新状态
+                await MainActor.run {
+                    session.activeRunId = nil
+                    session.status = .idle
+                }
             } catch {
-                print("Stop 请求失败：\(error.localizedDescription)")
+                // 失败时显示错误提示
+                await MainActor.run {
+                    viewModel.stopErrorText = "Stop 失败：\(error.localizedDescription)"
+                    viewModel.showStopError = true
+                }
             }
         }
     }
 
-    /// 发送 /new 消息
-    private func sendNewMessage() {
+    /// 确认发送 /new 消息
+    private func confirmSendNewMessage() {
         // 设置选中的 Session
         viewModel.globalInputState.selectedSessionId = session.sessionId
 
@@ -110,8 +119,9 @@ struct SessionColumnView: View {
 
                 // 底部浮动按钮组
                 VStack {
-                    // 顶部状态条 - iPad 显示对话名字
+                    // 顶部状态条（iPad + macOS）- 临时移到外面测试 accessibility
                     topStatusBar
+
                     Spacer()
 
                     HStack(spacing: 16) {
@@ -120,21 +130,43 @@ struct SessionColumnView: View {
                             scrollToBottom()
                         }
 
-                        // 快速操作按钮组 - 只在选中时显示
-                        if isSelected {
-                            HStack(spacing: 16) {
-                                // /new 按钮 - 点击发送 "/new" 消息
+                        // 快速操作按钮组
+                        // 判断状态
+                        let isProcessing = session.activeRunId != nil
+
+                        // Stop 按钮 - 优先级最高，无论是否选中，AI 处理中时都显示
+                        if isProcessing {
+                            Button {
+                                sendStopMessage()
+                            } label: {
+                                Image(systemName: "stop.circle")
+                                    .font(.title2)
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.glass)
+                            .frame(height: 40)
+                        }
+                        // 其他按钮只在选中时显示
+                        else if isSelected {
+                            // 判断状态
+                            let hasInput = !viewModel.globalInputState.inputText.isEmpty
+
+                            // 发送按钮 - 输入框有内容时显示
+                            if hasInput {
                                 Button {
-                                    sendNewMessage()
+                                    sendInputMessage()
                                 } label: {
-                                    Text("new".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
+                                    Image(systemName: "arrow.up.circle").accessibilityIdentifier(
+                                        "sendButton"
+                                    )
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(height: 36)
-
-                                // OK 按钮 - 点击发送 "OK" 消息
+                                .frame(height: 40)
+                            }
+                            // OK 按钮 - 输入框为空且 AI 未处理时显示
+                            else {
                                 Button {
                                     sendOKMessage()
                                 } label: {
@@ -143,31 +175,8 @@ struct SessionColumnView: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(height: 36)
-
-                                // Stop 按钮 - 点击中断当前对话
-                                Button {
-                                    sendStopMessage()
-                                } label: {
-                                    Text("stop".localized)
-                                        .font(.title3)
-                                        .foregroundColor(.red)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(height: 36)
-
-                                // 发送按钮 - 点击发送输入框内容
-                                Button {
-                                    sendInputMessage()
-                                } label: {
-                                    Image(systemName: "arrow.up.circle")
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                }
-                                .buttonStyle(.glass)
-                                .frame(width: 36, height: 36)
+                                .frame(height: 40)
                             }
-                            .transition(.opacity.combined(with: .scale))
                         }
                     }
                     .padding(12)
@@ -192,9 +201,11 @@ struct SessionColumnView: View {
                 }
             #endif
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("SessionView-\(session.sessionId)")
         .contentShape(Rectangle())
         .onTapGesture {
-            onSelect()
+            viewModel.selectSession(session.sessionId)
             // 点击整个 Session 视图时消除未读状态
             session.hasUnreadMessage = false
         }
@@ -219,103 +230,55 @@ struct SessionColumnView: View {
             }
         }
         #endif
-        .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-            onDelete()
-        }
     }
 
     // MARK: - Session Name Button
 
     private var sessionNameButton: some View {
-        // 点击选中，长按弹出菜单
-        Menu {
-            // 使用共用的菜单内容
-            sessionMenuContent
+        Button {
+            showingSessionDetails = true
         } label: {
-            // 点击按钮选中 Session
-            Button {
-                onSelect()
-            } label: {
-                Text(session.sessionId)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-                    // 工作中橘黄，完成未读绿色，其他蓝色
-                    .foregroundColor(
-                        session.isProcessing
-                            ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
-                    )
-            }
-            .buttonStyle(.glass)
-        }
-    }
-
-    // MARK: - Menu Button
-
-    private var menuButton: some View {
-        Menu {
-            // 使用共用的菜单内容
-            sessionMenuContent
-        } label: {
-            Image(systemName: "ellipsis")
+            Text(session.name ?? session.sessionId)
                 .font(.body)
-                .foregroundColor(.secondary)
+                .fontWeight(.medium)
+                .lineLimit(1)
+                // 工作中橘黄，完成未读绿色，其他蓝色
+                .foregroundColor(
+                    session.status == .thinking || session.status == .streaming
+                        ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
+                )
+                .accessibilityIdentifier("Session-\(session.sessionId)")
+        }
+        .buttonStyle(.glass)
+        .sheet(isPresented: $showingSessionDetails) {
+            SessionDetailView(
+                session: session,
+                viewModel: viewModel
+            )
         }
     }
 
-    // MARK: - Session Menu Content (共用)
+    // MARK: - Session Menu Content (简化版 - 只保留快捷操作)
 
-    private var sessionMenuContent: some View {
-        Group {
-            // 会话详细信息（仅 4 项）
-            Section {
-                // 消息数量
-                Label("\(session.messages.count) messages", systemImage: "message")
-
-                // 最后活动时间
-                if let lastActivity = session.lastMessageAt {
-                    Label("Last: \(formatDate(lastActivity))", systemImage: "clock")
-                }
-
-                // 上下文（如果有，限制 100 字符）
-                if let context = session.context, !context.isEmpty {
-                    Label("Context: \(context.prefix(100))", systemImage: "text.alignleft")
-                }
-
-                // Session Key
-                Label("Key: \(session.sessionKey)", systemImage: "tag")
-            }
-
-            Divider()
-
-            // 删除按钮
-            Section {
-                Button(role: .destructive) {
-                    showingDeleteAlert = true
-                } label: {
-                    Label("delete_session".localized, systemImage: "trash")
-                }
-            }
-        }
-    }
-
-    // MARK: - Top Status Bar (iPad)
+    // MARK: - Top Status Bar
 
     private var topStatusBar: some View {
         HStack {
             Spacer()
 
-            // 中间：对话名字按钮（只在 iPad 上显示）
+            // 中间：对话名字按钮（iPad + macOS）
             #if os(iOS)
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     sessionNameButton
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
                 }
+            #elseif os(macOS)
+                sessionNameButton
             #endif
 
             Spacer()
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .padding(.horizontal, 16)
         .padding(.top, 2)
     }
@@ -326,7 +289,7 @@ struct SessionColumnView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 Group {
-                    if session.isLoadingMessages {
+                    if session.messageLoadState == .loading {
                         // 消息加载中
                         VStack {
                             ProgressView()
@@ -339,7 +302,7 @@ struct SessionColumnView: View {
                         // 显示消息列表
                         VStack(alignment: .leading, spacing: 12) {
                             // Loading indicator
-                            if session.isHistoryLoading {
+                            if session.messageLoadState == .loading {
                                 HStack {
                                     Spacer()
                                     ProgressView()
@@ -357,11 +320,11 @@ struct SessionColumnView: View {
                                 MessageView(message: message)
                                     .id(message.id)
                             }
+                            .animation(.easeOut(duration: 0.05), value: session.messages)
                         }
                     }
                 }
                 .padding()
-                .id("messages-container-\(session.messages.count)")
             }
             .onChange(of: session.messages.last?.id) { _, newLastMessageId in
                 if let lastId = newLastMessageId {
@@ -610,9 +573,7 @@ struct SessionColumnView: View {
     SessionColumnView(
         session: createSampleSession(),
         viewModel: DeckViewModel(),
-        isSelected: true,
-        onSelect: {},
-        onDelete: {}
+        isSelected: true
     )
 }
 
@@ -620,9 +581,7 @@ struct SessionColumnView: View {
     SessionColumnView(
         session: SessionState(sessionId: "empty", sessionKey: "agent:main:empty"),
         viewModel: DeckViewModel(),
-        isSelected: true,
-        onSelect: {},
-        onDelete: {}
+        isSelected: true
     )
 }
 
@@ -630,9 +589,7 @@ struct SessionColumnView: View {
     SessionColumnView(
         session: createStreamingSession(),
         viewModel: DeckViewModel(),
-        isSelected: true,
-        onSelect: {},
-        onDelete: {}
+        isSelected: true
     )
 }
 

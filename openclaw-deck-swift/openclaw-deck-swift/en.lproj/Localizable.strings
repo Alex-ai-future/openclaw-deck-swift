@@ -151,7 +151,6 @@
 "view_complete_usage_instructions_and_troubleshooting_guide" = "View complete usage instructions and troubleshooting guide";
 "welcome" = "Welcome";
 "wshostport" = "ws://host:port";
-"保存到本地存储" = "保存到本地存储";
 "sound_on_message" = "Sound on Message";
 "this_will_clear_the_stored_device_identity_and_token_then_reconnect_using_the_token_you_entered" = "This will clear the stored device identity and token, then reconnect using the token you entered.";
 "this_will_remove_the_session_from_the_deck_messages_are_stored_in_gateway_and_can_be_reloaded" = "This will remove the session from the deck. Messages are stored in Gateway and can be reloaded.";
@@ -161,3 +160,123 @@
 "mark_as_read" = "Mark as Read";
 "mark_as_unread" = "Mark as Unread";
 "delete_session_action" = "Delete";
+
+"message_send_failed" = "Send Failed";
+"gateway_not_connected_message" = "Gateway not connected, message not sent";
+"retry" = "Retry";
+"cannot_reconnect_check_settings" = "Cannot reconnect, please check Gateway settings";
+"usage_examples" = "Usage Examples";
+"loading_document" = "Loading document...";
+"failed_to_load_document" = "Failed to load document";
+
+// MARK: - Error Messages
+"stop_failed" = "Stop Failed";
+"stop_failed_message" = "Failed to stop current conversation: %@\\nPlease check your network connection and try again.";
+
+// MARK: - Session Details
+"session_details" = "Session Details";
+"basic_info" = "Basic Info";
+"message_stats" = "Message Stats";
+"timeline" = "Timeline";
+"load_status" = "Load Status";
+"total_messages" = "messages";
+"last_activity" = "Last Activity";
+"first_message" = "First Message";
+"history_loaded" = "History loaded";
+"loading_messages" = "Loading messages...";
+"confirm_delete" = "Confirm Delete";
+"delete_session_confirm_message" = "Are you sure you want to delete this session? This action cannot be undone.";
+
+// MARK: - Session Details (Simplified)
+"processing" = "Processing";
+"yes" = "Yes";
+"no" = "No";
+"total_messages_count" = "Total Messages";
+"user_messages" = "User Messages";
+"assistant_messages" = "Assistant Messages";
+"completed" = "Completed";
+"incomplete" = "Incomplete";
+"status_loading" = "Loading";
+
+// MARK: - New Session Confirmation
+"confirm_new_session" = "Confirm New Session";
+"new_session_confirm_message" = "This will start a new conversation and clear the current context. Are you sure you want to continue?";
+
+// MARK: - Session Details (补充)
+"session_id_label" = "Session ID";
+"session_key_label" = "Session Key";
+"session_context_label" = "Notes";
+"processing_label" = "Processing";
+"unread_messages_label" = "Unread Messages";
+"active_run_label" = "Active Run";
+"total_messages_label" = "Total Messages";
+"user_messages_label" = "User Messages";
+"assistant_messages_label" = "Assistant Messages";
+"last_activity_label" = "Last Activity";
+"first_message_label" = "First Message";
+"history_load_label" = "History Load";
+"history_loaded_status" = "Loaded";
+"history_not_loaded_status" = "Not Loaded";
+"loading_history_ellipsis" = "Loading history...";
+"loading_messages_ellipsis" = "Loading messages...";
+"idle" = "Idle";
+"thinking" = "Thinking";
+"streaming" = "Streaming";
+"error_prefix" = "Error: ";
+
+// MARK: - Privacy Policy
+"privacy_policy" = "Privacy Policy";
+
+// MARK: - First Install Guide
+"first_install" = "First Install";
+"first_install_guide" = "Please configure Gateway connection first. See User Guide for detailed steps.";
+"view_user_guide" = "View User Guide";
+
+// MARK: - Login Guide
+"login_required" = "Login Required";
+"login_guide" = "Configure Gateway connection to start using the app.";
+"tap_settings_to_configure" = "Tap the settings icon to configure";
+"connection_error_please_reconnect" = "Connection error, please reconnect";
+"connection_error" = "Connection Error";
+
+// MARK: - Session Name Validation
+"session_name_taken" = "This name is already in use, please choose another";
+
+// MARK: - Session Status
+"processing_status" = "Processing";
+"new_status" = "New";
+
+// MARK: - Messages
+"no_messages_yet" = "No messages yet";
+"no_messages" = "No messages";
+"messages_count_format" = "%d messages";
+
+// MARK: - Settings
+"gateway_url_format" = "Gateway: %@";
+"app_version" = "1.0.0";
+
+// MARK: - Dictation
+"dictated_text_format" = "Dictated: %@";
+
+// MARK: - Web Client
+"open_web_client" = "Open Web Client";
+"web_client_description" = "Open the OpenClaw web-based control panel to manage agents, sessions, and advanced settings.";
+
+
+// MARK: - Archive & Continue
+"archive_section_header" = "Archive & Continue";
+"archive_button" = "Archive Current";
+"archive_description" = "Save history & start fresh";
+"confirm_archive" = "Archive Current History?";
+"archive_confirm_message" = "Current: %d messages. History will be saved and searchable.";
+"archive_action" = "Archive & Continue";
+
+// MARK: - Danger Zone
+"delete_section_header" = "Danger Zone";
+"delete_description" = "Permanently remove this session and all history";
+
+"invalid_gateway_url" = "Invalid gateway URL: %@";
+
+// MARK: - Connection Errors
+"connection_challenge_failed" = "Failed to connect to Gateway, please check network and try again";
+"connection_handshake_failed" = "Connection handshake failed, please check Gateway status";

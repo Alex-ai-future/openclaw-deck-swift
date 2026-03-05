@@ -20,7 +20,7 @@ struct openclaw_deck_swiftApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.locale, languageManager.currentLocale)
-                .id(languageManager.updateID) // 语言改变时强制刷新
+            // ✅ locale 改变时 SwiftUI 会自动刷新，无需强制重建视图
         }
     }
 }

@@ -29,7 +29,7 @@ struct SessionConfig: Identifiable, Codable {
     /// 生成 Session ID
     ///
     /// - Parameter name: 用户输入的会话名称（用于生成 ID）
-    /// - Returns: 生成的 Session ID（小写，替换特殊字符为连字符，末尾添加 4 位随机 hash 避免重复）
+    /// - Returns: 生成的 Session ID（小写，替换特殊字符为连字符）
     static func generateId(from name: String) -> String {
         let sanitized =
             name
@@ -37,12 +37,18 @@ struct SessionConfig: Identifiable, Codable {
                 .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
                 .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
 
-        let baseId = sanitized.isEmpty ? "session-\(Date().timeIntervalSince1970)" : sanitized
+        return sanitized.isEmpty ? "session-\(Date().timeIntervalSince1970)" : sanitized
+    }
 
-        // 添加 4 位随机 hash 避免重复
-        let hash = String(UUID().uuidString.prefix(4))
-
-        return "\(baseId)-\(hash)"
+    /// 检查 Session 名称是否已被使用
+    ///
+    /// - Parameters:
+    ///   - name: 要检查的名称
+    ///   - existingSessions: 现有的 Session 字典
+    /// - Returns: 如果名称已存在返回 true
+    static func isNameTaken(name: String, existingSessions: [String: SessionState]) -> Bool {
+        let normalizedId = generateId(from: name)
+        return existingSessions.keys.contains(normalizedId)
     }
 
     /// 生成 Session Key

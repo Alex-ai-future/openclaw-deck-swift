@@ -1,16 +1,17 @@
-// UserGuideView.swift
+// MarkdownDocumentView.swift
 // OpenClaw Deck Swift
 //
-// 用户指南视图 - 使用 MarkdownView 渲染纯净文档
+// 通用 Markdown 文档加载组件
 
-import MarkdownView
+import MarkdownUI
 import SwiftUI
 
-/// 用户指南视图
-struct UserGuideView: View {
-    /// GitHub raw 文档地址（直接获取 Markdown 内容）
-    let rawUrl =
-        "https://raw.githubusercontent.com/Alex-ai-future/openclaw-deck-swift/main/docs/USER_GUIDE.md"
+/// 通用 Markdown 文档视图
+struct MarkdownDocumentView: View {
+    /// 文档标题
+    let title: String
+    /// GitHub raw 文档地址
+    let rawUrl: String
 
     @State private var markdownContent: String = ""
     @State private var isLoading: Bool = true
@@ -20,13 +21,13 @@ struct UserGuideView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading User Guide...")
+                    ProgressView("loading_document".localized)
                 } else if let error {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.largeTitle)
                             .foregroundColor(.orange)
-                        Text("Failed to Load")
+                        Text("failed_to_load_document".localized)
                             .font(.headline)
                         Text(error)
                             .font(.caption)
@@ -36,12 +37,12 @@ struct UserGuideView: View {
                     .padding()
                 } else {
                     ScrollView {
-                        MarkdownView(markdownContent)
-                            .padding(.horizontal, 48)
+                        Markdown(markdownContent)
+                            .padding(.horizontal, 24) // 调小边距
                     }
                 }
             }
-            .navigationTitle("user_guide".localized)
+            .navigationTitle(title)
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -82,5 +83,8 @@ struct UserGuideView: View {
 }
 
 #Preview {
-    UserGuideView()
+    MarkdownDocumentView(
+        title: "Preview",
+        rawUrl: "https://raw.githubusercontent.com/Alex-ai-future/openclaw-deck-swift/main/docs/USER_GUIDE.md"
+    )
 }

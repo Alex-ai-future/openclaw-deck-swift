@@ -1,10 +1,10 @@
-import SwiftUI
-
 // SessionListView.swift
 // OpenClaw Deck Swift
 //
-// Session 列表视图 - 用于 iPhone 单列布局
+// Session 列表视图 - iPhone 单列布局（简洁现代设计）
+
 import os.log
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "SessionListView")
 
@@ -33,257 +33,99 @@ struct SessionListView: View {
         }
     }
 
-    // 内部状态管理
+    /// 内部状态管理
     @State private var showingSortSheet = false
-    @State private var showingSyncAlert = false
-    @State private var showingConflictAlert = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
+            // Session 列表
             List {
-                // Session 列表
                 ForEach(viewModel.sessionOrder, id: \.self) { sessionId in
                     if let session = viewModel.getSession(sessionId: sessionId) {
                         NavigationLink(value: session) {
                             SessionRowView(
                                 session: session,
+                                style: .list,
+                                showStatus: true,
+                                showLastMessage: true,
                                 onRequestDelete: {
-                                    // 请求删除：设置待删除的 sessionId，显示弹窗
                                     deleteSessionId = session.sessionId
                                     showingDeleteAlert = true
                                 }
                             )
                         }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
                 }
             }
             .listStyle(.plain)
             .navigationTitle("openclaw_deck".localized)
-            .accessibilityIdentifier("SessionList")
-            .toolbar {
-                DeckToolbar(
-                    viewModel: viewModel,
-                    showingSettings: $showingSettings,
-                    showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet,
-                    showingSyncAlert: $showingSyncAlert,
-                    showingConflictAlert: $showingConflictAlert
-                )
-            }
-            .navigationDestination(for: SessionState.self) { session in
-                // 跳转到聊天详情页面（使用现有的 SessionColumnView）
-                #if os(iOS)
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.large)
+            #endif
+                .accessibilityIdentifier("SessionList")
+                .toolbar {
+                    DeckToolbar(
+                        viewModel: viewModel,
+                        showingSettings: $showingSettings,
+                        showingNewSessionSheet: $showingNewSessionSheet,
+                        showingSortSheet: $showingSortSheet
+                    )
+                }
+                .navigationDestination(for: SessionState.self) { session in
                     SessionColumnView(
                         session: session,
                         viewModel: viewModel,
-                        isSelected: true,
-                        onSelect: {
-                            viewModel.selectSession(session.sessionId)
-                        },
-                        onDelete: {
-                            viewModel.deleteSession(sessionId: session.sessionId)
-                        }
+                        isSelected: true
                     )
+                    #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .onAppear {
-                        // 进入对话时自动标记为已读
                         session.hasUnreadMessage = false
                     }
-                #else
-                    SessionColumnView(
-                        session: session,
-                        viewModel: viewModel,
-                        isSelected: true,
-                        onSelect: {
-                            viewModel.selectSession(session.sessionId)
-                        },
-                        onDelete: {
-                            viewModel.deleteSession(sessionId: session.sessionId)
-                        }
-                    )
-                    .onAppear {
-                        // 进入对话时自动标记为已读
-                        session.hasUnreadMessage = false
+                }
+                .task {
+                    guard !hasAttemptedAutoConnect, !(viewModel.gatewayClient?.connected ?? false) else { return }
+                    hasAttemptedAutoConnect = true
+
+                    if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
+                        let savedToken = UserDefaultsStorage.shared.loadToken()
+                        await viewModel.initialize(url: savedUrl, token: savedToken)
                     }
-                #endif
-            }
-            .task {
-                // Auto-connect on first launch if credentials exist
-                guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
-                hasAttemptedAutoConnect = true
 
-                if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
-                    let savedToken = UserDefaultsStorage.shared.loadToken()
-                    await viewModel.initialize(url: savedUrl, token: savedToken)
+                    logSessionData()
                 }
-
-                // 调试：打印会话数据
-                logSessionData()
-            }
-            .onAppear {
-                // 调试：每次视图出现时打印会话数据
-                logSessionData()
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView(
-                    gatewayUrl: $gatewayUrl,
-                    token: $token,
-                    isConnected: .constant(viewModel.gatewayConnected),
-                    onDisconnect: {
-                        viewModel.disconnect()
-                        showingSettings = false
-                    },
-                    onApplyAndReconnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onConnect: {
-                        UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
-                        UserDefaultsStorage.shared.saveToken(token)
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onResetDeviceIdentity: {
-                        viewModel.resetDeviceIdentity()
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                        showingSettings = false
-                    },
-                    onClose: {
-                        showingSettings = false
-                    },
-                    viewModel: viewModel
-                )
-            }
-            .sheet(isPresented: $showingNewSessionSheet) {
-                NewSessionSheet(
-                    viewModel: viewModel,
-                    isPresented: $showingNewSessionSheet
-                )
-            }
-            .sheet(isPresented: $showingSortSheet) {
-                SessionSortView(viewModel: viewModel)
-            }
-            .deckSyncAlerts(
-                viewModel: viewModel,
-                showingSyncAlert: $showingSyncAlert,
-                showingConflictAlert: $showingConflictAlert
-            ) { newValue in
-                if newValue {
-                    showingConflictAlert = true
-                } else {
-                    showingConflictAlert = false
+                .sheet(isPresented: $showingSettings) {
+                    SettingsView(isConnected: (viewModel.gatewayClient?.connected ?? false), viewModel: viewModel)
                 }
-            }
-            .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                // 用户确认删除
-                if let sessionId = deleteSessionId {
-                    viewModel.deleteSession(sessionId: sessionId)
-                    deleteSessionId = nil
+                .sheet(isPresented: $showingNewSessionSheet) {
+                    NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
                 }
-            }
+                .sheet(isPresented: $showingSortSheet) {
+                    SessionSortView(viewModel: viewModel)
+                }
+                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+                    if let sessionId = deleteSessionId {
+                        Task.detached { [weak viewModel] in
+                            await viewModel?.deleteSession(sessionId: sessionId)
+                            await MainActor.run {
+                                deleteSessionId = nil
+                            }
+                        }
+                    }
+                }
         }
     }
 
-    // MARK: - Debug
-
     private func logSessionData() {
         logger.debug(
-            "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
+            "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\((viewModel.gatewayClient?.connected ?? false))"
         )
     }
 }
 
-// MARK: - Session Row View
-
-/// Session 行视图 - 用于列表展示
-struct SessionRowView: View {
-    @Bindable var session: SessionState
-    var onRequestDelete: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Session 图标
-            ZStack {
-                Circle()
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 44, height: 44)
-
-                Text(session.sessionId.prefix(1).uppercased())
-                    .font(.headline)
-                    .foregroundColor(.blue)
-            }
-
-            // Session 信息
-            VStack(alignment: .leading, spacing: 4) {
-                Text(session.sessionId)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-
-                if let lastMessage = session.messages.last {
-                    Text(lastMessage.text)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Text("no_messages".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
-
-            // 状态标记：进行中（黄色）优先于未读消息（绿色）
-            if session.isProcessing {
-                Circle()
-                    .fill(Color.orange)
-                    .frame(width: 8, height: 8)
-            } else if session.hasUnreadMessage {
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 8, height: 8)
-            }
-        }
-        .padding(.vertical, 4)
-        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-            // 左滑：根据当前状态显示已读/未读
-            if session.hasUnreadMessage {
-                // 当前是未读 → 显示"已读"按钮
-                Button {
-                    session.hasUnreadMessage = false
-                } label: {
-                    Label("mark_as_read".localized, systemImage: "checkmark.circle")
-                }
-                .tint(.green)
-            } else {
-                // 当前是已读 → 显示"未读"按钮
-                Button {
-                    session.hasUnreadMessage = true
-                } label: {
-                    Label("mark_as_unread".localized, systemImage: "circle")
-                }
-                .tint(.orange)
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            // 右滑：删除按钮（全滑动）
-            Button(role: .destructive) {
-                onRequestDelete()
-            } label: {
-                Label("delete_session_action".localized, systemImage: "trash")
-            }
-        }
-    }
-}
+// MARK: - Preview
 
 #Preview {
     SessionListView(viewModel: DeckViewModel())

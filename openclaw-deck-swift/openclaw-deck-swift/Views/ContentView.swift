@@ -53,19 +53,9 @@ struct ContentView: View {
     @State private var showingNewSessionSheet = false
     @State private var hasAttemptedAutoConnect = false
     @State private var showingWelcomeSettings = false
+    @State private var hasLoadedSavedConfig = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    init() {
-        // 从 UserDefaults 加载保存的配置
-        let storage = UserDefaultsStorage.shared
-        if let savedUrl = storage.loadGatewayUrl() {
-            _gatewayUrl = State(initialValue: savedUrl)
-        }
-        if let savedToken = storage.loadToken() {
-            _token = State(initialValue: savedToken)
-        }
-    }
 
     /// 判断是否为 iPad
     var isIPad: Bool {
@@ -74,52 +64,78 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            // ✅ 优先检查加载状态，确保加载完成前不显示主界面
-            if viewModel.loadingStage != .idle {
-                // 加载中 - 显示详细加载状态
-                LoadingView(
-                    stage: viewModel.loadingStage,
-                    progress: viewModel.loadingProgress
-                )
-
-            } else if viewModel.isReconnecting {
-                // Reconnecting state - show reconnecting view
-                ReconnectingView(
-                    attempts: viewModel.reconnectAttempts,
-                    maxAttempts: 5,
-                    onCancel: {
-                        viewModel.disconnect()
-                    }
-                )
-
-            } else if viewModel.gatewayConnected {
-                // 根据设备类型选择布局（加载完成后才显示）
-                if isIPad {
-                    // iPad - 多列布局
+            // 🧪 UI Test 模式：跳过连接检查，直接显示主界面
+            if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+                // UI Test 模式，显示主界面
+                #if os(macOS)
                     DeckView(
                         viewModel: viewModel,
                         showingSettings: $showingSettings,
                         showingNewSessionSheet: $showingNewSessionSheet
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    // iPhone - 单列布局
+                #elseif os(iOS)
+                    if isIPad {
+                        DeckView(
+                            viewModel: viewModel,
+                            showingSettings: $showingSettings,
+                            showingNewSessionSheet: $showingNewSessionSheet
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        SessionListView(viewModel: viewModel)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                #else
                     SessionListView(viewModel: viewModel)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                #endif
+            } else if viewModel.gatewayClient?.connected ?? false {
+                // ✅ 已连接
+                if case .connected = viewModel.appState {
+                    // 加载完成 → 显示聊天界面
+                    // 根据设备类型选择布局
+                    #if os(macOS)
+                        // macOS - 多列布局（类似 iPad）
+                        DeckView(
+                            viewModel: viewModel,
+                            showingSettings: $showingSettings,
+                            showingNewSessionSheet: $showingNewSessionSheet
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    #elseif os(iOS)
+                        if isIPad {
+                            // iPad - 多列布局
+                            DeckView(
+                                viewModel: viewModel,
+                                showingSettings: $showingSettings,
+                                showingNewSessionSheet: $showingNewSessionSheet
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            // iPhone - 单列布局
+                            SessionListView(viewModel: viewModel)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    #else
+                        // 其他平台 - 单列布局
+                        SessionListView(viewModel: viewModel)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    #endif
+                } else {
+                    // 加载中时显示 LoadingView
+                    LoadingView(appState: viewModel.appState)
                 }
-
+            } else if viewModel.appState.isLoading {
+                // ✅ 初始化连接中
+                LoadingView(appState: viewModel.appState)
             } else {
-                // Welcome screen - show settings
+                // ❌ 未连接
                 WelcomeView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,
-                    connectionError: viewModel.connectionError,
-                    isConnecting: viewModel.isInitializing,
-                    onConnect: {
-                        Task {
-                            await viewModel.initialize(url: gatewayUrl, token: token)
-                        }
-                    },
+                    connectionError: viewModel.gatewayClient?.connectionError,
+                    isConnecting: viewModel.appState.isLoading,
                     onClearError: {
                         viewModel.clearConnectionError()
                     },
@@ -131,90 +147,103 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(
-                gatewayUrl: $gatewayUrl,
-                token: $token,
-                isConnected: .init(
-                    get: { viewModel.gatewayConnected },
-                    set: { _ in }
-                ),
-                onDisconnect: {
-                    viewModel.disconnect()
-                    showingSettings = false
-                },
-                onApplyAndReconnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                    }
-                    showingSettings = false
-                },
-                onConnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 连接成功后关闭设置页面
-                        await MainActor.run {
-                            showingSettings = false
-                        }
-                    }
-                },
-                onResetDeviceIdentity: {
-                    viewModel.resetDeviceIdentity()
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 重置成功后关闭设置页面
-                        await MainActor.run {
-                            showingSettings = false
-                        }
-                    }
-                },
-                onClose: {
-                    showingSettings = false
-                },
+                isConnected: (viewModel.gatewayClient?.connected ?? false),
                 viewModel: viewModel
             )
         }
         .sheet(isPresented: $showingWelcomeSettings) {
             SettingsView(
-                gatewayUrl: $gatewayUrl,
-                token: $token,
-                isConnected: .constant(false),
-                onDisconnect: {
-                    viewModel.disconnect()
-                    showingWelcomeSettings = false
-                },
-                onApplyAndReconnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                    }
-                    showingWelcomeSettings = false
-                },
-                onConnect: {
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 连接成功后关闭设置页面
-                        await MainActor.run {
-                            showingWelcomeSettings = false
-                        }
-                    }
-                },
-                onResetDeviceIdentity: {
-                    viewModel.resetDeviceIdentity()
-                    Task {
-                        await viewModel.initialize(url: gatewayUrl, token: token)
-                        // 重置成功后关闭设置页面
-                        await MainActor.run {
-                            showingWelcomeSettings = false
-                        }
-                    }
-                },
-                onClose: {
-                    showingWelcomeSettings = false
-                },
+                isConnected: false,
                 viewModel: viewModel
             )
         }
+        // 同步确认弹窗（全局）
+        .alert("sync_all_sessions".localized, isPresented: .init(
+            get: { viewModel.isSyncing && !viewModel.showingSyncConflict },
+            set: { newValue in
+                // 用户点"取消"或关闭弹窗时，重置 isSyncing
+                if !newValue {
+                    viewModel.isSyncing = false
+                }
+            }
+        )) {
+            Button("cancel".localized, role: .cancel) {
+                // 点"取消"：重置 isSyncing，不同步
+                viewModel.isSyncing = false
+            }
+            Button("sync".localized) {
+                // 点"确定"：先关闭弹窗，再开始同步
+                viewModel.isSyncing = false
+                Task {
+                    await viewModel.handleSync()
+                }
+            }
+            .tint(.blue)
+        } message: {
+            Text("this_will_sync_all_sessions_with_the_gateway_continue".localized)
+        }
+
+        // 同步冲突弹窗（全局）
+        .alert("sync_conflict".localized, isPresented: .init(
+            get: { viewModel.showingSyncConflict },
+            set: { _ in }
+        )) {
+            Button("use_local_overwrite_cloud".localized, role: .destructive) {
+                Task {
+                    await viewModel.resolveSyncConflict(choice: "local")
+                }
+            }
+            Button("use_cloud_merge_with_local".localized) {
+                Task {
+                    await viewModel.resolveSyncConflict(choice: "remote")
+                }
+            }
+            Button("cancel".localized, role: .cancel) {
+                Task {
+                    await viewModel.resolveSyncConflict(choice: "cancel")
+                }
+            }
+        } message: {
+            if let info = viewModel.conflictInfo {
+                Text(info.description)
+            } else {
+                let localCount = viewModel.conflictLocalData?.sessions.count ?? 0
+                let remoteCount = viewModel.conflictRemoteData?.sessions.count ?? 0
+                Text(
+                    "Local has \(localCount) sessions, Cloud has \(remoteCount) sessions.\n\nChoose which data to use:"
+                )
+            }
+        }
+
+        // 消息发送失败弹窗（全局统一）
+        .alert("connection_error".localized, isPresented: $viewModel.showMessageSendError) {
+            Button("ok".localized, role: .cancel) {}
+        } message: {
+            Text(viewModel.messageSendErrorText)
+        }
+
         .task {
+            // 首先加载保存的配置到 @State 变量
+            if !hasLoadedSavedConfig {
+                let storage = UserDefaultsStorage.shared
+                if let savedUrl = storage.loadGatewayUrl() {
+                    gatewayUrl = savedUrl
+                }
+                if let savedToken = storage.loadToken() {
+                    token = savedToken
+                }
+                hasLoadedSavedConfig = true
+            }
+
             // Auto-connect on first launch if credentials exist
-            guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
+            guard !hasAttemptedAutoConnect, !(viewModel.gatewayClient?.connected ?? false) else { return }
+            // 🧪 UI 测试模式：跳过 Gateway 连接，但需要初始化 Session
+            if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
+                hasAttemptedAutoConnect = true
+                // UI 测试模式：调用 initialize 但不连接 Gateway
+                await viewModel.initialize(url: "http://test", token: nil)
+                return
+            }
             hasAttemptedAutoConnect = true
 
             logger.debug("Attempting auto-connect...")
@@ -231,7 +260,7 @@ struct ContentView: View {
             guard newPhase == .active else { return }
 
             // 如果已连接或正在连接，不需要重连
-            guard !viewModel.gatewayConnected, !viewModel.isInitializing else { return }
+            guard !(viewModel.gatewayClient?.connected ?? false), !viewModel.appState.isLoading else { return }
 
             // 检查是否有保存的凭证
             guard let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() else { return }
@@ -262,34 +291,6 @@ struct ConnectingView: View {
     }
 }
 
-// MARK: - Reconnecting View
-
-struct ReconnectingView: View {
-    let attempts: Int
-    let maxAttempts: Int
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-
-            Text("reconnecting".localized)
-                .font(.headline)
-
-            Text("Attempt \(attempts)/\(maxAttempts)")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-
-            Button("cancel".localized, action: onCancel)
-                .buttonStyle(.bordered)
-                .padding(.top, 20)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.adaptiveBackground)
-    }
-}
-
 // MARK: - Welcome View
 
 struct WelcomeView: View {
@@ -297,35 +298,93 @@ struct WelcomeView: View {
     @Binding var token: String
     let connectionError: String?
     let isConnecting: Bool
-    let onConnect: () -> Void
     let onClearError: () -> Void
     let onShowSettings: () -> Void
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 // Logo and title
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Image(systemName: "message.badge.filled.fill")
-                        .font(.system(size: 64))
+                        .font(.system(size: 72))
                         .foregroundColor(.blue)
 
                     Text("openclaw_deck".localized)
-                        .font(.largeTitle)
+                        .font(.title)
                         .fontWeight(.bold)
 
                     Text("multi_session_chat_client".localized)
-                        .font(.title3)
+                        .font(.body)
                         .foregroundColor(.secondary)
                 }
-                .padding(.top, 60)
+                .padding(.top, 40)
 
-                // Simple guide
-                Text("tap_the_in_the_top_rightnto_get_started".localized)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 40)
+                // First install guide card
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.orange)
+                        Text("first_install".localized)
+                            .font(.headline)
+                    }
+
+                    Text("first_install_guide".localized)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    Link(destination: URL(string: "https://alex-ai-future.github.io/openclaw-deck-swift/USER_GUIDE.html")!) {
+                        HStack {
+                            Label("view_user_guide".localized, systemImage: "book.fill")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.adaptiveSecondaryBackground)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
+
+                // Login guide card
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "hand.point.up.fill")
+                            .foregroundColor(.blue)
+                        Text("login_required".localized)
+                            .font(.headline)
+                    }
+
+                    Text("login_guide".localized)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    HStack {
+                        Image(systemName: "gearshape.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("tap_settings_to_configure".localized)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.top, 4)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.adaptiveSecondaryBackground)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
 
                 Spacer()
 
@@ -362,7 +421,7 @@ struct WelcomeView: View {
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .topBarLeading) {
                         Button {
                             onShowSettings()
                         } label: {
@@ -373,7 +432,7 @@ struct WelcomeView: View {
                 }
             #else
                 .toolbar {
-                        ToolbarItem {
+                        ToolbarItem(placement: .automatic) {
                             Button {
                                 onShowSettings()
                             } label: {

@@ -161,3 +161,135 @@
 "mark_as_read" = "已读";
 "mark_as_unread" = "未读";
 "delete_session_action" = "删除";
+
+"message_send_failed" = "发送失败";
+"gateway_not_connected_message" = "Gateway 未连接，消息未发送";
+"retry" = "重试";
+"cannot_reconnect_check_settings" = "无法重连，请检查 Gateway 设置";
+"usage_examples" = "使用样例";
+"loading_document" = "正在加载文档...";
+"failed_to_load_document" = "加载文档失败";
+
+// MARK: - Error Messages
+"stop_failed" = "停止失败";
+"stop_failed_message" = "无法停止当前对话：%@\\n请检查网络连接或稍后重试。";
+
+// MARK: - Session Details
+"session_details" = "会话详情";
+"basic_info" = "基础信息";
+"message_stats" = "消息统计";
+"timeline" = "时间线";
+"load_status" = "加载状态";
+"total_messages" = "条消息";
+"last_activity" = "最后活动";
+"first_message" = "第一条消息";
+"history_loaded" = "历史已加载";
+"loading_messages" = "正在加载消息...";
+"confirm_delete" = "确认删除";
+"delete_session_confirm_message" = "确定要删除这个会话吗？此操作不可恢复。";
+
+// MARK: - Session Details (简化版)
+"processing" = "处理中";
+"yes" = "是";
+"no" = "否";
+"total_messages_count" = "总消息数";
+"user_messages" = "User 消息";
+"assistant_messages" = "Assistant 消息";
+"completed" = "已完成";
+"incomplete" = "未完成";
+"status_loading" = "正在加载";
+
+// MARK: - New Session Confirmation
+"confirm_new_session" = "确认新建对话";
+"new_session_confirm_message" = "这将开始一个新的对话，当前上下文将被清空。确定继续吗？";
+
+// MARK: - Session Details (补充)
+"session_id_label" = "会话 ID";
+"session_key_label" = "会话 Key";
+"session_context_label" = "备注";
+"processing_label" = "处理中";
+"unread_messages_label" = "未读消息";
+"active_run_label" = "活跃 Run";
+"total_messages_label" = "总消息数";
+"user_messages_label" = "用户消息";
+"assistant_messages_label" = "助手消息";
+"last_activity_label" = "最后活动";
+"first_message_label" = "第一条消息";
+"history_load_label" = "历史加载";
+"history_loaded_status" = "已完成";
+"history_not_loaded_status" = "未完成";
+"loading_history_ellipsis" = "正在加载历史...";
+"loading_messages_ellipsis" = "正在加载消息...";
+"idle" = "空闲";
+"thinking" = "思考中";
+"streaming" = "输出中";
+"error_prefix" = "错误：";
+
+// MARK: - Privacy Policy
+"privacy_policy" = "隐私政策";
+
+// MARK: - First Install Guide
+"first_install" = "首次安装";
+"first_install_guide" = "请先配置 Gateway 连接，详细步骤请查看用户指南。";
+"view_user_guide" = "查看用户指南";
+
+// MARK: - Login Guide
+"login_required" = "需要登录";
+"login_guide" = "配置 Gateway 连接后即可开始使用";
+"tap_settings_to_configure" = "点击右上角设置图标进行配置";
+"connection_error_please_reconnect" = "连接错误，请重新连接";
+"connection_error" = "连接错误";
+
+// MARK: - Session Name Validation
+"session_name_taken" = "这个名字已存在，请使用其他名称";
+
+// MARK: - Session Status
+"processing_status" = "处理中";
+"new_status" = "新建";
+
+// MARK: - Messages
+"no_messages_yet" = "暂无消息";
+"no_messages" = "无消息";
+"messages_count_format" = "%d 条消息";
+
+// MARK: - Settings
+"gateway_url_format" = "Gateway: %@";
+"app_version" = "1.0.0";
+
+// MARK: - Dictation
+"dictated_text_format" = "听写：%@";
+
+// MARK: - Web Client
+"open_web_client" = "打开 Web 客户端";
+"web_client_description" = "在浏览器中打开 OpenClaw 控制面板，管理 Agent、会话和高级设置。";
+
+// MARK: - Archive & Continue
+"archive_section_header" = "归档并继续";
+"archive_button" = "归档当前会话";
+"archive_description" = "保存历史并开始新阶段";
+"archive_recommendation" = "建议 %d 条消息以内";
+"confirm_archive" = "归档当前历史？";
+"archive_confirm_message" = "当前：%d 条消息。历史将被保存并可搜索。";
+"archive_action" = "归档并继续";
+
+// MARK: - Danger Zone
+"delete_section_header" = "危险操作";
+"delete_description" = "永久删除此会话及所有历史记录";
+
+// MARK: - 归档并继续
+"archive_section_header" = "归档并继续";
+"archive_button" = "归档当前会话";
+"archive_description" = "保存历史并开始新阶段";
+"confirm_archive" = "归档当前历史？";
+"archive_confirm_message" = "当前：%d 条消息。历史将被保存并可搜索。";
+"archive_action" = "归档并继续";
+
+// MARK: - 危险操作
+"delete_section_header" = "危险操作";
+"delete_description" = "永久删除此会话及所有历史记录";
+
+"invalid_gateway_url" = "无效的 Gateway URL: %@";
+
+// MARK: - Connection Errors
+"connection_challenge_failed" = "无法连接到 Gateway，请检查网络后重试";
+"connection_handshake_failed" = "连接握手失败，请检查 Gateway 状态";

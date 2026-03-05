@@ -21,7 +21,7 @@ final class SettingsUITests: XCTestCase {
         // 强制验证：应用必须在 30 秒内加载
         let mainWindow = app.windows.firstMatch
         XCTAssertTrue(
-            mainWindow.waitForExistence(timeout: 30),
+            mainWindow.waitForExistence(timeout: 1),
             "应用必须在 30 秒内加载完成"
         )
     }
@@ -50,7 +50,7 @@ final class SettingsUITests: XCTestCase {
         // 验证设置按钮存在
         let settingsButton = app.buttons["settingsButton"]
         XCTAssertTrue(
-            settingsButton.waitForExistence(timeout: 5),
+            settingsButton.waitForExistence(timeout: 1),
             "设置按钮 (settingsButton) 必须在 5 秒内出现"
         )
         print("  ✅ 设置按钮存在")
@@ -61,7 +61,7 @@ final class SettingsUITests: XCTestCase {
         // 验证设置弹窗打开
         let settingsSheet = app.sheets.firstMatch
         XCTAssertTrue(
-            settingsSheet.waitForExistence(timeout: 5),
+            settingsSheet.waitForExistence(timeout: 1),
             "设置弹窗必须在点击设置按钮后 5 秒内打开"
         )
         print("  ✅ 设置弹窗已打开")
@@ -72,7 +72,7 @@ final class SettingsUITests: XCTestCase {
         // 获取 Gateway URL 输入框
         let gatewayUrlInput = app.textFields["gatewayUrlInput"]
         XCTAssertTrue(
-            gatewayUrlInput.waitForExistence(timeout: 3),
+            gatewayUrlInput.waitForExistence(timeout: 1),
             "Gateway URL 输入框 (gatewayUrlInput) 必须存在"
         )
         print("  ✅ Gateway URL 输入框存在")
@@ -80,7 +80,7 @@ final class SettingsUITests: XCTestCase {
         // 获取 Token 输入框
         let tokenInput = app.textFields["tokenInput"]
         XCTAssertTrue(
-            tokenInput.waitForExistence(timeout: 3),
+            tokenInput.waitForExistence(timeout: 1),
             "Token 输入框 (tokenInput) 必须存在"
         )
         print("  ✅ Token 输入框存在")
@@ -106,7 +106,7 @@ final class SettingsUITests: XCTestCase {
         let connectPredicate = NSPredicate(format: "label CONTAINS 'connect' OR label CONTAINS '连接' OR label CONTAINS 'Connect'")
         let applyButton = app.buttons.matching(connectPredicate).firstMatch
         XCTAssertTrue(
-            applyButton.waitForExistence(timeout: 3),
+            applyButton.waitForExistence(timeout: 1),
             "修改配置后必须显示 'Connect' 或 '连接' 按钮"
         )
         // 调试打印：显示实际找到的按钮信息
@@ -122,14 +122,14 @@ final class SettingsUITests: XCTestCase {
         // 点击取消按钮
         let cancelButton = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
         XCTAssertTrue(
-            cancelButton.waitForExistence(timeout: 3),
+            cancelButton.waitForExistence(timeout: 1),
             "取消按钮必须存在"
         )
         cancelButton.forceTap()
 
         // 验证弹窗关闭
         XCTAssertFalse(
-            settingsSheet.waitForExistence(timeout: 3),
+            settingsSheet.waitForExistence(timeout: 1),
             "点击取消后设置弹窗必须关闭"
         )
         print("  ✅ 设置弹窗已关闭")
@@ -137,7 +137,7 @@ final class SettingsUITests: XCTestCase {
         // 重新打开设置页面
         settingsButton.forceTap()
         XCTAssertTrue(
-            settingsSheet.waitForExistence(timeout: 5),
+            settingsSheet.waitForExistence(timeout: 1),
             "重新点击设置按钮后弹窗必须打开"
         )
         print("  ✅ 重新打开设置弹窗")
@@ -176,14 +176,14 @@ final class SettingsUITests: XCTestCase {
         // 点击 Done 按钮保存
         let doneButton = app.buttons.matching(NSPredicate(format: "label == 'Done' OR label == '完成' OR label == 'Connect' OR label == '连接'")).firstMatch
         XCTAssertTrue(
-            doneButton.waitForExistence(timeout: 3),
+            doneButton.waitForExistence(timeout: 1),
             "完成按钮必须存在"
         )
         doneButton.forceTap()
 
         // 验证弹窗关闭
         XCTAssertFalse(
-            settingsSheet.waitForExistence(timeout: 3),
+            settingsSheet.waitForExistence(timeout: 1),
             "点击完成后设置弹窗必须关闭"
         )
         print("  ✅ 设置弹窗已关闭")
@@ -194,7 +194,7 @@ final class SettingsUITests: XCTestCase {
         // 重新打开设置页面
         settingsButton.forceTap()
         XCTAssertTrue(
-            settingsSheet.waitForExistence(timeout: 5),
+            settingsSheet.waitForExistence(timeout: 1),
             "重新打开设置弹窗必须成功"
         )
         print("  ✅ 重新打开设置弹窗")
@@ -220,7 +220,7 @@ final class SettingsUITests: XCTestCase {
         // 关闭设置页面
         cancelButton.forceTap()
         XCTAssertFalse(
-            settingsSheet.waitForExistence(timeout: 3),
+            settingsSheet.waitForExistence(timeout: 1),
             "关闭设置弹窗必须成功"
         )
         print("  ✅ 设置页面已关闭")

@@ -24,13 +24,13 @@ final class SessionManagementUITests: XCTestCase {
         // 强制验证：应用必须在 30 秒内加载
         let mainWindow = app.windows.firstMatch
         XCTAssertTrue(
-            mainWindow.waitForExistence(timeout: 30),
+            mainWindow.waitForExistence(timeout: 1),
             "应用必须在 30 秒内加载完成"
         )
         print("✅ 主窗口已加载")
 
         // 等待 2 秒让界面完全渲染
-        sleep(2)
+        sleep(1)
 
         // 检查当前界面状态
         let newSessionButton = app.buttons["NewSessionButton"].firstMatch
@@ -140,7 +140,7 @@ final class SessionManagementUITests: XCTestCase {
         // 点击排序按钮
         let sortButton = app.buttons["SortButton"].firstMatch
         XCTAssertTrue(
-            sortButton.waitForExistence(timeout: 5),
+            sortButton.waitForExistence(timeout: 1),
             "排序按钮 (SortButton) 必须存在"
         )
         sortButton.forceTap()
@@ -149,7 +149,7 @@ final class SessionManagementUITests: XCTestCase {
         // 验证排序弹窗打开
         let sortSheet = app.sheets.firstMatch
         XCTAssertTrue(
-            sortSheet.waitForExistence(timeout: 5),
+            sortSheet.waitForExistence(timeout: 1),
             "排序弹窗必须打开"
         )
         print("  ✅ 排序弹窗已打开")
@@ -165,14 +165,14 @@ final class SessionManagementUITests: XCTestCase {
             let doneButton =
                 app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
             XCTAssertTrue(
-                doneButton.waitForExistence(timeout: 3),
+                doneButton.waitForExistence(timeout: 1),
                 "完成按钮必须存在"
             )
             doneButton.forceTap()
 
             // 验证弹窗关闭
             XCTAssertFalse(
-                sortSheet.waitForExistence(timeout: 3),
+                sortSheet.waitForExistence(timeout: 1),
                 "点击完成后排序弹窗必须关闭"
             )
             print("  ✅ 排序完成")
@@ -197,7 +197,7 @@ final class SessionManagementUITests: XCTestCase {
             let doneButton =
                 app.buttons["Done"].firstMatch.exists ? app.buttons["Done"] : app.buttons["完成"]
             XCTAssertTrue(
-                doneButton.waitForExistence(timeout: 3),
+                doneButton.waitForExistence(timeout: 1),
                 "完成按钮必须存在"
             )
             doneButton.forceTap()
@@ -271,7 +271,7 @@ final class SessionManagementUITests: XCTestCase {
         // 点击新建会话按钮
         let newSessionButton = app.buttons["NewSessionButton"].firstMatch
         XCTAssertTrue(
-            newSessionButton.waitForExistence(timeout: 5),
+            newSessionButton.waitForExistence(timeout: 1),
             "新建会话按钮 (NewSessionButton) 必须存在"
         )
         newSessionButton.forceTap()
@@ -279,14 +279,14 @@ final class SessionManagementUITests: XCTestCase {
         // 验证弹窗打开（增加等待时间）
         let createSheet = app.sheets.firstMatch
         XCTAssertTrue(
-            createSheet.waitForExistence(timeout: 10),
+            createSheet.waitForExistence(timeout: 2),
             "新建会话弹窗必须打开"
         )
 
         // 在名称输入框输入
         let nameInput = app.textFields.firstMatch
         XCTAssertTrue(
-            nameInput.waitForExistence(timeout: 3),
+            nameInput.waitForExistence(timeout: 1),
             "会话名称输入框必须存在"
         )
         setTextViaPasteboard(nameInput, text: name)
@@ -301,19 +301,19 @@ final class SessionManagementUITests: XCTestCase {
         let createButton =
             app.buttons["Create"].firstMatch.exists ? app.buttons["Create"] : app.buttons["创建"]
         XCTAssertTrue(
-            createButton.waitForExistence(timeout: 3),
+            createButton.waitForExistence(timeout: 1),
             "创建按钮必须存在"
         )
         createButton.forceTap()
 
         // 验证弹窗关闭
         XCTAssertFalse(
-            createSheet.waitForExistence(timeout: 5),
+            createSheet.waitForExistence(timeout: 1),
             "创建后会话弹窗必须关闭"
         )
 
         // 等待 UI 完全更新（会话列表刷新）
-        sleep(3)
+        sleep(1)
 
         // 验证会话出现在列表中
         let sessionButtons = getSessionButtons()
@@ -340,13 +340,13 @@ final class SessionManagementUITests: XCTestCase {
         // 在消息输入框输入
         let messageInput = app.textFields["messageInput"]
         XCTAssertTrue(
-            messageInput.waitForExistence(timeout: 3),
+            messageInput.waitForExistence(timeout: 1),
             "消息输入框 (messageInput) 必须存在"
         )
 
         // 点击输入框并等待获得焦点
         messageInput.tap()
-        sleep(2) // 增加等待时间
+        sleep(1) // 增加等待时间
 
         // 调试打印
         print("  🔍 消息输入框：label='\(messageInput.label)', identifier='\(messageInput.identifier)'")
@@ -360,7 +360,7 @@ final class SessionManagementUITests: XCTestCase {
             // 等待并关闭连接错误弹窗
             sleep(1)
             let alert = app.alerts.firstMatch
-            if alert.waitForExistence(timeout: 3) {
+            if alert.waitForExistence(timeout: 1) {
                 // 弹窗只有一个"确定"按钮
                 let okButton = app.buttons["ok"].firstMatch.exists ?
                     app.buttons["ok"] : app.buttons["确定"]
@@ -432,7 +432,7 @@ final class SessionManagementUITests: XCTestCase {
 
         let nameButton = app.buttons["Session-\(sessionId)"].firstMatch
         XCTAssertTrue(
-            nameButton.waitForExistence(timeout: 5),
+            nameButton.waitForExistence(timeout: 1),
             "会话名称按钮 (Session-\(sessionId)) 必须在 5 秒内出现"
         )
         nameButton.forceTap()
@@ -442,7 +442,7 @@ final class SessionManagementUITests: XCTestCase {
 
         // 验证删除按钮存在
         XCTAssertTrue(
-            deleteButton.waitForExistence(timeout: 5),
+            deleteButton.waitForExistence(timeout: 1),
             "删除按钮 (deleteSessionButton) 必须在 5 秒内出现"
         )
         print("  ✅ 删除按钮已找到")
@@ -452,7 +452,7 @@ final class SessionManagementUITests: XCTestCase {
         print("  ✅ 已点击删除按钮")
 
         // 等待弹窗出现（给更多时间）
-        sleep(2)
+        sleep(1)
 
         // 确认删除弹窗（macOS 上使用 dialogs 或 sheets）
         // 先尝试 dialogs，再尝试 sheets，最后尝试 alerts
@@ -495,7 +495,7 @@ final class SessionManagementUITests: XCTestCase {
         }
 
         XCTAssertTrue(
-            dialog.waitForExistence(timeout: 5),
+            dialog.waitForExistence(timeout: 1),
             "删除确认弹窗 (\(dialogType)) 必须出现"
         )
         print("  ✅ 删除确认弹窗已显示 (类型：\(dialogType))")
@@ -504,7 +504,7 @@ final class SessionManagementUITests: XCTestCase {
         // macOS 上 SwiftUI alert 的按钮 identifier 是 action-button-1 (Delete) 和 action-button-2 (Cancel)
         let confirmDeleteButton = dialog.buttons["action-button-1"].firstMatch
         XCTAssertTrue(
-            confirmDeleteButton.waitForExistence(timeout: 3),
+            confirmDeleteButton.waitForExistence(timeout: 1),
             "删除确认按钮 (action-button-1) 必须存在"
         )
         print("  ✅ 删除确认按钮已找到：identifier=action-button-1, label=Delete")
@@ -512,7 +512,7 @@ final class SessionManagementUITests: XCTestCase {
         print("  ✅ 已点击删除确认按钮")
 
         // 等待弹窗关闭（给动画时间）
-        sleep(2)
+        sleep(1)
         print("  ✅ 删除完成")
     }
 }

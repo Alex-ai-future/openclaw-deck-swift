@@ -231,7 +231,6 @@ struct SessionColumnView: View {
             }
         }
         #endif
-        .alert("confirm_new_session".localized, isPresented: $showingNewAlert) {
             Button("cancel".localized, role: .cancel) {}
             Button("confirm".localized, role: .destructive) {
                 confirmSendNewMessage()

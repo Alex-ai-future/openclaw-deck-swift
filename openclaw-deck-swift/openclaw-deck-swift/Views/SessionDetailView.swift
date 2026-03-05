@@ -182,6 +182,7 @@ struct SessionDetailView: View {
                             Spacer()
                         }
                     }
+                    .accessibilityIdentifier("deleteSessionButton")
                 } header: {
                     Text("delete_section_header".localized)
                 } footer: {

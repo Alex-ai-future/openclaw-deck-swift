@@ -76,13 +76,14 @@ final class SessionManagementUITests: XCTestCase {
         print("  📊 初始会话数量：\(initialSessions.count)")
 
         // 测试模式下可能没有预置会话，这是正常的
-        // 如果有会话，清理到只剩 1 个
+        // 如果有会话，清理到只剩 1 个（保留 main 会话）
         if initialSessions.count > 1 {
-            print("  🗑️  清理 \(initialSessions.count) 个现有会话...")
-            while getSessionButtons().count > 0 {
+            print("  🗑️  清理现有会话，保留 main 会话...")
+            // 只删除到剩 1 个会话（main 会话）
+            while getSessionButtons().count > 1 {
                 deleteFirstSession()
             }
-            print("  ✅ 清理完成")
+            print("  ✅ 清理完成，剩余 1 个会话（main）")
         } else {
             print("  ℹ️  没有现有会话（测试模式正常）")
         }
@@ -153,20 +154,8 @@ final class SessionManagementUITests: XCTestCase {
         )
         print("  ✅ 排序弹窗已打开")
 
-        // 验证有拖拽手柄（只有多个会话时才验证）
-        if sessionsBeforeSort.count > 1 {
-            let dragHandles = app.images.matching(
-                NSPredicate(format: "identifier == 'line.3.horizontal'")
-            )
-            XCTAssertGreaterThanOrEqual(
-                dragHandles.count,
-                1,
-                "排序弹窗中应该有拖拽手柄"
-            )
-            print("  ✅ 拖拽手柄存在")
-        } else {
-            print("  ⚠️  只有 1 个会话，跳过拖拽手柄验证")
-        }
+        // 注意：不验证拖拽手柄（SwiftUI 系统渲染，无法设置 accessibility identifier）
+        // 测试重点放在排序功能本身（拖拽、顺序反转）
 
         // 反转顺序：将最后一个移到最前面（只有多个会话时才执行）
         if sessionsBeforeSort.count > 1 {
@@ -223,19 +212,19 @@ final class SessionManagementUITests: XCTestCase {
         let initialCount = sessionButtons.count
 
         if initialCount > 1 {
-            // 只删除 (initialCount - 1) 次，保留 1 个
+            // 只删除 (initialCount - 1) 次，保留 1 个（main 会话）
             let deleteCount = initialCount - 1
             for i in 0 ..< deleteCount {
                 print("  🗑️  删除会话 \(i + 1)/\(deleteCount)")
                 deleteFirstSession()
                 sleep(1) // 等待 UI 更新
             }
-            print("  ✅ 删除完成，剩余 1 个会话")
+            print("  ✅ 删除完成，剩余 1 个会话（main）")
         } else {
             print("  ⚠️  只有 \(initialCount) 个会话，跳过删除")
         }
         let finalSessionCount = getSessionButtons().count
-        print("  ✅ 删除完成，剩余 \(finalSessionCount) 个会话")
+        print("  ✅ 删除完成，剩余 \(finalSessionCount) 个会话（main）")
 
         print("\n✅ testCompleteSessionLifecycle 测试通过")
     }

@@ -231,13 +231,6 @@ struct SessionColumnView: View {
             }
         }
         #endif
-            Button("cancel".localized, role: .cancel) {}
-            Button("confirm".localized, role: .destructive) {
-                confirmSendNewMessage()
-            }
-        } message: {
-            Text("new_session_confirm_message".localized)
-        }
     }
 
     // MARK: - Session Name Button

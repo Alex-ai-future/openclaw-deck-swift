@@ -92,28 +92,14 @@ final class SettingsUITests: XCTestCase {
         print("  📝 原始 URL: \(originalUrl)")
         print("  📝 原始 Token: \(originalToken.isEmpty ? "(空)" : "***")")
 
-        // 修改 Gateway URL
-        gatewayUrlInput.tap()
-        // 清空现有内容 - 使用 Cmd+A 全选再删除
-        app.typeKey("a", modifierFlags: .command)
-        let deleteKey = XCUIKeyboardKey.delete
-        for _ in 0 ..< 50 {
-            app.typeKey(deleteKey, modifierFlags: [])
-        }
-        // 输入新值
+        // 修改 Gateway URL（使用粘贴板，避免 typeText 超时）
         let testUrl = "ws://test-host:12345"
-        gatewayUrlInput.typeText(testUrl)
+        setTextViaPasteboard(gatewayUrlInput, text: testUrl)
         print("  ✏️  修改 URL: \(testUrl)")
 
-        // 修改 Token
-        tokenInput.tap()
-        // 使用 Cmd+A 全选再删除
-        app.typeKey("a", modifierFlags: .command)
-        for _ in 0 ..< 50 {
-            app.typeKey(deleteKey, modifierFlags: [])
-        }
+        // 修改 Token（使用粘贴板）
         let testToken = "test-token-123"
-        tokenInput.typeText(testToken)
+        setTextViaPasteboard(tokenInput, text: testToken)
         print("  ✏️  修改 Token: \(testToken)")
 
         // 验证按钮出现（修改后按钮文本应为 "connect" 或 "连接"）
@@ -178,26 +164,14 @@ final class SettingsUITests: XCTestCase {
         // ========== 阶段 3：修改并保存（第二次修改） ==========
         print("\n📍 阶段 3：修改配置并保存")
 
-        // 清空并输入新 URL
-        gatewayUrlInput.tap()
-        // 使用 Cmd+A 全选再删除
-        app.typeKey("a", modifierFlags: .command)
-        for _ in 0 ..< 50 {
-            app.typeKey(deleteKey, modifierFlags: [])
-        }
+        // 清空并输入新 URL（使用粘贴板）
         let newUrl = "ws://new-host:99999"
-        gatewayUrlInput.typeText(newUrl)
+        setTextViaPasteboard(gatewayUrlInput, text: newUrl)
         print("  ✏️  新 URL: \(newUrl)")
 
-        // 清空并输入新 Token
-        tokenInput.tap()
-        // 使用 Cmd+A 全选再删除
-        app.typeKey("a", modifierFlags: .command)
-        for _ in 0 ..< 50 {
-            app.typeKey(deleteKey, modifierFlags: [])
-        }
+        // 清空并输入新 Token（使用粘贴板）
         let newToken = "new-token-999"
-        tokenInput.typeText(newToken)
+        setTextViaPasteboard(tokenInput, text: newToken)
         print("  ✏️  新 Token: \(newToken)")
 
         // 点击 Done 按钮保存
@@ -253,5 +227,29 @@ final class SettingsUITests: XCTestCase {
         print("  ✅ 设置页面已关闭")
 
         print("\n✅ testSettingsCompleteFlow 测试通过")
+    }
+
+    // MARK: - 辅助方法
+
+    /// 通过 Pasteboard 设置文本（绕过键盘焦点问题）
+    private func setTextViaPasteboard(_ element: XCUIElement, text: String) {
+        #if os(macOS)
+            // macOS 使用 Cmd+V 快捷键粘贴
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            element.tap()
+            sleep(1)
+            app.typeKey("v", modifierFlags: .command)
+            sleep(1)
+        #else
+            // iOS 使用右键菜单粘贴
+            UIPasteboard.general.string = text
+            element.doubleTap()
+            sleep(1)
+            app.menuItems.matching(
+                NSPredicate(format: "label == 'Paste' OR label == '粘贴'")
+            ).firstMatch.tap()
+            sleep(1)
+        #endif
     }
 }

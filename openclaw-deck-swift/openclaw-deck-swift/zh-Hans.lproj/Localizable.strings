@@ -275,3 +275,15 @@
 // MARK: - Danger Zone
 "delete_section_header" = "危险操作";
 "delete_description" = "永久删除此会话及所有历史记录";
+
+// MARK: - 归档并继续
+"archive_section_header" = "归档并继续"
+"archive_button" = "归档当前会话"
+"archive_description" = "保存历史并开始新阶段"
+"confirm_archive" = "归档当前历史？"
+"archive_confirm_message" = "当前：%d 条消息。历史将被保存并可搜索。"
+"archive_action" = "归档并继续"
+
+// MARK: - 危险操作
+"delete_section_header" = "危险操作"
+"delete_description" = "永久删除此会话及所有历史记录"

@@ -86,9 +86,7 @@ struct SettingsView: View {
                     }
                 } header: {
                     Label("gateway".localized, systemImage: "server.rack")
-                } footer: {
-                    Text("modify_and_apply_to_reconnect_with_new_settings".localized)
-                }
+                } footer: {}
 
                 // MARK: - 3. APP SETTINGS
 
@@ -245,6 +243,13 @@ struct SettingsView: View {
             }
             .navigationTitle("settings".localized)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel".localized) {
+                        dismiss()
+                    }
+                    .foregroundColor(.secondary)
+                }
+
                 ToolbarItem(placement: .primaryAction) {
                     if isConnected {
                         Button("done".localized) {

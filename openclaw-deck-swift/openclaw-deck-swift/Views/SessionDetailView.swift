@@ -157,20 +157,15 @@ struct SessionDetailView: View {
                             Image(systemName: "archivebox.fill")
                             Text("archive_button".localized)
                             Spacer()
+                            Text("\(session.messages.count) msg")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                     }
 
                     Text("archive_description".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
-
-                    HStack {
-                        Image(systemName: session.messages.count > 200 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                            .foregroundColor(session.messages.count > 200 ? .orange : .green)
-                        Text(String(format: "archive_recommendation".localized, session.messages.count))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
                 } header: {
                     Text("archive_section_header".localized)
                 }
@@ -187,7 +182,6 @@ struct SessionDetailView: View {
                             Spacer()
                         }
                     }
-                    .accessibilityIdentifier("deleteSessionButton")
 
                     Text("delete_description".localized)
                         .font(.caption)
@@ -225,7 +219,6 @@ struct SessionDetailView: View {
     // MARK: - Actions
 
     private func sendArchiveCommand() {
-        // 发送 /new 命令来归档当前历史
         viewModel?.globalInputState.selectedSessionId = session.sessionId
         viewModel?.globalInputState.inputText = "/new"
         Task {

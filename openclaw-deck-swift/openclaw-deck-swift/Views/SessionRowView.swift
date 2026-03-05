@@ -20,12 +20,6 @@ struct SessionRowView: View {
     let onRequestDelete: (() -> Void)?
 
     /// 初始化
-    /// - Parameters:
-    ///   - session: Session 状态
-    ///   - style: 视图样式（list 或 sort）
-    ///   - showStatus: 是否显示状态标签（Processing/New）
-    ///   - showLastMessage: 是否显示最后消息预览
-    ///   - onRequestDelete: 删除回调（可选）
     init(
         session: SessionState,
         style: SessionRowStyle = .list,
@@ -47,11 +41,13 @@ struct SessionRowView: View {
 
             // Session 信息
             VStack(alignment: .leading, spacing: 4) {
-                // 标题行
+                // 标题行（名称 + 消息数 + 状态）
                 titleRow
 
-                // 副标题行（消息数量 + 最后消息）
-                subtitleRow
+                // 最后消息（第二行）
+                if showLastMessage, let lastMessage = session.messages.last {
+                    LastMessageRow(message: lastMessage)
+                }
             }
 
             Spacer()
@@ -66,14 +62,11 @@ struct SessionRowView: View {
         style == .list ? 44 : 40
     }
 
-    private var iconCornerRadius: CGFloat {
-        style == .list ? 10 : 8
-    }
-
     // MARK: - Subviews
 
     private var titleRow: some View {
-        HStack {
+        HStack(spacing: 8) {
+            // Session 名称
             Text(session.sessionId)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.primary)
@@ -81,27 +74,34 @@ struct SessionRowView: View {
 
             Spacer()
 
-            // 状态标签（仅聊天列表显示）
-            if showStatus {
-                StatusBadge(session: session)
+            HStack(spacing: 12) {
+                // 消息数量
+                Text("\(session.messageCount)")
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundColor(.secondary)
+
+                // 状态标签（仅聊天列表显示）
+                if showStatus {
+                    StatusBadge(session: session)
+                }
             }
         }
     }
+}
 
-    @ViewBuilder
-    private var subtitleRow: some View {
-        if showLastMessage, let lastMessage = session.messages.last {
-            // 消息数量 + 最后消息预览
-            Text("\(session.messageCount) messages · \(lastMessage.text)")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        } else {
-            // 只显示消息数量
-            Text("\(session.messageCount) messages")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(.secondary)
-        }
+// MARK: - Last Message Row
+
+/// 最后消息行视图 - 支持 Markdown 渲染
+struct LastMessageRow: View {
+    let message: ChatMessage
+
+    var body: some View {
+        // 简单文本渲染（性能好）
+        Text(message.text)
+            .font(.system(size: 14, weight: .regular))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -171,7 +171,6 @@ extension View {
     func applySwipeActions(session: SessionState, onRequestDelete: (() -> Void)?) -> some View {
         self
             .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                // 左滑：标记已读/未读
                 if session.hasUnreadMessage {
                     Button {
                         withAnimation(.spring(response: 0.3)) {
@@ -193,7 +192,6 @@ extension View {
                 }
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                // 右滑：删除
                 if let onDelete = onRequestDelete {
                     Button(role: .destructive) {
                         onDelete()

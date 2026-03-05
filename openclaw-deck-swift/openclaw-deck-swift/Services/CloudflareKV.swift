@@ -62,7 +62,7 @@ struct MergeResult {
 @MainActor
 class CloudflareKV: CloudflareKVProtocol {
     /// 测试用 Mock 实例
-    nonisolated(unsafe) static var mockInstance: CloudflareKVProtocol? = nil
+    nonisolated(unsafe) static var mockInstance: CloudflareKVProtocol?
     static let shared = CloudflareKV()
 
     /// 配置是否已设置

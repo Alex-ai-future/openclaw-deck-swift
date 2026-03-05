@@ -65,7 +65,7 @@ class GlobalInputState: GlobalInputStateProtocol {
             layoutManager.addTextContainer(textContainer)
             textStorage.addLayoutManager(layoutManager)
             let rect = layoutManager.usedRect(for: textContainer)
-            let height = max(36.0, min(300, rect.height + 8))  // 限制最高 400
+            let height = max(36.0, min(300, rect.height + 8)) // 限制最高 400
         #else
             let font = UIFont.preferredFont(forTextStyle: .body)
             let rect = text.boundingRect(
@@ -74,7 +74,7 @@ class GlobalInputState: GlobalInputStateProtocol {
                 attributes: [.font: font],
                 context: nil
             )
-            let height = max(36.0, min(300, rect.height + 8))  // 限制最高 400
+            let height = max(36.0, min(300, rect.height + 8)) // 限制最高 400
         #endif
 
         DispatchQueue.main.async {

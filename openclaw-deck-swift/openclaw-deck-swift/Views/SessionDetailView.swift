@@ -162,12 +162,12 @@ struct SessionDetailView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-
+                } header: {
+                    Text("archive_section_header".localized)
+                } footer: {
                     Text("archive_description".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                } header: {
-                    Text("archive_section_header".localized)
                 }
 
                 // MARK: - 危险操作
@@ -182,12 +182,12 @@ struct SessionDetailView: View {
                             Spacer()
                         }
                     }
-
+                } header: {
+                    Text("delete_section_header".localized)
+                } footer: {
                     Text("delete_description".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
-                } header: {
-                    Text("delete_section_header".localized)
                 }
             }
             .navigationTitle("session_details".localized)

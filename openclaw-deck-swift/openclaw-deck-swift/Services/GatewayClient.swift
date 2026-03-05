@@ -133,14 +133,20 @@ class GatewayClient: GatewayClientProtocol {
     /// 重连尝试次数
     private var reconnectAttempts: Int = 0
 
+    /// 当前重连延迟（纳秒）- 指数退避
+    private var currentReconnectDelay: UInt64 = 800_000_000 // 初始 800ms
+
+    /// 最大重连延迟（纳秒）
+    private let maxReconnectDelay: UInt64 = 15_000_000_000 // 15 秒
+
+    /// 指数退避系数
+    private let backoffMultiplier: Double = 1.7
+
     /// 最多重连次数
-    private let maxReconnectAttempts: Int = 3
+    private let maxReconnectAttempts: Int = 10
 
     /// 重连任务
     private var reconnectTask: Task<Void, Never>?
-
-    /// 重连延迟（纳秒）
-    private let reconnectDelayNs: UInt64 = 2_000_000_000 // 2 秒
 
     // MARK: - Callbacks
 
@@ -994,9 +1000,9 @@ class GatewayClient: GatewayClientProtocol {
         reconnectTask = Task { [weak self] in
             guard let self else { return }
 
-            // 等待重连延迟（给网络恢复的时间）
+            // ✅ 使用动态延迟（指数退避）
             do {
-                try await Task.sleep(nanoseconds: self.reconnectDelayNs)
+                try await Task.sleep(nanoseconds: self.currentReconnectDelay)
             } catch {
                 // Task cancelled
                 return
@@ -1037,10 +1043,11 @@ class GatewayClient: GatewayClientProtocol {
             // 发送 connect 握手（静默模式，不触发 UI 回调）
             await sendConnect(silent: true)
 
-            // ✅ 重连成功：重置状态，不调用回调（UI 无感知）
+            // ✅ 重连成功：重置状态和延迟
             isAutoReconnecting = false
             reconnectAttempts = 0
             connected = true
+            currentReconnectDelay = 800_000_000 // 重置为初始值
             logger.info("✅ Auto-reconnect succeeded (silent)")
 
         } catch {
@@ -1069,8 +1076,13 @@ class GatewayClient: GatewayClientProtocol {
 
                 onConnection?(false) // ← 现在才通知 UI
             } else {
-                // 继续下一次重连
+                // ✅ 继续下一次重连，增加延迟（指数退避）
                 isAutoReconnecting = false
+                currentReconnectDelay = UInt64(min(
+                    Double(currentReconnectDelay) * backoffMultiplier,
+                    Double(maxReconnectDelay)
+                ))
+                logger.info("⏱️ 下次重连延迟：\(self.currentReconnectDelay / 1_000_000)ms")
                 startSilentReconnect()
             }
         }

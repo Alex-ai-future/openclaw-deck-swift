@@ -3,8 +3,8 @@
 //
 // SwiftData Session 模型（支持 Codable 用于 Cloudflare 同步）
 
-import SwiftData
 import Foundation
+import SwiftData
 
 /// Session 状态（SwiftData 模型 + Codable）
 @Model
@@ -17,20 +17,22 @@ final class SessionState: Hashable, Identifiable, Codable {
     var sortOrder: Int
     var createdAt: Date
     var lastActivityAt: Date
-    
+
     // 内存属性（不持久化，不编码）
     @Transient var messages: [ChatMessage] = []
     @Transient var status: SessionStatus = .idle
     @Transient var hasUnreadMessage: Bool = false
     @Transient var activeRunId: String?
-    @Transient var messageCount: Int { messages.count }
-    
+    @Transient var messageCount: Int {
+        messages.count
+    }
+
     // MARK: - Codable
-    
+
     enum CodingKeys: String, CodingKey {
         case id, sessionKey, name, context, isHidden, sortOrder, createdAt, lastActivityAt
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -42,7 +44,7 @@ final class SessionState: Hashable, Identifiable, Codable {
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         lastActivityAt = try container.decode(Date.self, forKey: .lastActivityAt)
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -54,9 +56,9 @@ final class SessionState: Hashable, Identifiable, Codable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(lastActivityAt, forKey: .lastActivityAt)
     }
-    
+
     // MARK: - Init
-    
+
     init(
         id: String,
         sessionKey: String,
@@ -76,13 +78,13 @@ final class SessionState: Hashable, Identifiable, Codable {
         self.createdAt = createdAt
         self.lastActivityAt = lastActivityAt
     }
-    
+
     // MARK: - Hashable
-    
+
     static func == (lhs: SessionState, rhs: SessionState) -> Bool {
         lhs.id == rhs.id
     }
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

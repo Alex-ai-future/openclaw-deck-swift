@@ -48,6 +48,15 @@ class MockCloudflareKV: CloudflareKVProtocol {
                 remoteData: remoteData
             )
         }
+    }
+    
+    func fetch() async throws -> SyncData {
+        if simulatedDelay > 0 {
+            try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
+        }
+        
+        return mockData ?? SyncData(sessions: [], lastUpdated: "")
+    }
 
         // 返回模拟数据或空数据
         let data = mockData ?? SyncData(sessions: [], lastUpdated: ISO8601DateFormatter().string(from: Date()))

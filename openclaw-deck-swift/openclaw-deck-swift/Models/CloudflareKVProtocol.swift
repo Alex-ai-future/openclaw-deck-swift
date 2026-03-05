@@ -15,4 +15,7 @@ protocol CloudflareKVProtocol {
 
     /// 保存数据
     func save(_ data: SyncData) async throws
+    
+    /// 获取云端数据
+    func fetch() async throws -> SyncData
 }

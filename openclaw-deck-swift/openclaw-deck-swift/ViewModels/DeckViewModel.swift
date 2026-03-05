@@ -281,30 +281,38 @@ class DeckViewModel {
                         session.activeRunId = nil
                     }
 
-                    // 🔧 内联 initializeAfterConnect() 的逻辑
-                    // 连接成功，更新进度
-                    self.loadingStage = .connecting
-                    self.loadingProgress = 0.5
+                    // ✅ 只在初始化时显示加载动画，重连成功时不显示
+                    if self.isInitializing {
+                        // 🔧 内联 initializeAfterConnect() 的逻辑
+                        // 连接成功，更新进度
+                        self.loadingStage = .connecting
+                        self.loadingProgress = 0.5
 
-                    // 检查是否有会话列表
-                    if self.sessionOrder.isEmpty {
-                        logger.warning("⚠️ 没有会话列表，跳过消息加载")
+                        // 检查是否有会话列表
+                        if self.sessionOrder.isEmpty {
+                            logger.warning("⚠️ 没有会话列表，跳过消息加载")
+                        } else {
+                            // 加载所有历史
+                            self.loadingStage = .fetchingMessages
+                            self.loadingProgress = 0.8
+                            await self.loadAllSessionHistory()
+                        }
+
+                        // 所有数据加载完成，设置 100%
+                        self.loadingStage = .syncingLocal
+                        self.loadingProgress = 1.0
+                        try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+
+                        // 初始化完成
+                        self.isInitializing = false
+                        self.gatewayConnected = true
+                        self.loadingStage = .idle
                     } else {
-                        // 加载所有历史
-                        self.loadingStage = .fetchingMessages
-                        self.loadingProgress = 0.8
-                        await self.loadAllSessionHistory()
+                        // ✅ 重连成功，不显示加载动画
+                        self.gatewayConnected = true
+                        self.loadingStage = .idle
+                        logger.log("✅ 重连成功，保持当前界面")
                     }
-
-                    // 所有数据加载完成，设置 100%
-                    self.loadingStage = .syncingLocal
-                    self.loadingProgress = 1.0
-                    try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
-
-                    // 初始化完成
-                    self.isInitializing = false
-                    self.gatewayConnected = true
-                    self.loadingStage = .idle
 
                 } else {
                     logger.error("❌ Gateway 连接失败")

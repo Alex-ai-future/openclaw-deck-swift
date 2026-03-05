@@ -44,7 +44,7 @@ struct SessionRowView: View {
                 // 标题行（名称 + 消息数 + 状态）
                 titleRow
 
-                // 最后消息（第二行）
+                // 最后消息（第二行，支持 Markdown）
                 if showLastMessage, let lastMessage = session.messages.last {
                     LastMessageRow(message: lastMessage)
                 }
@@ -96,8 +96,8 @@ struct LastMessageRow: View {
     let message: ChatMessage
 
     var body: some View {
-        // 简单文本渲染（性能好）
-        Text(message.text)
+        // 使用 Markdown 渲染（支持 **粗体**、*斜体*、`代码` 等）
+        Text(.init(message.text))
             .font(.system(size: 14, weight: .regular))
             .foregroundStyle(.secondary)
             .lineLimit(2)

@@ -274,3 +274,9 @@
 // MARK: - Danger Zone
 "delete_section_header" = "Danger Zone";
 "delete_description" = "Permanently remove this session and all history";
+
+"invalid_gateway_url" = "Invalid gateway URL: %@";
+
+// MARK: - Connection Errors
+"connection_challenge_failed" = "Failed to connect to Gateway, please check network and try again";
+"connection_handshake_failed" = "Connection handshake failed, please check Gateway status";

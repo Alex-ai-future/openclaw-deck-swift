@@ -214,7 +214,7 @@ class GatewayClient: GatewayClientProtocol {
             try await waitForChallenge()
         } catch {
             logger.error("Failed to receive connect challenge: \(error.localizedDescription)")
-            connectionError = error.localizedDescription
+            connectionError = "connection_challenge_failed".localized
             isConnecting = false
             onConnection?(false)
             disconnect()
@@ -757,7 +757,7 @@ class GatewayClient: GatewayClientProtocol {
 
         } catch {
             logger.error("❌ connect 握手失败：\(error.localizedDescription)")
-            connectionError = error.localizedDescription
+            connectionError = "connection_handshake_failed".localized
             isConnecting = false
             if !silent {
                 onConnection?(false)
@@ -1059,7 +1059,7 @@ class GatewayClient: GatewayClientProtocol {
                 isAutoReconnecting = false
                 connected = false
                 isConnecting = false
-                connectionError = "网络断开，请检查连接"
+                connectionError = "connection_error_please_reconnect".localized
 
                 // 拒绝所有待处理请求
                 for (_, pending) in pendingRequests {

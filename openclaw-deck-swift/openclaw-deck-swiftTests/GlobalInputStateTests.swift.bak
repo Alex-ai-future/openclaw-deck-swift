@@ -12,16 +12,23 @@ import XCTest
 final class GlobalInputStateTests: XCTestCase {
     var inputState: GlobalInputState!
     var viewModel: DeckViewModel!
+    var mockStorage: MockUserDefaultsStorage!
 
     override func setUp() async throws {
         try await super.setUp()
         inputState = GlobalInputState()
-        viewModel = DeckViewModel()
+        mockStorage = MockFactory.createMockStorage()
+        let testDIContainer = MockFactory.createDIContainer(
+            storage: mockStorage,
+            globalInputState: inputState
+        )
+        viewModel = DeckViewModel(diContainer: testDIContainer)
     }
 
     override func tearDown() async throws {
         inputState = nil
         viewModel = nil
+        mockStorage = nil
         try await super.tearDown()
     }
 

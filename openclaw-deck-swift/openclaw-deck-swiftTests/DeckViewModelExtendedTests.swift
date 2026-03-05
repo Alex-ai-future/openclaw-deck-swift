@@ -9,13 +9,9 @@ import XCTest
 @MainActor
 final class DeckViewModelExtendedTests: XCTestCase {
     var viewModel: DeckViewModel!
-    var mockStorage: MockUserDefaultsStorage!
-    var mockGlobalInputState: MockGlobalInputState!
 
     override func setUp() async throws {
         try await super.setUp()
-        mockStorage = MockFactory.createMockStorage()
-        mockGlobalInputState = MockGlobalInputState()
         // 清除 Cloudflare 配置，避免测试中访问 Keychain
         CloudflareConfig.clear()
         // 清理 UserDefaults，避免测试间状态污染
@@ -23,19 +19,13 @@ final class DeckViewModelExtendedTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
         UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
         UserDefaults.standard.synchronize()
-        let testDIContainer = MockFactory.createDIContainer(
-            storage: mockStorage,
-            globalInputState: mockGlobalInputState
-        )
-        viewModel = DeckViewModel(diContainer: testDIContainer)
+        viewModel = DeckViewModel()
         // 加载 sessions（会创建 welcome session）
         await viewModel.loadSessionsFromStorageForTesting()
     }
 
     override func tearDown() async throws {
         viewModel = nil
-        mockStorage = nil
-        mockGlobalInputState = nil
 
         // 清理 UserDefaults
         UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
@@ -90,7 +80,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
         XCTAssertTrue(savedSessions.contains { $0.id == session.id })
 
         // 删除
-        viewModel.deleteSession(sessionId: session.id)
+        viewModel.deleteSession(id: session.id)
 
         // 验证从 Mock 中移除
         savedSessions = mockStorage.loadSessions()
@@ -105,7 +95,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
         XCTAssertTrue(savedOrder.contains(session.id.lowercased()))
 
         // 删除
-        viewModel.deleteSession(sessionId: session.id)
+        viewModel.deleteSession(id: session.id)
 
         // 验证从顺序列表中移除
         savedOrder = mockStorage.loadSessionOrder()
@@ -116,7 +106,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
         // 删除所有 session
         let sessionIds = viewModel.sessionOrder.map(\.self)
         for id in sessionIds {
-            viewModel.deleteSession(sessionId: id)
+            viewModel.deleteSession(id: id)
         }
 
         // 验证创建了 welcome session
@@ -127,9 +117,9 @@ final class DeckViewModelExtendedTests: XCTestCase {
         let session = viewModel.createSession(name: "Test")
 
         // 大小写不敏感查找
-        let found1 = viewModel.getSession(sessionId: session.id)
-        let found2 = viewModel.getSession(sessionId: session.id.uppercased())
-        let found3 = viewModel.getSession(sessionId: session.id.lowercased())
+        let found1 = viewModel.getSession(id: session.id)
+        let found2 = viewModel.getSession(id: session.id.uppercased())
+        let found3 = viewModel.getSession(id: session.id.lowercased())
 
         XCTAssertNotNil(found1)
         XCTAssertNotNil(found2)
@@ -166,7 +156,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
         XCTAssertEqual(viewModel.sessionOrder.count, 4)
 
         // 删除 second
-        viewModel.deleteSession(sessionId: session2.id)
+        viewModel.deleteSession(id: session2.id)
 
         // 顺序应该是：[third, first, welcome]
         XCTAssertEqual(viewModel.sessionOrder.count, 3)
@@ -335,24 +325,24 @@ final class DeckViewModelExtendedTests: XCTestCase {
         let session = viewModel.createSession(name: "Test")
 
         // 用不同大小写删除
-        viewModel.deleteSession(sessionId: session.id.uppercased())
-        XCTAssertNil(viewModel.getSession(sessionId: session.id))
+        viewModel.deleteSession(id: session.id.uppercased())
+        XCTAssertNil(viewModel.getSession(id: session.id))
     }
 
     func testMultipleDeleteCalls_sameSession() {
         let session = viewModel.createSession(name: "Test")
 
         // 多次删除同一个 session 不应该崩溃
-        viewModel.deleteSession(sessionId: session.id)
-        viewModel.deleteSession(sessionId: session.id)
-        viewModel.deleteSession(sessionId: session.id.uppercased())
+        viewModel.deleteSession(id: session.id)
+        viewModel.deleteSession(id: session.id)
+        viewModel.deleteSession(id: session.id.uppercased())
     }
 
     // MARK: - Session State Tests
 
     func testSessionState_messageManagement() {
         let session = viewModel.createSession(name: "Test")
-        let sessionState = viewModel.getSession(sessionId: session.id)
+        let sessionState = viewModel.getSession(id: session.id)
 
         XCTAssertNotNil(sessionState)
         guard let state = sessionState else { return }
@@ -372,7 +362,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
         XCTAssertEqual(session.context, "Test context")
 
-        let sessionState = viewModel.getSession(sessionId: session.id)
+        let sessionState = viewModel.getSession(id: session.id)
         XCTAssertEqual(sessionState?.context, "Test context")
     }
 
@@ -410,7 +400,7 @@ final class DeckViewModelExtendedTests: XCTestCase {
         // 并发删除
         for (index, sessionId) in sessions.enumerated() {
             Task {
-                viewModel.deleteSession(sessionId: sessionId)
+                viewModel.deleteSession(id: sessionId)
                 if index == sessions.count - 1 {
                     expectation.fulfill()
                 }

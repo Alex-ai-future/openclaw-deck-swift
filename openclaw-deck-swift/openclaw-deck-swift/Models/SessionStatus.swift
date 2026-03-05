@@ -9,6 +9,7 @@ import Foundation
 enum SessionStatus: Hashable {
     case idle
     case thinking
+    case streaming
     case speaking
     case error(String)
 }

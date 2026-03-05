@@ -10,7 +10,7 @@ import XCTest
 final class SessionStateTests: XCTestCase {
     func testSessionStateInitialization() {
         let session = SessionState(
-            sessionId: "test-session",
+            id: "test-session",
             sessionKey: "agent:main:test-session"
         )
 
@@ -25,7 +25,7 @@ final class SessionStateTests: XCTestCase {
 
     func testAppendMessage() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -44,7 +44,7 @@ final class SessionStateTests: XCTestCase {
 
     func testUpdateLastMessage() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -63,7 +63,7 @@ final class SessionStateTests: XCTestCase {
 
     func testAppendToLastMessage() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -82,7 +82,7 @@ final class SessionStateTests: XCTestCase {
 
     func testAppendToLastMessage_nonAssistantMessage() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -101,7 +101,7 @@ final class SessionStateTests: XCTestCase {
 
     func testClearMessages() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -122,7 +122,7 @@ final class SessionStateTests: XCTestCase {
 
     func testMessageCount() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -142,7 +142,7 @@ final class SessionStateTests: XCTestCase {
 
     func testLastMessageAt() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -163,7 +163,7 @@ final class SessionStateTests: XCTestCase {
 
     func testSessionStatusTransitions() {
         let session = SessionState(
-            sessionId: "test",
+            id: "test",
             sessionKey: "agent:main:test"
         )
 

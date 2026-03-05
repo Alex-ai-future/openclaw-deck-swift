@@ -10,6 +10,8 @@ import XCTest
 @MainActor
 final class DeckViewModelTests: XCTestCase {
     var viewModel: DeckViewModel!
+    var mockStorage: MockUserDefaultsStorage!
+    var mockGlobalInputState: MockGlobalInputState!
     override func setUp() async throws {
         try await super.setUp()
 
@@ -20,11 +22,20 @@ final class DeckViewModelTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "playSoundOnMessage")
         UserDefaults.standard.synchronize()
 
-        viewModel = DeckViewModel()
+        // 使用 Mock 存储和 Mock GlobalInputState，完全隔离测试
+        mockStorage = MockFactory.createMockStorage()
+        mockGlobalInputState = MockGlobalInputState()
+        let testDIContainer = MockFactory.createDIContainer(
+            storage: mockStorage,
+            globalInputState: mockGlobalInputState
+        )
+        viewModel = DeckViewModel(diContainer: testDIContainer)
     }
 
     override func tearDown() async throws {
         viewModel = nil
+        mockStorage = nil
+        mockGlobalInputState = nil
 
         // 清理 UserDefaults
         UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")

@@ -67,7 +67,7 @@ struct SessionRowView: View {
     private var titleRow: some View {
         HStack(spacing: 8) {
             // Session 名称
-            Text(session.sessionId)
+            Text(session.id)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.primary)
                 .lineLimit(1)
@@ -124,7 +124,7 @@ struct SessionIcon: View {
                 )
                 .frame(width: size, height: size)
 
-            Text(session.sessionId.prefix(1).uppercased())
+            Text(session.id.prefix(1).uppercased())
                 .font(.system(size: size == 44 ? 18 : 16, weight: .semibold))
                 .foregroundColor(.blue)
         }

@@ -63,8 +63,8 @@ jobs:
     - name: Build
       run: bash script/build.sh ipados
 
-  test:
-    name: Unit Tests
+  test-macos:
+    name: Unit Tests macOS
     runs-on: macos-26
     needs: build-macos
     
@@ -73,13 +73,55 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Run Unit Tests
-      run: bash script/run_unit_tests.sh
+      run: bash script/run_unit_tests.sh macos
       timeout-minutes: 10
     
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results
+        name: test-results-macos
         path: build/tests/TestResults.xcresult
+        if-no-files-found: warn
+
+  test-ios:
+    name: Unit Tests iOS
+    runs-on: macos-26
+    needs: build-ios
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Run Unit Tests
+      run: bash script/run_unit_tests.sh ios
+      timeout-minutes: 10
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-ios
+        path: build/tests_ios/TestResults.xcresult
+        if-no-files-found: warn
+
+  test-ipados:
+    name: Unit Tests iPadOS
+    runs-on: macos-26
+    needs: build-ipados
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Run Unit Tests
+      run: bash script/run_unit_tests.sh ipados
+      timeout-minutes: 10
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-ipados
+        path: build/tests_ipados/TestResults.xcresult
         if-no-files-found: warn

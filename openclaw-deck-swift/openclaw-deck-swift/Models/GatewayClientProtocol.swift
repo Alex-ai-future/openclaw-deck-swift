@@ -9,7 +9,7 @@ import Foundation
 @MainActor
 protocol GatewayClientProtocol {
     /// 是否已连接
-    var connected: Bool { get }
+    var connected: Bool { get set }
 
     /// 连接错误信息
     var connectionError: String? { get }

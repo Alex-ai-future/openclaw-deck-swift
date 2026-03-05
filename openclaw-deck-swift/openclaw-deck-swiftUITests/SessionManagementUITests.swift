@@ -16,13 +16,13 @@ final class SessionManagementUITests: XCTestCase {
         app.launchEnvironment["UITESTING"] = "YES"
         app.launchArguments.append("--disable-animations")
         continueAfterFailure = false // 失败立即停止
-        
+
         // 添加 UI 中断处理器
         addUIInterruptionMonitors()
-        
+
         app.launch()
         app.activate() // ✅ 显式激活应用到前台
-        
+
         // iOS 真机：点击屏幕以触发中断处理器
         app.tap()
 
@@ -315,31 +315,31 @@ final class SessionManagementUITests: XCTestCase {
         newSessionButton.forceTap()
 
         // 验证弹窗打开（增加等待时间，iPadOS 可能较慢）
-        sleep(2)  # 等待弹窗动画
-        
-        # 尝试多种弹窗类型（iPadOS 可能是 Dialog 或 Sheet）
+        sleep(2) // 等待弹窗动画
+
+        // 尝试多种弹窗类型（iPadOS 可能是 Dialog 或 Sheet）
         let createSheet = app.sheets.firstMatch
         let createDialog = app.dialogs.firstMatch
-        
+
         if createSheet.exists {
             print("  ✅ 新建会话弹窗已打开（Sheet）")
         } else if createDialog.exists {
             print("  ✅ 新建会话弹窗已打开（Dialog）")
         } else {
-            # 截图诊断
+            // 截图诊断
             print("  ⚠️  弹窗未打开，截图诊断...")
             let screenshot = app.windows.firstMatch.screenshot()
             let attachment = XCTAttachment(screenshot: screenshot)
             attachment.name = "创建会话弹窗诊断"
             attachment.lifetime = .keepAlways
             add(attachment)
-            
-            # 打印所有可用元素
+
+            // 打印所有可用元素
             print("  🔍 当前所有 Sheets: \(app.sheets.allElementsBoundByIndex.count)")
             print("  🔍 当前所有 Dialogs: \(app.dialogs.allElementsBoundByIndex.count)")
             print("  🔍 当前所有 Alerts: \(app.alerts.allElementsBoundByIndex.count)")
         }
-        
+
         XCTAssertTrue(
             createSheet.waitForExistence(timeout: 3) || createDialog.waitForExistence(timeout: 3),
             "新建会话弹窗必须打开（Sheet 或 Dialog）"

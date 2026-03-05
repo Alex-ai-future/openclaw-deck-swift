@@ -14,4 +14,18 @@ extension XCUIElement {
             coordinate.tap()
         }
     }
+
+    /// 通过剪贴板设置文本（用于解决某些输入框无法直接输入的问题）
+    func setTextViaPasteboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+
+        if self.exists {
+            self.forceTap()
+            // 模拟 Cmd+V 粘贴
+            let app = XCUIApplication()
+            app.typeKey("v", modifierFlags: .command)
+        }
+    }
 }

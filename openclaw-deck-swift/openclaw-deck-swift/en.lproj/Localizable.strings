@@ -264,13 +264,13 @@
 
 
 // MARK: - Archive & Continue
-"archive_section_header" = "Archive & Continue"
-"archive_button" = "Archive Current"
-"archive_description" = "Save history & start fresh"
-"confirm_archive" = "Archive Current History?"
-"archive_confirm_message" = "Current: %d messages. History will be saved and searchable."
-"archive_action" = "Archive & Continue"
+"archive_section_header" = "Archive & Continue";
+"archive_button" = "Archive Current";
+"archive_description" = "Save history & start fresh";
+"confirm_archive" = "Archive Current History?";
+"archive_confirm_message" = "Current: %d messages. History will be saved and searchable.";
+"archive_action" = "Archive & Continue";
 
 // MARK: - Danger Zone
-"delete_section_header" = "Danger Zone"
-"delete_description" = "Permanently remove this session and all history"
+"delete_section_header" = "Danger Zone";
+"delete_description" = "Permanently remove this session and all history";

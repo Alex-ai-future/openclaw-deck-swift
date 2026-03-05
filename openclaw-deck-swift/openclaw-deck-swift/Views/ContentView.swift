@@ -64,15 +64,9 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            // ✅ 优先检查加载状态，确保加载完成前不显示主界面
-            if viewModel.gatewayConnected || viewModel.isInitializing || ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
-                // 加载中时显示 LoadingView（包括 connecting 状态）
-                if viewModel.loadingStage != .idle {
-                    LoadingView(
-                        stage: viewModel.loadingStage,
-                        progress: viewModel.loadingProgress
-                    )
-                } else {
+            if viewModel.gatewayConnected {
+                // ✅ 已连接
+                if viewModel.loadingStage == .idle {
                     // 加载完成 → 显示聊天界面
                     // 根据设备类型选择布局
                     #if os(macOS)
@@ -102,9 +96,21 @@ struct ContentView: View {
                         SessionListView(viewModel: viewModel)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     #endif
+                } else {
+                    // 加载中时显示 LoadingView
+                    LoadingView(
+                        stage: viewModel.loadingStage,
+                        progress: viewModel.loadingProgress
+                    )
                 }
+            } else if viewModel.isInitializing {
+                // ✅ 初始化连接中
+                LoadingView(
+                    stage: viewModel.loadingStage,
+                    progress: viewModel.loadingProgress
+                )
             } else {
-                // Welcome screen - show settings
+                // ❌ 未连接
                 WelcomeView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,

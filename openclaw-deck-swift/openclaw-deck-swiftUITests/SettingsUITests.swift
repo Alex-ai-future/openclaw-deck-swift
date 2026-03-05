@@ -16,12 +16,12 @@ final class SettingsUITests: XCTestCase {
         app.launchEnvironment["UITESTING"] = "YES"
         app.launchArguments.append("--disable-animations")
         continueAfterFailure = false // 失败立即停止
-        
+
         // 添加 UI 中断处理器
         addUIInterruptionMonitors()
-        
+
         app.launch()
-        
+
         // iOS 真机：点击屏幕以触发中断处理器
         app.tap()
 
@@ -76,5 +76,4 @@ final class SettingsUITests: XCTestCase {
             return false
         }
     }
-
 }

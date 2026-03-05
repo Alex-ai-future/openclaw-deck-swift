@@ -1,7 +1,7 @@
 // DeckViewModel.swift
 // OpenClaw Deck Swift
 //
-// Deck ViewModel - 使用 SwiftData（简化版）
+// Deck ViewModel - 使用 SwiftData（简化版 + 同步）
 
 import SwiftData
 import os.log
@@ -44,8 +44,32 @@ class DeckViewModel {
         // 加载配置
         playSoundOnMessage = UserDefaults.standard.object(forKey: "playSoundOnMessage") as? Bool ?? true
         
+        // 启动时同步云端
         Task { @MainActor in
-            await migrateFromUserDefaults()
+            await syncFromCloudOnLaunch()
+        }
+    }
+    
+    // MARK: - Cloud Sync on Launch
+    
+    private func syncFromCloudOnLaunch() async {
+        do {
+            // 检查冲突
+            let result = try await checkCloudConflict()
+            
+            switch result {
+            case .noConflict:
+                // 无冲突：全量同步到云端
+                await syncToCloud()
+                
+            case .conflict(let localCount, let cloudCount):
+                // 有冲突：暂时使用本地（后续添加冲突解决 UI）
+                logger.warning("⚠️ Conflict detected: local=\(localCount), cloud=\(cloudCount)")
+                await syncToCloud()  // 本地优先
+            }
+        } catch {
+            logger.error("❌ Cloud sync failed: \(error)")
+            // 失败时使用本地数据
         }
     }
     
@@ -71,6 +95,11 @@ class DeckViewModel {
         )
         modelContext.insert(session)
         
+        // 全量同步到云端
+        Task {
+            await syncToCloud()
+        }
+        
         logger.info("✅ Created session: \(name)")
         
         return session
@@ -83,41 +112,13 @@ class DeckViewModel {
             FetchDescriptor<SessionState>(predicate: #Predicate { $0.id == id })
         ).first {
             modelContext.delete(session)
+            
+            // 全量同步到云端
+            Task {
+                await syncToCloud()
+            }
+            
             logger.info("🗑️ Deleted session: \(id)")
         }
-    }
-    
-    // MARK: - Migration
-    
-    private func migrateFromUserDefaults() async {
-        if UserDefaults.standard.bool(forKey: "swiftdata.migrated") {
-            return
-        }
-        
-        logger.info("📥 Migrating from UserDefaults...")
-        
-        let storage = UserDefaultsStorage.shared
-        let sessions = storage.loadSessions()
-        
-        for (index, config) in sessions.enumerated() {
-            let session = SessionState(
-                id: config.id,
-                sessionKey: config.sessionKey,
-                name: config.name,
-                context: config.context,
-                isHidden: false,
-                sortOrder: index,
-                createdAt: config.createdAt,
-                lastActivityAt: Date()
-            )
-            modelContext.insert(session)
-        }
-        
-        // 删除旧数据
-        storage.clearSessions()
-        
-        UserDefaults.standard.set(true, forKey: "swiftdata.migrated")
-        
-        logger.info("✅ Migration complete: \(sessions.count) sessions")
     }
 }

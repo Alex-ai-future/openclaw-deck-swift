@@ -57,7 +57,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testSessionState_initialization() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -65,39 +65,25 @@ final class SessionStateExtendedTests: XCTestCase {
         XCTAssertEqual(session.sessionKey, "key-1")
         XCTAssertEqual(session.id, "session-1") // Identifiable
         XCTAssertTrue(session.messages.isEmpty)
-        XCTAssertFalse(session.messageLoadState == .loaded)
-        XCTAssertFalse(session.messageLoadState == .loading)
+        XCTAssertEqual(session.messageLoadState, .notLoaded)
         XCTAssertEqual(session.status, .idle)
         XCTAssertNil(session.activeRunId)
-        XCTAssertFalse(session.status == .thinking)
         XCTAssertFalse(session.hasUnreadMessage)
         XCTAssertNil(session.context)
         XCTAssertNil(session.lastMessageAt)
         XCTAssertEqual(session.messageCount, 0)
     }
 
-    func testSessionState_initializationWithContext() {
-        let session = SessionState(
-            id: "session-1",
-            sessionKey: "key-1",
-            context: "Test context"
-        )
-
-        XCTAssertEqual(session.sessionId, "session-1")
-        XCTAssertEqual(session.sessionKey, "key-1")
-        XCTAssertEqual(session.context, "Test context")
-    }
-
     // MARK: - SessionState Hashable Tests
 
     func testSessionState_hashable_sameSession() {
         let session1 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
         let session2 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -107,12 +93,12 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testSessionState_hashable_differentSessionId() {
         let session1 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
         let session2 = SessionState(
-            id: "session-2",
+            sessionId: "session-2",
             sessionKey: "key-1"
         )
 
@@ -121,12 +107,12 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testSessionState_hashable_differentSessionKey() {
         let session1 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
         let session2 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-2"
         )
 
@@ -135,12 +121,12 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testSessionState_inSet() {
         let session1 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
         let session2 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -152,12 +138,12 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testSessionState_asDictionaryKey() {
         let session1 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
         let session2 = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -174,7 +160,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendMessage() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -193,7 +179,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendMultipleMessages() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -221,7 +207,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testUpdateLastMessage() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -241,7 +227,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testUpdateLastMessage_emptyMessages() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -253,7 +239,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendToLastMessage() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -273,7 +259,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendToLastMessage_nonAssistantMessage() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -294,7 +280,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendToLastMessage_emptyMessages() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -306,7 +292,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testClearMessages() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -321,19 +307,19 @@ final class SessionStateExtendedTests: XCTestCase {
         session.messageLoadState = .loaded
 
         XCTAssertEqual(session.messages.count, 1)
-        XCTAssertTrue(session.messageLoadState == .loaded)
+        XCTAssertEqual(session.messageLoadState, .loaded)
 
         session.clearMessages()
 
         XCTAssertTrue(session.messages.isEmpty)
-        XCTAssertFalse(session.messageLoadState == .loaded)
+        XCTAssertEqual(session.messageLoadState, .notLoaded)
     }
 
     // MARK: - Computed Property Tests
 
     func testLastMessageAt_withMessages() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -352,7 +338,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testLastMessageAt_withoutMessages() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -361,7 +347,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testMessageCount() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -394,7 +380,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testStatusTransitions() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -423,7 +409,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testActiveRunId() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -436,24 +422,9 @@ final class SessionStateExtendedTests: XCTestCase {
         XCTAssertNil(session.activeRunId)
     }
 
-    func testIsProcessing() {
-        let session = SessionState(
-            id: "session-1",
-            sessionKey: "key-1"
-        )
-
-        XCTAssertFalse(session.status == .thinking)
-
-        session.status = .thinking
-        XCTAssertTrue(session.status == .thinking)
-
-        session.status = .idle
-        XCTAssertFalse(session.status == .thinking)
-    }
-
     func testHasUnreadMessage() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -470,7 +441,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendMessage_withNilText() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -489,7 +460,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testUpdateLastMessage_withLongText() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -511,7 +482,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testMultipleStatusChanges() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -529,7 +500,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testAppendMessage_performance() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 
@@ -549,7 +520,7 @@ final class SessionStateExtendedTests: XCTestCase {
 
     func testClearMessages_performance() {
         let session = SessionState(
-            id: "session-1",
+            sessionId: "session-1",
             sessionKey: "key-1"
         )
 

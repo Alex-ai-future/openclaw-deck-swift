@@ -10,22 +10,22 @@ import XCTest
 final class SessionStateTests: XCTestCase {
     func testSessionStateInitialization() {
         let session = SessionState(
-            id: "test-session",
+            sessionId: "test-session",
             sessionKey: "agent:main:test-session"
         )
 
         XCTAssertEqual(session.sessionId, "test-session")
         XCTAssertEqual(session.sessionKey, "agent:main:test-session")
         XCTAssertTrue(session.messages.isEmpty)
-        XCTAssertFalse(session.messageLoadState == .loaded)
-        XCTAssertFalse(session.messageLoadState == .loading)
+        XCTAssertFalse(session.messageLoadState == MessageLoadState.loaded)
+        XCTAssertFalse(session.messageLoadState == MessageLoadState.loading)
         XCTAssertEqual(session.status, .idle)
         XCTAssertNil(session.activeRunId)
     }
 
     func testAppendMessage() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -44,7 +44,7 @@ final class SessionStateTests: XCTestCase {
 
     func testUpdateLastMessage() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -63,7 +63,7 @@ final class SessionStateTests: XCTestCase {
 
     func testAppendToLastMessage() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -82,7 +82,7 @@ final class SessionStateTests: XCTestCase {
 
     func testAppendToLastMessage_nonAssistantMessage() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -101,7 +101,7 @@ final class SessionStateTests: XCTestCase {
 
     func testClearMessages() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -117,12 +117,12 @@ final class SessionStateTests: XCTestCase {
         session.clearMessages()
 
         XCTAssertTrue(session.messages.isEmpty)
-        XCTAssertFalse(session.messageLoadState == .loaded)
+        XCTAssertFalse(session.messageLoadState == MessageLoadState.loaded)
     }
 
     func testMessageCount() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -142,7 +142,7 @@ final class SessionStateTests: XCTestCase {
 
     func testLastMessageAt() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
@@ -163,19 +163,19 @@ final class SessionStateTests: XCTestCase {
 
     func testSessionStatusTransitions() {
         let session = SessionState(
-            id: "test",
+            sessionId: "test",
             sessionKey: "agent:main:test"
         )
 
         XCTAssertEqual(session.status, .idle)
 
-        session.status = .thinking
+        session.status = SessionStatus.thinking
         XCTAssertEqual(session.status, .thinking)
 
-        session.status = .streaming
+        session.status = SessionStatus.streaming
         XCTAssertEqual(session.status, .streaming)
 
-        session.status = .error("Test error")
+        session.status = SessionStatus.error("Test error")
         XCTAssertEqual(session.status, .error("Test error"))
 
         session.status = .idle
@@ -185,9 +185,9 @@ final class SessionStateTests: XCTestCase {
     func testStatusEquatable() {
         let status1: SessionStatus = .idle
         let status2: SessionStatus = .idle
-        let status3: SessionStatus = .thinking
-        let status4: SessionStatus = .error("Error 1")
-        let status5: SessionStatus = .error("Error 2")
+        let status3: SessionStatus = SessionStatus.thinking
+        let status4: SessionStatus = SessionStatus.error("Error 1")
+        let status5: SessionStatus = SessionStatus.error("Error 2")
 
         XCTAssertEqual(status1, status2)
         XCTAssertNotEqual(status1, status3)

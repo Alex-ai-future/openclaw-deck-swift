@@ -33,8 +33,26 @@ final class SessionConfigTests: XCTestCase {
     func testIsNameTaken_withExistingSession() {
         // 创建模拟的 sessions 字典
         let sessions: [String: SessionState] = [
-            "test-agent": SessionState(id: "test-agent", sessionKey: "agent:main:test-agent", context: nil),
-            "work": SessionState(id: "work", sessionKey: "agent:main:work", context: nil),
+            "test-agent": SessionState(
+                id: "test-agent",
+                sessionKey: "agent:main:test-agent",
+                name: "Test Agent",
+                context: nil,
+                isHidden: false,
+                sortOrder: 0,
+                createdAt: Date(),
+                lastActivityAt: Date()
+            ),
+            "work": SessionState(
+                id: "work",
+                sessionKey: "agent:main:work",
+                name: "Work",
+                context: nil,
+                isHidden: false,
+                sortOrder: 1,
+                createdAt: Date(),
+                lastActivityAt: Date()
+            ),
         ]
 
         // 测试已存在的名字

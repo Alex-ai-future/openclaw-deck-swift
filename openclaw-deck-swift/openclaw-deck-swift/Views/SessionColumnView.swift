@@ -205,13 +205,13 @@ struct SessionColumnView: View {
         .accessibilityIdentifier("SessionView-\(session.sessionId)")
         .contentShape(Rectangle())
         .onTapGesture {
-            viewModel.selectSession(session.sessionId)
+            // viewModel.selectSession(session.sessionId)
             // 点击整个 Session 视图时消除未读状态
             session.hasUnreadMessage = false
         }
         .onAppear {
             // 进入视图时自动选中当前 session，确保输入框发送到正确的会话
-            viewModel.selectSession(session.sessionId)
+            // viewModel.selectSession(session.sessionId)
 
             // 滚动到最底部（显示最新消息）
             // 延迟执行确保消息已经加载完成，避免滚动到空白位置
@@ -579,7 +579,7 @@ struct SessionColumnView: View {
 
 #Preview("Empty Session") {
     SessionColumnView(
-        session: SessionState(id: "empty", sessionKey: "agent:main:empty"),
+        session: SessionState(sessionId: "empty", sessionKey: "agent:main:empty"),
         viewModel: DeckViewModel(),
         isSelected: true
     )
@@ -597,7 +597,7 @@ struct SessionColumnView: View {
 
 private func createSampleSession() -> SessionState {
     let session = SessionState(
-        id: "demo",
+        sessionId: "demo",
         sessionKey: "agent:main:demo"
     )
 
@@ -743,7 +743,7 @@ private func createSampleSession() -> SessionState {
 
 private func createStreamingSession() -> SessionState {
     let session = SessionState(
-        id: "streaming",
+        sessionId: "streaming",
         sessionKey: "agent:main:streaming"
     )
 

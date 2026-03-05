@@ -3,8 +3,8 @@
 //
 // SwiftData Session 模型（支持 Codable 用于 Cloudflare 同步）
 
-import SwiftData
 import Foundation
+import SwiftData
 
 /// Session 状态（SwiftData 模型 + Codable）
 @Model
@@ -17,7 +17,7 @@ final class SessionState: Hashable, Identifiable, Codable {
     var sortOrder: Int
     var createdAt: Date
     var lastActivityAt: Date
-    
+
     // 内存属性（不持久化，不编码）
     @Transient var messages: [ChatMessage] = []
     @Transient var status: SessionStatus = .idle
@@ -27,21 +27,27 @@ final class SessionState: Hashable, Identifiable, Codable {
     @Transient var isHistoryLoading: Bool = false
     @Transient var isLoadingMessages: Bool = false
     @Transient var historyLoaded: Bool = false
-    
+
     // MARK: - Computed Properties
-    
-    var sessionId: String { id }
-    
-    var messageCount: Int { messages.count }
-    
-    var lastMessageAt: Date? { messages.last?.timestamp }
-    
+
+    var sessionId: String {
+        id
+    }
+
+    var messageCount: Int {
+        messages.count
+    }
+
+    var lastMessageAt: Date? {
+        messages.last?.timestamp
+    }
+
     // MARK: - Codable
-    
+
     enum CodingKeys: String, CodingKey {
         case id, sessionKey, name, context, isHidden, sortOrder, createdAt, lastActivityAt
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -53,7 +59,7 @@ final class SessionState: Hashable, Identifiable, Codable {
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         lastActivityAt = try container.decode(Date.self, forKey: .lastActivityAt)
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -65,9 +71,9 @@ final class SessionState: Hashable, Identifiable, Codable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(lastActivityAt, forKey: .lastActivityAt)
     }
-    
+
     // MARK: - Init
-    
+
     init(
         id: String,
         sessionKey: String,
@@ -87,7 +93,7 @@ final class SessionState: Hashable, Identifiable, Codable {
         self.createdAt = createdAt
         self.lastActivityAt = lastActivityAt
     }
-    
+
     /// 便利初始化器（用于测试预览）
     convenience init(sessionId: String, sessionKey: String) {
         self.init(
@@ -101,23 +107,23 @@ final class SessionState: Hashable, Identifiable, Codable {
             lastActivityAt: Date()
         )
     }
-    
+
     // MARK: - Hashable
-    
+
     static func == (lhs: SessionState, rhs: SessionState) -> Bool {
         lhs.id == rhs.id
     }
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
-    
+
     // MARK: - Message Management
-    
+
     func appendMessage(_ message: ChatMessage) {
         messages.append(message)
     }
-    
+
     func updateLastMessage(text: String) {
         guard let index = messages.indices.last else { return }
         let message = messages[index]
@@ -134,12 +140,12 @@ final class SessionState: Hashable, Identifiable, Codable {
             isLoaded: message.isLoaded
         )
     }
-    
+
     func appendToLastMessage(text: String) {
         guard let index = messages.indices.last else { return }
         let message = messages[index]
         guard message.role == .assistant else { return }
-        
+
         messages[index] = ChatMessage(
             id: message.id,
             role: message.role,
@@ -153,7 +159,7 @@ final class SessionState: Hashable, Identifiable, Codable {
             isLoaded: message.isLoaded
         )
     }
-    
+
     func clearMessages() {
         messages.removeAll()
         messageLoadState = .notLoaded

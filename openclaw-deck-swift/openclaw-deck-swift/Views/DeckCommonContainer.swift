@@ -43,7 +43,7 @@ struct DeckCommonContainer<Content: View>: View {
             // Settings Sheet
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
-                    isConnected: (viewModel.gatewayClient?.connected ?? false),
+                    isConnected: (viewModel.gatewayConnected ?? false),
                     viewModel: viewModel
                 )
             }

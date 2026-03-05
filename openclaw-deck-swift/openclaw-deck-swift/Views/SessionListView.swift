@@ -37,7 +37,7 @@ struct SessionListView: View {
             }
             .listStyle(.plain)
             .navigationTitle("openclaw_deck".localized)
-            .navigationBarTitleDisplayMode(.large)
+            // // macOS: .navigationBarTitleDisplayMode(.large) - macOS
             .toolbar {
                 DeckToolbar(
                     viewModel: viewModel,
@@ -52,13 +52,13 @@ struct SessionListView: View {
                     viewModel: viewModel,
                     isSelected: true
                 )
-                .navigationBarTitleDisplayMode(.inline)
+                // // macOS: .navigationBarTitleDisplayMode(.inline) - macOS
                 .onAppear {
                     session.hasUnreadMessage = false
                 }
             }
             .sheet(isPresented: $showingSettings) {
-                SettingsView(isConnected: .constant(false), viewModel: viewModel)
+                SettingsView(isConnected: false, viewModel: viewModel)
             }
             .sheet(isPresented: $showingNewSessionSheet) {
                 NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)

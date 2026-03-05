@@ -17,6 +17,18 @@ class DeckViewModel {
     /// 全局输入状态
     let globalInputState = GlobalInputState()
 
+    /// Gateway 客户端
+    var gatewayClient: GatewayClientProtocol?
+
+    /// 连接错误信息
+    var connectionError: String?
+
+    /// 停止错误信息
+    var stopErrorText: String = ""
+
+    /// 是否显示停止错误
+    var showStopError: Bool = false
+
     /// Gateway 连接状态
     var gatewayConnected: Bool = false
     var isInitializing: Bool = false
@@ -27,6 +39,42 @@ class DeckViewModel {
     var config: AppConfig = .default
     var playSoundOnMessage: Bool = true
 
+    /// Session 字典（计算属性，从 SwiftData 读取）
+    var sessions: [String: SessionState] {
+        get {
+            do {
+                let allSessions = try modelContext.fetch(FetchDescriptor<SessionState>())
+                var dict: [String: SessionState] = [:]
+                for session in allSessions {
+                    dict[session.id] = session
+                }
+                return dict
+            } catch {
+                return [:]
+            }
+        }
+    }
+    
+    /// Session 顺序（计算属性，从 SwiftData 读取）
+    var sessionOrder: [String] {
+        get {
+            do {
+                var descriptor = FetchDescriptor<SessionState>()
+                descriptor.sortBy = [SortDescriptor(\.sortOrder)]
+                let allSessions = try modelContext.fetch(descriptor)
+                return allSessions.map { $0.id }
+            } catch {
+                return []
+            }
+        }
+    }
+    
+    /// 检查 Session 名称是否已被使用
+    func isSessionNameTaken(name: String) -> Bool {
+        let allNames = sessions.values.map { $0.name }
+        return allNames.contains(name)
+    }
+    
     init() {
         let schema = Schema([SessionState.self])
         let configuration = ModelConfiguration(
@@ -129,5 +177,15 @@ class DeckViewModel {
     func sendMessage(sessionId: String, text: String) async {
         // TODO: Implement message sending logic
         logger.info("📤 Send message to session \(sessionId): \(text)")
+    }
+
+    /// 发送当前输入到选中的 Session
+    func sendCurrentInput() async {
+        guard let sessionId = globalInputState.selectedSessionId else { return }
+        guard !globalInputState.inputText.isEmpty else { return }
+
+        let text = globalInputState.inputText
+        globalInputState.inputText = ""
+        await sendMessage(sessionId: sessionId, text: text)
     }
 }

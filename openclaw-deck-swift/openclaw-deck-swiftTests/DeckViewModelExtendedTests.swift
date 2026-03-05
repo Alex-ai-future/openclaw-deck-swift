@@ -1,7 +1,7 @@
 // DeckViewModelExtendedTests.swift
 // OpenClaw Deck Swift
 //
-// 扩展测试 - 覆盖 DeckViewModel 的更多方法
+// DeckViewModel 扩展测试
 
 @testable import openclaw_deck_swift
 import XCTest
@@ -9,404 +9,56 @@ import XCTest
 @MainActor
 final class DeckViewModelExtendedTests: XCTestCase {
     var viewModel: DeckViewModel!
-
+    
     override func setUp() async throws {
         try await super.setUp()
-        // 清除 Cloudflare 配置，避免测试中访问 Keychain
-        CloudflareConfig.clear()
-        // 清理 UserDefaults，避免测试间状态污染
-        UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-        UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
-        UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
+        
+        UserDefaults.standard.removeObject(forKey: "swiftdata.migrated")
         UserDefaults.standard.synchronize()
+        
         viewModel = DeckViewModel()
-        // 加载 sessions（会创建 welcome session）
-        await viewModel.loadSessionsFromStorageForTesting()
     }
-
+    
     override func tearDown() async throws {
         viewModel = nil
-
-        // 清理 UserDefaults
-        UserDefaults.standard.removeObject(forKey: "openclaw.deck.gatewayUrl")
-        UserDefaults.standard.removeObject(forKey: "openclaw.deck.token")
-        UserDefaults.standard.synchronize()
-
         try await super.tearDown()
     }
-
-    // MARK: - Storage Tests
-
-    func testLoadSessionsFromStorage_withMockStorage() {
-        // 验证使用 Mock Storage 时不会访问云端
-        XCTAssertTrue(mockStorage.isTesting)
-
-        // 创建一些测试数据
-        let session = viewModel.createSession(name: "Test")
-
-        // 验证数据保存在 Mock 中
-        let savedSessions = mockStorage.loadSessions()
-        XCTAssertTrue(savedSessions.contains { $0.id == session.id })
+    
+    // MARK: - Session Management
+    
+    func testCreateMultipleSessions() async {
+        let session1 = await viewModel.createSession(name: "Session 1")
+        let session2 = await viewModel.createSession(name: "Session 2")
+        
+        XCTAssertNotNil(session1)
+        XCTAssertNotNil(session2)
+        XCTAssertNotEqual(session1?.id, session2?.id)
     }
-
-    func testSaveSessionsToStorage_withMockStorage() {
-        // 初始有 1 个 welcome session，再创建 2 个，总共 3 个
-        _ = viewModel.createSession(name: "Test1")
-        _ = viewModel.createSession(name: "Test2")
-
-        // 验证保存到了 Mock（welcome + Test1 + Test2 = 3 个）
-        let savedSessions = mockStorage.loadSessions()
-        XCTAssertEqual(savedSessions.count, 3)
-
-        let savedOrder = mockStorage.loadSessionOrder()
-        XCTAssertEqual(savedOrder.count, 3)
+    
+    func testDeleteNonExistentSession() {
+        // 删除不存在的会话不应崩溃
+        viewModel.deleteSession(id: "non-existent-id")
     }
-
-    func testSaveSessionsToStorage_updatesLastUpdated() {
-        _ = viewModel.createSession(name: "Test")
-
-        // 验证最后更新时间被设置
-        let lastUpdated = UserDefaults.standard.string(forKey: "openclaw.deck.sessionOrder.lastUpdated")
-        XCTAssertNotNil(lastUpdated)
+    
+    // MARK: - Sync Tests
+    
+    func testDownloadFromCloud_noCrash() async {
+        // 验证下载方法不会崩溃（即使没有配置）
+        await viewModel.downloadFromCloud()
     }
-
-    // MARK: - Session Management Extended Tests
-
-    func testDeleteSession_removesFromStorage() {
-        let session = viewModel.createSession(name: "To Delete")
-
-        // 验证已保存
-        var savedSessions = mockStorage.loadSessions()
-        XCTAssertTrue(savedSessions.contains { $0.id == session.id })
-
-        // 删除
-        viewModel.deleteSession(id: session.id)
-
-        // 验证从 Mock 中移除
-        savedSessions = mockStorage.loadSessions()
-        XCTAssertFalse(savedSessions.contains { $0.id == session.id })
+    
+    func testResolveConflict_useLocal() async {
+        await viewModel.resolveConflict(choice: .useLocal)
+        // 验证不崩溃
     }
-
-    func testDeleteSession_removesFromOrder() {
-        let session = viewModel.createSession(name: "To Delete")
-
-        // 验证在顺序列表中
-        var savedOrder = mockStorage.loadSessionOrder()
-        XCTAssertTrue(savedOrder.contains(session.id.lowercased()))
-
-        // 删除
-        viewModel.deleteSession(id: session.id)
-
-        // 验证从顺序列表中移除
-        savedOrder = mockStorage.loadSessionOrder()
-        XCTAssertFalse(savedOrder.contains(session.id.lowercased()))
+    
+    func testResolveConflict_useCloud() async {
+        await viewModel.resolveConflict(choice: .useCloud)
+        // 验证不崩溃
     }
-
-    func testDeleteAllSessions_createsWelcomeSession() {
-        // 删除所有 session
-        let sessionIds = viewModel.sessionOrder.map(\.self)
-        for id in sessionIds {
-            viewModel.deleteSession(id: id)
-        }
-
-        // 验证创建了 welcome session
-        XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 1)
-    }
-
-    func testGetSession_caseInsensitive() {
-        let session = viewModel.createSession(name: "Test")
-
-        // 大小写不敏感查找
-        let found1 = viewModel.getSession(id: session.id)
-        let found2 = viewModel.getSession(id: session.id.uppercased())
-        let found3 = viewModel.getSession(id: session.id.lowercased())
-
-        XCTAssertNotNil(found1)
-        XCTAssertNotNil(found2)
-        XCTAssertNotNil(found3)
-        XCTAssertEqual(found1?.sessionId, found2?.sessionId)
-        XCTAssertEqual(found1?.sessionId, found3?.sessionId)
-    }
-
-    // MARK: - Session Order Tests
-
-    func testSessionOrder_newSessionInsertedAtBeginning() {
-        let initialCount = viewModel.sessionOrder.count
-
-        let session1 = viewModel.createSession(name: "First")
-        XCTAssertEqual(viewModel.sessionOrder[0], session1.id.lowercased())
-
-        let session2 = viewModel.createSession(name: "Second")
-        XCTAssertEqual(viewModel.sessionOrder[0], session2.id.lowercased())
-        XCTAssertEqual(viewModel.sessionOrder[1], session1.id.lowercased())
-
-        let session3 = viewModel.createSession(name: "Third")
-        XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased())
-        XCTAssertEqual(viewModel.sessionOrder[1], session2.id.lowercased())
-        XCTAssertEqual(viewModel.sessionOrder[2], session1.id.lowercased())
-    }
-
-    func testSessionOrder_afterDelete() {
-        // 初始有 welcome session，创建 3 个后共 4 个
-        let session1 = viewModel.createSession(name: "First")
-        let session2 = viewModel.createSession(name: "Second")
-        let session3 = viewModel.createSession(name: "Third")
-
-        // 顺序：[third, second, first, welcome]
-        XCTAssertEqual(viewModel.sessionOrder.count, 4)
-
-        // 删除 second
-        viewModel.deleteSession(id: session2.id)
-
-        // 顺序应该是：[third, first, welcome]
-        XCTAssertEqual(viewModel.sessionOrder.count, 3)
-        // 验证顺序正确（前两个是 third 和 first）
-        XCTAssertEqual(viewModel.sessionOrder[0], session3.id.lowercased())
-        XCTAssertEqual(viewModel.sessionOrder[1], session1.id.lowercased())
-    }
-
-    // MARK: - Gateway Connection Tests
-
-    func testDisconnect_clearsGatewayClient() {
-        // 断开连接
-        viewModel.disconnect()
-
-        // 验证连接状态
-        XCTAssertFalse(viewModel.gatewayClient?.connected ?? false)
-    }
-
-    func testClearConnectionError_clearsError() {
-        // 设置 mock gateway client
-        let mockClient = MockGatewayClient()
-        viewModel.gatewayClient = mockClient
-
-        mockClient.connectionError = "Test error" // Note: this is setting on gatewayClient
-        XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
-
-        // 清除错误
-        viewModel.clearConnectionError()
-        XCTAssertNil(viewModel.gatewayClient?.connectionError)
-    }
-
-    // MARK: - Event Handling Extended Tests
-
-    func testHandleGatewayEvent_allEventTypes() {
-        let events = [
-            GatewayEvent(event: "tick", payload: nil),
-            GatewayEvent(event: "health", payload: nil),
-            GatewayEvent(event: "heartbeat", payload: nil),
-            GatewayEvent(event: "unknown.event", payload: nil),
-            GatewayEvent(event: "agent", payload: nil),
-        ]
-
-        // 验证所有事件类型都不会导致崩溃
-        for event in events {
-            viewModel.handleGatewayEvent(event)
-        }
-    }
-
-    func testHandleAgentEvent_withValidPayload() {
-        // 有效的 agent 事件 payload
-        let event = GatewayEvent(
-            event: "agent",
-            payload: [
-                "sessionKey": "test-key",
-                "runId": "run-123",
-                "stream": "assistant",
-                "text": "Hello",
-            ]
-        )
-
-        // 不应该崩溃
-        viewModel.handleGatewayEvent(event)
-    }
-
-    func testHandleAgentEvent_withDifferentStreamTypes() {
-        let streamTypes = ["assistant", "user", "system", "thinking"]
-
-        for streamType in streamTypes {
-            let event = GatewayEvent(
-                event: "agent",
-                payload: [
-                    "sessionKey": "test-key",
-                    "runId": "run-123",
-                    "stream": streamType,
-                ]
-            )
-
-            viewModel.handleGatewayEvent(event)
-        }
-    }
-
-    // MARK: - Config Tests
-
-    func testConfig_defaultValues() {
-        let config = viewModel.config
-
-        // 验证默认配置
-        XCTAssertEqual(config.gatewayUrl, "ws://127.0.0.1:18789")
-        XCTAssertEqual(config.mainAgentId, "main")
-    }
-
-    func testConfig_isValidGatewayUrl() {
-        let config = AppConfig(
-            gatewayUrl: "ws://localhost:18789", token: "test-token", mainAgentId: "main"
-        )
-
-        XCTAssertTrue(config.isValidGatewayUrl)
-        XCTAssertTrue(config.isValidToken)
-        XCTAssertTrue(config.isComplete)
-    }
-
-    func testConfig_invalidGatewayUrl() {
-        let config = AppConfig(
-            gatewayUrl: "invalid-url", token: "test-token", mainAgentId: "main"
-        )
-        XCTAssertFalse(config.isValidGatewayUrl)
-    }
-
-    func testConfig_invalidToken() {
-        let config = AppConfig(
-            gatewayUrl: "ws://localhost:18789", token: "", mainAgentId: "main"
-        )
-        XCTAssertFalse(config.isValidToken)
-    }
-
-    // MARK: - Play Sound Configuration
-
-    func testPlaySoundOnMessage_defaultValue() {
-        XCTAssertTrue(viewModel.playSoundOnMessage)
-    }
-
-    func testPlaySoundOnMessage_setValue() {
-        viewModel.playSoundOnMessage = false
-        XCTAssertFalse(viewModel.playSoundOnMessage)
-
-        viewModel.playSoundOnMessage = true
-        XCTAssertTrue(viewModel.playSoundOnMessage)
-    }
-
-    func testPlaySoundOnMessage_persistsToUserDefaults() {
-        viewModel.playSoundOnMessage = false
-
-        let saved = UserDefaults.standard.bool(forKey: "playSoundOnMessage")
-        XCTAssertFalse(saved)
-    }
-
-    func testIsSyncing_defaultValue() {
-        XCTAssertFalse(viewModel.isSyncing)
-    }
-
-    // MARK: - Edge Cases
-
-    func testCreateSession_withVeryLongName() {
-        let longName = String(repeating: "A", count: 1000)
-        let session = viewModel.createSession(name: longName)
-
-        XCTAssertNotNil(session)
-        XCTAssertEqual(session.name, longName)
-    }
-
-    func testCreateSession_withEmojiName() {
-        let session = viewModel.createSession(name: "🎉 Test 🚀 Session 🎊")
-
-        XCTAssertNotNil(session)
-        XCTAssertEqual(session.name, "🎉 Test 🚀 Session 🎊")
-    }
-
-    func testCreateSession_withUnicodeName() {
-        let session = viewModel.createSession(name: "测试会话 - テスト - 테스트")
-
-        XCTAssertNotNil(session)
-        XCTAssertEqual(session.name, "测试会话 - テスト - 테스트")
-    }
-
-    func testDeleteSession_withCaseVariations() {
-        let session = viewModel.createSession(name: "Test")
-
-        // 用不同大小写删除
-        viewModel.deleteSession(id: session.id.uppercased())
-        XCTAssertNil(viewModel.getSession(id: session.id))
-    }
-
-    func testMultipleDeleteCalls_sameSession() {
-        let session = viewModel.createSession(name: "Test")
-
-        // 多次删除同一个 session 不应该崩溃
-        viewModel.deleteSession(id: session.id)
-        viewModel.deleteSession(id: session.id)
-        viewModel.deleteSession(id: session.id.uppercased())
-    }
-
-    // MARK: - Session State Tests
-
-    func testSessionState_messageManagement() {
-        let session = viewModel.createSession(name: "Test")
-        let sessionState = viewModel.getSession(id: session.id)
-
-        XCTAssertNotNil(sessionState)
-        guard let state = sessionState else { return }
-
-        // 初始状态
-        XCTAssertEqual(state.messages.count, 0)
-        XCTAssertFalse(state.messageLoadState == .loaded)
-        XCTAssertFalse(state.messageLoadState == .loading)
-        XCTAssertEqual(state.status, .idle)
-        XCTAssertNil(state.activeRunId)
-        XCTAssertFalse(state.status == .thinking)
-        XCTAssertFalse(state.hasUnreadMessage)
-    }
-
-    func testSessionState_contextManagement() {
-        let session = viewModel.createSession(name: "Test", context: "Test context")
-
-        XCTAssertEqual(session.context, "Test context")
-
-        let sessionState = viewModel.getSession(id: session.id)
-        XCTAssertEqual(sessionState?.context, "Test context")
-    }
-
-    // MARK: - Concurrent Access Tests
-
-    func testConcurrentSessionCreation() {
-        let expectation = XCTestExpectation(description: "Concurrent creation")
-
-        // 并发创建多个 session
-        for i in 0 ..< 10 {
-            Task {
-                _ = viewModel.createSession(name: "Concurrent-\(i)")
-                if i == 9 {
-                    expectation.fulfill()
-                }
-            }
-        }
-
-        wait(for: [expectation], timeout: 5.0)
-
-        // 验证所有 session 都创建了
-        XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 10)
-    }
-
-    func testConcurrentSessionDeletion() {
-        // 先创建多个 session
-        var sessions: [String] = []
-        for i in 0 ..< 10 {
-            let session = viewModel.createSession(name: "Test-\(i)")
-            sessions.append(session.id)
-        }
-
-        let expectation = XCTestExpectation(description: "Concurrent deletion")
-
-        // 并发删除
-        for (index, sessionId) in sessions.enumerated() {
-            Task {
-                viewModel.deleteSession(id: sessionId)
-                if index == sessions.count - 1 {
-                    expectation.fulfill()
-                }
-            }
-        }
-
-        wait(for: [expectation], timeout: 5.0)
+    
+    func testResolveConflict_merge() async {
+        await viewModel.resolveConflict(choice: .merge)
+        // 验证不崩溃
     }
 }

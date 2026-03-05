@@ -147,7 +147,7 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.selectedSessionId = "test-session"
 
         let session = SessionState(
-            id: "test-session",
+            sessionId: "test-session",
             sessionKey: "agent:main:test-session"
         )
 
@@ -161,7 +161,7 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.selectedSessionId = "test-session"
 
         let session = SessionState(
-            id: "test-session",
+            sessionId: "test-session",
             sessionKey: "agent:main:test-session"
         )
 
@@ -177,7 +177,7 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.selectedSessionId = "test-session"
 
         let session = SessionState(
-            id: "test-session",
+            sessionId: "test-session",
             sessionKey: "agent:main:test-session"
         )
 
@@ -194,7 +194,7 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.speechRecognizer.isListening = true
 
         let session = SessionState(
-            id: "test-session",
+            sessionId: "test-session",
             sessionKey: "agent:main:test-session"
         )
 
@@ -210,7 +210,7 @@ final class GlobalInputStateTests: XCTestCase {
         inputState.speechRecognizer.isListening = false
 
         let session = SessionState(
-            id: "test-session",
+            sessionId: "test-session",
             sessionKey: "agent:main:test-session"
         )
 

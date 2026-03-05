@@ -223,7 +223,7 @@ struct SessionDetailView: View {
         viewModel?.globalInputState.selectedSessionId = session.sessionId
         viewModel?.globalInputState.inputText = "/new"
         Task {
-            await viewModel?.sendCurrentInput()
+            await viewModel?.globalInputState.sendMessage(to: session, viewModel: viewModel!)
         }
         dismiss()
     }
@@ -235,6 +235,7 @@ struct SessionDetailView: View {
         case .idle: "idle"
         case .thinking: "thinking"
         case .streaming: "streaming"
+        case .speaking: "speaking"
         case let .error(message): "Error: \(message)"
         }
     }
@@ -263,7 +264,7 @@ struct SessionDetailView: View {
 
 #Preview {
     SessionDetailView(
-        session: SessionState(id: "test", sessionKey: "agent:main:test"),
+        session: SessionState(sessionId: "test", sessionKey: "agent:main:test"),
         viewModel: DeckViewModel()
     )
 }

@@ -483,7 +483,14 @@ bash script/build.sh ipados
 
 **如果要本地验证（开发阶段）：**
 ```bash
-bash script/run_unit_tests.sh
+# macOS
+bash script/run_unit_tests.sh macos
+
+# iOS
+bash script/run_unit_tests.sh ios
+
+# iPadOS
+bash script/run_unit_tests.sh ipados
 ```
 
 **预期输出：**
@@ -494,7 +501,10 @@ bash script/run_unit_tests.sh
 ```
 
 **如果失败：**
-- 查看测试日志：`build/tests/test_output.log`
+- 查看测试日志：
+  - macOS: `build/tests/test_output.log`
+  - iOS: `build/tests_ios/test_output.log`
+  - iPadOS: `build/tests_ipados/test_output.log`
 - 修复失败的测试
 - 重新运行测试
 
@@ -873,8 +883,17 @@ AI: "现在可以编译吗？有没有其他 AI 在编译？"
 
 **单元测试**:
 ```bash
-bash script/run_unit_tests.sh
+# macOS (默认推荐)
+bash script/run_unit_tests.sh macos
+
+# iOS 模拟器
+bash script/run_unit_tests.sh ios
+
+# iPadOS 模拟器
+bash script/run_unit_tests.sh ipados
 ```
+
+**⚠️ 注意：** 平台参数是必需的，必须指定 `macos`、`ios` 或 `ipados`
 
 **UI 测试**:
 ```bash
@@ -918,7 +937,7 @@ AI: "完成了！修改了 SessionManager.swift 的消息发送逻辑。
 用户：要
 
 AI: （创建子代理运行测试）
-     → 子代理执行 bash script/run_unit_tests.sh
+     → 子代理执行 bash script/run_unit_tests.sh macos
      → 完成后通知结果
 
 AI: "✅ 93 个测试全部通过，可以提交了"

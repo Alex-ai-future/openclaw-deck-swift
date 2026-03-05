@@ -134,6 +134,19 @@ class DeckViewModel {
     /// 连接错误信息
     var connectionError: String?
 
+    // MARK: - Message Queue
+
+    /// 消息队列（网络断开时暂存消息）
+    private var messageQueue: [(sessionId: String, text: String)] = []
+
+    /// 是否正在发送队列消息
+    private var isFlushingQueue: Bool = false
+
+    /// 队列中的消息数量（用于 UI 显示）
+    var messageQueueCount: Int {
+        messageQueue.count
+    }
+
     /// 应用配置
     var config: AppConfig = .default
 
@@ -280,6 +293,9 @@ class DeckViewModel {
                         session.status = .idle
                         session.activeRunId = nil
                     }
+
+                    // ✅ 重连成功，发送队列中的消息
+                    await self.flushMessageQueue()
 
                     // ✅ 只在初始化时显示加载动画，重连成功时不显示
                     if self.isInitializing {
@@ -977,22 +993,76 @@ class DeckViewModel {
 
     // MARK: - Send Message
 
-    /// 发送消息
+    /// 发送消息（统一入口）
     /// - Parameters:
     ///   - sessionId: Session ID
     ///   - text: 消息文本
     func sendMessage(sessionId: String, text: String) async {
+        // ✅ 检查连接，未连接则入队
         guard let client = gatewayClient, client.connected else {
-            showConnectionErrorAlert()
+            // 未连接，添加到队列
+            logger.info("⏳ 网络未连接，消息已加入队列：\(text.prefix(20))...")
+            messageQueue.append((sessionId, text))
             return
         }
 
-        // Find session by sessionId (case-insensitive)
-        guard let session = findSession(sessionId: sessionId) else {
+        // ✅ 已连接，正常发送
+        await sendOrRequeueMessage(sessionId: sessionId, text: text)
+    }
+
+    // MARK: - Message Queue
+
+    /// 发送队列中的消息（重连成功后调用）
+    @MainActor
+    private func flushMessageQueue() async {
+        guard !messageQueue.isEmpty else { return }
+        guard !isFlushingQueue else {
+            logger.warning("⚠️ 队列正在处理中，跳过")
             return
         }
 
-        // ✅ 1. 先添加用户消息到 UI（乐观更新）
+        isFlushingQueue = true
+        logger.info("📤 开始发送队列中的 \(self.messageQueue.count) 条消息...")
+
+        // 复制队列，避免并发问题
+        let queue = messageQueue
+        messageQueue.removeAll()
+
+        for (sessionId, text) in queue {
+            logger.info("📤 发送队列消息：\(text.prefix(30))...")
+            await sendOrRequeueMessage(sessionId: sessionId, text: text)
+
+            // 小延迟，避免过快发送
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 秒
+        }
+
+        isFlushingQueue = false
+
+        // 如果队列中还有消息（发送失败的），继续等待下次重连
+        if !messageQueue.isEmpty {
+            logger.warning("⚠️ 队列中还有 \(self.messageQueue.count) 条消息发送失败，等待下次重连")
+        } else {
+            logger.info("✅ 队列消息全部发送完成")
+        }
+    }
+
+    /// 发送消息或重新排队（内部方法）
+    /// - Parameters:
+    ///   - sessionId: Session ID
+    ///   - text: 消息文本
+    private func sendOrRequeueMessage(sessionId: String, text: String) async {
+        guard let client = gatewayClient, client.connected else {
+            // 发送时断网，重新排队
+            logger.warning("⚠️ 发送失败，消息已重新加入队列：\(text.prefix(20))...")
+            messageQueue.append((sessionId, text))
+            return
+        }
+
+        guard let session = getSession(sessionId: sessionId) else {
+            return
+        }
+
+        // 1. 先添加用户消息到 UI（乐观更新）
         let userMsg = ChatMessage(
             id: UUID().uuidString,
             role: .user,
@@ -1016,22 +1086,18 @@ class DeckViewModel {
                     message: text,
                     sessionKey: session.sessionKey
                 )
-                // ✅ 发送成功，不需要额外操作（消息已显示）
+                // ✅ 发送成功
 
             } catch {
-                logger.error("Failed to send message: \(error.localizedDescription)")
+                logger.error("❌ 发送失败：\(error.localizedDescription)")
                 await MainActor.run {
                     // ❌ 失败时移除用户消息
                     if let index = session.messages.firstIndex(where: { $0.id == userMsg.id }) {
                         session.messages.remove(at: index)
                     }
 
-                    // 显示连接错误弹窗
-                    self.showConnectionErrorAlert()
-
-                    // 恢复输入框内容（让用户不需要重新输入）
-                    self.globalInputState.inputText = text
-                    self.globalInputState.calculateTextHeight()
+                    // ✅ 重新加入队列（等待重连后重发）
+                    self.messageQueue.append((sessionId, text))
 
                     // 重置 session 状态（避免 UI 卡住）
                     session.status = .idle

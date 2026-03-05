@@ -252,10 +252,24 @@ struct SettingsView: View {
 
                 ToolbarItem(placement: .primaryAction) {
                     if isConnected {
-                        Button("done".localized) {
-                            dismiss()
+                        if hasChanges {
+                            // 有修改：显示"连接"，保存并重新连接
+                            Button("connect".localized) {
+                                UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                                UserDefaultsStorage.shared.saveToken(token)
+                                Task {
+                                    await viewModel?.initialize(url: gatewayUrl, token: token)
+                                    dismiss()
+                                }
+                            }
+                            .fontWeight(.semibold)
+                        } else {
+                            // 无修改：显示"完成"，只关闭
+                            Button("done".localized) {
+                                dismiss()
+                            }
+                            .fontWeight(.semibold)
                         }
-                        .fontWeight(.semibold)
                     }
                 }
             }

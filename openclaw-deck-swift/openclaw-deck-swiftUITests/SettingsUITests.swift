@@ -233,11 +233,13 @@ final class SettingsUITests: XCTestCase {
     /// 通过 Pasteboard 设置文本（绕过键盘焦点问题）
     private func setTextViaPasteboard(_ element: XCUIElement, text: String) {
         #if os(macOS)
-            // macOS 使用 Cmd+V 快捷键粘贴
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
+            // macOS 使用 Cmd+A 全选，然后 Cmd+V 粘贴
             element.tap()
             sleep(1)
+            app.typeKey("a", modifierFlags: .command)
+            sleep(1)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
             app.typeKey("v", modifierFlags: .command)
             sleep(1)
         #else

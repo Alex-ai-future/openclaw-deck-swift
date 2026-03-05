@@ -16,8 +16,15 @@ final class SessionManagementUITests: XCTestCase {
         app.launchEnvironment["UITESTING"] = "YES"
         app.launchArguments.append("--disable-animations")
         continueAfterFailure = false // 失败立即停止
+        
+        // 添加 UI 中断处理器
+        addUIInterruptionMonitors()
+        
         app.launch()
         app.activate() // ✅ 显式激活应用到前台
+        
+        // iOS 真机：点击屏幕以触发中断处理器
+        app.tap()
 
         print("🚀 应用已启动，等待加载...")
 
@@ -55,17 +62,47 @@ final class SessionManagementUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
+    // MARK: - Helper Methods
+
+    /// 添加 UI 中断处理器
+    private func addUIInterruptionMonitors() {
+        // 处理通知权限弹窗
+        addUIInterruptionMonitor(withDescription: "NotificationPermission") { alert -> Bool in
+            if alert.label.contains("通知") || alert.label.contains("Notifications") {
+                let allowButton = alert.buttons.element(boundBy: 0)
+                if allowButton.exists {
+                    allowButton.tap()
+                    return true
+                }
+            }
+            return false
+        }
+
+        // 处理本地网络访问权限弹窗
+        addUIInterruptionMonitor(withDescription: "LocalNetworkAccess") { alert -> Bool in
+            if alert.label.contains("本地网络") || alert.label.contains("Local Network") {
+                let allowButton = alert.buttons.element(boundBy: 0)
+                if allowButton.exists {
+                    allowButton.tap()
+                    return true
+                }
+            }
+            return false
+        }
+
+        // 处理其他通用系统弹窗
+        addUIInterruptionMonitor(withDescription: "SystemAlerts") { alert -> Bool in
+            if alert.buttons.count > 0 {
+                alert.buttons.element(boundBy: 0).tap()
+                return true
+            }
+            return false
+        }
+    }
+
     // MARK: - 完整会话生命周期测试
 
     /// 测试：完整会话生命周期
-    ///
-    /// 流程：
-    /// 0. 清理现有会话
-    /// 1. 创建三个会话
-    /// 2. 每个会话发送消息（触发连接失败）
-    /// 3. 记录当前顺序
-    /// 4. 排序 - 完全反转
-    /// 5. 删除所有新建会话
     func testCompleteSessionLifecycle() {
         print("📋 开始测试：完整会话生命周期")
 
@@ -121,7 +158,7 @@ final class SessionManagementUITests: XCTestCase {
 
         print("  ✅ 所有会话消息发送完成（连接失败已取消）")
 
-        // ========== 阶段 3：排序 - 完全反转（移到发送消息后）==========
+        // ========== 阶段 3：记录当前会话顺序 ==========
         print("\n📍 阶段 3：记录当前会话顺序")
 
         let sessionsBeforeSort = getSessionButtons()
@@ -134,7 +171,7 @@ final class SessionManagementUITests: XCTestCase {
             "排序前应该至少有 3 个会话"
         )
 
-        // ========== 阶段 4：记录当前顺序（移到排序后）==========
+        // ========== 阶段 4：排序 - 完全反转 ==========
         print("\n📍 阶段 4：排序 - 完全反转会话顺序")
 
         // 点击排序按钮
@@ -204,7 +241,7 @@ final class SessionManagementUITests: XCTestCase {
             print("  ✅ 已关闭排序弹窗")
         }
 
-        // ========== 阶段 5：删除所有新建会话（先检查数量）==========
+        // ========== 阶段 5：删除所有新建会话 ==========
         print("\n📍 阶段 5：删除所有新建会话")
 
         // 先记录初始数量，只删除固定次数（避免无限循环）
@@ -212,7 +249,7 @@ final class SessionManagementUITests: XCTestCase {
         let initialCount = sessionButtons.count
 
         if initialCount > 1 {
-            // 只删除 (initialCount - 1) 次，保留 1 个（main 会话）
+            // 只删除 (initialCount - 1) 次，保留 1 个
             let deleteCount = initialCount - 1
             for i in 0 ..< deleteCount {
                 print("  🗑️  删除会话 \(i + 1)/\(deleteCount)")
@@ -232,14 +269,15 @@ final class SessionManagementUITests: XCTestCase {
     // MARK: - 辅助方法
 
     /// 通过 Pasteboard 设置文本（绕过键盘焦点问题）
-    /// 这是解决 SwiftUI TextField 焦点竞争问题的最可靠方案
     private func setTextViaPasteboard(_ element: XCUIElement, text: String) {
         #if os(macOS)
-            // macOS 使用 Cmd+V 快捷键粘贴
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
+            // macOS 使用 Cmd+A 全选，然后 Cmd+V 粘贴
             element.tap()
             sleep(1)
+            app.typeKey("a", modifierFlags: .command)
+            sleep(1)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
             app.typeKey("v", modifierFlags: .command)
             sleep(1)
         #else
@@ -276,11 +314,35 @@ final class SessionManagementUITests: XCTestCase {
         )
         newSessionButton.forceTap()
 
-        // 验证弹窗打开（增加等待时间）
+        // 验证弹窗打开（增加等待时间，iPadOS 可能较慢）
+        sleep(2)  # 等待弹窗动画
+        
+        # 尝试多种弹窗类型（iPadOS 可能是 Dialog 或 Sheet）
         let createSheet = app.sheets.firstMatch
+        let createDialog = app.dialogs.firstMatch
+        
+        if createSheet.exists {
+            print("  ✅ 新建会话弹窗已打开（Sheet）")
+        } else if createDialog.exists {
+            print("  ✅ 新建会话弹窗已打开（Dialog）")
+        } else {
+            # 截图诊断
+            print("  ⚠️  弹窗未打开，截图诊断...")
+            let screenshot = app.windows.firstMatch.screenshot()
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "创建会话弹窗诊断"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            
+            # 打印所有可用元素
+            print("  🔍 当前所有 Sheets: \(app.sheets.allElementsBoundByIndex.count)")
+            print("  🔍 当前所有 Dialogs: \(app.dialogs.allElementsBoundByIndex.count)")
+            print("  🔍 当前所有 Alerts: \(app.alerts.allElementsBoundByIndex.count)")
+        }
+        
         XCTAssertTrue(
-            createSheet.waitForExistence(timeout: 2),
-            "新建会话弹窗必须打开"
+            createSheet.waitForExistence(timeout: 3) || createDialog.waitForExistence(timeout: 3),
+            "新建会话弹窗必须打开（Sheet 或 Dialog）"
         )
 
         // 在名称输入框输入
@@ -455,7 +517,7 @@ final class SessionManagementUITests: XCTestCase {
         sleep(1)
 
         // 确认删除弹窗（macOS 上使用 dialogs 或 sheets）
-        // 先尝试 dialogs，再尝试 sheets，最后尝试 alerts
+        // 先尝试 sheets，再尝试 dialogs，最后尝试 alerts
         var dialog: XCUIElement
         var dialogType = ""
 
@@ -483,12 +545,12 @@ final class SessionManagementUITests: XCTestCase {
             }
         }
 
-        if app.dialogs.firstMatch.exists {
-            dialog = app.dialogs.firstMatch
-            dialogType = "Dialog"
-        } else if app.sheets.firstMatch.exists {
+        if app.sheets.firstMatch.exists {
             dialog = app.sheets.firstMatch
             dialogType = "Sheet"
+        } else if app.dialogs.firstMatch.exists {
+            dialog = app.dialogs.firstMatch
+            dialogType = "Dialog"
         } else {
             dialog = app.alerts.firstMatch
             dialogType = "Alert"

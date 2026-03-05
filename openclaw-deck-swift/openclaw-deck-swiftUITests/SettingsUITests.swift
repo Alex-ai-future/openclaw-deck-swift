@@ -77,14 +77,13 @@ final class SettingsUITests: XCTestCase {
         )
         print("  ✅ Gateway URL 输入框存在")
 
-        // 获取 Token 输入框（可选）
+        // 获取 Token 输入框
         let tokenInput = app.textFields["tokenInput"]
-        if tokenInput.waitForExistence(timeout: 3) {
-            print("  ✅ Token 输入框存在")
-        } else {
-            print("  ⚠️  Token 输入框不存在，可能是可选的")
-            // 创建一个假的 tokenInput 用于后续逻辑
-        }
+        XCTAssertTrue(
+            tokenInput.waitForExistence(timeout: 3),
+            "Token 输入框 (tokenInput) 必须存在"
+        )
+        print("  ✅ Token 输入框存在")
 
         // 记录原始值
         let originalUrl = gatewayUrlInput.value as? String ?? ""

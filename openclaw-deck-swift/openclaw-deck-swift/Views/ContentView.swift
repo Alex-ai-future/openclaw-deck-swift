@@ -138,6 +138,11 @@ struct ContentView: View {
         if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
             let savedToken = UserDefaultsStorage.shared.loadToken()
             await viewModel.initialize(url: savedUrl, token: savedToken)
+            
+            // ✅ 初始化完成后自动选中第一个 Session
+            if let firstSessionId = viewModel.sessionOrder.first {
+                await viewModel.selectSession(firstSessionId)
+            }
         }
     }
 

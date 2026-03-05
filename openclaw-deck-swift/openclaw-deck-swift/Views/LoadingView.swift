@@ -1,27 +1,20 @@
 // LoadingView.swift
 // OpenClaw Deck Swift
 //
-// 通用加载状态视图 - 支持 iOS 和 macOS
+// 通用加载状态视图
 
 import SwiftUI
 
 /// 通用加载视图组件
 struct LoadingView: View {
-    let appState: AppState
-
-    var stage: LoadingStage? {
-        appState.loadingStage
-    }
-
-    var progress: Double {
-        appState.progress
-    }
+    let stage: LoadingStage
+    let progress: Double
 
     var body: some View {
         VStack(spacing: 24) {
             // 进度指示器
             Group {
-                if case .connected = appState {
+                if stage == .idle {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.green)
@@ -34,14 +27,14 @@ struct LoadingView: View {
             }
 
             // 主标题
-            Text(stage?.title ?? "Loading...")
+            Text(stage.title)
                 .font(.headline)
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
-                .animation(.easeInOut(duration: 0.3), value: stage?.title)
+                .animation(.easeInOut(duration: 0.3), value: stage.title)
 
-            // 进度条（连接中状态显示）
-            if case .connecting = appState {
+            // 进度条
+            if stage != .idle {
                 VStack(spacing: 8) {
                     ProgressView(value: progress)
                         .progressViewStyle(LinearProgressViewStyle())
@@ -56,8 +49,8 @@ struct LoadingView: View {
                 .transition(.opacity)
             }
 
-            // 副标题（详细说明）
-            if let subtitle = stage?.subtitle {
+            // 副标题
+            if let subtitle = stage.subtitle {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -76,10 +69,10 @@ struct LoadingView: View {
 #if DEBUG
     #Preview {
         Group {
-            LoadingView(appState: .connecting(.connecting, 0.2))
-            LoadingView(appState: .connecting(.fetchingSessions, 0.5))
-            LoadingView(appState: .connecting(.fetchingMessages, 0.8))
-            LoadingView(appState: .connecting(.syncingLocal, 1.0))
+            LoadingView(stage: .connecting, progress: 0.2)
+            LoadingView(stage: .fetchingSessions, progress: 0.5)
+            LoadingView(stage: .fetchingMessages, progress: 0.8)
+            LoadingView(stage: .syncingLocal, progress: 1.0)
         }
     }
 #endif

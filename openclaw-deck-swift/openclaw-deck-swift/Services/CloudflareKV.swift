@@ -222,7 +222,7 @@ class CloudflareKV: CloudflareKVProtocol {
     }
 
     /// 从 KV 加载数据
-    private func loadFromKV(config: CloudflareConfig) async throws -> SyncData? {
+    func loadFromKV(config: CloudflareConfig) async throws -> SyncData? {
         guard let url = URL(string: config.buildKVURL()!) else {
             throw CloudflareError.invalidURL
         }
@@ -284,6 +284,22 @@ class CloudflareKV: CloudflareKVProtocol {
             logger.error("保存失败，状态码：\(httpResponse.statusCode)")
             throw CloudflareError.httpError(httpResponse.statusCode)
         }
+    }
+
+    /// 获取云端数据（协议要求）
+    func fetch() async throws -> SyncData {
+        // 测试模式使用 Mock 实例
+        if let mock = CloudflareKV.mockInstance {
+            return try await mock.fetch()
+        }
+        guard let config = CloudflareConfig.load(), config.isValid else {
+            throw CloudflareError.notConfigured
+        }
+        
+        if let data = try await loadFromKV(config: config) {
+            return data
+        }
+        return SyncData.empty
     }
 }
 
@@ -382,6 +398,60 @@ enum KeychainError: LocalizedError {
             "Data encoding failed"
         case let .saveFailed(status):
             "Keychain save failed: \(status)"
+        }
+    }
+}
+
+
+// MARK: - Sync Extensions (SessionState helpers)
+
+@MainActor
+extension CloudflareKV {
+    /// 保存 Session 列表到云端（从 SessionState 提取 ID）
+    func saveSessions(_ sessions: [SessionState]) async throws {
+        // 测试模式使用 Mock 实例
+        if let mock = CloudflareKV.mockInstance {
+            return try await mock.saveSessions(sessions)
+        }
+        guard let config = CloudflareConfig.load(), config.isValid else {
+            throw CloudflareError.notConfigured
+        }
+        
+        let sessionIds = sessions.map { $0.id }
+        let syncData = SyncData(
+            sessions: sessionIds,
+            lastUpdated: ISO8601DateFormatter().string(from: Date())
+        )
+        try await saveToKV(syncData, config: config)
+        saveLocalData(syncData)
+    }
+    
+    /// 从云端获取 Session ID 列表，并转换为 SessionState（仅 ID，其他字段为空）
+    func fetchSessions() async throws -> [SessionState] {
+        // 测试模式使用 Mock 实例
+        if let mock = CloudflareKV.mockInstance {
+            return try await mock.fetchSessions()
+        }
+        guard let config = CloudflareConfig.load(), config.isValid else {
+            throw CloudflareError.notConfigured
+        }
+        
+        guard let syncData = try await loadFromKV(config: config) else {
+            return []
+        }
+        
+        // 仅从 ID 创建 SessionState（其他字段需要本地填充）
+        return syncData.sessions.enumerated().map { (index, id) in
+            SessionState(
+                id: id,
+                sessionKey: "",
+                name: "",
+                context: nil,
+                isHidden: false,
+                sortOrder: index,
+                createdAt: Date(),
+                lastActivityAt: Date()
+            )
         }
     }
 }

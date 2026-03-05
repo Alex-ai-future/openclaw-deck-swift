@@ -13,21 +13,21 @@ enum LoadingStage: Comparable, Hashable {
     case connectingToGateway
     case syncingFromCloud
     case ready
-    
+
     var description: String {
         switch self {
         case .idle:
-            return "Idle"
+            "Idle"
         case .initializing:
-            return "Initializing..."
+            "Initializing..."
         case .loadingSessions:
-            return "Loading sessions..."
+            "Loading sessions..."
         case .connectingToGateway:
-            return "Connecting to gateway..."
+            "Connecting to gateway..."
         case .syncingFromCloud:
-            return "Syncing from cloud..."
+            "Syncing from cloud..."
         case .ready:
-            return "Ready"
+            "Ready"
         }
     }
 }

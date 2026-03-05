@@ -86,4 +86,26 @@ class MockCloudflareKV: CloudflareKVProtocol {
         saveCallCount = 0
         syncCallCount = 0
     }
+    
+    func saveSessions(_ sessions: [SessionState]) async throws {
+        saveCallCount += 1
+        let sessionIds = sessions.map { $0.id }
+        mockData = SyncData(sessions: sessionIds, lastUpdated: ISO8601DateFormatter().string(from: Date()))
+    }
+    
+    func fetchSessions() async throws -> [SessionState] {
+        let data = try await fetch()
+        return data.sessions.enumerated().map { (index, id) in
+            SessionState(
+                id: id,
+                sessionKey: "",
+                name: "",
+                context: nil,
+                isHidden: false,
+                sortOrder: index,
+                createdAt: Date(),
+                lastActivityAt: Date()
+            )
+        }
+    }
 }

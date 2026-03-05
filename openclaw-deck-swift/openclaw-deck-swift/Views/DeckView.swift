@@ -58,6 +58,10 @@ struct DeckView: View {
                     session.hasUnreadMessage = false
                 }
             }
+            .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
+                // ViewModel 的选中状态变化时，同步到本地 State
+                selectedSessionId = newId
+            }
             .task {
                 // 初始化选中状态：确保 ViewModel 有选中的 Session
                 if viewModel.globalInputState.selectedSessionId == nil,

@@ -77,7 +77,6 @@ struct SettingsView: View {
                             HStack {
                                 Image(systemName: "globe")
                                 Text("open_web_client".localized)
-                                    .fontWeight(.medium)
                             }
                         }
 

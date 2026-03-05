@@ -42,7 +42,7 @@ struct DeckView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 // 全局输入视图 - 固定在底部
-                GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+                GlobalInputView(state: viewModel.globalInputState as? GlobalInputState ?? GlobalInputState()) {
                     await viewModel.sendCurrentInput()
                 }
             }
@@ -159,7 +159,10 @@ struct NewSessionSheet: View {
                             isNameTaken = viewModel.isSessionNameTaken(name: newValue)
                         }
                         .onSubmit {
+                        Task {
                             createSession()
+                        }
+                    }
                         }
                     if isNameTaken, !name.isEmpty {
                         Text("session_name_taken".localized)
@@ -193,7 +196,9 @@ struct NewSessionSheet: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("create".localized) {
-                        createSession()
+                        Task {
+                            createSession()
+                        }
                     }
                     .disabled(name.isEmpty || isNameTaken)
                     .fontWeight(.semibold)
@@ -208,7 +213,7 @@ struct NewSessionSheet: View {
         }
     }
 
-    private func createSession() async {
+    private func createSession() } async {
         await viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
         dismiss()
     }

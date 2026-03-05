@@ -39,14 +39,14 @@ class DeckViewModel {
     func selectSession(_ sessionId: String?) async {
         globalInputState.selectedSessionId = sessionId
     }
-    
+
     /// 获取 Session
     func getSession(id: String) -> SessionState? {
         try? modelContext.fetch(FetchDescriptor<SessionState>(
             predicate: #Predicate { $0.id == id }
         )).first
     }
-    
+
     /// 配置
     var config: AppConfig = .default
     var playSoundOnMessage: Bool = true

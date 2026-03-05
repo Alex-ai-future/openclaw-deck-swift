@@ -81,7 +81,7 @@ struct DeckView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView(
-                    isConnected: $viewModel.gatewayConnected,
+                    isConnected: (viewModel.gatewayClient?.connected ?? false),
                     viewModel: viewModel
                 )
             }

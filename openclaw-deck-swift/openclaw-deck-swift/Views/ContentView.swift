@@ -90,9 +90,9 @@ struct ContentView: View {
                     SessionListView(viewModel: viewModel)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 #endif
-            } else if viewModel.gatewayConnected {
+            } else if ((viewModel.gatewayClient?.connected ?? false)) {
                 // ✅ 已连接
-                if viewModel.loadingStage == .idle {
+                if case .connected = viewModel.appState {
                     // 加载完成 → 显示聊天界面
                     // 根据设备类型选择布局
                     #if os(macOS)
@@ -124,24 +124,18 @@ struct ContentView: View {
                     #endif
                 } else {
                     // 加载中时显示 LoadingView
-                    LoadingView(
-                        stage: viewModel.loadingStage,
-                        progress: viewModel.loadingProgress
-                    )
+                    LoadingView(appState: viewModel.appState)
                 }
-            } else if viewModel.isInitializing {
+            } else if viewModel.appState.isLoading {
                 // ✅ 初始化连接中
-                LoadingView(
-                    stage: viewModel.loadingStage,
-                    progress: viewModel.loadingProgress
-                )
+                LoadingView(appState: viewModel.appState)
             } else {
                 // ❌ 未连接
                 WelcomeView(
                     gatewayUrl: $gatewayUrl,
                     token: $token,
-                    connectionError: viewModel.connectionError,
-                    isConnecting: viewModel.isInitializing,
+                    connectionError: viewModel.gatewayClient?.connectionError,
+                    isConnecting: viewModel.appState.isLoading,
                     onClearError: {
                         viewModel.clearConnectionError()
                     },
@@ -153,13 +147,13 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(
-                isConnected: $viewModel.gatewayConnected,
+                isConnected: ((viewModel.gatewayClient?.connected ?? false)),
                 viewModel: viewModel
             )
         }
         .sheet(isPresented: $showingWelcomeSettings) {
             SettingsView(
-                isConnected: .constant(false),
+                isConnected: false,
                 viewModel: viewModel
             )
         }
@@ -242,7 +236,7 @@ struct ContentView: View {
             }
 
             // Auto-connect on first launch if credentials exist
-            guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
+            guard !hasAttemptedAutoConnect, !((viewModel.gatewayClient?.connected ?? false)) else { return }
             // 🧪 UI 测试模式：跳过 Gateway 连接，但需要初始化 Session
             if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
                 hasAttemptedAutoConnect = true
@@ -266,7 +260,7 @@ struct ContentView: View {
             guard newPhase == .active else { return }
 
             // 如果已连接或正在连接，不需要重连
-            guard !viewModel.gatewayConnected, !viewModel.isInitializing else { return }
+            guard !((viewModel.gatewayClient?.connected ?? false)), !viewModel.appState.isLoading else { return }
 
             // 检查是否有保存的凭证
             guard let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() else { return }

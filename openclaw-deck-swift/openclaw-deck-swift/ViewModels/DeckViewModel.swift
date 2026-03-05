@@ -9,15 +9,39 @@ import os
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "DeckViewModel")
 
+// MARK: - App State
+
+/// 应用状态（统一连接状态 + 加载状态）
+enum AppState: Equatable {
+    case disconnected                          // 未连接（欢迎页面）
+    case connecting(LoadingStage, Double)      // 连接中（阶段 + 进度）
+    case connected                             // 已连接（主界面）
+    case error(String)                         // 错误状态
+    
+    var isLoading: Bool {
+        if case .connecting = self { return true }
+        return false
+    }
+    
+    var progress: Double {
+        if case .connecting(_, let progress) = self { return progress }
+        return 0.0
+    }
+    
+    var loadingStage: LoadingStage? {
+        if case .connecting(let stage, _) = self { return stage }
+        return nil
+    }
+}
+
 // MARK: - Loading Stage
 
 /// 加载阶段枚举
 enum LoadingStage: Equatable {
-    case idle // 无加载
-    case connecting // 连接 Gateway
-    case fetchingSessions // 从云端获取会话列表
-    case fetchingMessages // 从后端获取消息历史
-    case syncingLocal // 同步到本地存储
+    case connecting         // 连接 Gateway
+    case fetchingSessions   // 从云端获取会话列表
+    case fetchingMessages   // 从后端获取消息历史
+    case syncingLocal       // 同步到本地存储
 }
 
 // MARK: - LoadingStage: CustomStringConvertible
@@ -25,7 +49,6 @@ enum LoadingStage: Equatable {
 extension LoadingStage: CustomStringConvertible {
     var description: String {
         switch self {
-        case .idle: "idle"
         case .connecting: "connecting"
         case .fetchingSessions: "fetchingSessions"
         case .fetchingMessages: "fetchingMessages"
@@ -39,8 +62,6 @@ extension LoadingStage: CustomStringConvertible {
 extension LoadingStage {
     var title: String {
         switch self {
-        case .idle:
-            ""
         case .connecting:
             "connecting_to_gateway".localized
         case .fetchingSessions:
@@ -54,14 +75,14 @@ extension LoadingStage {
 
     var subtitle: String? {
         switch self {
+        case .connecting:
+            nil
         case .fetchingSessions:
             "fetching_sessions_from_cloudflare_kv".localized
         case .fetchingMessages:
             "fetching_messages_from_gateway".localized
         case .syncingLocal:
             "saving_to_local_storage".localized
-        default:
-            nil
         }
     }
 }
@@ -128,11 +149,8 @@ class DeckViewModel {
     /// Session 顺序（用于 UI 展示顺序）
     var sessionOrder: [String] = []
 
-    /// Gateway 连接状态
-    var gatewayConnected: Bool = false
-
-    /// 连接错误信息
-    var connectionError: String?
+    /// 应用状态（统一连接状态 + 加载状态）
+    var appState: AppState = .disconnected
 
     // MARK: - Message Queue
 
@@ -150,14 +168,7 @@ class DeckViewModel {
     /// 应用配置
     var config: AppConfig = .default
 
-    /// 是否正在初始化
-    var isInitializing: Bool = false
 
-    /// 当前加载阶段
-    var loadingStage: LoadingStage = .idle
-
-    /// 加载进度（0.0 - 1.0）
-    var loadingProgress: Double = 0.0
 
     /// 是否正在同步
     var isSyncing: Bool = false
@@ -212,23 +223,22 @@ class DeckViewModel {
     /// 初始化并连接 Gateway
     /// 初始化并连接 Gateway
     func initialize(url: String, token: String?) async {
-        guard !isInitializing else { return }
-        isInitializing = true
+        guard !appState.isLoading else { return }
+        appState = .connecting(.connecting, 0.0)
 
         // 🧪 UI 测试模式：跳过 Gateway 连接，直接完成初始化
         if isUITesting {
             logger.info("🧪 UI 测试模式，跳过 Gateway 连接")
-            loadingStage = .idle
-            loadingProgress = 0.3
-            gatewayConnected = true
-            isInitializing = false
+            appState = .connected
+            
+            appState = .connected
             // 加载本地会话（测试环境 storage.isTesting 应该为 true）
             await loadSessionsFromStorage()
             return
         }
 
-        loadingStage = .connecting
-        loadingProgress = 0.3
+        appState = .connecting(.connecting, 0.5)
+        
 
         // 保存到 UserDefaults
         storage.saveGatewayUrl(url)
@@ -238,8 +248,8 @@ class DeckViewModel {
 
         guard let gatewayUrl = URL(string: url) else {
             logger.error("Invalid gateway URL: \(url)")
-            connectionError = "Invalid gateway URL: \(url)"
-            isInitializing = false
+            gatewayClient?.connectionError = "Invalid gateway URL: \(url)"
+            appState = .connected
             return
         }
 
@@ -247,15 +257,15 @@ class DeckViewModel {
         // 如果 sessionOrder 已经有值（解决冲突后重新调用），跳过加载
         if sessionOrder.isEmpty {
             logger.info("📥 加载会话列表...")
-            loadingStage = .fetchingSessions
-            loadingProgress = 0.3
+            appState = .connecting(.fetchingSessions, 0.3)
+            
             await loadSessionsFromStorage()
 
             // ❗ 检测是否有冲突（冲突时 showingSyncConflict 会被设置）
             // 如果有冲突，停止初始化流程，等待用户解决
             if showingSyncConflict {
                 logger.log("⏳ Sync conflict detected, stopping initialization")
-                // 保持 loadingStage = .fetchingSessions，等待用户解决冲突
+                // 保持 appState = .connecting(.fetchingSessions, 0.3)，等待用户解决冲突
                 // 不继续执行连接 Gateway 的流程
                 return
             }
@@ -289,7 +299,6 @@ class DeckViewModel {
                     // 🔧 内联 onConnect 回调的逻辑
                     // 重连时重置所有 session 的处理状态
                     for session in self.sessions.values {
-                        session.isProcessing = false
                         session.status = .idle
                         session.activeRunId = nil
                     }
@@ -298,51 +307,41 @@ class DeckViewModel {
                     await self.flushMessageQueue()
 
                     // ✅ 只在初始化时显示加载动画，重连成功时不显示
-                    if self.isInitializing {
+                    if self.appState.isLoading {
                         // 🔧 内联 initializeAfterConnect() 的逻辑
                         // 连接成功，更新进度
-                        self.loadingStage = .connecting
-                        self.loadingProgress = 0.5
-
-                        // 检查是否有会话列表
+                        self.appState = .connecting(.connecting, 0.5)
+                                                // 检查是否有会话列表
                         if self.sessionOrder.isEmpty {
                             logger.warning("⚠️ 没有会话列表，跳过消息加载")
                         } else {
                             // 加载所有历史
-                            self.loadingStage = .fetchingMessages
-                            self.loadingProgress = 0.8
                             await self.loadAllSessionHistory()
                         }
 
                         // 所有数据加载完成，设置 100%
-                        self.loadingStage = .syncingLocal
-                        self.loadingProgress = 1.0
                         try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 
                         // 初始化完成
-                        self.isInitializing = false
-                        self.gatewayConnected = true
-                        self.loadingStage = .idle
+                        self.appState = .connected
+                                                self.appState = .connected
                     } else {
                         // ✅ 重连成功，不显示加载动画
-                        self.gatewayConnected = true
-                        self.loadingStage = .idle
+                                                self.appState = .connected
                         logger.log("✅ 重连成功，保持当前界面")
                     }
 
                 } else {
                     logger.error("❌ Gateway 连接失败")
-                    self.gatewayConnected = false
-                    self.isInitializing = false
-                    self.loadingStage = .idle
+                    self.appState = .disconnected
                     // 获取错误信息
-                    self.connectionError = client.connectionError ?? "Unknown connection error"
+                    // 连接失败，错误信息已在 client 中
                 }
             }
         }
 
         gatewayClient = client
-        connectionError = client.connectionError
+        // 错误信息已在 client 中
 
         // 异步连接 Gateway
         await client.connect()
@@ -350,7 +349,7 @@ class DeckViewModel {
 
     /// 清除连接错误
     func clearConnectionError() {
-        connectionError = nil
+        gatewayClient?.connectionError = nil
         gatewayClient?.clearError()
     }
 
@@ -359,7 +358,6 @@ class DeckViewModel {
     func disconnect() {
         // 只断开连接，不清空 Session 消息（保留离线浏览能力）
         gatewayClient?.disconnect()
-        gatewayConnected = false
     }
 
     /// 重置设备身份（清除 device identity 和 device token）
@@ -437,7 +435,7 @@ class DeckViewModel {
         saveSessionsToStorage()
 
         // 7. 如果已连接，加载历史消息
-        if gatewayConnected, ProcessInfo.processInfo.environment["UITESTING"] != "YES" {
+        if gatewayClient?.connected ?? false, ProcessInfo.processInfo.environment["UITESTING"] != "YES" {
             Task {
                 await loadSessionHistory(sessionKey: sessionKey)
             }
@@ -520,12 +518,12 @@ class DeckViewModel {
 
     /// 测试专用：加载 Sessions（测试用）
     @MainActor func loadSessionsFromStorageForTesting() async {
-        loadingStage = .fetchingSessions
-        loadingProgress = 0.3
+        appState = .connecting(.fetchingSessions, 0.3)
+        
         await loadSessionsFromStorage()
         // 恢复为 connecting 状态，等待连接成功
-        loadingStage = .connecting
-        loadingProgress = 0.5
+        appState = .connecting(.connecting, 0.5)
+        
     }
 
     /// 从 Cloudflare 同步加载 Sessions
@@ -640,8 +638,8 @@ class DeckViewModel {
 
         guard let url = URL(string: gatewayUrl) else {
             logger.error("❌ Invalid gateway URL: \(gatewayUrl)")
-            isInitializing = false
-            loadingStage = .idle
+            appState = .connected
+            appState = .connected
             return
         }
 
@@ -669,24 +667,18 @@ class DeckViewModel {
                     // 连接成功后加载历史
                     await self.loadAllSessionHistory()
                     // 初始化完成
-                    self.gatewayConnected = true
-                    self.isInitializing = false
-                    self.loadingStage = .idle
-                    self.loadingProgress = 0.3
                     logger.log("✅ Sync conflict resolved, initialization complete")
 
                 } else {
                     logger.error("❌ Gateway 连接失败")
-                    self.gatewayConnected = false
-                    self.isInitializing = false
-                    self.loadingStage = .idle
-                    self.connectionError = client.connectionError ?? "Unknown connection error"
+                    self.appState = .disconnected
+                    // 连接失败，错误信息已在 client 中
                 }
             }
         }
 
         gatewayClient = client
-        connectionError = client.connectionError
+        // 错误信息已在 client 中
 
         // 异步连接 Gateway
         await client.connect()
@@ -716,7 +708,7 @@ class DeckViewModel {
         logger.log("✅ Sync complete: \(data.sessions.count) sessions")
 
         // If Gateway connected, load history
-        if gatewayConnected, ProcessInfo.processInfo.environment["UITESTING"] != "YES" {
+        if gatewayClient?.connected ?? false, ProcessInfo.processInfo.environment["UITESTING"] != "YES" {
             await loadAllSessionHistory()
         }
     }
@@ -735,8 +727,8 @@ class DeckViewModel {
             logger.log("📭 本地没有 session，创建 Welcome session")
             createWelcomeSession()
             // ✅ 重置加载状态，避免卡在 100%
-            loadingStage = .idle
-            loadingProgress = 0.3
+            appState = .connected
+            
             return
         }
 
@@ -765,7 +757,7 @@ class DeckViewModel {
         }
 
         // 如果 Gateway 已连接，立即加载历史消息
-        if gatewayConnected, ProcessInfo.processInfo.environment["UITESTING"] != "YES" {
+        if gatewayClient?.connected ?? false, ProcessInfo.processInfo.environment["UITESTING"] != "YES" {
             logger.log("🔗 Gateway 已连接，加载历史消息...")
             Task {
                 await loadAllSessionHistory()
@@ -773,8 +765,8 @@ class DeckViewModel {
         }
 
         // ✅ 重置加载状态，避免卡在 100%
-        loadingStage = .idle
-        loadingProgress = 0.3
+        appState = .connected
+        
     }
 
     /// 创建 Session 状态（从 sessionOrder）
@@ -865,7 +857,7 @@ class DeckViewModel {
     /// - Returns: 同步结果（成功/失败消息）
     @MainActor
     func syncAll() async -> Result<String, Error> {
-        guard gatewayConnected else {
+        guard gatewayClient?.connected ?? false else {
             return .failure(
                 NSError(
                     domain: "DeckViewModel", code: 400,
@@ -878,8 +870,8 @@ class DeckViewModel {
             logger.info("🔄 Starting full sync...")
 
             // ✅ 立即显示加载动画
-            loadingStage = .fetchingSessions
-            loadingProgress = 0.5
+            appState = .connecting(.fetchingSessions, 0.3)
+            
 
             // 1. 从 Cloudflare 同步 Session 列表
             let result = try await CloudflareKV.shared.syncAndGet()
@@ -909,7 +901,7 @@ class DeckViewModel {
             // 2. 清空所有 Session 的当前消息
             for session in sessions.values {
                 session.messages.removeAll()
-                session.historyLoaded = false
+                session.messageLoadState = .notLoaded
             }
 
             // 3. 重新加载所有 Session 的对话内容
@@ -918,8 +910,8 @@ class DeckViewModel {
             logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
 
             // ✅ 重置加载状态，避免卡在 100%
-            loadingStage = .idle
-            loadingProgress = 0.3
+            appState = .connected
+            
 
             return .success("Sync complete: \(result.data.sessions.count) sessions")
         } catch {
@@ -934,8 +926,8 @@ class DeckViewModel {
     @MainActor
     func loadAllSessionHistory() async {
         // 开始加载
-        loadingStage = .fetchingMessages
-        loadingProgress = 0.8
+        appState = .connecting(.fetchingMessages, 0.8)
+        
 
         let totalCount = sessionOrder.count
         var loadedCount = 0
@@ -949,9 +941,9 @@ class DeckViewModel {
 
             // 更新进度（按会话数量）
             if totalCount > 0 {
-                loadingProgress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
+                if case .connecting(let stage, _) = appState { appState = .connecting(stage, 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)) }
                 logger.info(
-                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.loadingProgress * 100))%"
+                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(self.appState.progress * 100))%"
                 )
             }
         }
@@ -969,7 +961,7 @@ class DeckViewModel {
         if let session = sessions.values.first(where: {
             $0.sessionKey.lowercased() == sessionKey.lowercased()
         }) {
-            session.isHistoryLoading = true
+            session.messageLoadState = .loading
         }
 
         do {
@@ -980,8 +972,7 @@ class DeckViewModel {
                 $0.sessionKey.lowercased() == sessionKey.lowercased()
             }) {
                 session.messages = messages
-                session.historyLoaded = true
-                session.isHistoryLoading = false
+                session.messageLoadState = .loaded
                 logger.info("  ↳ 加载 \(messages.count) 条消息")
             }
         } catch {
@@ -989,7 +980,6 @@ class DeckViewModel {
             if let session = sessions.values.first(where: {
                 $0.sessionKey.lowercased() == sessionKey.lowercased()
             }) {
-                session.isHistoryLoading = false
             }
         }
     }
@@ -1076,7 +1066,6 @@ class DeckViewModel {
 
         // 2. 设置状态
         session.status = .thinking
-        session.isProcessing = true
         session.activeRunId = "pending-\(UUID().uuidString)"
 
         // 3. 后台调用 runAgent
@@ -1102,7 +1091,6 @@ class DeckViewModel {
 
                     // 重置 session 状态（避免 UI 卡住）
                     session.status = .idle
-                    session.isProcessing = false
                     session.activeRunId = nil
                 }
             }
@@ -1212,12 +1200,10 @@ class DeckViewModel {
             {
                 switch phase {
                 case "start":
-                    session.isProcessing = true
                     session.status = .thinking
                     // ✅ 设置 activeRunId（此时 Gateway 已创建 AbortController）
                     session.activeRunId = runId
                 case "end":
-                    session.isProcessing = false
                     session.hasUnreadMessage = true // 总是标记为未读
                     session.status = .idle
                     session.activeRunId = nil

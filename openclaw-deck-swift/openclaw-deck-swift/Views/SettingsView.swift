@@ -9,7 +9,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var gatewayUrl: String
     @State private var token: String
-    @Binding var isConnected: Bool
+    var isConnected: Bool
 
     /// ViewModel binding for settings
     var viewModel: DeckViewModel?
@@ -22,14 +22,14 @@ struct SettingsView: View {
     @State private var showingResetAlert = false
 
     init(
-        isConnected: Binding<Bool>,
+        isConnected: Bool,
         viewModel: DeckViewModel? = nil
     ) {
         // 从 UserDefaults 加载初始值
         let storage = UserDefaultsStorage.shared
         _gatewayUrl = State(initialValue: storage.loadGatewayUrl() ?? "ws://127.0.0.1:18789")
         _token = State(initialValue: storage.loadToken() ?? "")
-        _isConnected = isConnected
+        self.isConnected = isConnected
         self.viewModel = viewModel
     }
 
@@ -253,23 +253,38 @@ struct SettingsView: View {
                 ToolbarItem(placement: .primaryAction) {
                     if isConnected {
                         if hasChanges {
-                            // 有修改：显示"连接"，保存并重新连接
+                            // 已连接 + 有修改：显示"连接"，保存并重新连接
                             Button("connect".localized) {
                                 UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
                                 UserDefaultsStorage.shared.saveToken(token)
                                 Task {
                                     await viewModel?.initialize(url: gatewayUrl, token: token)
+                                    // 延迟关闭，让用户看到加载动画
+                                    try? await Task.sleep(nanoseconds: 500_000_000)
                                     dismiss()
                                 }
                             }
                             .fontWeight(.semibold)
                         } else {
-                            // 无修改：显示"完成"，只关闭
+                            // 已连接 + 无修改：显示"完成"，只关闭
                             Button("done".localized) {
                                 dismiss()
                             }
                             .fontWeight(.semibold)
                         }
+                    } else {
+                        // 未连接：始终显示"连接"按钮
+                        Button("connect".localized) {
+                            UserDefaultsStorage.shared.saveGatewayUrl(gatewayUrl)
+                            UserDefaultsStorage.shared.saveToken(token)
+                            Task {
+                                await viewModel?.initialize(url: gatewayUrl, token: token)
+                                // 延迟关闭，让用户看到加载动画
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                dismiss()
+                            }
+                        }
+                        .fontWeight(.semibold)
                     }
                 }
             }
@@ -305,7 +320,7 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView(
-        isConnected: .constant(true),
+        isConnected: true,
         viewModel: nil
     )
 }

@@ -57,7 +57,7 @@ struct SessionDetailView: View {
                     HStack {
                         Text("processing_label".localized)
                         Spacer()
-                        Text(session.isProcessing ? "yes".localized : "no".localized)
+                        Text(session.status == .thinking || session.status == .streaming ? "yes".localized : "no".localized)
                             .foregroundColor(.secondary)
                     }
                     HStack {
@@ -132,16 +132,16 @@ struct SessionDetailView: View {
                     HStack {
                         Text("history_load_label".localized)
                         Spacer()
-                        Text(session.historyLoaded ? "history_loaded_status".localized : "history_not_loaded_status".localized)
+                        Text(session.messageLoadState == .loaded ? "history_loaded_status".localized : "history_not_loaded_status".localized)
                             .foregroundColor(.secondary)
                     }
 
-                    if session.isHistoryLoading {
+                    if session.messageLoadState == .loading {
                         Text("loading_history_ellipsis".localized)
                             .foregroundColor(.secondary)
                     }
 
-                    if session.isLoadingMessages {
+                    if session.messageLoadState == .loading {
                         Text("loading_messages_ellipsis".localized)
                             .foregroundColor(.secondary)
                     }

@@ -142,7 +142,7 @@ struct StatusBadge: View {
     let session: SessionState
 
     var body: some View {
-        if session.isProcessing {
+        if session.status == .thinking || session.status == .streaming {
             HStack(spacing: 4) {
                 Circle()
                     .fill(Color.orange)

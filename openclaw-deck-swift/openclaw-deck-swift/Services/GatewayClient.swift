@@ -93,13 +93,13 @@ class GatewayClient: GatewayClientProtocol {
     // MARK: - State
 
     /// 连接状态（是否已连接）
-    private(set) var connected: Bool = false
+    internal(set) var connected: Bool = false
 
     /// 连接错误信息
-    private(set) var connectionError: String?
+    internal(set) var connectionError: String?
 
     /// 是否正在连接
-    private(set) var isConnecting: Bool = false
+    internal(set) var isConnecting: Bool = false
 
     /// WebSocket 任务（用于连接和通信）
     private var webSocket: URLSessionWebSocketTask?

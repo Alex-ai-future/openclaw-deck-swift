@@ -12,7 +12,7 @@ protocol GatewayClientProtocol {
     var connected: Bool { get set }
 
     /// 连接错误信息
-    var connectionError: String? { get }
+    var connectionError: String? { get set }
 
     /// 事件回调
     var onEvent: ((GatewayEvent) -> Void)? { get set }

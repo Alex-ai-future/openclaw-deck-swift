@@ -67,11 +67,11 @@ final class SessionStateExtendedTests: XCTestCase {
     XCTAssertEqual(session.sessionKey, "key-1")
     XCTAssertEqual(session.id, "session-1")  // Identifiable
     XCTAssertTrue(session.messages.isEmpty)
-    XCTAssertFalse(session.historyLoaded)
-    XCTAssertFalse(session.isHistoryLoading)
+    XCTAssertFalse(session.messageLoadState == .loaded)
+    XCTAssertFalse(session.messageLoadState == .loading)
     XCTAssertEqual(session.status, .idle)
     XCTAssertNil(session.activeRunId)
-    XCTAssertFalse(session.isProcessing)
+    XCTAssertFalse(session.status == .thinking)
     XCTAssertFalse(session.hasUnreadMessage)
     XCTAssertNil(session.context)
     XCTAssertNil(session.lastMessageAt)
@@ -320,15 +320,15 @@ final class SessionStateExtendedTests: XCTestCase {
     )
 
     session.appendMessage(message)
-    session.historyLoaded = true
+    session.messageLoadState = .loaded
 
     XCTAssertEqual(session.messages.count, 1)
-    XCTAssertTrue(session.historyLoaded)
+    XCTAssertTrue(session.messageLoadState == .loaded)
 
     session.clearMessages()
 
     XCTAssertTrue(session.messages.isEmpty)
-    XCTAssertFalse(session.historyLoaded)
+    XCTAssertFalse(session.messageLoadState == .loaded)
   }
 
   // MARK: - Computed Property Tests
@@ -442,13 +442,13 @@ final class SessionStateExtendedTests: XCTestCase {
       sessionKey: "key-1"
     )
 
-    XCTAssertFalse(session.isProcessing)
+    XCTAssertFalse(session.status == .thinking)
 
-    session.isProcessing = true
-    XCTAssertTrue(session.isProcessing)
+    session.status = .thinking
+    XCTAssertTrue(session.status == .thinking)
 
-    session.isProcessing = false
-    XCTAssertFalse(session.isProcessing)
+    session.status = .idle
+    XCTAssertFalse(session.status == .thinking)
   }
 
   func testHasUnreadMessage() {

@@ -6,6 +6,14 @@
 
 import Foundation
 
+/// 消息加载状态
+enum MessageLoadState: Equatable {
+    case notLoaded        // 未加载
+    case loading          // 加载中
+    case loaded           // 已加载
+    case error(String)    // 加载失败
+}
+
 /// Session 运行时状态
 enum SessionStatus: Equatable {
     /// 空闲状态
@@ -50,23 +58,14 @@ class SessionState: Hashable, Identifiable {
     /// 消息列表
     var messages: [ChatMessage] = []
 
-    /// 是否已加载历史消息
-    var historyLoaded: Bool = false
-
-    /// 是否正在加载历史消息
-    var isHistoryLoading: Bool = false
-
-    /// 是否正在加载消息
-    var isLoadingMessages: Bool = false
+    /// 消息加载状态（合并了 historyLoaded, isHistoryLoading, isLoadingMessages）
+    var messageLoadState: MessageLoadState = .notLoaded
 
     /// 当前状态
     var status: SessionStatus = .idle
 
     /// 当前活跃的 runId（用于关联流式响应）
     var activeRunId: String?
-
-    /// 🆕 是否正在处理中（lifecycle start → end 之间）
-    var isProcessing: Bool = false
 
     /// 🆕 是否有未完成的消息（任务完成但用户未查看）
     var hasUnreadMessage: Bool = false
@@ -142,6 +141,6 @@ class SessionState: Hashable, Identifiable {
     /// 清除消息列表
     func clearMessages() {
         messages.removeAll()
-        historyLoaded = false
+        messageLoadState = .notLoaded
     }
 }

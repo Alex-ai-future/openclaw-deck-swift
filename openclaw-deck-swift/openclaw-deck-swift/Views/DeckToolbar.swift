@@ -74,7 +74,7 @@ struct DeckToolbar: ToolbarContent {
             }
             .accessibilityIdentifier("NewSessionButton")
             // 移除禁用逻辑，允许任何时候创建会话
-            // .disabled(!viewModel.gatewayConnected)
+            // .disabled(!(viewModel.gatewayClient?.connected ?? false))
 
             // 同步按钮
             SyncButton(viewModel: viewModel)

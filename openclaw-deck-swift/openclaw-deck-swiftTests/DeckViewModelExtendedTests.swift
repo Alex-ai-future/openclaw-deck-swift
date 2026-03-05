@@ -182,17 +182,20 @@ final class DeckViewModelExtendedTests: XCTestCase {
         viewModel.disconnect()
 
         // 验证连接状态
-        XCTAssertFalse(viewModel.gatewayConnected)
+        XCTAssertFalse(viewModel.gatewayClient?.connected ?? false)
     }
 
     func testClearConnectionError_clearsError() {
-        // 设置错误
-        viewModel.connectionError = "Test error"
-        XCTAssertNotNil(viewModel.connectionError)
+        // 设置 mock gateway client
+        let mockClient = MockGatewayClient()
+        viewModel.gatewayClient = mockClient
+        
+        mockClient.connectionError = "Test error"  // Note: this is setting on gatewayClient
+        XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
 
         // 清除错误
         viewModel.clearConnectionError()
-        XCTAssertNil(viewModel.connectionError)
+        XCTAssertNil(viewModel.gatewayClient?.connectionError)
     }
 
     // MARK: - Event Handling Extended Tests
@@ -356,11 +359,11 @@ final class DeckViewModelExtendedTests: XCTestCase {
 
         // 初始状态
         XCTAssertEqual(state.messages.count, 0)
-        XCTAssertFalse(state.historyLoaded)
-        XCTAssertFalse(state.isHistoryLoading)
+        XCTAssertFalse(state.messageLoadState == .loaded)
+        XCTAssertFalse(state.messageLoadState == .loading)
         XCTAssertEqual(state.status, .idle)
         XCTAssertNil(state.activeRunId)
-        XCTAssertFalse(state.isProcessing)
+        XCTAssertFalse(state.status == .thinking)
         XCTAssertFalse(state.hasUnreadMessage)
     }
 

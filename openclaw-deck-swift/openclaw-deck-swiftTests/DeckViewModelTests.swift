@@ -53,22 +53,22 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.gatewayClient)
         XCTAssertGreaterThanOrEqual(viewModel.sessions.count, 0)
         XCTAssertGreaterThanOrEqual(viewModel.sessionOrder.count, 0)
-        XCTAssertFalse(viewModel.gatewayConnected)
-        XCTAssertNil(viewModel.connectionError)
+        XCTAssertFalse(viewModel.gatewayClient?.connected ?? false)
+        XCTAssertNil(viewModel.gatewayClient?.connectionError)
     }
 
     // MARK: - Connection Tests
 
     func testClearConnectionError() {
-        viewModel.connectionError = "Test error"
-        XCTAssertNotNil(viewModel.connectionError)
+        viewModel.gatewayClient?.connectionError = "Test error"  // Note: this is setting on gatewayClient
+        XCTAssertNotNil(viewModel.gatewayClient?.connectionError)
         viewModel.clearConnectionError()
-        XCTAssertNil(viewModel.connectionError)
+        XCTAssertNil(viewModel.gatewayClient?.connectionError)
     }
 
     func testDisconnect() {
         viewModel.disconnect()
-        XCTAssertFalse(viewModel.gatewayConnected)
+        XCTAssertFalse(viewModel.gatewayClient?.connected ?? false)
     }
 
     func testGatewayDisconnect_updatesGatewayConnectedState() {
@@ -80,16 +80,16 @@ final class DeckViewModelTests: XCTestCase {
         // 注意：直接同步更新，不使用 Task，因为 MockGatewayClient.disconnect() 是同步调用回调
         var callbackExecuted = false
         mockClient.onConnection = { [weak viewModel] connected in
-            viewModel?.gatewayConnected = connected
+            viewModel?.gatewayClient = mockClient  // Update the mock client directly
             callbackExecuted = true
         }
 
         // 3. 设置初始状态
-        viewModel.gatewayConnected = true
+        mockClient.connected = true  // Set on mock client directly
         viewModel.gatewayClient = mockClient
 
         // 验证初始状态
-        XCTAssertTrue(viewModel.gatewayConnected, "初始状态应该是已连接")
+        XCTAssertTrue(viewModel.gatewayClient?.connected ?? false, "初始状态应该是已连接")
         XCTAssertTrue(mockClient.connected, "Mock Client 初始状态应该是已连接")
 
         // 4. 执行：模拟网络断开
@@ -99,7 +99,7 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertTrue(callbackExecuted, "onConnection 回调应该被调用")
 
         // 6. 验证：状态应该更新为断开
-        XCTAssertFalse(viewModel.gatewayConnected, "断开连接后 gatewayConnected 应该为 false")
+        XCTAssertFalse(viewModel.gatewayClient?.connected ?? false, "断开连接后 gatewayConnected 应该为 false")
         XCTAssertFalse(mockClient.connected, "Mock Client 断开后 connected 应该为 false")
     }
 
@@ -273,7 +273,7 @@ final class DeckViewModelTests: XCTestCase {
 
         viewModel.handleGatewayEvent(event)
 
-        XCTAssertEqual(sessionState?.isProcessing, true)
+        XCTAssertEqual(sessionState?.status == .thinking, true)
         XCTAssertEqual(sessionState?.status, .thinking)
         XCTAssertEqual(sessionState?.activeRunId, "run-123")
     }
@@ -284,7 +284,7 @@ final class DeckViewModelTests: XCTestCase {
         XCTAssertNotNil(sessionState)
 
         // 先设置为处理中状态
-        sessionState?.isProcessing = true
+        sessionState?.status = .thinking
         sessionState?.status = .thinking
         sessionState?.activeRunId = "run-123"
 
@@ -300,7 +300,7 @@ final class DeckViewModelTests: XCTestCase {
 
         viewModel.handleGatewayEvent(event)
 
-        XCTAssertEqual(sessionState?.isProcessing, false)
+        XCTAssertEqual(sessionState?.status == .thinking, false)
         XCTAssertEqual(sessionState?.status, .idle)
         XCTAssertNil(sessionState?.activeRunId)
         XCTAssertEqual(sessionState?.hasUnreadMessage, true)
@@ -449,8 +449,8 @@ final class DeckViewModelTests: XCTestCase {
         await viewModel.loadSessionHistory(sessionKey: session.sessionKey)
 
         XCTAssertEqual(sessionState?.messages.count, 2)
-        XCTAssertEqual(sessionState?.historyLoaded, true)
-        XCTAssertEqual(sessionState?.isHistoryLoading, false)
+        XCTAssertEqual(sessionState?.messageLoadState == .loaded, true)
+        XCTAssertEqual(sessionState?.messageLoadState == .loading, false)
     }
 
     func testLoadSessionHistory_gatewayDisconnected() async {
@@ -467,7 +467,7 @@ final class DeckViewModelTests: XCTestCase {
 
         // 验证没有加载消息（Gateway 未连接时跳过）
         XCTAssertEqual(sessionState?.messages.count, 0)
-        XCTAssertEqual(sessionState?.historyLoaded, false)
+        XCTAssertEqual(sessionState?.messageLoadState == .loaded, false)
     }
 
     // MARK: - Error Handling Tests
@@ -565,11 +565,11 @@ final class DeckViewModelTests: XCTestCase {
         let mockClient = MockGatewayClient()
         mockClient.connectionError = "Test client error"
         viewModel.gatewayClient = mockClient
-        viewModel.connectionError = "Test error"
+        viewModel.gatewayClient?.connectionError = "Test error"  // Note: this is setting on gatewayClient
 
         viewModel.clearConnectionError()
 
-        XCTAssertEqual(viewModel.connectionError, nil)
+        XCTAssertEqual(viewModel.gatewayClient?.connectionError, nil)
         XCTAssertEqual(mockClient.connectionError, nil)
     }
 
@@ -577,11 +577,11 @@ final class DeckViewModelTests: XCTestCase {
         let mockClient = MockGatewayClient()
         mockClient.connected = true
         viewModel.gatewayClient = mockClient
-        viewModel.gatewayConnected = true
+        mockClient.connected = true  // Set on mock client directly
 
         viewModel.disconnect()
 
-        XCTAssertEqual(viewModel.gatewayConnected, false)
+        XCTAssertEqual(viewModel.gatewayClient?.connected ?? false, false)
         XCTAssertEqual(mockClient.connected, false)
     }
 
@@ -636,7 +636,7 @@ final class DeckViewModelTests: XCTestCase {
 
     func testLoadingStageTransitions() {
         // 测试 LoadingStage 枚举的各种状态
-        XCTAssertEqual(LoadingStage.idle.description, "idle")
+        XCTAssertEqual(LoadingStage.connecting.description, "idle")
         XCTAssertEqual(LoadingStage.connecting.description, "connecting")
         XCTAssertEqual(LoadingStage.fetchingSessions.description, "fetchingSessions")
         XCTAssertEqual(LoadingStage.fetchingMessages.description, "fetchingMessages")
@@ -645,7 +645,7 @@ final class DeckViewModelTests: XCTestCase {
 
     func testLoadingStageTitles() {
         // 测试 LoadingStage 的 title 属性
-        XCTAssertEqual(LoadingStage.idle.title, "")
+        XCTAssertEqual(LoadingStage.connecting.title, "")
         XCTAssertFalse(LoadingStage.connecting.title.isEmpty)
         XCTAssertFalse(LoadingStage.fetchingSessions.title.isEmpty)
         XCTAssertFalse(LoadingStage.fetchingMessages.title.isEmpty)
@@ -654,7 +654,7 @@ final class DeckViewModelTests: XCTestCase {
 
     func testLoadingStageSubtitles() {
         // 测试 LoadingStage 的 subtitle 属性
-        XCTAssertNil(LoadingStage.idle.subtitle)
+        XCTAssertNil(LoadingStage.connecting.subtitle)
         XCTAssertNil(LoadingStage.connecting.subtitle)
         XCTAssertNotNil(LoadingStage.fetchingSessions.subtitle)
         XCTAssertNotNil(LoadingStage.fetchingMessages.subtitle)
@@ -1263,7 +1263,7 @@ final class DeckViewModelTests: XCTestCase {
     }
 
     func testLoadingStage_allDescriptions() {
-        XCTAssertEqual(LoadingStage.idle.description, "idle")
+        XCTAssertEqual(LoadingStage.connecting.description, "idle")
         XCTAssertEqual(LoadingStage.connecting.description, "connecting")
         XCTAssertEqual(LoadingStage.fetchingSessions.description, "fetchingSessions")
         XCTAssertEqual(LoadingStage.fetchingMessages.description, "fetchingMessages")

@@ -86,7 +86,7 @@ struct SessionListView: View {
                     }
                 }
                 .task {
-                    guard !hasAttemptedAutoConnect, !viewModel.gatewayConnected else { return }
+                    guard !hasAttemptedAutoConnect, !((viewModel.gatewayClient?.connected ?? false)) else { return }
                     hasAttemptedAutoConnect = true
 
                     if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
@@ -97,7 +97,7 @@ struct SessionListView: View {
                     logSessionData()
                 }
                 .sheet(isPresented: $showingSettings) {
-                    SettingsView(isConnected: $viewModel.gatewayConnected, viewModel: viewModel)
+                    SettingsView(isConnected: (viewModel.gatewayClient?.connected ?? false), viewModel: viewModel)
                 }
                 .sheet(isPresented: $showingNewSessionSheet) {
                     NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
@@ -120,7 +120,7 @@ struct SessionListView: View {
 
     private func logSessionData() {
         logger.debug(
-            "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\(viewModel.gatewayConnected)"
+            "📊 SessionListView: sessionOrder=\(viewModel.sessionOrder.count), sessions=\(viewModel.sessions.count), connected=\((viewModel.gatewayClient?.connected ?? false))"
         )
     }
 }

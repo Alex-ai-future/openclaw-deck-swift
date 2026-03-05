@@ -67,7 +67,6 @@ struct SessionColumnView: View {
                 await MainActor.run {
                     session.activeRunId = nil
                     session.status = .idle
-                    session.isProcessing = false
                 }
             } catch {
                 // 失败时显示错误提示
@@ -245,7 +244,7 @@ struct SessionColumnView: View {
                 .lineLimit(1)
                 // 工作中橘黄，完成未读绿色，其他蓝色
                 .foregroundColor(
-                    session.isProcessing
+                    session.status == .thinking || session.status == .streaming
                         ? Color.orange : session.hasUnreadMessage ? Color.green : Color.blue
                 )
                 .accessibilityIdentifier("Session-\(session.sessionId)")
@@ -290,7 +289,7 @@ struct SessionColumnView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 Group {
-                    if session.isLoadingMessages {
+                    if session.messageLoadState == .loading {
                         // 消息加载中
                         VStack {
                             ProgressView()
@@ -303,7 +302,7 @@ struct SessionColumnView: View {
                         // 显示消息列表
                         VStack(alignment: .leading, spacing: 12) {
                             // Loading indicator
-                            if session.isHistoryLoading {
+                            if session.messageLoadState == .loading {
                                 HStack {
                                     Spacer()
                                     ProgressView()

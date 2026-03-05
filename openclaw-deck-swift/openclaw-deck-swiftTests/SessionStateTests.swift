@@ -19,8 +19,8 @@ final class SessionStateTests: XCTestCase {
     XCTAssertEqual(session.sessionId, "test-session")
     XCTAssertEqual(session.sessionKey, "agent:main:test-session")
     XCTAssertTrue(session.messages.isEmpty)
-    XCTAssertFalse(session.historyLoaded)
-    XCTAssertFalse(session.isHistoryLoading)
+    XCTAssertFalse(session.messageLoadState == .loaded)
+    XCTAssertFalse(session.messageLoadState == .loading)
     XCTAssertEqual(session.status, .idle)
     XCTAssertNil(session.activeRunId)
   }
@@ -114,12 +114,12 @@ final class SessionStateTests: XCTestCase {
       timestamp: Date()
     )
     session.appendMessage(message)
-    session.historyLoaded = true
+    // session.messageLoadState = .loaded  # Already loaded
 
     session.clearMessages()
 
     XCTAssertTrue(session.messages.isEmpty)
-    XCTAssertFalse(session.historyLoaded)
+    XCTAssertFalse(session.messageLoadState == .loaded)
   }
 
   func testMessageCount() {

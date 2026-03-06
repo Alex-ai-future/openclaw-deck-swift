@@ -44,7 +44,7 @@ struct DeckCommonContainer<Content: View>: View {
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
             }
-            // 注意：Settings 和 NewSessionSheet 由 ContentView 统一管理，避免双重管理
+        // 注意：Settings 和 NewSessionSheet 由 ContentView 统一管理，避免双重管理
     }
 }
 

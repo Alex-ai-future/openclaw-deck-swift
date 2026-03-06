@@ -157,6 +157,10 @@ struct ContentView: View {
                 viewModel: viewModel
             )
         }
+        // 新建会话弹窗
+        .sheet(isPresented: $showingNewSessionSheet) {
+            NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
+        }
         // 同步确认弹窗（全局）
         .alert("sync_all_sessions".localized, isPresented: .init(
             get: { viewModel.isSyncing && !viewModel.showingSyncConflict },

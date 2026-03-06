@@ -5,6 +5,12 @@
 
 import XCTest
 
+#if os(macOS)
+    import AppKit
+#else
+    import UIKit
+#endif
+
 extension XCUIElement {
     /// macOS 强制点击（绕过某些辅助功能限制）
     func forceTap() {
@@ -17,9 +23,14 @@ extension XCUIElement {
 
     /// 通过剪贴板设置文本（用于解决某些输入框无法直接输入的问题）
     func setTextViaPasteboard(_ text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        #if os(macOS)
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(text, forType: .string)
+        #else
+            let pasteboard = UIPasteboard.general
+            pasteboard.string = text
+        #endif
 
         if self.exists {
             self.forceTap()

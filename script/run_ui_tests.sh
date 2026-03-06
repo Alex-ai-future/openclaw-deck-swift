@@ -54,10 +54,10 @@ case "$PLATFORM" in
         DESTINATION="platform=macOS,name=My Mac"
         ;;
     ios)
-        DESTINATION="platform=iOS Simulator,name=iPhone 15,OS=latest"
+        DESTINATION="platform=iOS Simulator,name=iPhone 17,OS=latest"
         ;;
     ipados)
-        DESTINATION="platform=iPadOS Simulator,name=iPad Pro 12.9-inch (6th generation),OS=latest"
+        DESTINATION="platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=latest"
         ;;
 esac
 

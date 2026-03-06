@@ -79,18 +79,8 @@ struct DeckView: View {
                     showingSortSheet: $showingSortSheet
                 )
             }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView(
-                    isConnected: (viewModel.gatewayClient?.connected ?? false),
-                    viewModel: viewModel
-                )
-            }
-            .sheet(isPresented: $showingNewSessionSheet) {
-                NewSessionSheet(
-                    viewModel: viewModel,
-                    isPresented: $showingNewSessionSheet
-                )
-            }
+            // 注意：showingSettings 和 showingNewSessionSheet 由 ContentView 统一管理
+            // 这里只管理 showingSortSheet
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
             }
@@ -187,6 +177,8 @@ struct NewSessionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
+                        // 同时使用 dismiss 和 binding 确保关闭（iOS 26 修复）
+                        isPresented = false
                         dismiss()
                     }
                 }
@@ -209,8 +201,10 @@ struct NewSessionSheet: View {
     }
 
     private func createSession() {
+        // 直接关闭弹窗（同步）
+        isPresented = false
+        // 创建会话
         _ = viewModel.createSession(name: name, context: context.isEmpty ? nil : context)
-        dismiss()
     }
 }
 

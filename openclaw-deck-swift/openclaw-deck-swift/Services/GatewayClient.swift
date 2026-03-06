@@ -989,7 +989,6 @@ class GatewayClient: GatewayClientProtocol {
             return
         }
 
-        isAutoReconnecting = true
         reconnectTask?.cancel()
 
         reconnectTask = Task { [weak self] in
@@ -1012,6 +1011,7 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 执行重连（静默）
     private func reconnect() async {
+        isAutoReconnecting = true
         reconnectAttempts += 1
         logger.info("🔄 Auto-reconnecting (attempt \(self.reconnectAttempts)/\(self.maxReconnectAttempts))...")
 

@@ -40,26 +40,11 @@ struct DeckCommonContainer<Content: View>: View {
                     localToken = UserDefaultsStorage.shared.loadToken() ?? ""
                 }
             }
-            // Settings Sheet
-            .sheet(isPresented: $showingSettings) {
-                SettingsView(
-                    isConnected: (viewModel.gatewayClient?.connected ?? false),
-                    viewModel: viewModel
-                )
-            }
-
-            // New Session Sheet
-            .sheet(isPresented: $showingNewSessionSheet) {
-                NewSessionSheet(
-                    viewModel: viewModel,
-                    isPresented: $showingNewSessionSheet
-                )
-            }
-
-            // Sort Sheet
+            // Sort Sheet - 本地管理
             .sheet(isPresented: $showingSortSheet) {
                 SessionSortView(viewModel: viewModel)
             }
+        // 注意：Settings 和 NewSessionSheet 由 ContentView 统一管理，避免双重管理
     }
 }
 

@@ -6,9 +6,9 @@
 import XCTest
 
 #if os(macOS)
-import AppKit
+    import AppKit
 #else
-import UIKit
+    import UIKit
 #endif
 
 extension XCUIElement {
@@ -24,12 +24,12 @@ extension XCUIElement {
     /// 通过剪贴板设置文本（用于解决某些输入框无法直接输入的问题）
     func setTextViaPasteboard(_ text: String) {
         #if os(macOS)
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(text, forType: .string)
         #else
-        let pasteboard = UIPasteboard.general
-        pasteboard.string = text
+            let pasteboard = UIPasteboard.general
+            pasteboard.string = text
         #endif
 
         if self.exists {

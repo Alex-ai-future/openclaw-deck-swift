@@ -22,6 +22,22 @@ struct SessionColumnView: View {
     @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
+    /// 过滤后的消息列表（根据 showToolMessages 开关）
+    private var filteredMessages: [ChatMessage] {
+        session.messages.filter { message in
+            // 始终显示 user 和 assistant 消息
+            if message.role == .user || message.role == .assistant {
+                return true
+            }
+            // 工具消息根据开关决定是否显示
+            if message.role == .tool {
+                return session.showToolMessages
+            }
+            // 其他角色不显示
+            return false
+        }
+    }
+
     /// 滚动到底部（手动点击按钮）
     private func scrollToBottom() {
         guard let lastId = session.messages.last?.id else { return }
@@ -316,11 +332,11 @@ struct SessionColumnView: View {
                             }
 
                             // Messages
-                            ForEach(session.messages) { message in
+                            ForEach(filteredMessages) { message in
                                 MessageView(message: message)
                                     .id(message.id)
                             }
-                            .animation(.easeOut(duration: 0.05), value: session.messages)
+                            .animation(.easeOut(duration: 0.05), value: filteredMessages)
                         }
                     }
                 }

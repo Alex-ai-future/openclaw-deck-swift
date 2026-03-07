@@ -293,3 +293,7 @@
 // MARK: - Connection Errors
 "connection_challenge_failed" = "无法连接到 Gateway，请检查网络后重试";
 "connection_handshake_failed" = "连接握手失败，请检查 Gateway 状态";
+
+// MARK: - Tool Messages
+"tool_messages" = "工具消息";
+"show_tool_messages" = "显示工具调用";

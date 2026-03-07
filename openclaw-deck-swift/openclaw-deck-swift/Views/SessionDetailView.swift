@@ -102,6 +102,18 @@ struct SessionDetailView: View {
                     }
                 }
 
+                // MARK: - 工具消息
+
+                Section("tool_messages".localized) {
+                    Toggle(
+                        "show_tool_messages".localized, systemImage: "wrench.and.screwdriver",
+                        isOn: .init(
+                            get: { session.showToolMessages },
+                            set: { session.showToolMessages = $0 }
+                        )
+                    )
+                }
+
                 // MARK: - 时间
 
                 Section("timeline".localized) {

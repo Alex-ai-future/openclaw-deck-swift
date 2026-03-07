@@ -280,3 +280,7 @@
 // MARK: - Connection Errors
 "connection_challenge_failed" = "Failed to connect to Gateway, please check network and try again";
 "connection_handshake_failed" = "Connection handshake failed, please check Gateway status";
+
+// MARK: - Tool Messages
+"tool_messages" = "Tool Messages";
+"show_tool_messages" = "Show Tool Calls";

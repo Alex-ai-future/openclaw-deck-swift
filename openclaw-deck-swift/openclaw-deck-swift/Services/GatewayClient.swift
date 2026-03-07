@@ -158,7 +158,7 @@ class GatewayClient: GatewayClientProtocol {
 
     // MARK: - Constants
 
-    private let requestTimeout: TimeInterval = 60
+    private let requestTimeout: TimeInterval = 180
     private let connectChallengeTimeout: TimeInterval = 15
     private let operatorScopes = ["operator.read", "operator.write", "operator.admin"]
     private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
@@ -1040,7 +1040,7 @@ class GatewayClient: GatewayClientProtocol {
         }
 
         logger.info("🔄 Starting auto-reconnect in \(self.currentReconnectDelay / 1_000_000)ms...")
-        
+
         reconnectTask?.cancel()
 
         reconnectTask = Task { [weak self] in
@@ -1069,7 +1069,7 @@ class GatewayClient: GatewayClientProtocol {
     func reconnect() async {
         isAutoReconnecting = true
         reconnectAttempts += 1
-        
+
         logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         logger.info("🔄 Auto-reconnect attempt #\(self.reconnectAttempts)/\(self.maxReconnectAttempts)")
         logger.info("📍 Current delay: \(self.currentReconnectDelay / 1_000_000)ms")
@@ -1140,7 +1140,7 @@ class GatewayClient: GatewayClientProtocol {
                 logger.error("❌ Auto-reconnect FAILED after \(self.maxReconnectAttempts) attempts")
                 logger.error("📍 Will notify UI and stop reconnecting")
                 logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                
+
                 isAutoReconnecting = false
                 connected = false
                 isConnecting = false

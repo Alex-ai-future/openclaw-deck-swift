@@ -44,8 +44,8 @@ struct SessionRowView: View {
                 // 标题行（名称 + 消息数 + 状态）
                 titleRow
 
-                // 最后消息（第二行，支持 Markdown）
-                if showLastMessage, let lastMessage = session.messages.last {
+                // 最后消息（第二行，支持 Markdown，根据 showToolMessages 过滤）
+                if showLastMessage, let lastMessage = session.getLastVisibleMessage() {
                     LastMessageRow(message: lastMessage)
                 }
             }

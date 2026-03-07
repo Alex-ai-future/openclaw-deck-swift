@@ -120,16 +120,18 @@ struct SessionDetailView: View {
                 // MARK: - 时间线
 
                 Section {
-                    if let lastActivity = session.lastMessageAt {
+                    // 最后一条可见消息的时间（根据 showToolMessages 过滤）
+                    if let lastMessage = session.getLastVisibleMessage() {
                         HStack {
                             Text("last_activity_label".localized)
                             Spacer()
-                            Text("\(formatRelativeDate(lastActivity)) (\(formatDateTime(lastActivity)))")
+                            Text("\(formatRelativeDate(lastMessage.timestamp)) (\(formatDateTime(lastMessage.timestamp)))")
                                 .foregroundColor(.secondary)
                                 .font(.caption2)
                         }
                     }
 
+                    // 第一条消息的时间
                     if let firstMessage = session.messages.first {
                         HStack {
                             Text("first_message_label".localized)

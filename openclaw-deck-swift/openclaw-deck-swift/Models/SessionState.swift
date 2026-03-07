@@ -146,4 +146,16 @@ class SessionState: Hashable, Identifiable {
         messages.removeAll()
         messageLoadState = .notLoaded
     }
+
+    // MARK: - Visible Messages
+
+    /// 获取可见的最后一条消息（根据 showToolMessages 过滤）
+    func getLastVisibleMessage() -> ChatMessage? {
+        if showToolMessages {
+            messages.last
+        } else {
+            // 跳过工具消息，查找最后一条 user/assistant 消息
+            messages.last { $0.role != .tool }
+        }
+    }
 }

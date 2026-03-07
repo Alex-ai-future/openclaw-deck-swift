@@ -433,8 +433,8 @@ struct SessionColumnView: View {
 
         @ViewBuilder
         private var messageContent: some View {
-            if message.role == .assistant {
-                // 使用 MarkdownUI 支持链接点击
+            if message.role == .assistant || message.role == .tool {
+                // 使用 MarkdownUI 支持链接点击（助手和工具消息）
                 Markdown(message.text)
                     .font(.body)
                     .foregroundColor(.primary)
@@ -525,7 +525,8 @@ struct SessionColumnView: View {
 
         @ViewBuilder
         private var messageContent: some View {
-            if message.role == .assistant {
+            if message.role == .assistant || message.role == .tool {
+                // 使用 MarkdownUI 支持链接点击（助手和工具消息）
                 Markdown(message.text)
                     .font(.body)
                     .foregroundColor(.primary)

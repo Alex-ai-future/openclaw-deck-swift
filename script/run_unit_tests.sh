@@ -79,6 +79,9 @@ if xcodebuild test \
     # 创建覆盖率目录
     mkdir -p "$COVERAGE_DIR"
     
+    # 定义测试结果路径
+    TEST_RESULTS="$BUILD_DIR/TestResults.xcresult"
+    
     # 生成文本报告
     echo "📝 生成文本报告..."
     xcrun xccov view --archive "$TEST_RESULTS" 2>/dev/null | \

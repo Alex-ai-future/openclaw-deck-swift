@@ -385,8 +385,8 @@ struct SessionColumnView: View {
         @State private var showFullContent = false
 
         var body: some View {
-            // 只显示 user 和 assistant 消息
-            if message.role != .user, message.role != .assistant {
+            // 显示 user、assistant 和 tool 消息
+            if message.role != .user, message.role != .assistant, message.role != .tool {
                 EmptyView()
                 //      } else if message.text.isEmpty && !shouldShowEmptyMessage {
                 //        // 对于 assistant 空消息，只有在 streaming 时显示占位
@@ -490,8 +490,8 @@ struct SessionColumnView: View {
         let message: ChatMessage
 
         var body: some View {
-            // 只显示 user 和 assistant 消息
-            if message.role != .user, message.role != .assistant {
+            // 显示 user、assistant 和 tool 消息
+            if message.role != .user, message.role != .assistant, message.role != .tool {
                 EmptyView()
             } else {
                 messageBody

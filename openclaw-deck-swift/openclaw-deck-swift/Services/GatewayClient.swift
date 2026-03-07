@@ -757,13 +757,14 @@ class GatewayClient: GatewayClientProtocol {
                 "client": [
                     "id": "gateway-client",
                     "version": "2026.2.16",
-                    "platform": "web",
-                    "mode": "webchat",
+                    "platform": "ios",
+                    "mode": "ui",
                 ],
                 "minProtocol": 3,
                 "maxProtocol": 3,
                 "role": "operator",
                 "scopes": operatorScopes,
+                "caps": ["tool-events"],
             ]
 
             // Add device identity if available

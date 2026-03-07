@@ -1272,6 +1272,8 @@ class DeckViewModel {
             if let data = payload["data"] as? [String: Any],
                let toolName = data["name"] as? String
             {
+                logger.info("🔍 Processing tool event: toolName=\(toolName)")
+
                 // 提取参数信息（优先使用 meta，其次使用 args）
                 let argsText: String
                 if let meta = data["meta"] as? String {
@@ -1297,7 +1299,9 @@ class DeckViewModel {
                 )
 
                 session.messages.append(toolMessage)
-                logger.info("🔧 Tool call: \(toolName), Args: \(argsText)")
+                logger.info("✅ Tool message added: sessionId=\(session.sessionId), messages.count=\(session.messages.count)")
+            } else {
+                logger.error("❌ Failed to parse tool event data")
             }
 
         default:
@@ -1623,17 +1627,6 @@ class DeckViewModel {
         // 🔍 调试：打印完整事件结构
         if let payload = event.payload as? [String: Any] {
             logger.debug("🔍 Event=\(event.event), payload keys: \(payload.keys.sorted())")
-            if let sessionKey = payload["sessionKey"] {
-                logger.debug("🔑 sessionKey in payload: \(sessionKey)")
-            } else {
-                logger.debug("⚠️ sessionKey NOT in payload")
-            }
-            if let data = payload["data"] as? [String: Any] {
-                logger.debug("📦 data keys: \(data.keys.sorted())")
-                if let sessionKey = data["sessionKey"] {
-                    logger.debug("🔑 sessionKey in data: \(sessionKey)")
-                }
-            }
         }
 
         // ✅ 1. 优先通过 sessionKey 匹配（最准确）

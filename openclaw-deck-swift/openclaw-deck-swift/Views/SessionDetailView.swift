@@ -18,7 +18,7 @@ struct SessionDetailView: View {
             Form {
                 // MARK: - 会话信息
 
-                Section("session_info".localized, systemImage: "info.circle") {
+                Section {
                     // 基础信息
                     HStack {
                         Text("session_id_label".localized)
@@ -78,11 +78,13 @@ struct SessionDetailView: View {
                                 .textSelection(.enabled)
                         }
                     }
+                } header: {
+                    Label("session_info".localized, systemImage: "info.circle")
                 }
 
                 // MARK: - 消息
 
-                Section("messages".localized, systemImage: "message") {
+                Section {
                     HStack {
                         Text("total_messages_label".localized)
                         Spacer()
@@ -113,11 +115,13 @@ struct SessionDetailView: View {
                             set: { session.showToolMessages = $0 }
                         )
                     )
+                } header: {
+                    Label("messages".localized, systemImage: "message")
                 }
 
                 // MARK: - 时间线
 
-                Section("timeline".localized, systemImage: "clock") {
+                Section {
                     if let lastActivity = session.lastMessageAt {
                         HStack {
                             Text("last_activity_label".localized)
@@ -158,11 +162,13 @@ struct SessionDetailView: View {
                         Text("loading_messages_ellipsis".localized)
                             .foregroundColor(.secondary)
                     }
+                } header: {
+                    Label("timeline".localized, systemImage: "clock")
                 }
 
                 // MARK: - 操作
 
-                Section("actions".localized, systemImage: "gear") {
+                Section {
                     // 归档并继续
                     Button {
                         showingArchiveAlert = true
@@ -188,6 +194,8 @@ struct SessionDetailView: View {
                         }
                     }
                     .accessibilityIdentifier("deleteSessionButton")
+                } header: {
+                    Label("actions".localized, systemImage: "gear")
                 } footer: {
                     Text("session_actions_footer".localized)
                         .font(.caption)

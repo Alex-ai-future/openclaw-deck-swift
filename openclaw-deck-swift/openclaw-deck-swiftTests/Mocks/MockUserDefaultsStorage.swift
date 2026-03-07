@@ -49,6 +49,14 @@ class MockUserDefaultsStorage: UserDefaultsStorageProtocol {
         tokenStore
     }
 
+    /// 清空所有存储（用于测试清理）
+    func clear() {
+        sessionsStore.removeAll()
+        sessionOrderStore.removeAll()
+        gatewayUrlStore = nil
+        tokenStore = nil
+    }
+
     func clearAll() {
         sessionsStore = []
         sessionOrderStore = []

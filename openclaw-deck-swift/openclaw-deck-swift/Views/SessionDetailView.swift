@@ -20,38 +20,68 @@ struct SessionDetailView: View {
 
                 Section {
                     // 基础信息
-                    HStack {
-                        Text("session_id_label".localized)
-                        Spacer()
-                        Text(session.sessionId)
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("session_key_label".localized)
-                        Spacer()
-                        Text(session.sessionKey)
-                            .font(.caption.monospaced())
-                            .foregroundColor(.secondary)
-                            .textSelection(.enabled)
-                    }
-
-                    if let context = session.context, !context.isEmpty {
+                    Group {
                         HStack {
-                            Text("session_context_label".localized)
+                            Text("session_id_label".localized)
                             Spacer()
-                            Text(context)
+                            Text(session.sessionId)
+                                .foregroundColor(.secondary)
+                        }
+                        HStack {
+                            Text("session_key_label".localized)
+                            Spacer()
+                            Text(session.sessionKey)
+                                .font(.caption.monospaced())
                                 .foregroundColor(.secondary)
                                 .textSelection(.enabled)
+                        }
+
+                        if let context = session.context, !context.isEmpty {
+                            HStack {
+                                Text("session_context_label".localized)
+                                Spacer()
+                                Text(context)
+                                    .foregroundColor(.secondary)
+                                    .textSelection(.enabled)
+                            }
                         }
                     }
 
                     // 状态
-                    HStack {
-                        Text("status".localized)
-                        Spacer()
-                        Text(sessionStatusText)
-                            .foregroundColor(.secondary)
+                    Group {
+                        HStack {
+                            Text("status".localized)
+                            Spacer()
+                            Text(sessionStatusText)
+                                .foregroundColor(.secondary)
+                        }
+                        HStack {
+                            Text("processing_label".localized)
+                            Spacer()
+                            Text(session.status == .thinking || session.status == .streaming ? "yes".localized : "no".localized)
+                                .foregroundColor(.secondary)
+                        }
+                        HStack {
+                            Text("unread_messages_label".localized)
+                            Spacer()
+                            Text(session.hasUnreadMessage ? "yes".localized : "no".localized)
+                                .foregroundColor(.secondary)
+                        }
+
+                        if let runId = session.activeRunId {
+                            HStack {
+                                Text("active_run_label".localized)
+                                Spacer()
+                                Text(runId)
+                                    .font(.caption.monospaced())
+                                    .foregroundColor(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                        }
                     }
+                } header: {
+                    Label("session_info".localized, systemImage: "info.circle")
+                }
                     HStack {
                         Text("processing_label".localized)
                         Spacer()

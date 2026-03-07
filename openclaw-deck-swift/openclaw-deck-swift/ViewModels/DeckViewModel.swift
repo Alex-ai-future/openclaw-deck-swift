@@ -1200,10 +1200,13 @@ class DeckViewModel {
                 let delta = data["delta"] as? String
                 let text = data["text"] as? String
 
+                logger.info("📥 Assistant event: delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars, seq=\(seq ?? -1), runId=\(runId)")
+
                 // 如果有 seq，检查是否已处理（去重）
                 if let seq {
                     let alreadyProcessed = session.messages.contains { $0.seq == seq }
                     if alreadyProcessed {
+                        logger.debug("⏭️ Message already processed, skipping: seq=\(seq)")
                         return
                     }
                 }
@@ -1220,6 +1223,8 @@ class DeckViewModel {
 
                     if !hasExistingMessage {
                         createAssistantMessage(session: session, runId: runId, text: text, seq: seq)
+                    } else {
+                        logger.warning("⚠️ Existing message found for runId=\(runId), skipping text")
                     }
                 }
             }
@@ -1480,11 +1485,37 @@ class DeckViewModel {
     }
 
     /// 追加内容到 assistant 消息（用于 delta 流式更新）
-    private func appendToAssistantMessage(session: SessionState, runId: String, text: String) {
+    private func appendToAssistantMessage(
+        session: SessionState, runId: String, text: String, seq: Int?
+    ) {
         // 设置状态为 streaming
         session.status = .streaming
 
-        // 查找最后一条同 runId 且 streaming 的消息
+        // ✅ 1. 如果有 seq，优先查找 seq 匹配的消息（更新它）
+        if let seq {
+            if let index = session.messages.enumerated().firstIndex(where: { _, msg in
+                msg.role == .assistant && msg.seq == seq
+            }) {
+                // 找到 seq 匹配的消息，更新它（不追加）
+                let message = session.messages[index]
+                session.messages[index] = ChatMessage(
+                    id: message.id,
+                    role: message.role,
+                    text: message.text + text,
+                    timestamp: message.timestamp,
+                    streaming: message.streaming,
+                    thinking: message.thinking,
+                    toolUse: message.toolUse,
+                    runId: message.runId,
+                    seq: message.seq,
+                    isLoaded: message.isLoaded
+                )
+                logger.debug("✏️ Updated message by seq: \(seq)")
+                return
+            }
+        }
+
+        // ✅ 2. 没有 seq 或找不到，查找最后一条同 runId 且 streaming 的消息
         guard
             let index = session.messages.enumerated().last(where: { _, msg in
                 msg.role == .assistant && msg.runId == runId && msg.streaming == true
@@ -1497,14 +1528,16 @@ class DeckViewModel {
                 text: text,
                 timestamp: Date(),
                 streaming: true,
-                runId: runId
+                runId: runId,
+                seq: seq
             )
             session.messages.append(assistantMsg)
             session.activeRunId = runId
+            logger.debug("➕ Created new message: runId=\(runId), seq=\(seq ?? -1)")
             return
         }
 
-        // 追加文本
+        // ✅ 3. 追加到最后一条 streaming 消息
         let message = session.messages[index]
         session.messages[index] = ChatMessage(
             id: message.id,
@@ -1515,8 +1548,10 @@ class DeckViewModel {
             thinking: message.thinking,
             toolUse: message.toolUse,
             runId: message.runId,
+            seq: message.seq ?? seq,
             isLoaded: message.isLoaded
         )
+        logger.debug("➕ Appended to streaming message: runId=\(runId)")
     }
 
     /// 处理 agent.content 事件（旧格式兼容）

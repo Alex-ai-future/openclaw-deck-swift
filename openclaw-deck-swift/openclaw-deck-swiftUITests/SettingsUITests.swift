@@ -217,8 +217,9 @@ final class SettingsUITests: XCTestCase {
         )
         print("  ✅ Token 已保存：\(savedToken)")
 
-        // 关闭设置页面
-        cancelButton.forceTap()
+        // 关闭设置页面（重新获取按钮，因为弹窗已经重新打开）
+        let cancelButton2 = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
+        cancelButton2.forceTap()
         XCTAssertFalse(
             settingsSheet.waitForExistence(timeout: 1),
             "关闭设置弹窗必须成功"

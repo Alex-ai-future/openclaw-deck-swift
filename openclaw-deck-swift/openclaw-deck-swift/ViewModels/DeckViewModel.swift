@@ -1186,8 +1186,8 @@ class DeckViewModel {
 
         logger.info("📥 Agent event: stream=\(stream), runId=\(runId)")
 
-        // 使用与其他事件处理一致的方式查找 session
-        guard let session = findSessionForEvent(event) else {
+        // ✅ 优先通过 sessionKey 查找 session（与 handleAgentDone/handleAgentError 一致）
+        guard let session = sessionFromEvent(event) ?? findSessionForEvent(event) else {
             logger.warning("⚠️ Session not found for agent event: stream=\(stream)")
             return
         }

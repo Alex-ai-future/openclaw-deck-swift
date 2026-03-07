@@ -823,7 +823,7 @@ class GatewayClient: GatewayClientProtocol {
             version: version,
             deviceId: identity["id"] as! String,
             clientId: "gateway-client",
-            clientMode: "webchat",
+            clientMode: "ui",
             role: "operator",
             scopes: operatorScopes,
             signedAtMs: Int(signedAt),

@@ -902,10 +902,13 @@ final class DeckViewModelTests: XCTestCase {
         sessionState?.status = .thinking
         sessionState?.activeRunId = "run-123"
 
-        // 不带 sessionKey 的 done 事件（通过 activeRunId 匹配）
+        // 带 sessionKey 的 done 事件（严格使用 sessionKey 匹配）
         let doneEvent = GatewayEvent(
             event: "agent.done",
-            payload: ["runId": "run-123"]
+            payload: [
+                "sessionKey": session.sessionKey,
+                "runId": "run-123",
+            ]
         )
 
         viewModel.handleGatewayEvent(doneEvent)

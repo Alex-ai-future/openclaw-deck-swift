@@ -869,6 +869,7 @@ class DeckViewModel {
     /// - Returns: 同步结果（成功/失败消息）
     @MainActor
     func syncAll() async -> Result<String, Error> {
+        // 先检查 Gateway 是否已连接
         guard gatewayClient?.connected ?? false else {
             return .failure(
                 NSError(
@@ -878,18 +879,28 @@ class DeckViewModel {
             )
         }
 
+        guard let gatewayUrl = UserDefaults.standard.string(forKey: "openclaw.deck.gatewayUrl"),
+              let url = URL(string: gatewayUrl)
+        else {
+            return .failure(
+                NSError(
+                    domain: "DeckViewModel", code: 400,
+                    userInfo: [NSLocalizedDescriptionKey: "Gateway URL not configured"]
+                )
+            )
+        }
+
         do {
             logger.info("🔄 Starting full sync...")
 
             // ✅ 立即显示加载动画
-            appState = .connecting(.fetchingSessions, 0.3)
+            appState = .connecting(.fetchingSessions, 0.1)
 
             // 1. 从 Cloudflare 同步 Session 列表
             let result = try await CloudflareKV.shared.syncAndGet()
 
             // 处理冲突情况
             if result.source == .conflict {
-                // 冲突时让用户选择（弹窗）
                 logger.info("⚠️ Conflict detected during sync, showing conflict dialog")
                 await handleSyncConflict(result: result)
                 return .failure(
@@ -909,18 +920,19 @@ class DeckViewModel {
 
             logger.info("✅ Session list updated: \(result.data.sessions.count) sessions")
 
-            // 2. 清空所有 Session 的当前消息
+            appState = .connecting(.fetchingMessages, 0.5)
+
+            // 清空所有 Session 的当前消息
             for session in sessions.values {
                 session.messages.removeAll()
                 session.messageLoadState = .notLoaded
             }
 
-            // 3. 重新加载所有 Session 的对话内容
-            await loadAllSessionHistory()
+            // 并发加载所有 Session 的对话内容
+            await loadAllSessionHistoryConcurrent()
 
-            logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
+            logger.info("✅ Sync complete (concurrent): \(result.data.sessions.count) sessions")
 
-            // ✅ 重置加载状态，避免卡在 100%
             appState = .connected
 
             return .success("Sync complete: \(result.data.sessions.count) sessions")
@@ -932,39 +944,46 @@ class DeckViewModel {
 
     // MARK: - Load History
 
-    /// 加载所有 Session 的历史消息
+    /// 加载所有 Session 的历史消息（已优化为并发版本）
     @MainActor
     func loadAllSessionHistory() async {
-        // 开始加载
-        appState = .connecting(.fetchingMessages, 0.8)
+        // 使用并发版本
+        await loadAllSessionHistoryConcurrent()
+    }
 
-        let totalCount = sessionOrder.count
-        var loadedCount = 0
-
-        logger.info("📥 开始加载所有会话历史，共 \(totalCount) 个会话...")
-
-        for session in sessionOrder.compactMap({ sessions[$0] }) {
-            logger.info("📥 [\(loadedCount + 1)/\(totalCount)] 加载会话：\(session.sessionId)")
-            await loadSessionHistory(sessionKey: session.sessionKey)
-            loadedCount += 1
-
-            // 更新进度（按会话数量）
-            if totalCount > 0 {
-                let progress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
-                if case let .connecting(stage, _) = appState {
-                    appState = .connecting(stage, progress)
-                } else {
-                    // 如果 appState 不是 connecting，说明可能被中断了
-                    logger.warning("⚠️ 加载进度更新时 appState 不是 connecting: \(self.appState)")
-                }
-                logger.info(
-                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(progress * 100))%"
-                )
-            }
+    /// 加载单个 Session 的历史消息（保留用于向后兼容）
+    @MainActor
+    private func loadSessionHistoryLegacy(sessionKey: String) async {
+        guard let client = gatewayClient, client.connected else {
+            return
         }
 
-        // 所有历史加载完成（不设置 100%，由调用方统一设置）
-        logger.info("✅ 所有会话历史加载完成")
+        // 设置加载状态（大小写不敏感匹配）
+        if let session = sessions.values.first(where: {
+            $0.sessionKey.lowercased() == sessionKey.lowercased()
+        }) {
+            session.messageLoadState = .loading
+        }
+
+        do {
+            let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
+
+            // 更新 Session 的消息（大小写不敏感匹配）
+            if let session = sessions.values.first(where: {
+                $0.sessionKey.lowercased() == sessionKey.lowercased()
+            }) {
+                session.messages = messages
+                session.messageLoadState = .loaded
+                logger.info("  ↳ 加载 \(messages.count) 条消息")
+            }
+        } catch {
+            logger.error("❌ 加载 Session \(sessionKey) 历史失败：\(error.localizedDescription)")
+            if let session = sessions.values.first(where: {
+                $0.sessionKey.lowercased() == sessionKey.lowercased()
+            }) {
+                session.messageLoadState = .error(error.localizedDescription)
+            }
+        }
     }
 
     func loadSessionHistory(sessionKey: String) async {

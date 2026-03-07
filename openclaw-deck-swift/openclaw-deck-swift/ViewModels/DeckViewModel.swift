@@ -1246,10 +1246,12 @@ class DeckViewModel {
                     session.activeRunId = nil
 
                     // 🎯 发送通知：无论前台后台都发
-                    if let lastMessage = session.messages.last,
-                       lastMessage.role == .assistant,
-                       !lastMessage.text.isEmpty
-                    {
+                    // 查找最后一条 assistant 消息（而不是最后一条消息，因为可能有工具消息）
+                    let lastAssistantMessage = session.messages.last {
+                        $0.role == .assistant && !$0.text.isEmpty
+                    }
+
+                    if let lastMessage = lastAssistantMessage {
                         NotificationService.shared.sendNewMessageNotification(
                             sessionName: session.sessionId,
                             messageText: lastMessage.text

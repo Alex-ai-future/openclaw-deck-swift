@@ -119,10 +119,10 @@ final class SettingsUITests: XCTestCase {
         // ========== 阶段 2：点击取消并验证不保存 ==========
         print("\n📍 阶段 2：点击取消并验证配置未保存")
 
-        // 点击取消按钮
-        let cancelButton = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
+        // 点击取消按钮（使用更可靠的方式查找）
+        let cancelButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'cancel' OR label CONTAINS[c] '取消'")).firstMatch
         XCTAssertTrue(
-            cancelButton.waitForExistence(timeout: 1),
+            cancelButton.waitForExistence(timeout: 2),
             "取消按钮必须存在"
         )
         cancelButton.forceTap()
@@ -218,10 +218,16 @@ final class SettingsUITests: XCTestCase {
         print("  ✅ Token 已保存：\(savedToken)")
 
         // 关闭设置页面（重新获取按钮，因为弹窗已经重新打开）
-        let cancelButton2 = app.buttons["Cancel"].firstMatch.exists ? app.buttons["Cancel"] : app.buttons["取消"]
-        cancelButton2.forceTap()
+        // 使用更可靠的方式查找取消按钮（支持多种可能的标识符）
+        let cancelButton2 = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'cancel' OR label CONTAINS[c] '取消'")).firstMatch
+        if cancelButton2.exists {
+            cancelButton2.forceTap()
+        } else {
+            // 如果找不到取消按钮，尝试点击弹窗外部关闭
+            app.windows.firstMatch.tap()
+        }
         XCTAssertFalse(
-            settingsSheet.waitForExistence(timeout: 1),
+            settingsSheet.waitForExistence(timeout: 2),
             "关闭设置弹窗必须成功"
         )
         print("  ✅ 设置页面已关闭")

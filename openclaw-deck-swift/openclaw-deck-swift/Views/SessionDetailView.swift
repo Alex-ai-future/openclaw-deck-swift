@@ -46,9 +46,6 @@ struct SessionDetailView: View {
                     }
 
                     // 状态
-                    Divider()
-                        .padding(.vertical, 8)
-
                     HStack {
                         Text("status".localized)
                         Spacer()
@@ -105,9 +102,6 @@ struct SessionDetailView: View {
                     }
 
                     // 工具消息开关
-                    Divider()
-                        .padding(.vertical, 8)
-
                     Toggle(
                         "show_tool_messages".localized, systemImage: "wrench.and.screwdriver",
                         isOn: .init(
@@ -143,9 +137,6 @@ struct SessionDetailView: View {
                     }
 
                     // 加载状态
-                    Divider()
-                        .padding(.vertical, 8)
-
                     HStack {
                         Text("history_load_label".localized)
                         Spacer()

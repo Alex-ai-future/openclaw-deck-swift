@@ -1305,14 +1305,14 @@ class DeckViewModel {
         let toolMessage = ChatMessage(
             id: UUID().uuidString,
             role: .tool,
-            text: "🔧 工具调用：**\(toolName)**\n参数：\(argsText)",
+            text: "🔧 Tool: **\(toolName)**\nArgs: \(argsText)",
             timestamp: Date(),
             runId: payload["runId"] as? String,
             seq: payload["seq"] as? Int
         )
 
         session.messages.append(toolMessage)
-        logger.info("🔧 工具调用：\(toolName), 参数：\(argsText)")
+        logger.info("🔧 Tool call: \(toolName), Args: \(argsText)")
     }
 
     /// 更新或创建最后一条 assistant 消息（实时流式更新）

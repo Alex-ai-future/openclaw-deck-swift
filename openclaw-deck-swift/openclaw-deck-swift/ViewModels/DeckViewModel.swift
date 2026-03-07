@@ -1213,7 +1213,7 @@ class DeckViewModel {
 
                 // 优先使用 delta 追加（流式更新）
                 if let delta, !delta.isEmpty {
-                    appendToAssistantMessage(session: session, runId: runId, text: delta)
+                    appendToAssistantMessage(session: session, runId: runId, text: delta, seq: seq)
                 }
                 // 后备：使用 text（只在没有 delta 且没有同 runId 消息时）
                 else if let text, !text.isEmpty {
@@ -1245,22 +1245,15 @@ class DeckViewModel {
                     session.status = .idle
                     session.activeRunId = nil
 
-                    // 🎯 发送通知：无论前台后台都发
-                    // 查找最后一条 assistant 消息（而不是最后一条消息，因为可能有工具消息）
-                    let lastAssistantMessage = session.messages.last {
-                        $0.role == .assistant && !$0.text.isEmpty
-                    }
+                    // 🎯 发送通知：agent 运行结束就通知（和消息类型无关）
+                    NotificationService.shared.sendNewMessageNotification(
+                        sessionName: session.sessionId,
+                        messageText: "任务完成"
+                    )
 
-                    if let lastMessage = lastAssistantMessage {
-                        NotificationService.shared.sendNewMessageNotification(
-                            sessionName: session.sessionId,
-                            messageText: lastMessage.text
-                        )
-
-                        // 🎵 播放提示音（如果启用）
-                        if playSoundOnMessage {
-                            SoundService.shared.playMessageNotification()
-                        }
+                    // 🎵 播放提示音（如果启用）- agent 完成就播放
+                    if playSoundOnMessage {
+                        SoundService.shared.playMessageNotification()
                     }
 
                     // 清除所有消息的 streaming 状态
@@ -1495,7 +1488,7 @@ class DeckViewModel {
 
         // ✅ 1. 如果有 seq，优先查找 seq 匹配的消息（更新它）
         if let seq {
-            if let index = session.messages.enumerated().firstIndex(where: { _, msg in
+            if let index = session.messages.firstIndex(where: { msg in
                 msg.role == .assistant && msg.seq == seq
             }) {
                 // 找到 seq 匹配的消息，更新它（不追加）
@@ -1572,9 +1565,10 @@ class DeckViewModel {
 
         // 使用 runId 查找消息，如果没有 runId 则使用 activeRunId
         let runId = payload["runId"] as? String ?? session.activeRunId
+        let seq = payload["seq"] as? Int
 
         if let runId {
-            appendToAssistantMessage(session: session, runId: runId, text: text)
+            appendToAssistantMessage(session: session, runId: runId, text: text, seq: seq)
         } else {
             // 后备：追加到最后一条 assistant 消息
             if let lastMessage = session.messages.last, lastMessage.role == .assistant {

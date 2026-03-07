@@ -399,6 +399,8 @@ struct SessionColumnView: View {
     struct MessageView: View {
         let message: ChatMessage
         @State private var showFullContent = false
+        @State private var showSelectSheet = false
+        @State private var selectText: String = ""
 
         var body: some View {
             // 显示 user、assistant 和 tool 消息
@@ -409,6 +411,22 @@ struct SessionColumnView: View {
                 //        EmptyView()
             } else {
                 messageBody
+                    .sheet(isPresented: $showSelectSheet) {
+                        // 纯文本选择 Sheet
+                        VStack {
+                            Text("select_text".localized)
+                                .font(.headline)
+                                .padding()
+
+                            TextEditor(text: $selectText)
+                                .font(.body)
+                                .textSelection(.enabled)
+                                .padding()
+                        }
+                        .onAppear {
+                            selectText = message.text
+                        }
+                    }
             }
         }
 
@@ -426,13 +444,20 @@ struct SessionColumnView: View {
                         .background(backgroundColor)
                         .cornerRadius(18, corners: cornerMask)
                         .contextMenu {
+                            // 复制全部
                             Button {
                                 UIPasteboard.general.string = message.text
-
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                 impactFeedback.impactOccurred()
                             } label: {
                                 Label("copy".localized, systemImage: "doc.on.doc")
+                            }
+
+                            // 选择文本
+                            Button {
+                                showSelectSheet = true
+                            } label: {
+                                Label("select_text".localized, systemImage: "text.cursor")
                             }
                         }
 

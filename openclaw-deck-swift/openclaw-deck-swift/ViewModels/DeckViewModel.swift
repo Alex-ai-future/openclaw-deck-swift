@@ -1178,15 +1178,17 @@ class DeckViewModel {
     private func handleAgentEvent(_ event: GatewayEvent) {
         guard let payload = event.payload as? [String: Any],
               let runId = payload["runId"] as? String,
-              let stream = payload["stream"] as? String,
-              let sessionKey = payload["sessionKey"] as? String
+              let stream = payload["stream"] as? String
         else {
             logger.error("Invalid agent event payload")
             return
         }
 
-        // Find session by sessionKey (case-insensitive)
-        guard let session = findSession(sessionKey: sessionKey) else {
+        logger.info("📥 Agent event: stream=\(stream), runId=\(runId)")
+
+        // 使用与其他事件处理一致的方式查找 session
+        guard let session = findSessionForEvent(event) else {
+            logger.warning("⚠️ Session not found for agent event: stream=\(stream)")
             return
         }
 
@@ -1266,13 +1268,16 @@ class DeckViewModel {
             }
 
         case "tool":
-            // 工具调用事件：{ data: { name: "exec", args: {...} } }
+            // 工具调用事件：{ data: { name: "exec", phase: "start"|"result", meta: "...", ... } }
             if let data = payload["data"] as? [String: Any],
                let toolName = data["name"] as? String
             {
-                // 提取参数（args）
+                // 提取参数信息（优先使用 meta，其次使用 args）
                 let argsText: String
-                if let args = data["args"] as? [String: Any] {
+                if let meta = data["meta"] as? String {
+                    // 使用 meta 字段（包含工具调用的详细信息）
+                    argsText = meta
+                } else if let args = data["args"] as? [String: Any] {
                     let params = args.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
                     argsText = params.isEmpty ? "none" : params
                 } else if let args = data["args"] as? String {

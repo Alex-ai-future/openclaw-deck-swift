@@ -1,11 +1,11 @@
 // SessionDetailView.swift
 // OpenClaw Deck Swift
 //
-// Session 详情视图 - 极简布局
+// Session 详情视图 - 重构布局
 
 import SwiftUI
 
-/// Session 详情视图 - 极简布局
+/// Session 详情视图 - 重构布局
 struct SessionDetailView: View {
     let session: SessionState
     var viewModel: DeckViewModel?
@@ -16,9 +16,10 @@ struct SessionDetailView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // MARK: - 基础信息
+                // MARK: - 会话信息
 
-                Section("basic_info".localized) {
+                Section("session_info".localized, systemImage: "info.circle") {
+                    // 基础信息
                     HStack {
                         Text("session_id_label".localized)
                         Spacer()
@@ -43,11 +44,11 @@ struct SessionDetailView: View {
                                 .textSelection(.enabled)
                         }
                     }
-                }
 
-                // MARK: - 状态
+                    // 状态
+                    Divider()
+                        .padding(.vertical, 8)
 
-                Section("status".localized) {
                     HStack {
                         Text("status".localized)
                         Spacer()
@@ -79,9 +80,9 @@ struct SessionDetailView: View {
                     }
                 }
 
-                // MARK: - 消息统计
+                // MARK: - 消息
 
-                Section("message_stats".localized) {
+                Section("messages".localized, systemImage: "message") {
                     HStack {
                         Text("total_messages_label".localized)
                         Spacer()
@@ -100,11 +101,11 @@ struct SessionDetailView: View {
                         Text("\(assistantMessageCount)")
                             .foregroundColor(.secondary)
                     }
-                }
 
-                // MARK: - 工具消息
+                    // 工具消息开关
+                    Divider()
+                        .padding(.vertical, 8)
 
-                Section("tool_messages".localized) {
                     Toggle(
                         "show_tool_messages".localized, systemImage: "wrench.and.screwdriver",
                         isOn: .init(
@@ -114,9 +115,9 @@ struct SessionDetailView: View {
                     )
                 }
 
-                // MARK: - 时间
+                // MARK: - 时间线
 
-                Section("timeline".localized) {
+                Section("timeline".localized, systemImage: "clock") {
                     if let lastActivity = session.lastMessageAt {
                         HStack {
                             Text("last_activity_label".localized)
@@ -136,11 +137,11 @@ struct SessionDetailView: View {
                                 .font(.caption2)
                         }
                     }
-                }
 
-                // MARK: - 加载状态
+                    // 加载状态
+                    Divider()
+                        .padding(.vertical, 8)
 
-                Section("load_status".localized) {
                     HStack {
                         Text("history_load_label".localized)
                         Spacer()
@@ -159,9 +160,10 @@ struct SessionDetailView: View {
                     }
                 }
 
-                // MARK: - 归档并继续
+                // MARK: - 操作
 
-                Section {
+                Section("actions".localized, systemImage: "gear") {
+                    // 归档并继续
                     Button {
                         showingArchiveAlert = true
                     } label: {
@@ -174,17 +176,8 @@ struct SessionDetailView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                } header: {
-                    Text("archive_section_header".localized)
-                } footer: {
-                    Text("archive_description".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
 
-                // MARK: - 危险操作
-
-                Section {
+                    // 删除会话
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
@@ -195,10 +188,8 @@ struct SessionDetailView: View {
                         }
                     }
                     .accessibilityIdentifier("deleteSessionButton")
-                } header: {
-                    Text("delete_section_header".localized)
                 } footer: {
-                    Text("delete_description".localized)
+                    Text("session_actions_footer".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

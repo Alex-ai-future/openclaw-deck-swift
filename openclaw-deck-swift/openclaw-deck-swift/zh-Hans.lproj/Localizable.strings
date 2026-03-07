@@ -297,3 +297,10 @@
 // MARK: - Tool Messages
 "tool_messages" = "工具消息";
 "show_tool_messages" = "显示工具调用";
+
+// MARK: - Session Details (Refactored)
+"session_info" = "会话信息";
+"messages" = "消息";
+"timeline" = "时间线";
+"actions" = "操作";
+"session_actions_footer" = "归档可保存历史并继续，删除将永久移除所有数据";

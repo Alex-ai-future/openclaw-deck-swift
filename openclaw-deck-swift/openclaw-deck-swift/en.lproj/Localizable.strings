@@ -284,3 +284,10 @@
 // MARK: - Tool Messages
 "tool_messages" = "Tool Messages";
 "show_tool_messages" = "Show Tool Calls";
+
+// MARK: - Session Details (Refactored)
+"session_info" = "Session Info";
+"messages" = "Messages";
+"timeline" = "Timeline";
+"actions" = "Actions";
+"session_actions_footer" = "Archive saves history and continues, delete permanently removes all data";

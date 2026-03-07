@@ -1275,24 +1275,30 @@ class DeckViewModel {
                 logger.info("🔍 Processing tool event: toolName=\(toolName)")
 
                 // 提取参数信息（优先使用 meta，其次使用 args）
-                let argsText: String
-                if let meta = data["meta"] as? String {
+                var argsText: String?
+                if let meta = data["meta"] as? String, !meta.isEmpty {
                     // 使用 meta 字段（包含工具调用的详细信息）
                     argsText = meta
-                } else if let args = data["args"] as? [String: Any] {
+                } else if let args = data["args"] as? [String: Any], !args.isEmpty {
                     let params = args.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
-                    argsText = params.isEmpty ? "none" : params
-                } else if let args = data["args"] as? String {
+                    if !params.isEmpty {
+                        argsText = params
+                    }
+                } else if let args = data["args"] as? String, !args.isEmpty {
                     argsText = args
-                } else {
-                    argsText = "none"
+                }
+
+                // 如果没有参数，不创建消息
+                guard let args = argsText else {
+                    logger.info("⚠️ Tool call has no args, skipping message: \(toolName)")
+                    return
                 }
 
                 // 创建工具调用消息
                 let toolMessage = ChatMessage(
                     id: UUID().uuidString,
                     role: .tool,
-                    text: "🔧 Tool: **\(toolName)**\nArgs: \(argsText)",
+                    text: "🔧 Tool: **\(toolName)**\nArgs: \(args)",
                     timestamp: Date(),
                     runId: runId,
                     seq: payload["seq"] as? Int

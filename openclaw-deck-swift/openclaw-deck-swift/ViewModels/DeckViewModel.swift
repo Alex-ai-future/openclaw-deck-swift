@@ -1620,23 +1620,40 @@ class DeckViewModel {
 
     /// 根据事件找到对应的 Session
     private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
-        // 优先通过 activeRunId 查找匹配的 Session
+        // ✅ 1. 优先通过 sessionKey 匹配（最准确）
+        if let payload = event.payload as? [String: Any],
+           let sessionKey = payload["sessionKey"] as? String
+        {
+            if let session = findSession(sessionKey: sessionKey) {
+                logger.debug("✅ Found session by sessionKey: \(sessionKey)")
+                return session
+            }
+            logger.warning("⚠️ Session not found by sessionKey: \(sessionKey)")
+        }
+
+        // ✅ 2. 其次通过 activeRunId 匹配
         for session in sessions.values {
             if let activeRunId = session.activeRunId {
-                // 如果事件 payload 中有 runId，进行匹配
                 if let payload = event.payload as? [String: Any],
                    let eventRunId = payload["runId"] as? String
                 {
                     if activeRunId == eventRunId {
+                        logger.debug("✅ Found session by runId: \(eventRunId)")
                         return session
                     }
                 }
-                // 如果没有 runId 信息，返回第一个有 activeRunId 的 session
-                return session
             }
         }
 
-        // 如果没有找到 activeRunId，返回最后一个 session（作为后备）
-        return sessionOrder.last.flatMap { sessions[$0] }
+        // ✅ 3. 最后后备：返回当前选中的 session（而不是最后一个）
+        if let selectedId = globalInputState.selectedSessionId,
+           let session = getSession(sessionId: selectedId)
+        {
+            logger.debug("✅ Found session by selected: \(selectedId)")
+            return session
+        }
+
+        logger.error("❌ No session found for event")
+        return nil
     }
 }

@@ -1604,61 +1604,35 @@ class DeckViewModel {
         return nil
     }
 
-    /// 根据事件找到对应的 Session
+    /// 根据事件找到对应的 Session（严格使用 sessionKey 匹配）
     private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
         guard let payload = event.payload as? [String: Any] else {
             logger.error("❌ Invalid event payload")
             return nil
         }
 
-        // 🔍 调试：打印完整事件结构
-        logger.debug("🔍 Event=\(event.event), payload keys: \(payload.keys.sorted())")
+        // ✅ 1. 从 payload 中提取 sessionKey
+        var sessionKey = payload["sessionKey"] as? String
 
-        // ✅ 1. 优先通过 sessionKey 匹配（最准确）
-        // 检查 payload.sessionKey
-        if let sessionKey = payload["sessionKey"] as? String {
-            logger.debug("🔑 sessionKey in payload: \(sessionKey)")
-            if let session = findSession(sessionKey: sessionKey) {
-                logger.debug("✅ Found session by sessionKey: \(sessionKey)")
-                return session
-            }
-            logger.warning("⚠️ Session not found by sessionKey: \(sessionKey)")
-        }
-
-        // 检查 payload.data.sessionKey
-        if let data = payload["data"] as? [String: Any],
-           let sessionKey = data["sessionKey"] as? String
+        // ✅ 2. 如果 payload 中没有，检查 payload.data
+        if sessionKey == nil || sessionKey!.isEmpty,
+           let data = payload["data"] as? [String: Any],
+           let dataSessionKey = data["sessionKey"] as? String
         {
-            logger.debug("🔑 sessionKey in data: \(sessionKey)")
-            if let session = findSession(sessionKey: sessionKey) {
-                logger.debug("✅ Found session by sessionKey (from data): \(sessionKey)")
-                return session
-            }
-            logger.warning("⚠️ Session not found by sessionKey (from data): \(sessionKey)")
+            sessionKey = dataSessionKey
         }
 
-        // ✅ 2. 其次通过 activeRunId 匹配
-        if let eventRunId = payload["runId"] as? String {
-            for session in sessions.values {
-                if let activeRunId = session.activeRunId {
-                    if activeRunId == eventRunId {
-                        logger.debug("✅ Found session by runId: \(eventRunId)")
-                        return session
-                    }
-                }
-            }
-            logger.debug("⚠️ No session matched runId: \(eventRunId)")
+        // ✅ 3. 如果还是没有 sessionKey，返回 nil
+        guard let key = sessionKey, !key.isEmpty else {
+            logger.warning("⚠️ Event missing sessionKey: event=\(event.event)")
+            return nil
         }
 
-        // ✅ 3. 最后后备：返回当前选中的 session
-        if let selectedId = globalInputState.selectedSessionId,
-           let session = getSession(sessionId: selectedId)
-        {
-            logger.debug("✅ Found session by selected: \(selectedId)")
-            return session
+        // ✅ 4. 严格使用 sessionKey 匹配
+        let session = findSession(sessionKey: key)
+        if session == nil {
+            logger.warning("⚠️ Session not found for sessionKey: \(key)")
         }
-
-        logger.error("❌ No session found for event")
-        return nil
+        return session
     }
 }

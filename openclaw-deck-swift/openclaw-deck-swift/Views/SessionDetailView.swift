@@ -82,32 +82,6 @@ struct SessionDetailView: View {
                 } header: {
                     Label("session_info".localized, systemImage: "info.circle")
                 }
-                    HStack {
-                        Text("processing_label".localized)
-                        Spacer()
-                        Text(session.status == .thinking || session.status == .streaming ? "yes".localized : "no".localized)
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("unread_messages_label".localized)
-                        Spacer()
-                        Text(session.hasUnreadMessage ? "yes".localized : "no".localized)
-                            .foregroundColor(.secondary)
-                    }
-
-                    if let runId = session.activeRunId {
-                        HStack {
-                            Text("active_run_label".localized)
-                            Spacer()
-                            Text(runId)
-                                .font(.caption.monospaced())
-                                .foregroundColor(.secondary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                } header: {
-                    Label("session_info".localized, systemImage: "info.circle")
-                }
 
                 // MARK: - 消息
 

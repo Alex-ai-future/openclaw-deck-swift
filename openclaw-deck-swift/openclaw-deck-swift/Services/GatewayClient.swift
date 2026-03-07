@@ -1039,6 +1039,8 @@ class GatewayClient: GatewayClientProtocol {
             return
         }
 
+        logger.info("🔄 Starting auto-reconnect in \(self.currentReconnectDelay / 1_000_000)ms...")
+        
         reconnectTask?.cancel()
 
         reconnectTask = Task { [weak self] in
@@ -1048,13 +1050,17 @@ class GatewayClient: GatewayClientProtocol {
             do {
                 try await Task.sleep(nanoseconds: self.currentReconnectDelay)
             } catch {
-                // Task cancelled
+                logger.info("⏹️ Auto-reconnect task cancelled")
                 return
             }
 
             // 检查是否还需要重连
-            guard self.isAutoReconnecting else { return }
+            guard self.isAutoReconnecting else {
+                logger.info("⏹️ Auto-reconnect cancelled, no longer needed")
+                return
+            }
 
+            logger.info("🚀 Executing auto-reconnect attempt...")
             await self.reconnect()
         }
     }
@@ -1063,7 +1069,11 @@ class GatewayClient: GatewayClientProtocol {
     func reconnect() async {
         isAutoReconnecting = true
         reconnectAttempts += 1
-        logger.info("🔄 Auto-reconnecting (attempt \(self.reconnectAttempts)/\(self.maxReconnectAttempts))...")
+        
+        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        logger.info("🔄 Auto-reconnect attempt #\(self.reconnectAttempts)/\(self.maxReconnectAttempts)")
+        logger.info("📍 Current delay: \(self.currentReconnectDelay / 1_000_000)ms")
+        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         // 重置 WebSocket 连接
         webSocket?.cancel(with: .normalClosure, reason: nil)
@@ -1075,15 +1085,18 @@ class GatewayClient: GatewayClientProtocol {
 
         // 如果是 Mock WebSocket，快速返回成功
         if webSocket is MockWebSocketConnection {
+            logger.info("🧪 Mock mode detected")
             connected = true
             isAutoReconnecting = false
             reconnectAttempts = 0
             currentReconnectDelay = 800_000_000
             logger.info("✅ Mock reconnect succeeded")
+            logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             return
         }
 
         do {
+            logger.info("🔌 Creating new WebSocket connection...")
             // 使用注入的 URLSession 创建新连接（真实连接）
             var request = URLRequest(url: url)
             let origin = url.absoluteString
@@ -1095,12 +1108,14 @@ class GatewayClient: GatewayClientProtocol {
             )
             webSocket?.resume()
 
+            logger.info("⏳ Waiting for connection challenge...")
             // 开始接收消息
             await receiveMessage()
 
             // 等待连接挑战
             try await waitForChallenge()
 
+            logger.info("📤 Sending connect handshake (silent)...")
             // 发送 connect 握手（静默模式，不触发 UI 回调）
             await sendConnect(silent: true)
 
@@ -1110,14 +1125,22 @@ class GatewayClient: GatewayClientProtocol {
             connected = true
             currentReconnectDelay = 800_000_000 // 重置为初始值
             logger.info("✅ Auto-reconnect succeeded (silent)")
+            logger.info("📊 Reconnect attempts: \(self.reconnectAttempts)")
+            logger.info("📊 Connection state: connected=\(self.connected)")
+            logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         } catch {
-            logger.error("❌ Auto-reconnect attempt \(self.reconnectAttempts) failed: \(error.localizedDescription)")
+            logger.error("❌ Auto-reconnect attempt #\(self.reconnectAttempts) failed")
+            logger.error("📍 Error: \(error.localizedDescription)")
 
             // 检查是否达到最大重试次数
             if reconnectAttempts >= maxReconnectAttempts {
                 // ❌ 重连彻底失败，通知 UI
-                logger.error("❌ Auto-reconnect failed after \(self.maxReconnectAttempts) attempts, notifying UI")
+                logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                logger.error("❌ Auto-reconnect FAILED after \(self.maxReconnectAttempts) attempts")
+                logger.error("📍 Will notify UI and stop reconnecting")
+                logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                
                 isAutoReconnecting = false
                 connected = false
                 isConnecting = false
@@ -1138,12 +1161,14 @@ class GatewayClient: GatewayClientProtocol {
                 onConnection?(false) // ← 现在才通知 UI
             } else {
                 // ✅ 继续下一次重连，增加延迟（指数退避）
+                logger.info("⏭️ Will retry with increased delay")
                 isAutoReconnecting = false
                 currentReconnectDelay = UInt64(min(
                     Double(currentReconnectDelay) * backoffMultiplier,
                     Double(maxReconnectDelay)
                 ))
-                logger.info("⏱️ 下次重连延迟：\(self.currentReconnectDelay / 1_000_000)ms")
+                logger.info("⏱️ Next retry delay: \(self.currentReconnectDelay / 1_000_000)ms (\(String(format: "%.1f", Double(self.currentReconnectDelay) / 1_000_000_000.0))s)")
+                logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 startSilentReconnect()
             }
         }

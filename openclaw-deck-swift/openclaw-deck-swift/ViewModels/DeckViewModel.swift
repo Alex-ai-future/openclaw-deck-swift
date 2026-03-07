@@ -1620,6 +1620,22 @@ class DeckViewModel {
 
     /// 根据事件找到对应的 Session
     private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
+        // 🔍 调试：打印完整事件结构
+        if let payload = event.payload as? [String: Any] {
+            logger.debug("🔍 Event=\(event.event), payload keys: \(payload.keys.sorted())")
+            if let sessionKey = payload["sessionKey"] {
+                logger.debug("🔑 sessionKey in payload: \(sessionKey)")
+            } else {
+                logger.debug("⚠️ sessionKey NOT in payload")
+            }
+            if let data = payload["data"] as? [String: Any] {
+                logger.debug("📦 data keys: \(data.keys.sorted())")
+                if let sessionKey = data["sessionKey"] {
+                    logger.debug("🔑 sessionKey in data: \(sessionKey)")
+                }
+            }
+        }
+
         // ✅ 1. 优先通过 sessionKey 匹配（最准确）
         if let payload = event.payload as? [String: Any],
            let sessionKey = payload["sessionKey"] as? String

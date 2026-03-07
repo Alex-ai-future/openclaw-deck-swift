@@ -454,6 +454,7 @@ struct SessionColumnView: View {
                 Markdown(message.text)
                     .font(.body)
                     .foregroundColor(.primary)
+                    .textSelection(.enabled)
                     .onOpenURL { url in
                         #if os(iOS) || os(visionOS)
                             UIApplication.shared.open(url)
@@ -463,6 +464,7 @@ struct SessionColumnView: View {
                 Text(message.text)
                     .font(.body)
                     .foregroundColor(.white)
+                    .textSelection(.enabled)
             }
         }
 
@@ -556,6 +558,7 @@ struct SessionColumnView: View {
                 Text(message.text)
                     .font(.body)
                     .foregroundColor(.white)
+                    .textSelection(.enabled)
             }
         }
 

@@ -1186,8 +1186,8 @@ class DeckViewModel {
 
         logger.info("📥 Agent event: stream=\(stream), runId=\(runId)")
 
-        // ✅ 优先通过 sessionKey 查找 session（与 handleAgentDone/handleAgentError 一致）
-        guard let session = sessionFromEvent(event) ?? findSessionForEvent(event) else {
+        // 查找对应的 session
+        guard let session = findSessionForEvent(event) else {
             logger.warning("⚠️ Session not found for agent event: stream=\(stream)")
             return
         }
@@ -1558,13 +1558,7 @@ class DeckViewModel {
 
     /// 处理 agent.done 事件
     private func handleAgentDone(_ event: GatewayEvent) {
-        // 尝试从 sessionKey 提取 sessionId
-        if let session = sessionFromEvent(event) {
-            session.status = .idle
-            session.activeRunId = nil
-            return
-        }
-        // 后备：使用 findSessionForEvent
+        // 查找对应的 session
         if let session = findSessionForEvent(event) {
             session.status = .idle
             session.activeRunId = nil
@@ -1579,9 +1573,8 @@ class DeckViewModel {
             return
         }
 
-        // 尝试从 sessionKey 提取 sessionId
-        let session = sessionFromEvent(event) ?? findSessionForEvent(event)
-        guard let session else {
+        // 查找对应的 session
+        guard let session = findSessionForEvent(event) else {
             return
         }
 
@@ -1611,22 +1604,16 @@ class DeckViewModel {
         return nil
     }
 
-    /// 从事件中提取 sessionId（通过 sessionKey）
-    private func sessionFromEvent(_ event: GatewayEvent) -> SessionState? {
-        guard let payload = event.payload as? [String: Any],
-              let sessionKey = payload["sessionKey"] as? String
-        else {
-            return nil
-        }
-
-        return findSession(sessionKey: sessionKey)
-    }
-
     /// 根据事件找到对应的 Session
     private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
         // 🔍 调试：打印完整事件结构
         if let payload = event.payload as? [String: Any] {
             logger.debug("🔍 Event=\(event.event), payload keys: \(payload.keys.sorted())")
+            if let sessionKey = payload["sessionKey"] {
+                logger.debug("🔑 sessionKey in payload: \(sessionKey)")
+            } else {
+                logger.debug("⚠️ sessionKey NOT in payload")
+            }
         }
 
         // ✅ 1. 优先通过 sessionKey 匹配（最准确）
@@ -1654,7 +1641,7 @@ class DeckViewModel {
             }
         }
 
-        // ✅ 3. 最后后备：返回当前选中的 session（而不是最后一个）
+        // ✅ 3. 最后后备：返回当前选中的 session
         if let selectedId = globalInputState.selectedSessionId,
            let session = getSession(sessionId: selectedId)
         {

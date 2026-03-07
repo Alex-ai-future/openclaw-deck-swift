@@ -1157,12 +1157,9 @@ class DeckViewModel {
         case "agent.content":
             // 兼容旧的 agent.content 事件格式（增量事件，不记录日志）
             handleAgentContent(event)
-        case "agent.thinking", "agent.status", "agent.parameter":
-            // 忽略 thinking、status、parameter 事件，不显示这些消息
+        case "agent.thinking", "agent.tool_use", "agent.status", "agent.parameter":
+            // 忽略 thinking、tool_use、status、parameter 事件，不显示这些消息
             break
-        case "agent.tool_use":
-            // 处理工具调用事件，显示工具名称和参数
-            handleAgentToolUse(event)
         case "agent.done":
             handleAgentDone(event)
         case "agent.error":
@@ -1268,51 +1265,39 @@ class DeckViewModel {
                 }
             }
 
+        case "tool":
+            // 工具调用事件：{ data: { name: "exec", args: {...} } }
+            if let data = payload["data"] as? [String: Any],
+               let toolName = data["name"] as? String
+            {
+                // 提取参数（args）
+                let argsText: String
+                if let args = data["args"] as? [String: Any] {
+                    let params = args.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+                    argsText = params.isEmpty ? "none" : params
+                } else if let args = data["args"] as? String {
+                    argsText = args
+                } else {
+                    argsText = "none"
+                }
+
+                // 创建工具调用消息
+                let toolMessage = ChatMessage(
+                    id: UUID().uuidString,
+                    role: .tool,
+                    text: "🔧 Tool: **\(toolName)**\nArgs: \(argsText)",
+                    timestamp: Date(),
+                    runId: runId,
+                    seq: payload["seq"] as? Int
+                )
+
+                session.messages.append(toolMessage)
+                logger.info("🔧 Tool call: \(toolName), Args: \(argsText)")
+            }
+
         default:
             break
         }
-    }
-
-    /// 处理工具调用事件
-    private func handleAgentToolUse(_ event: GatewayEvent) {
-        guard let payload = event.payload as? [String: Any],
-              let sessionKey = payload["sessionKey"] as? String,
-              let data = payload["data"] as? [String: Any],
-              let toolName = data["name"] as? String
-        else {
-            logger.error("Invalid tool_use event payload")
-            return
-        }
-
-        // Find session by sessionKey (case-insensitive)
-        guard let session = findSession(sessionKey: sessionKey) else {
-            return
-        }
-
-        // 提取参数（args）
-        let argsText: String
-        if let args = data["args"] as? [String: Any] {
-            // 将参数字典转换为字符串
-            let params = args.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
-            argsText = params.isEmpty ? "无" : params
-        } else if let args = data["args"] as? String {
-            argsText = args
-        } else {
-            argsText = "无"
-        }
-
-        // 创建工具调用消息
-        let toolMessage = ChatMessage(
-            id: UUID().uuidString,
-            role: .tool,
-            text: "🔧 Tool: **\(toolName)**\nArgs: \(argsText)",
-            timestamp: Date(),
-            runId: payload["runId"] as? String,
-            seq: payload["seq"] as? Int
-        )
-
-        session.messages.append(toolMessage)
-        logger.info("🔧 Tool call: \(toolName), Args: \(argsText)")
     }
 
     /// 更新或创建最后一条 assistant 消息（实时流式更新）

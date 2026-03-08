@@ -163,7 +163,7 @@ struct SessionColumnView: View {
                                 )
                             }
                             .buttonStyle(.glass)
-                            .frame(height: 40)
+                            .frame(width: 40, height: 40)
                         }
 
                         // 快速操作按钮组
@@ -180,7 +180,7 @@ struct SessionColumnView: View {
                                     .foregroundColor(.red)
                             }
                             .buttonStyle(.glass)
-                            .frame(height: 40)
+                            .frame(width: 40, height: 40)
                         }
                         // 其他按钮只在选中时显示
                         else if isSelected {
@@ -199,7 +199,7 @@ struct SessionColumnView: View {
                                     .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(height: 40)
+                                .frame(width: 40, height: 40)
                             }
                             // OK 按钮 - 输入框为空且 AI 未处理时显示
                             else {

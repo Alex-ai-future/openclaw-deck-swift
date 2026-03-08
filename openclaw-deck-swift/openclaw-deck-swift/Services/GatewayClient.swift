@@ -809,7 +809,7 @@ class GatewayClient: GatewayClientProtocol {
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 2_000_000_000) // 等待 2 秒
                     // 检查连接是否还保持
-                    if self.connected && !self.isConnecting {
+                    if self.connected, !self.isConnecting {
                         self.onConnection?(true)
                         logger.info("✅ Silent connect confirmed stable, notified UI")
                     }
@@ -1068,7 +1068,7 @@ class GatewayClient: GatewayClientProtocol {
 
         // ✅ 先关闭旧 WebSocket 连接（重要！）
         webSocket?.cancel(with: .normalClosure, reason: nil)
-        webSocket = nil  // 清除旧连接，让 connect() 创建新连接
+        webSocket = nil // 清除旧连接，让 connect() 创建新连接
 
         // 延迟 1 秒后重连（给网络恢复时间）
         Task { @MainActor in

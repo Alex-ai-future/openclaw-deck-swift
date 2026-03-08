@@ -3,6 +3,7 @@
 //
 // Settings view - organized by functional groups
 
+import OSLog
 import SwiftUI
 
 struct SettingsView: View {

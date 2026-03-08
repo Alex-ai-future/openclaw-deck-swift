@@ -184,18 +184,6 @@ struct SessionColumnView: View {
             Rectangle()
                 .fill(isSelected ? Color.blue : Color.gray)
                 .frame(height: 3)
-
-            // MARK: - 输入框（放在 VStack 内部，键盘弹出时会自动推起）
-
-            #if os(iOS)
-                if !DeviceUtils.isIPad {
-                    GlobalInputView(
-                        state: viewModel.globalInputState as! GlobalInputState
-                    ) {
-                        await viewModel.sendCurrentInput()
-                    }
-                }
-            #endif
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("SessionView-\(session.sessionId)")

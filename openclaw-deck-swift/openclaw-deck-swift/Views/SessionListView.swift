@@ -73,11 +73,10 @@ struct SessionListView: View {
                 SessionColumnView(
                     session: session,
                     viewModel: viewModel,
-                    isSelected: true
+                    isSelected: true,
+                    displayMode: .navigation // 导航模式：用 NavigationBar
                 )
-                #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
-                #endif
                 .onAppear {
                     session.hasUnreadMessage = false
                 }

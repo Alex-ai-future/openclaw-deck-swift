@@ -90,7 +90,8 @@ struct DeckView: View {
                         SessionColumnView(
                             session: session,
                             viewModel: viewModel,
-                            isSelected: sessionId == selectedSessionId
+                            isSelected: sessionId == selectedSessionId,
+                            displayMode: .embedded // 内嵌模式：用 topStatusBar
                         )
                         .frame(width: 400)
                         .transition(

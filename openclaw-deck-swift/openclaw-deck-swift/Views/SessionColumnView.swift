@@ -13,11 +13,18 @@ import SwiftUI
     import UIKit
 #endif
 
+/// Session 列视图显示模式
+enum SessionColumnDisplayMode {
+    case navigation // 导航模式（从列表点进，用 NavigationBar）
+    case embedded // 内嵌模式（平铺展示，用 topStatusBar）
+}
+
 /// Session 列视图 - 单个聊天会话（只负责展示）
 struct SessionColumnView: View {
     var session: SessionState
     var viewModel: DeckViewModel
     var isSelected: Bool
+    var displayMode: SessionColumnDisplayMode = .embedded
 
     @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
@@ -203,17 +210,14 @@ struct SessionColumnView: View {
                 scrollToBottom()
             }
         }
-        // iPhone 上使用 NavigationBar 工具栏显示对话名字
-        #if os(iOS)
+        // 导航模式：使用 NavigationBar 工具栏显示对话名字
         .toolbar {
-            if UIDevice.current.userInterfaceIdiom == .phone {
-                // 中间：对话名字按钮（玻璃按钮，本身是 Menu）
+            if displayMode == .navigation {
                 ToolbarItem(placement: .principal) {
                     sessionNameButton
                 }
             }
         }
-        #endif
     }
 
     // MARK: - Session Name Button
@@ -250,14 +254,10 @@ struct SessionColumnView: View {
         HStack {
             Spacer()
 
-            // 中间：对话名字按钮（iPad + macOS）
-            #if os(iOS)
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    sessionNameButton
-                }
-            #elseif os(macOS)
+            // 内嵌模式：显示对话名字在顶部状态栏
+            if displayMode == .embedded {
                 sessionNameButton
-            #endif
+            }
 
             Spacer()
         }

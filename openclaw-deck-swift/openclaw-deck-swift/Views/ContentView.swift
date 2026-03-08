@@ -57,11 +57,6 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    /// 判断是否为 iPad
-    var isIPad: Bool {
-        DeviceUtils.isIPad
-    }
-
     var body: some View {
         Group {
             // 🧪 UI Test 模式：跳过连接检查，直接显示主界面

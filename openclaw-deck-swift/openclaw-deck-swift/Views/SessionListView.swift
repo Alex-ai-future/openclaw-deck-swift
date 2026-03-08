@@ -59,62 +59,59 @@ struct SessionListView: View {
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("openclaw_deck".localized)
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.large)
-            #endif
-                .accessibilityIdentifier("SessionList")
-                .toolbar {
-                    DeckToolbar(
-                        viewModel: viewModel,
-                        showingSettings: $showingSettings,
-                        showingNewSessionSheet: $showingNewSessionSheet,
-                        showingSortSheet: $showingSortSheet
-                    )
+            .navigationTitle("")
+            .accessibilityIdentifier("SessionList")
+            .toolbar {
+                DeckToolbar(
+                    viewModel: viewModel,
+                    showingSettings: $showingSettings,
+                    showingNewSessionSheet: $showingNewSessionSheet,
+                    showingSortSheet: $showingSortSheet
+                )
+            }
+            .navigationDestination(for: SessionState.self) { session in
+                SessionColumnView(
+                    session: session,
+                    viewModel: viewModel,
+                    isSelected: true
+                )
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .onAppear {
+                    session.hasUnreadMessage = false
                 }
-                .navigationDestination(for: SessionState.self) { session in
-                    SessionColumnView(
-                        session: session,
-                        viewModel: viewModel,
-                        isSelected: true
-                    )
-                    #if os(iOS)
-                    .navigationBarTitleDisplayMode(.inline)
-                    #endif
-                    .onAppear {
-                        session.hasUnreadMessage = false
-                    }
-                }
-                .task {
-                    guard !hasAttemptedAutoConnect, !(viewModel.gatewayClient?.connected ?? false) else { return }
-                    hasAttemptedAutoConnect = true
+            }
+            .task {
+                guard !hasAttemptedAutoConnect, !(viewModel.gatewayClient?.connected ?? false) else { return }
+                hasAttemptedAutoConnect = true
 
-                    if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
-                        let savedToken = UserDefaultsStorage.shared.loadToken()
-                        await viewModel.initialize(url: savedUrl, token: savedToken)
-                    }
+                if let savedUrl = UserDefaultsStorage.shared.loadGatewayUrl() {
+                    let savedToken = UserDefaultsStorage.shared.loadToken()
+                    await viewModel.initialize(url: savedUrl, token: savedToken)
+                }
 
-                    logSessionData()
-                }
-                .sheet(isPresented: $showingSettings) {
-                    SettingsView(isConnected: (viewModel.gatewayClient?.connected ?? false), viewModel: viewModel)
-                }
-                .sheet(isPresented: $showingNewSessionSheet) {
-                    NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
-                }
-                .sheet(isPresented: $showingSortSheet) {
-                    SessionSortView(viewModel: viewModel)
-                }
-                .deleteSessionAlert(isPresented: $showingDeleteAlert) {
-                    if let sessionId = deleteSessionId {
-                        Task.detached { [weak viewModel] in
-                            await viewModel?.deleteSession(sessionId: sessionId)
-                            await MainActor.run {
-                                deleteSessionId = nil
-                            }
+                logSessionData()
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView(isConnected: (viewModel.gatewayClient?.connected ?? false), viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingNewSessionSheet) {
+                NewSessionSheet(viewModel: viewModel, isPresented: $showingNewSessionSheet)
+            }
+            .sheet(isPresented: $showingSortSheet) {
+                SessionSortView(viewModel: viewModel)
+            }
+            .deleteSessionAlert(isPresented: $showingDeleteAlert) {
+                if let sessionId = deleteSessionId {
+                    Task.detached { [weak viewModel] in
+                        await viewModel?.deleteSession(sessionId: sessionId)
+                        await MainActor.run {
+                            deleteSessionId = nil
                         }
                     }
                 }
+            }
         }
     }
 

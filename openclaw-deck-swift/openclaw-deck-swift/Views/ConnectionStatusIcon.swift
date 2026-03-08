@@ -1,16 +1,16 @@
 // ConnectionStatusIcon.swift
 // OpenClaw Deck Swift
 //
-// 连接状态图标组件 - 空心圆圈，颜色随状态变化
+// 连接状态图标组件 - 爱心形状，颜色随状态变化
 
 import SwiftUI
 
-/// 连接状态图标 - 统一的空心圆圈样式
+/// 连接状态图标 - 爱心形状
 struct ConnectionStatusIcon: View {
     let status: ConnectionStatus
-
+    
     var body: some View {
-        Image(systemName: "circle")
+        Image(systemName: "heart")
             .foregroundColor(status.color)
             .accessibilityLabel(status.rawValue)
     }

@@ -186,13 +186,13 @@ extension GatewayDiscoveryService {
             }
 
             switch addr.pointee.sa_family {
-            case AF_INET: // IPv4
+            case sa_family_t(AF_INET): // IPv4
                 var ipv4Addr = sockaddr_in()
                 memcpy(&ipv4Addr, addr, MemoryLayout<sockaddr_in>.size)
                 var ip = CChar(INET_ADDRSTRLEN)
                 return String(cString: inet_ntop(AF_INET, &ipv4Addr.sin_addr, &ip, socklen_t(INET_ADDRSTRLEN)))
 
-            case AF_INET6: // IPv6
+            case sa_family_t(AF_INET6): // IPv6
                 var ipv6Addr = sockaddr_in6()
                 memcpy(&ipv6Addr, addr, MemoryLayout<sockaddr_in6>.size)
                 var ip = CChar(INET6_ADDRSTRLEN)

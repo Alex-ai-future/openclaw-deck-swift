@@ -197,11 +197,11 @@ struct SessionColumnView: View {
                                     sendInputMessage()
                                 } label: {
                                     Image(systemName: "arrow.up.circle")
-                                        .accessibilityIdentifier("sendButton")
                                         .resizable()
                                         .aspectRatio(1, contentMode: .fit)
                                         .frame(width: 24, height: 24)
                                         .foregroundColor(.blue)
+                                        .accessibilityIdentifier("sendButton")
                                 }
                                 .buttonStyle(.glass)
                                 .frame(width: 40, height: 40)

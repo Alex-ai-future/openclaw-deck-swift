@@ -620,8 +620,6 @@ class DeckViewModel {
     /// 用户选择同步方案
     @MainActor
     func resolveSyncConflict(choice: String) async {
-        showingSyncConflict = false
-
         guard let localData = conflictLocalData, let remoteData = conflictRemoteData else {
             return
         }
@@ -630,20 +628,22 @@ class DeckViewModel {
         case "local":
             // Use local data (overwrite cloud)
             logger.log("✅ User selected: local data (\(localData.sessions.count) sessions)")
+            showingSyncConflict = false
             await applySyncData(localData)
 
         case "remote":
             // Use cloud data (merge with local)
             logger.log("✅ User selected: cloud data (\(remoteData.sessions.count) sessions)")
+            showingSyncConflict = false
             await applySyncData(remoteData)
 
         default:
-            // Cancel, do nothing
+            // Cancel, do nothing - 保持冲突状态
             logger.log("⚠️ User cancelled sync")
             return
         }
 
-        // Clear conflict data
+        // Clear conflict data (only after successful resolution)
         conflictLocalData = nil
         conflictRemoteData = nil
         conflictInfo = nil

@@ -516,6 +516,13 @@ class DeckViewModel {
             return
         }
 
+        // ✅ 如果有 Mock 实例，使用 Mock（即使没有配置 Cloudflare）
+        if CloudflareKV.mockInstance != nil {
+            logger.log("🧪 检测到 Mock Cloudflare，使用 Mock 实例")
+            await loadSessionsWithCloudflareSync()
+            return
+        }
+
         // 尝试从 Cloudflare 同步（如果已配置）
         if CloudflareKV.shared.isConfigured {
             logger.log("☁️ Cloudflare 已配置，开始同步...")

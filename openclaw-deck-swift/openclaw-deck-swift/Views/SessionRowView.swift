@@ -72,19 +72,17 @@ struct SessionRowView: View {
                 .foregroundColor(.primary)
                 .lineLimit(1)
 
+            // 状态标签（紧跟名称，仅聊天列表显示）
+            if showStatus {
+                StatusBadge(session: session)
+            }
+
             Spacer()
 
-            HStack(spacing: 12) {
-                // 消息数量
-                Text("\(session.messageCount)")
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundColor(.secondary)
-
-                // 状态标签（仅聊天列表显示）
-                if showStatus {
-                    StatusBadge(session: session)
-                }
-            }
+            // 消息数量（固定在右边）
+            Text("\(session.messageCount)")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(.secondary)
         }
     }
 }

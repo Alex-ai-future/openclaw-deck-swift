@@ -7,6 +7,7 @@
 import CryptoKit
 import Foundation
 import os
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "Gateway")
 

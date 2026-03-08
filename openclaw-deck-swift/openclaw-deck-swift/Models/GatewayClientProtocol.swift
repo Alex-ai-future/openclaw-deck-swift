@@ -4,6 +4,38 @@
 // Gateway 客户端协议 - 用于依赖注入和测试
 
 import Foundation
+import SwiftUI
+
+/// 网络连接状态枚举
+enum ConnectionStatus: String {
+    case connected // 已连接（绿色）
+    case reconnecting // 重连中（橙黄色）
+    case disconnected // 未连接/断开（红色）
+
+    /// 状态对应的颜色
+    var color: Color {
+        switch self {
+        case .connected:
+            .green
+        case .reconnecting:
+            .orange
+        case .disconnected:
+            .red
+        }
+    }
+
+    /// 状态对应的图标
+    var iconName: String {
+        switch self {
+        case .connected:
+            "checkmark.circle.fill"
+        case .reconnecting:
+            "arrow.clockwise"
+        case .disconnected:
+            "xmark.circle.fill"
+        }
+    }
+}
 
 /// Gateway 客户端协议
 @MainActor
@@ -13,6 +45,9 @@ protocol GatewayClientProtocol {
 
     /// 连接错误信息
     var connectionError: String? { get set }
+
+    /// 连接状态（计算属性）
+    var connectionStatus: ConnectionStatus { get }
 
     /// 事件回调
     var onEvent: ((GatewayEvent) -> Void)? { get set }

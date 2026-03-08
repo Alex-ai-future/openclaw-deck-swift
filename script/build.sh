@@ -45,7 +45,7 @@ case $PLATFORM in
     ;;
   ios)
     BUILD_DIR="${PROJECT_DIR}/build/ios"
-    DESTINATION="platform=iOS Simulator,name=iPhone 17"
+    DESTINATION="platform=iOS Simulator"
     PLATFORM_NAME="iOS"
     NEEDS_BUILD_LOCK=false
     ;;

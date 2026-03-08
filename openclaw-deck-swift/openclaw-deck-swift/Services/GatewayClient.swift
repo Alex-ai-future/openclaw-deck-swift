@@ -90,13 +90,17 @@ class GatewayClient: GatewayClientProtocol {
 
     // MARK: - State
 
-    /// 连接状态（是否已连接）
+    /// 是否已连接（用户期望的连接状态）
+    /// - `true`: 用户期望保持连接（系统应自动重连）
+    /// - `false`: 用户期望断开（手动断开，不重连）
     internal(set) var connected: Bool = false
 
     /// 连接错误信息
     internal(set) var connectionError: String?
 
-    /// 是否正在连接
+    /// 是否正在建立连接（物理连接状态）
+    /// - `true`: 正在建立/重建物理连接
+    /// - `false`: 没有在进行连接操作
     internal(set) var isConnecting: Bool = false
 
     /// WebSocket 连接（可注入，用于测试）
@@ -126,50 +130,18 @@ class GatewayClient: GatewayClientProtocol {
     /// Whether challenge has been completed (success or timeout)
     private var challengeCompleted: Bool = false
 
-    // MARK: - Auto Reconnect
-
-    /// 是否正在自动重连
-    var isAutoReconnecting: Bool = false
-
-    /// 重连尝试次数
-    var reconnectAttempts: Int = 0
-
     // MARK: - Computed Properties
 
-    /// 连接状态（计算属性，优先判断断开和重连）
+    /// 连接状态（计算属性）
     var connectionStatus: ConnectionStatus {
-        // 1. 断开连接（有错误且不在重连）
-        if connectionError != nil, !isAutoReconnecting {
-            .disconnected
-        }
-        // 2. 重试中
-        else if isAutoReconnecting {
-            .reconnecting
-        }
-        // 3. 已连接（connected = true 且无错误）
-        else if connected, connectionError == nil {
-            .connected
-        }
-        // 4. 其他情况（连接中、初始化等）
-        else {
-            .disconnected
+        if isConnecting {
+            .reconnecting // 🟠 连接中/重连中（优先检查）
+        } else if connected {
+            .connected // 🟢 已连接
+        } else {
+            .disconnected // 🔴 断开
         }
     }
-
-    /// 当前重连延迟（纳秒）- 指数退避
-    var currentReconnectDelay: UInt64 = 800_000_000 // 初始 800ms
-
-    /// 最大重连延迟（纳秒）
-    let maxReconnectDelay: UInt64 = 15_000_000_000 // 15 秒
-
-    /// 指数退避系数
-    let backoffMultiplier: Double = 1.7
-
-    /// 最多重连次数
-    let maxReconnectAttempts: Int = 10
-
-    /// 重连任务（内部可见，用于测试）
-    var reconnectTask: Task<Void, Never>?
 
     // MARK: - Callbacks
 
@@ -210,28 +182,26 @@ class GatewayClient: GatewayClientProtocol {
     // MARK: - Public Methods
 
     /// 建立连接并完成握手
-    func connect() async {
-        guard !isConnecting else {
-            return
-        }
+    /// - Parameter silent: 是否静默连接（不触发 onConnection 回调，用于自动重连）
+    func connect(silent: Bool = false) async {
+        // ✅ 允许重连场景（isConnecting=true 时也可以连接）
+        // guard !isConnecting else { return }  ← 删除这个检查
 
         isConnecting = true
         connectionError = nil
         connectNonce = nil
         connectSent = false
 
-        // 使用注入的 WebSocket 或创建新的连接
-        if webSocket == nil {
-            var request = URLRequest(url: url)
-            // Set Origin header - required by Gateway CORS policy
-            let origin = url.absoluteString
-                .replacingOccurrences(of: "ws://", with: "http://")
-                .replacingOccurrences(of: "wss://", with: "https://")
-            request.setValue(origin, forHTTPHeaderField: "Origin")
-            webSocket = RealWebSocketConnection(
-                task: urlSession.webSocketTask(with: request)
-            )
-        }
+        // ✅ 总是创建新的 WebSocket 连接（重连时必须关闭旧的）
+        var request = URLRequest(url: url)
+        // Set Origin header - required by Gateway CORS policy
+        let origin = url.absoluteString
+            .replacingOccurrences(of: "ws://", with: "http://")
+            .replacingOccurrences(of: "wss://", with: "https://")
+        request.setValue(origin, forHTTPHeaderField: "Origin")
+        webSocket = RealWebSocketConnection(
+            task: urlSession.webSocketTask(with: request)
+        )
         webSocket?.resume()
 
         // 如果是 Mock WebSocket，快速返回成功
@@ -255,13 +225,23 @@ class GatewayClient: GatewayClientProtocol {
             logger.error("Failed to receive connect challenge: \(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
-            onConnection?(false)
-            disconnect()
+
+            // ✅ 静默模式失败：不通知 UI，继续重试
+            if silent {
+                logger.info("🔄 Silent connect challenge failed, will retry...")
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    await self.connect(silent: true)
+                }
+            } else {
+                // 非静默模式失败：通知 UI
+                onConnection?(false)
+            }
             return
         }
 
         // Send connect request with nonce
-        await sendConnect()
+        await sendConnect(silent: silent)
     }
 
     /// Wait for connect.challenge event from Gateway
@@ -314,21 +294,14 @@ class GatewayClient: GatewayClientProtocol {
         }
     }
 
-    /// 断开连接（手动断开，取消自动重连）
+    /// 断开连接（手动断开）
     func disconnect() {
-        // ✅ 取消自动重连任务（手动断开时不重连）
-        isAutoReconnecting = false
-        reconnectTask?.cancel()
-        reconnectTask = nil
-        reconnectAttempts = 0
-
-        let wasConnected = connected
+        // ✅ 用户手动断开：设置 connected = false，表示用户期望断开
         connected = false
         isConnecting = false
 
-        // 取消 WebSocket（但不设置为 nil，保留注入的 Mock WebSocket）
+        // 取消 WebSocket
         webSocket?.cancel(with: .normalClosure, reason: nil)
-        // ⚠️ 注意：不清除 webSocket，这样多次 connect/disconnect 循环可以重用注入的 Mock
 
         // 拒绝所有待处理请求
         for (_, pending) in pendingRequests {
@@ -342,10 +315,8 @@ class GatewayClient: GatewayClientProtocol {
         }
         pendingRequests.removeAll()
 
-        // 只通知如果之前已连接
-        if wasConnected {
-            onConnection?(false)
-        }
+        // 通知 UI
+        onConnection?(false)
     }
 
     /// 重置设备身份（清除旧的 device identity，下次连接时会生成新的）
@@ -823,23 +794,49 @@ class GatewayClient: GatewayClientProtocol {
 
             connected = true
             connectionError = nil
-            isConnecting = false
+            isConnecting = false // ✅ 重连成功，清除连接中状态
 
-            // ✅ 静默模式不触发回调（用于自动重连）
+            logger.info("📊 State after connect: connected=\(self.connected), isConnecting=\(self.isConnecting), status=\(self.connectionStatus.rawValue)")
+
+            // ✅ 静默模式：不立即通知 UI，等待连接稳定
+            // 非静默模式：立即通知 UI（用户手动连接）
             if !silent {
                 onConnection?(true)
             } else {
-                logger.debug("🔇 Silent connect: skipping onConnection callback")
+                logger.info("🔇 Silent connect succeeded, will notify UI after heartbeat")
+                // 静默重连成功：等待心跳确认连接稳定后再通知 UI
+                // 或者：延迟通知，给连接稳定时间
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 等待 2 秒
+                    // 检查连接是否还保持
+                    if self.connected, !self.isConnecting {
+                        self.onConnection?(true)
+                        logger.info("✅ Silent connect confirmed stable, notified UI")
+                    }
+                }
             }
 
         } catch {
             logger.error("❌ connect 握手失败：\(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
-            if !silent {
+
+            logger.info("📊 State after connect failure: connected=\(self.connected), isConnecting=\(self.isConnecting), silent=\(silent)")
+
+            // ✅ 静默模式失败：继续重试（因为用户期望连接）
+            if silent {
+                logger.info("🔄 Silent connect failed, will retry in 1s...")
+                // 延迟后再次尝试重连
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    await self.connect(silent: true)
+                }
+            } else {
+                // 非静默模式（用户手动连接）失败：通知 UI
+                logger.info("❌ Non-silent connect failed, notifying UI")
                 onConnection?(false)
             }
-            disconnect()
         }
     }
 
@@ -1055,163 +1052,29 @@ class GatewayClient: GatewayClientProtocol {
         UserDefaults.standard.set(token, forKey: key)
     }
 
-    /// 处理断开连接（内部方法，用于测试）
+    /// 处理断开连接（被动断开 → 自动重连）
     func handleDisconnect() {
-        // Mock 模式下，只设置标志，不真正启动重连任务
-        if webSocket is MockWebSocketConnection {
-            isAutoReconnecting = true
-            return
-        }
+        guard !isConnecting else { return } // 避免重复连接
 
-        // ✅ 启动静默重连，不立即通知 UI
-        startSilentReconnect()
-    }
+        // ✅ 不修改 connected（用户期望保持连接）
+        // connected 保持 true，表示用户期望系统保持连接状态
+        isConnecting = true // 显示橙色（重连中）
 
-    /// 启动静默重连（后台自动重连，不影响 UI）
-    func startSilentReconnect() {
-        guard !isAutoReconnecting else {
-            logger.warning("⚠️ Already reconnecting, skipping")
-            return
-        }
+        logger.info("🔄 Passive disconnect detected, starting auto-reconnect...")
+        logger.info("📊 State: connected=\(self.connected), isConnecting=\(self.isConnecting)")
 
-        logger.info("🔄 Starting auto-reconnect in \(self.currentReconnectDelay / 1_000_000)ms...")
+        // ✅ 通知 UI 状态变化（因为 connectionStatus 是计算属性，需要显式通知）
+        onConnection?(true)
 
-        reconnectTask?.cancel()
-
-        reconnectTask = Task { [weak self] in
-            guard let self else { return }
-
-            // ✅ 使用动态延迟（指数退避）
-            do {
-                try await Task.sleep(nanoseconds: self.currentReconnectDelay)
-            } catch {
-                logger.info("⏹️ Auto-reconnect task cancelled")
-                return
-            }
-
-            // 检查是否还需要重连
-            guard self.isAutoReconnecting else {
-                logger.info("⏹️ Auto-reconnect cancelled, no longer needed")
-                return
-            }
-
-            logger.info("🚀 Executing auto-reconnect attempt...")
-            await self.reconnect()
-        }
-    }
-
-    /// 执行重连（静默，内部方法用于测试）
-    func reconnect() async {
-        isAutoReconnecting = true
-        reconnectAttempts += 1
-
-        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        logger.info(
-            "🔄 Auto-reconnect attempt #\(self.reconnectAttempts)/\(self.maxReconnectAttempts)"
-        )
-        logger.info("📍 Current delay: \(self.currentReconnectDelay / 1_000_000)ms")
-        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-        // 重置 WebSocket 连接
+        // ✅ 先关闭旧 WebSocket 连接（重要！）
         webSocket?.cancel(with: .normalClosure, reason: nil)
-        // ⚠️ 不清除 webSocket，保留注入的 Mock WebSocket
+        webSocket = nil // 清除旧连接，让 connect() 创建新连接
 
-        // ✅ 重置 connectNonce，让重连时重新等待新的 nonce
-        connectNonce = nil
-        connectSent = false
-
-        // 如果是 Mock WebSocket，快速返回成功
-        if webSocket is MockWebSocketConnection {
-            logger.info("🧪 Mock mode detected")
-            connected = true
-            isAutoReconnecting = false
-            reconnectAttempts = 0
-            currentReconnectDelay = 800_000_000
-            logger.info("✅ Mock reconnect succeeded")
-            logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            return
-        }
-
-        do {
-            logger.info("🔌 Creating new WebSocket connection...")
-            // 使用注入的 URLSession 创建新连接（真实连接）
-            var request = URLRequest(url: url)
-            let origin = url.absoluteString
-                .replacingOccurrences(of: "ws://", with: "http://")
-                .replacingOccurrences(of: "wss://", with: "https://")
-            request.setValue(origin, forHTTPHeaderField: "Origin")
-            webSocket = RealWebSocketConnection(
-                task: urlSession.webSocketTask(with: request)
-            )
-            webSocket?.resume()
-
-            logger.info("⏳ Waiting for connection challenge...")
-            // 开始接收消息
-            await receiveMessage()
-
-            // 等待连接挑战
-            try await waitForChallenge()
-
-            logger.info("📤 Sending connect handshake (silent)...")
-            // 发送 connect 握手（静默模式，不触发 UI 回调）
-            await sendConnect(silent: true)
-
-            // ✅ 重连成功：重置状态和延迟
-            isAutoReconnecting = false
-            reconnectAttempts = 0
-            connected = true
-            currentReconnectDelay = 800_000_000 // 重置为初始值
-            logger.info("✅ Auto-reconnect succeeded (silent)")
-            logger.info("📊 Reconnect attempts: \(self.reconnectAttempts)")
-            logger.info("📊 Connection state: connected=\(self.connected)")
-            logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-        } catch {
-            logger.error("❌ Auto-reconnect attempt #\(self.reconnectAttempts) failed")
-            logger.error("📍 Error: \(error.localizedDescription)")
-
-            // 检查是否达到最大重试次数
-            if reconnectAttempts >= maxReconnectAttempts {
-                // ❌ 重连彻底失败，通知 UI
-                logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                logger.error("❌ Auto-reconnect FAILED after \(self.maxReconnectAttempts) attempts")
-                logger.error("📍 Will notify UI and stop reconnecting")
-                logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-                isAutoReconnecting = false
-                connected = false
-                isConnecting = false
-                connectionError = "connection_error_please_reconnect".localized
-
-                // 拒绝所有待处理请求
-                for (_, pending) in pendingRequests {
-                    pending.continuation.resume(
-                        throwing: NSError(
-                            domain: "GatewayClient",
-                            code: -1,
-                            userInfo: [NSLocalizedDescriptionKey: "Connection closed"]
-                        )
-                    )
-                }
-                pendingRequests.removeAll()
-
-                onConnection?(false) // ← 现在才通知 UI
-            } else {
-                // ✅ 继续下一次重连，增加延迟（指数退避）
-                logger.info("⏭️ Will retry with increased delay")
-                isAutoReconnecting = false
-                currentReconnectDelay = UInt64(
-                    min(
-                        Double(currentReconnectDelay) * backoffMultiplier,
-                        Double(maxReconnectDelay)
-                    )
-                )
-                logger.info(
-                    "⏱️ Next retry delay: \(self.currentReconnectDelay / 1_000_000)ms (\(String(format: "%.1f", Double(self.currentReconnectDelay) / 1_000_000_000.0))s)"
-                )
-                logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                startSilentReconnect()
-            }
+        // 延迟 1 秒后重连（给网络恢复时间）
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            await self.connect(silent: true) // 静默重连
         }
     }
 

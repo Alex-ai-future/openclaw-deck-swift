@@ -18,8 +18,10 @@ struct SettingsView: View {
     /// Gateway 发现服务
     @StateObject private var discovery = GatewayDiscoveryService.shared
 
+    /// 语言管理器
+    @ObservedObject private var languageManager = LanguageManager.shared
+
     private let logger = Logger(subsystem: "com.openclaw.deck", category: "SettingsView")
-    private let languageManager = LanguageManager.shared
 
     @State private var hasChanges = false
     @State private var originalUrl = ""
@@ -41,31 +43,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // MARK: - 1. DEVICE STATUS (Read-only)
-
-                Section {
-                    HStack {
-                        Circle()
-                            .fill(isConnected ? Color.green : Color.orange)
-                            .frame(width: 10, height: 10)
-
-                        Text(isConnected ? "Connected" : "Not Connected")
-                            .foregroundColor(.primary)
-                            .fontWeight(.medium)
-
-                        Spacer()
-                    }
-                } header: {
-                    Label("device_status".localized, systemImage: "iphone")
-                } footer: {
-                    if isConnected {
-                        Text(String(format: "gateway_url_format".localized, gatewayUrl))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                // MARK: - 2. GATEWAY CONFIG (Editable)
+                // MARK: - 1. GATEWAY CONFIG (Editable)
 
                 Section {
                     GatewayConfigInput(
@@ -93,7 +71,7 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                // MARK: - 3. APP SETTINGS
+                // MARK: - 2. APP SETTINGS
 
                 Section {
                     // Language Selector
@@ -140,25 +118,9 @@ struct SettingsView: View {
                     Text("notifications_and_cloud_sync_settings".localized)
                 }
 
-                // MARK: - 4. LAN GATEWAY DISCOVERY
+                // MARK: - 3. LAN GATEWAY DISCOVERY
 
                 Section {
-                    // 扫描按钮
-                    Button {
-                        discovery.refresh()
-                    } label: {
-                        HStack {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                            Text("Scan LAN Gateway")
-                            Spacer()
-                            if discovery.isScanning {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            }
-                        }
-                    }
-                    .disabled(discovery.isScanning)
-
                     // 发现结果列表
                     if !discovery.gateways.isEmpty {
                         ForEach(discovery.gateways) { gateway in
@@ -203,20 +165,16 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                         .font(.caption)
-                    } else if let lastScan = discovery.lastScanTime {
-                        Text("Last scan: " + lastScan.formatted(.relative(presentation: .named)))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 } header: {
                     Label("LAN Gateway Discovery", systemImage: "wifi.router")
                 } footer: {
-                    Text("Scan and connect to Gateway on local network")
+                    Text("Automatically scans when settings is open")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
-                // MARK: - 5. DEVICE MANAGEMENT
+                // MARK: - 4. DEVICE MANAGEMENT
 
                 Section {
                     Button {
@@ -247,7 +205,7 @@ struct SettingsView: View {
                     Text("clear_stored_device_identity_and_token".localized)
                 }
 
-                // MARK: - 6. DISCONNECT (Separate section for safety)
+                // MARK: - 5. DISCONNECT (Separate section for safety)
 
                 Section {
                     Button {
@@ -302,7 +260,7 @@ struct SettingsView: View {
                     Text("view_complete_usage_instructions_and_troubleshooting_guide".localized)
                 }
 
-                // MARK: - 8. ABOUT
+                // MARK: - 7. ABOUT
 
                 Section {
                     HStack {
@@ -375,6 +333,12 @@ struct SettingsView: View {
             originalUrl = gatewayUrl
             originalToken = token
             hasChanges = false
+            // 打开设置页面时自动开始扫描
+            discovery.start()
+        }
+        .onDisappear {
+            // 关闭设置页面时自动停止扫描
+            discovery.stop()
         }
         .onChange(of: gatewayUrl) { _, _ in
             checkChanges()

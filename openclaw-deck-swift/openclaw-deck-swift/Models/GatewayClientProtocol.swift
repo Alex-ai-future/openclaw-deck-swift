@@ -24,10 +24,14 @@ protocol GatewayClientProtocol {
     var onConnection: ((Bool) -> Void)? { get set }
 
     /// 连接 Gateway
-    func connect() async
+    /// - Parameter silent: 是否静默连接（用于自动重连）
+    func connect(silent: Bool) async
 
     /// 断开连接
     func disconnect()
+
+    /// 处理断开连接（被动断开 → 自动重连）
+    func handleDisconnect()
 
     /// 清除错误
     func clearError()

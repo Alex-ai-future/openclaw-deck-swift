@@ -132,7 +132,7 @@ struct SessionColumnView: View {
                                 .aspectRatio(1, contentMode: .fit)
                                 .frame(width: 24, height: 24)
                                 .foregroundColor(
-                                    session.showToolMessages ? .green : .blue
+                                    session.showToolMessages ? .gray : .blue
                                 )
                             }
                             .buttonStyle(.glass)

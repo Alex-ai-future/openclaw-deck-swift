@@ -1235,12 +1235,12 @@ class DeckViewModel {
         case "agent.error":
             logger.error("Agent error")
             handleAgentError(event)
-        // 心跳事件 - 更新时间戳
-        case "heartbeat":
+        // 心跳事件（tick）- 更新时间戳
+        case "tick":
             lastHeartbeatTime = Date()
-            logger.info("💓 Heartbeat received at \(Date().formatted())")
+            logger.debug("💓 Heartbeat (tick) received at \(Date().formatted())")
         // 忽略其他保活事件
-        case "tick", "health":
+        case "health", "heartbeat":
             break
         default:
             // 忽略未知事件类型

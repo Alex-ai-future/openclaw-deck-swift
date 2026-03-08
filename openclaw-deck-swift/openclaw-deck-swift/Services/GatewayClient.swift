@@ -192,18 +192,16 @@ class GatewayClient: GatewayClientProtocol {
         connectNonce = nil
         connectSent = false
 
-        // 使用注入的 WebSocket 或创建新的连接
-        if webSocket == nil {
-            var request = URLRequest(url: url)
-            // Set Origin header - required by Gateway CORS policy
-            let origin = url.absoluteString
-                .replacingOccurrences(of: "ws://", with: "http://")
-                .replacingOccurrences(of: "wss://", with: "https://")
-            request.setValue(origin, forHTTPHeaderField: "Origin")
-            webSocket = RealWebSocketConnection(
-                task: urlSession.webSocketTask(with: request)
-            )
-        }
+        // ✅ 总是创建新的 WebSocket 连接（重连时必须关闭旧的）
+        var request = URLRequest(url: url)
+        // Set Origin header - required by Gateway CORS policy
+        let origin = url.absoluteString
+            .replacingOccurrences(of: "ws://", with: "http://")
+            .replacingOccurrences(of: "wss://", with: "https://")
+        request.setValue(origin, forHTTPHeaderField: "Origin")
+        webSocket = RealWebSocketConnection(
+            task: urlSession.webSocketTask(with: request)
+        )
         webSocket?.resume()
 
         // 如果是 Mock WebSocket，快速返回成功
@@ -800,8 +798,23 @@ class GatewayClient: GatewayClientProtocol {
 
             logger.info("📊 State after connect: connected=\(self.connected), isConnecting=\(self.isConnecting), status=\(self.connectionStatus.rawValue)")
 
-            // ✅ 总是触发回调（通知 UI 状态变化）
-            onConnection?(true)
+            // ✅ 静默模式：不立即通知 UI，等待连接稳定
+            // 非静默模式：立即通知 UI（用户手动连接）
+            if !silent {
+                onConnection?(true)
+            } else {
+                logger.info("🔇 Silent connect succeeded, will notify UI after heartbeat")
+                // 静默重连成功：等待心跳确认连接稳定后再通知 UI
+                // 或者：延迟通知，给连接稳定时间
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 等待 2 秒
+                    // 检查连接是否还保持
+                    if self.connected && !self.isConnecting {
+                        self.onConnection?(true)
+                        logger.info("✅ Silent connect confirmed stable, notified UI")
+                    }
+                }
+            }
 
         } catch {
             logger.error("❌ connect 握手失败：\(error.localizedDescription)")
@@ -1052,6 +1065,10 @@ class GatewayClient: GatewayClientProtocol {
 
         // ✅ 通知 UI 状态变化（因为 connectionStatus 是计算属性，需要显式通知）
         onConnection?(true)
+
+        // ✅ 先关闭旧 WebSocket 连接（重要！）
+        webSocket?.cancel(with: .normalClosure, reason: nil)
+        webSocket = nil  // 清除旧连接，让 connect() 创建新连接
 
         // 延迟 1 秒后重连（给网络恢复时间）
         Task { @MainActor in

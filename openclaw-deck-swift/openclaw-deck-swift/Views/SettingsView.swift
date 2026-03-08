@@ -185,7 +185,7 @@ struct SettingsView: View {
                                             Text("IP: \(ip) (自动跟踪)")
                                         }
                                         .font(.caption2)
-                                        .foregroundColor(.tertiary)
+                                        .foregroundColor(.secondary.opacity(0.7))
                                     }
                                 }
                             }

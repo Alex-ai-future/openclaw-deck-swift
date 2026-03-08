@@ -41,7 +41,6 @@ final class GatewayDiscoveryService: NSObject, ObservableObject {
     @Published private(set) var gateways: [GatewayService] = []
     @Published private(set) var isScanning: Bool = false
     @Published private(set) var lastScanTime: Date?
-    @Published var isEnabled: Bool = false // 用户控制的扫描开关
 
     private let logger = Logger(subsystem: "com.openclaw.deck", category: "Discovery")
     private var browser: NetServiceBrowser?
@@ -61,7 +60,6 @@ final class GatewayDiscoveryService: NSObject, ObservableObject {
             return
         }
 
-        isEnabled = true
         logger.info("🔍 开始扫描局域网 Gateway...")
         gateways.removeAll()
         resolvedServices.removeAll()
@@ -78,7 +76,6 @@ final class GatewayDiscoveryService: NSObject, ObservableObject {
 
     /// 停止扫描
     @objc func stop() {
-        isEnabled = false
         browser?.stop()
         browser = nil
         isScanning = false

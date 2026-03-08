@@ -143,24 +143,6 @@ struct SettingsView: View {
                 // MARK: - 4. LAN GATEWAY DISCOVERY
 
                 Section {
-                    // 扫描开关
-                    Toggle(
-                        isOn: $discovery.isEnabled,
-                        label: {
-                            Label(
-                                "Enable Scanning",
-                                systemImage: "antenna.radiowaves.left.and.right"
-                            )
-                        }
-                    )
-                    .onChange(of: discovery.isEnabled) { _, newValue in
-                        if newValue {
-                            discovery.start()
-                        } else {
-                            discovery.stop()
-                        }
-                    }
-
                     // 发现结果列表
                     if !discovery.gateways.isEmpty {
                         ForEach(discovery.gateways) { gateway in
@@ -195,23 +177,13 @@ struct SettingsView: View {
                     }
 
                     // 扫描状态提示
-                    if discovery.isEnabled {
-                        if discovery.isScanning {
-                            HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .foregroundColor(.secondary)
-                                    .rotationEffect(.degrees(360))
-                                    .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: discovery.isScanning)
-                                Text("Scanning...")
-                                    .foregroundColor(.secondary)
-                            }
-                            .font(.caption)
-                        }
-                    } else {
+                    if discovery.isScanning {
                         HStack {
-                            Image(systemName: "wifi.slash")
+                            Image(systemName: "arrow.triangle.2.circlepath")
                                 .foregroundColor(.secondary)
-                            Text("Scanning is disabled")
+                                .rotationEffect(.degrees(360))
+                                .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: discovery.isScanning)
+                            Text("Scanning...")
                                 .foregroundColor(.secondary)
                         }
                         .font(.caption)
@@ -219,7 +191,7 @@ struct SettingsView: View {
                 } header: {
                     Label("LAN Gateway Discovery", systemImage: "wifi.router")
                 } footer: {
-                    Text("Turn on to scan and connect to Gateway on local network")
+                    Text("Automatically scans when settings is open")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -383,6 +355,12 @@ struct SettingsView: View {
             originalUrl = gatewayUrl
             originalToken = token
             hasChanges = false
+            // 打开设置页面时自动开始扫描
+            discovery.start()
+        }
+        .onDisappear {
+            // 关闭设置页面时自动停止扫描
+            discovery.stop()
         }
         .onChange(of: gatewayUrl) { _, _ in
             checkChanges()

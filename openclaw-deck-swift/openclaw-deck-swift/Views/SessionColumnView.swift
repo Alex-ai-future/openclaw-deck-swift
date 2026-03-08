@@ -148,6 +148,24 @@ struct SessionColumnView: View {
                             scrollToBottom()
                         }
 
+                        // 🔧 工具消息开关 - 只在选中时显示
+                        if isSelected {
+                            Button {
+                                session.showToolMessages.toggle()
+                            } label: {
+                                Image(
+                                    systemName: session.showToolMessages
+                                        ? "wrench.and.screwdriver.fill" : "wrench"
+                                )
+                                .font(.title3)
+                                .foregroundColor(
+                                    session.showToolMessages ? .blue : .secondary
+                                )
+                            }
+                            .buttonStyle(.glass)
+                            .frame(height: 40)
+                        }
+
                         // 快速操作按钮组
                         // 判断状态
                         let isProcessing = session.activeRunId != nil

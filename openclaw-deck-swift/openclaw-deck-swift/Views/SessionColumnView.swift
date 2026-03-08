@@ -157,7 +157,9 @@ struct SessionColumnView: View {
                                     systemName: session.showToolMessages
                                         ? "wrench.and.screwdriver.fill" : "wrench"
                                 )
-                                .font(.title2)
+                                .resizable()
+                                .aspectRatio(1, contentMode: .fit)
+                                .frame(width: 24, height: 24)
                                 .foregroundColor(
                                     session.showToolMessages ? .blue : .secondary
                                 )
@@ -176,7 +178,9 @@ struct SessionColumnView: View {
                                 sendStopMessage()
                             } label: {
                                 Image(systemName: "stop.circle")
-                                    .font(.title2)
+                                    .resizable()
+                                    .aspectRatio(1, contentMode: .fit)
+                                    .frame(width: 24, height: 24)
                                     .foregroundColor(.red)
                             }
                             .buttonStyle(.glass)
@@ -192,11 +196,12 @@ struct SessionColumnView: View {
                                 Button {
                                     sendInputMessage()
                                 } label: {
-                                    Image(systemName: "arrow.up.circle").accessibilityIdentifier(
-                                        "sendButton"
-                                    )
-                                    .font(.title2)
-                                    .foregroundColor(.blue)
+                                    Image(systemName: "arrow.up.circle")
+                                        .accessibilityIdentifier("sendButton")
+                                        .resizable()
+                                        .aspectRatio(1, contentMode: .fit)
+                                        .frame(width: 24, height: 24)
+                                        .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
                                 .frame(width: 40, height: 40)

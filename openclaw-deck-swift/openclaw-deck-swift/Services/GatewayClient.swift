@@ -18,6 +18,39 @@ struct PendingRequest {
     let timeout: Task<Void, Never>
 }
 
+// MARK: - Connection Status
+
+/// 网络连接状态枚举
+enum ConnectionStatus: String {
+    case connected // 已连接（绿色）
+    case reconnecting // 重连中（橙黄色）
+    case disconnected // 未连接/断开（红色）
+
+    /// 状态对应的颜色
+    var color: Color {
+        switch self {
+        case .connected:
+            .green
+        case .reconnecting:
+            .orange
+        case .disconnected:
+            .red
+        }
+    }
+
+    /// 状态对应的图标
+    var iconName: String {
+        switch self {
+        case .connected:
+            "checkmark.circle.fill"
+        case .reconnecting:
+            "arrow.clockwise"
+        case .disconnected:
+            "xmark.circle.fill"
+        }
+    }
+}
+
 // MARK: - Gateway Session Status
 
 /// 网关会话状态（从网关查询）
@@ -132,6 +165,28 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 重连尝试次数
     var reconnectAttempts: Int = 0
+
+    // MARK: - Computed Properties
+
+    /// 连接状态（计算属性，优先判断断开和重连）
+    var connectionStatus: ConnectionStatus {
+        // 1. 断开连接（有错误且不在重连）
+        if connectionError != nil, !isAutoReconnecting {
+            .disconnected
+        }
+        // 2. 重试中
+        else if isAutoReconnecting {
+            .reconnecting
+        }
+        // 3. 已连接（connected = true 且无错误）
+        else if connected, connectionError == nil {
+            .connected
+        }
+        // 4. 其他情况（连接中、初始化等）
+        else {
+            .disconnected
+        }
+    }
 
     /// 当前重连延迟（纳秒）- 指数退避
     var currentReconnectDelay: UInt64 = 800_000_000 // 初始 800ms

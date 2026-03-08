@@ -41,7 +41,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // MARK: - 1. CONNECTION STATUS (Read-only)
+                // MARK: - 1. DEVICE STATUS (Read-only)
 
                 Section {
                     HStack {
@@ -56,7 +56,7 @@ struct SettingsView: View {
                         Spacer()
                     }
                 } header: {
-                    Label("connection".localized, systemImage: "network")
+                    Label("device_status".localized, systemImage: "iphone")
                 } footer: {
                     if isConnected {
                         Text(String(format: "gateway_url_format".localized, gatewayUrl))

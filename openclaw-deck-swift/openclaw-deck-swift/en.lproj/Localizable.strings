@@ -21,6 +21,10 @@
 "delete" = "Delete";
 "confirm" = "Confirm";
 "select_text" = "Select Text";
+"status_connected" = "Connected";
+"status_reconnecting" = "Reconnecting";
+"status_disconnected" = "Disconnected";
+"device_status" = "Device Status";
 "continue" = "Continue";
 "done" = "Done";
 "settings" = "Settings";

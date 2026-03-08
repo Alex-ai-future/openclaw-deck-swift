@@ -15,12 +15,12 @@ struct DeckToolbar: ToolbarContent {
     @Binding var showingSortSheet: Bool
 
     var body: some ToolbarContent {
-        // 左边：设置按钮
+        // 左边：设置按钮 + 连接状态
         #if os(iOS)
             ToolbarItem(placement: .topBarLeading) {
                 if UIDevice.current.userInterfaceIdiom == .pad {
-                    // iPad：显示设置按钮 + App 名字
-                    HStack(spacing: 16) {
+                    // iPad：显示设置按钮 + 连接状态 + App 名字
+                    HStack(spacing: 12) {
                         Button {
                             showingSettings = true
                         } label: {
@@ -28,32 +28,49 @@ struct DeckToolbar: ToolbarContent {
                         }
                         .accessibilityIdentifier("settingsButton")
 
+                        // 连接状态指示器
+                        Image(systemName: viewModel.gatewayClient?.connectionStatus.iconName ?? "circle")
+                            .foregroundColor(viewModel.gatewayClient?.connectionStatus.color ?? .gray)
+                            .accessibilityLabel(viewModel.gatewayClient?.connectionStatus.rawValue ?? "unknown")
+
                         Text("openclaw_deck".localized)
                             .font(.headline)
                             .fontWeight(.semibold)
                             .frame(width: 160, alignment: .leading)
                     }
                 } else {
-                    // iPhone：只显示设置按钮
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "gear")
+                    // iPhone：显示设置按钮 + 连接状态
+                    HStack(spacing: 12) {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gear")
+                        }
+                        .accessibilityIdentifier("settingsButton")
+
+                        // 连接状态指示器
+                        Image(systemName: viewModel.gatewayClient?.connectionStatus.iconName ?? "circle")
+                            .foregroundColor(viewModel.gatewayClient?.connectionStatus.color ?? .gray)
+                            .accessibilityLabel(viewModel.gatewayClient?.connectionStatus.rawValue ?? "unknown")
                     }
-                    .accessibilityIdentifier("settingsButton")
                 }
             }
 
         #else
             ToolbarItem(placement: .automatic) {
-                // macOS：显示设置按钮 + App 名字
-                HStack(spacing: 16) {
+                // macOS：显示设置按钮 + 连接状态 + App 名字
+                HStack(spacing: 12) {
                     Button {
                         showingSettings = true
                     } label: {
                         Image(systemName: "gear")
                     }
                     .accessibilityIdentifier("settingsButton")
+
+                    // 连接状态指示器
+                    Image(systemName: viewModel.gatewayClient?.connectionStatus.iconName ?? "circle")
+                        .foregroundColor(viewModel.gatewayClient?.connectionStatus.color ?? .gray)
+                        .accessibilityLabel(viewModel.gatewayClient?.connectionStatus.rawValue ?? "unknown")
 
                     Text("openclaw_deck".localized)
                         .font(.headline)

@@ -176,10 +176,20 @@ struct ContentView: View {
                 viewModel.isSyncing = false
             }
             Button("sync".localized) {
-                // 点"确定"：先关闭弹窗，再开始同步
+                // 点"确定"：先关闭弹窗，再重新创建 ViewModel（自动重连 + 同步）
                 viewModel.isSyncing = false
                 Task {
-                    await viewModel.handleSync()
+                    // ✅ 直接重新创建 ViewModel，自动建立新连接
+                    let newViewModel = DeckViewModel()
+
+                    // ✅ 等待新 ViewModel 初始化完成
+                    await newViewModel.initialize(
+                        url: UserDefaults.standard.string(forKey: "openclaw.deck.gatewayUrl") ?? "ws://127.0.0.1:18789",
+                        token: UserDefaults.standard.string(forKey: "openclaw.deck.token")
+                    )
+
+                    // ✅ 用新的替换旧的
+                    self.viewModel = newViewModel
                 }
             }
             .tint(.blue)

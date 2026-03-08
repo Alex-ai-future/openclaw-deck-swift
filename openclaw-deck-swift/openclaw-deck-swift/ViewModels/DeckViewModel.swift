@@ -200,6 +200,19 @@ class DeckViewModel {
         }
     }
 
+    // MARK: - Heartbeat Monitoring
+
+    /// 最后心跳时间（内部使用，不观察）
+    @ObservationIgnored
+    private var lastHeartbeatTime: Date?
+
+    /// 心跳检查定时器（内部使用，不观察）
+    @ObservationIgnored
+    private var heartbeatTimer: Timer?
+
+    /// 心跳超时阈值（秒）
+    private let heartbeatTimeoutSeconds: TimeInterval = 20
+
     /// UserDefaults 存储
     private let storage: UserDefaultsStorageProtocol
 
@@ -221,6 +234,37 @@ class DeckViewModel {
     /// 设置 Gateway 回调
     private func setupGatewayCallbacks() {
         // 回调将在 initialize() 中设置
+    }
+
+    // MARK: - Heartbeat Monitoring
+
+    /// 启动心跳检测
+    private func startHeartbeatMonitoring() {
+        heartbeatTimer?.invalidate()
+        lastHeartbeatTime = Date()
+
+        // 每 10 秒检查一次心跳
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            guard let self else { return }
+
+            if let lastHeartbeat = lastHeartbeatTime {
+                let timeSinceLastHeartbeat = Date().timeIntervalSince(lastHeartbeat)
+
+                // 超过 20 秒没心跳 = 断开，触发重连
+                if timeSinceLastHeartbeat > heartbeatTimeoutSeconds {
+                    logger.warning("⚠️ Heartbeat timeout (\\(Int(timeSinceLastHeartbeat))s), triggering reconnect")
+                    gatewayClient?.handleDisconnect()
+                    stopHeartbeatMonitoring()
+                }
+            }
+        }
+    }
+
+    /// 停止心跳检测
+    private func stopHeartbeatMonitoring() {
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
+        lastHeartbeatTime = nil
     }
 
     /// 连接 Gateway（共用方法）
@@ -299,6 +343,7 @@ class DeckViewModel {
                 guard let self else { return }
                 if connected {
                     logger.log("✅ Gateway 连接成功")
+                    self.startHeartbeatMonitoring() // ✅ 启动心跳检测
 
                     // 🔧 内联 onConnect 回调的逻辑
                     // 重连时重置所有 session 的处理状态
@@ -338,6 +383,7 @@ class DeckViewModel {
 
                 } else {
                     logger.error("❌ Gateway 连接失败")
+                    self.stopHeartbeatMonitoring() // ✅ 停止心跳检测
                     self.appState = .disconnected
                     // 获取错误信息
                     // 连接失败，错误信息已在 client 中
@@ -358,11 +404,11 @@ class DeckViewModel {
         gatewayClient?.clearError()
     }
 
-    /// 断开 Gateway 连接
+    /// 断开 Gateway 连接（手动断开）
     /// - Note: 断开连接时保留所有历史消息，不清空数据
     func disconnect() {
-        // 只断开连接，不清空 Session 消息（保留离线浏览能力）
-        gatewayClient?.disconnect()
+        stopHeartbeatMonitoring() // ✅ 停止心跳检测
+        gatewayClient?.disconnect() // 手动断开，不重连
     }
 
     /// 重置设备身份（清除 device identity 和 device token）
@@ -674,6 +720,7 @@ class DeckViewModel {
                 guard let self else { return }
                 if connected {
                     logger.log("✅ Gateway 连接成功")
+                    self.startHeartbeatMonitoring() // ✅ 启动心跳检测
 
                     // 连接成功后加载历史
                     await self.loadAllSessionHistory()
@@ -682,6 +729,7 @@ class DeckViewModel {
 
                 } else {
                     logger.error("❌ Gateway 连接失败")
+                    self.stopHeartbeatMonitoring() // ✅ 停止心跳检测
                     self.appState = .disconnected
                     // 连接失败，错误信息已在 client 中
                 }
@@ -1166,8 +1214,12 @@ class DeckViewModel {
         case "agent.error":
             logger.error("Agent error")
             handleAgentError(event)
-        // 忽略保活和健康检查事件
-        case "tick", "health", "heartbeat":
+        // 心跳事件 - 更新时间戳
+        case "heartbeat":
+            lastHeartbeatTime = Date()
+            logger.debug("💓 Heartbeat received")
+        // 忽略其他保活事件
+        case "tick", "health":
             break
         default:
             // 忽略未知事件类型
@@ -1493,10 +1545,10 @@ class DeckViewModel {
             return
         }
 
-        // ✅ 2. 检查最后一条消息
+        // ✅ 2. 检查最后一条消息 - 必须同时满足：assistant + streaming + runId 匹配
         let lastMsg = session.messages.last
-        if let lastMsg, lastMsg.role == .assistant, lastMsg.streaming == true {
-            // 最后一条是 assistant 且还在 streaming → 追加
+        if let lastMsg, lastMsg.role == .assistant, lastMsg.streaming == true, lastMsg.runId == runId {
+            // 最后一条是 assistant 且还在 streaming 且 runId 匹配 → 追加
             session.messages[session.messages.count - 1] = ChatMessage(
                 id: lastMsg.id,
                 role: lastMsg.role,
@@ -1506,7 +1558,7 @@ class DeckViewModel {
                 thinking: lastMsg.thinking,
                 toolUse: lastMsg.toolUse,
                 runId: lastMsg.runId,
-                seq: lastMsg.seq ?? seq,
+                seq: seq ?? lastMsg.seq, // ✅ 优先使用新的 seq（最新的序号）
                 isLoaded: lastMsg.isLoaded
             )
             logger.debug("➕ Appended to last assistant message: runId=\(runId)")

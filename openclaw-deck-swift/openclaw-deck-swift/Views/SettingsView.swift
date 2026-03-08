@@ -143,21 +143,23 @@ struct SettingsView: View {
                 // MARK: - 4. LAN GATEWAY DISCOVERY
 
                 Section {
-                    // 扫描按钮
-                    Button {
-                        discovery.refresh()
-                    } label: {
-                        HStack {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                            Text("Scan LAN Gateway")
-                            Spacer()
-                            if discovery.isScanning {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            }
+                    // 扫描开关
+                    Toggle(
+                        isOn: $discovery.isEnabled,
+                        label: {
+                            Label(
+                                "Enable Scanning",
+                                systemImage: "antenna.radiowaves.left.and.right"
+                            )
+                        }
+                    )
+                    .onChange(of: discovery.isEnabled) { _, newValue in
+                        if newValue {
+                            discovery.start()
+                        } else {
+                            discovery.stop()
                         }
                     }
-                    .disabled(discovery.isScanning)
 
                     // 发现结果列表
                     if !discovery.gateways.isEmpty {
@@ -193,25 +195,31 @@ struct SettingsView: View {
                     }
 
                     // 扫描状态提示
-                    if discovery.isScanning {
+                    if discovery.isEnabled {
+                        if discovery.isScanning {
+                            HStack {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.secondary)
+                                    .rotationEffect(.degrees(360))
+                                    .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: discovery.isScanning)
+                                Text("Scanning...")
+                                    .foregroundColor(.secondary)
+                            }
+                            .font(.caption)
+                        }
+                    } else {
                         HStack {
-                            Image(systemName: "arrow.triangle.2.circlepath")
+                            Image(systemName: "wifi.slash")
                                 .foregroundColor(.secondary)
-                                .rotationEffect(.degrees(360))
-                                .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: discovery.isScanning)
-                            Text("Scanning...")
+                            Text("Scanning is disabled")
                                 .foregroundColor(.secondary)
                         }
                         .font(.caption)
-                    } else if let lastScan = discovery.lastScanTime {
-                        Text("Last scan: " + lastScan.formatted(.relative(presentation: .named)))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 } header: {
                     Label("LAN Gateway Discovery", systemImage: "wifi.router")
                 } footer: {
-                    Text("Scan and connect to Gateway on local network")
+                    Text("Turn on to scan and connect to Gateway on local network")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

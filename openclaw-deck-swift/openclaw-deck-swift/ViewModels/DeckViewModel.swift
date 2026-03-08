@@ -1203,29 +1203,23 @@ class DeckViewModel {
 
                 logger.info("📥 Assistant event: delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars, seq=\(seq ?? -1), runId=\(runId)")
 
-                // 如果有 seq，检查是否已处理（去重）
-                if let seq {
-                    let alreadyProcessed = session.messages.contains { $0.seq == seq }
-                    if alreadyProcessed {
-                        logger.debug("⏭️ Message already processed, skipping: seq=\(seq)")
-                        return
-                    }
-                }
-
-                // 优先使用 delta 追加（流式更新）
+                // ✅ 优先使用 delta 追加（流式更新）- appendToAssistantMessage 内部已处理 seq 去重
                 if let delta, !delta.isEmpty {
                     appendToAssistantMessage(session: session, runId: runId, text: delta, seq: seq)
                 }
-                // 后备：使用 text（只在没有 delta 且没有同 runId 消息时）
+                // ✅ 使用 text（完整文本模式）- 即使有同 runId 消息也要更新内容
                 else if let text, !text.isEmpty {
                     let hasExistingMessage = session.messages.contains {
                         $0.runId == runId && $0.role == .assistant
                     }
 
                     if !hasExistingMessage {
+                        // 没有消息，创建新的
                         createAssistantMessage(session: session, runId: runId, text: text, seq: seq)
                     } else {
-                        logger.warning("⚠️ Existing message found for runId=\(runId), skipping text")
+                        // ✅ 已有消息，更新内容而不是跳过
+                        logger.info("📝 Updating existing message for runId=\(runId)")
+                        replaceAssistantMessage(session: session, runId: runId, text: text)
                     }
                 }
             }

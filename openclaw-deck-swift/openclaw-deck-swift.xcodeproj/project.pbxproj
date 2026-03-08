@@ -33,9 +33,22 @@
 		58399AA32F4C9060008689AD /* openclaw-deck-swiftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclaw-deck-swiftUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5864A06E2F5D8607006385D7 /* Exceptions for "openclaw-deck-swift" folder in "openclaw-deck-swift" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 58399A892F4C9059008689AD /* openclaw-deck-swift */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		58399A8C2F4C9059008689AD /* openclaw-deck-swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5864A06E2F5D8607006385D7 /* Exceptions for "openclaw-deck-swift" folder in "openclaw-deck-swift" target */,
+			);
 			path = "openclaw-deck-swift";
 			sourceTree = "<group>";
 		};
@@ -414,6 +427,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "openclaw-deck-swift/Info.plist";
 				INFOPLIST_KEY_NSBonjourServices = "_openclaw-gw._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要发现局域网内的 OpenClaw Gateway";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要语音识别权限来进行语音输入";
@@ -471,6 +485,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "openclaw-deck-swift/Info.plist";
 				INFOPLIST_KEY_NSBonjourServices = "_openclaw-gw._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要发现局域网内的 OpenClaw Gateway";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要语音识别权限来进行语音输入";

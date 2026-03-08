@@ -581,6 +581,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 63F2TW9G35;
 				INFOPLIST_KEY_NSBonjourServices = "_openclaw-gw._tcp";

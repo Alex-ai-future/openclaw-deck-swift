@@ -164,12 +164,14 @@ struct SessionColumnView: View {
                                 Button {
                                     sendOKMessage()
                                 } label: {
-                                    Text("ok".localized)
-                                        .font(.title3)
+                                    Image(systemName: "arrow.right.circle")
+                                        .resizable()
+                                        .aspectRatio(1, contentMode: .fit)
+                                        .frame(width: 24, height: 24)
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(height: 40)
+                                .frame(width: 40, height: 40)
                             }
                         }
                     }

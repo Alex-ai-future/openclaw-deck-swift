@@ -443,42 +443,18 @@ struct WelcomeView: View {
             .navigationTitle("")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        HStack(spacing: 8) {
-                            Button {
-                                onShowSettings()
-                            } label: {
-                                Image(systemName: "gear")
-                                    .font(.title2)
-                            }
-
-                            Divider()
-
-                            // 连接状态指示器（空心圆圈）
-                            ConnectionStatusIcon(status: connectionStatus)
-                        }
-                    }
-                }
-            #else
-                .toolbar {
-                        ToolbarItem(placement: .automatic) {
-                            HStack(spacing: 8) {
-                                Button {
-                                    onShowSettings()
-                                } label: {
-                                    Image(systemName: "gear")
-                                        .font(.title2)
-                                }
-
-                                Divider()
-
-                                // 连接状态指示器（空心圆圈）
-                                ConnectionStatusIcon(status: connectionStatus)
-                            }
-                        }
-                    }
             #endif
+                .toolbar {
+                    // 使用统一的 DeckToolbar 组件（简化模式：无右侧按钮）
+                    DeckToolbar(
+                        viewModel: nil,
+                        connectionStatus: connectionStatus,
+                        showingSettings: .constant(false),
+                        onShowSettings: onShowSettings,
+                        showingNewSessionSheet: nil,
+                        showingSortSheet: nil
+                    )
+                }
         }
     }
 }

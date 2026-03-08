@@ -18,8 +18,10 @@ struct SettingsView: View {
     /// Gateway 发现服务
     @StateObject private var discovery = GatewayDiscoveryService.shared
 
+    /// 语言管理器
+    @ObservedObject private var languageManager = LanguageManager.shared
+
     private let logger = Logger(subsystem: "com.openclaw.deck", category: "SettingsView")
-    private let languageManager = LanguageManager.shared
 
     @State private var hasChanges = false
     @State private var originalUrl = ""

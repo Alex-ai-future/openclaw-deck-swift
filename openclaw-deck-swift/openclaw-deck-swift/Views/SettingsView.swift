@@ -165,14 +165,27 @@ struct SettingsView: View {
                             Button {
                                 // 点击使用此 Gateway
                                 gatewayUrl = gateway.wsURL
-                                logger.info("✅ 已选择 Gateway: \(gateway.name)")
+                                logger.info("✅ 已选择 Gateway: \(gateway.name) @ \(gateway.displayAddress)")
                             } label: {
                                 VStack(alignment: .leading) {
                                     Text(gateway.name)
                                         .font(.headline)
-                                    Text(gateway.wsURL)
+
+                                    if let ip = gateway.ipAddress {
+                                        HStack {
+                                            Image(systemName: "server.rack")
+                                            Text("IP: \(ip)")
+                                        }
                                         .font(.caption)
                                         .foregroundColor(.secondary)
+                                    }
+
+                                    HStack {
+                                        Image(systemName: "network")
+                                        Text(gateway.displayAddress)
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 }
                             }
                         }

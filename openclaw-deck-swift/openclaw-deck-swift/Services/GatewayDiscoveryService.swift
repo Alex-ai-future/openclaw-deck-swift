@@ -4,6 +4,7 @@
 // 局域网 Gateway 服务发现
 
 import Combine
+import Darwin // 用于 inet_ntop 等网络函数
 import Foundation
 import OSLog
 
@@ -15,15 +16,30 @@ struct GatewayService: Identifiable, Hashable {
     let port: Int32
     let type: String
     let domain: String
+    let ipAddress: String? // 新增：IP 地址
 
-    /// WebSocket 连接地址
+    /// WebSocket 连接地址（优先使用 IP）
     var wsURL: String {
-        "ws://\(hostName):\(port)"
+        if let ip = ipAddress {
+            return "ws://\(ip):\(port)"
+        }
+        return "ws://\(hostName):\(port)"
     }
 
     /// HTTP 地址（用于测试）
     var httpURL: String {
-        "http://\(hostName):\(port)"
+        if let ip = ipAddress {
+            return "http://\(ip):\(port)"
+        }
+        return "http://\(hostName):\(port)"
+    }
+
+    /// 显示地址（用于 UI）
+    var displayAddress: String {
+        if let ip = ipAddress {
+            return "\(ip):\(port)"
+        }
+        return "\(hostName):\(port)"
     }
 }
 
@@ -107,7 +123,7 @@ extension GatewayDiscoveryService: NetServiceBrowserDelegate {
     }
 
     func netServiceBrowserDidStopSearch(_: NetServiceBrowser) {
-        logger.info("🛑 扫描停止，共发现 \(gateways.count) 个 Gateway")
+        logger.info("🛑 扫描停止，共发现 \(self.gateways.count) 个 Gateway")
     }
 
     func netServiceBrowser(_: NetServiceBrowser,
@@ -122,18 +138,24 @@ extension GatewayDiscoveryService: NetServiceBrowserDelegate {
 
 extension GatewayDiscoveryService: NetServiceDelegate {
     func netServiceDidResolveAddress(_ sender: NetService) {
+        // 解析 IP 地址
+        let ipAddress = extractIPAddress(from: sender.addresses)
+
         let gateway = GatewayService(
             name: sender.name,
             hostName: sender.hostName ?? "unknown",
             port: Int32(sender.port),
             type: sender.type,
-            domain: sender.domain ?? "local."
+            domain: sender.domain ?? "local.",
+            ipAddress: ipAddress
         )
 
         logger.info("""
         📡 Gateway 详情:
           名称：\(gateway.name)
-          地址：\(gateway.hostName):\(gateway.port)
+          主机名：\(gateway.hostName)
+          IP 地址：\(gateway.ipAddress ?? "未解析")
+          端口：\(gateway.port)
           WebSocket: \(gateway.wsURL)
         """)
 
@@ -148,5 +170,39 @@ extension GatewayDiscoveryService: NetServiceDelegate {
 
     func netService(_ sender: NetService, didNotResolve error: [String: NSNumber]) {
         logger.warning("⚠️ 解析失败：\(sender.name) - \(error)")
+    }
+}
+
+// MARK: - Helper Methods
+
+extension GatewayDiscoveryService {
+    /// 从 addresses 数组中解析 IPv4 地址
+    private func extractIPAddress(from addresses: [Data]?) -> String? {
+        guard let addresses else { return nil }
+
+        for addrData in addresses {
+            let addr = addrData.withUnsafeBytes {
+                $0.bindMemory(to: sockaddr.self).baseAddress!
+            }
+
+            switch addr.pointee.sa_family {
+            case AF_INET: // IPv4
+                var ipv4Addr = sockaddr_in()
+                memcpy(&ipv4Addr, addr, MemoryLayout<sockaddr_in>.size)
+                var ip = CChar(INET_ADDRSTRLEN)
+                return String(cString: inet_ntop(AF_INET, &ipv4Addr.sin_addr, &ip, socklen_t(INET_ADDRSTRLEN)))
+
+            case AF_INET6: // IPv6
+                var ipv6Addr = sockaddr_in6()
+                memcpy(&ipv6Addr, addr, MemoryLayout<sockaddr_in6>.size)
+                var ip = CChar(INET6_ADDRSTRLEN)
+                let ipAddress = String(cString: inet_ntop(AF_INET6, &ipv6Addr.sin6_addr, &ip, socklen_t(INET6_ADDRSTRLEN)))
+                return "[\(ipAddress)]" // IPv6 需要方括号
+
+            default:
+                continue
+            }
+        }
+        return nil
     }
 }

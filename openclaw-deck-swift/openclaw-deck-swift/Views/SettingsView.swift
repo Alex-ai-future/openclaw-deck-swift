@@ -163,7 +163,7 @@ struct SettingsView: View {
                     if !discovery.gateways.isEmpty {
                         ForEach(discovery.gateways) { gateway in
                             Button {
-                                // 点击使用此 Gateway
+                                // 点击使用此 Gateway（使用主机名，更稳定）
                                 gatewayUrl = gateway.wsURL
                                 logger.info("✅ 已选择 Gateway: \(gateway.name) @ \(gateway.displayAddress)")
                             } label: {
@@ -171,21 +171,22 @@ struct SettingsView: View {
                                     Text(gateway.name)
                                         .font(.headline)
 
-                                    if let ip = gateway.ipAddress {
-                                        HStack {
-                                            Image(systemName: "server.rack")
-                                            Text("IP: \(ip)")
-                                        }
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    }
-
                                     HStack {
                                         Image(systemName: "network")
                                         Text(gateway.displayAddress)
                                     }
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+
+                                    // IP 地址仅用于调试/诊断
+                                    if let ip = gateway.ipAddress {
+                                        HStack {
+                                            Image(systemName: "info.circle")
+                                            Text("IP: \(ip) (自动跟踪)")
+                                        }
+                                        .font(.caption2)
+                                        .foregroundColor(.tertiary)
+                                    }
                                 }
                             }
                         }

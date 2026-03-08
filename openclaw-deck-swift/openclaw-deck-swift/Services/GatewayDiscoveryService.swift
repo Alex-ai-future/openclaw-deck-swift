@@ -16,30 +16,21 @@ struct GatewayService: Identifiable, Hashable {
     let port: Int32
     let type: String
     let domain: String
-    let ipAddress: String? // 新增：IP 地址
+    let ipAddress: String? // IP 地址（仅用于显示/调试）
 
-    /// WebSocket 连接地址（优先使用 IP）
+    /// WebSocket 连接地址（使用主机名，更稳定）
     var wsURL: String {
-        if let ip = ipAddress {
-            return "ws://\(ip):\(port)"
-        }
-        return "ws://\(hostName):\(port)"
+        "ws://\(hostName):\(port)"
     }
 
     /// HTTP 地址（用于测试）
     var httpURL: String {
-        if let ip = ipAddress {
-            return "http://\(ip):\(port)"
-        }
-        return "http://\(hostName):\(port)"
+        "http://\(hostName):\(port)"
     }
 
-    /// 显示地址（用于 UI）
+    /// 显示地址（用于 UI，显示主机名）
     var displayAddress: String {
-        if let ip = ipAddress {
-            return "\(ip):\(port)"
-        }
-        return "\(hostName):\(port)"
+        "\(hostName):\(port)"
     }
 }
 

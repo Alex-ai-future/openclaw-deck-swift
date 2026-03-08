@@ -21,17 +21,17 @@ final class DeckViewModelSyncTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "openclaw.deck.sessionOrder")
         UserDefaults.standard.synchronize()
 
-        // 创建 Mock 对象并设置为单例
+        // 创建 Mock 对象并设置为 CloudflareKV 的 Mock 实例
         mockCloudflare = MockCloudflareKV()
-        CloudflareKV.shared = mockCloudflare // ⚠️ 关键：替换单例
+        CloudflareKV.mockInstance = mockCloudflare // ✅ 使用 mockInstance
 
         mockGateway = MockGatewayClient()
         mockStorage = MockUserDefaultsStorage()
     }
 
     override func tearDown() async throws {
-        // 恢复 CloudflareKV 单例
-        CloudflareKV.shared = CloudflareKV()
+        // 清除 Mock 实例
+        CloudflareKV.mockInstance = nil
 
         mockCloudflare = nil
         mockGateway = nil

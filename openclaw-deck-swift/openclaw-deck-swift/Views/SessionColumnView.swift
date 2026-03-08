@@ -40,11 +40,13 @@ struct SessionColumnView: View {
 
     /// 滚动到底部（手动点击按钮）
     private func scrollToBottom() {
-        guard let lastId = session.messages.last?.id else { return }
+        // 使用最后一条可见消息（根据 showToolMessages 过滤）
+        guard let lastVisibleMessage = session.getLastVisibleMessage() else { return }
+
         // 先清空再设置，强制触发 onChange（即使 ID 相同）
         scrollTargetId = nil
         DispatchQueue.main.async {
-            scrollTargetId = lastId
+            scrollTargetId = lastVisibleMessage.id
         }
     }
 
@@ -342,8 +344,8 @@ struct SessionColumnView: View {
                 }
                 .padding()
             }
-            .onChange(of: session.messages.last?.id) { _, newLastMessageId in
-                if let lastId = newLastMessageId {
+            .onChange(of: session.getLastVisibleMessage()?.id) { _, newLastVisibleMessageId in
+                if let lastId = newLastVisibleMessageId {
                     scrollTargetId = lastId
                 }
             }

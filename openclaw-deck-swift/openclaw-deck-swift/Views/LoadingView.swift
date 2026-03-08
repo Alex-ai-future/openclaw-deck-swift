@@ -90,21 +90,39 @@ struct LoadingView: View {
             .toolbar {
                 // 只在有 ViewModel 时显示工具栏
                 if let viewModel, let onShowSettings {
-                    ToolbarItem(placement: .topBarLeading) {
-                        HStack(spacing: 8) {
-                            Button {
-                                onShowSettings()
-                            } label: {
-                                Image(systemName: "gear")
+                    #if os(iOS)
+                        ToolbarItem(placement: .topBarLeading) {
+                            HStack(spacing: 8) {
+                                Button {
+                                    onShowSettings()
+                                } label: {
+                                    Image(systemName: "gear")
+                                }
+                                .accessibilityIdentifier("settingsButton")
+
+                                Divider()
+
+                                // 连接状态指示器（爱心形状）
+                                ConnectionStatusIcon(status: viewModel.gatewayClient?.connectionStatus ?? .disconnected)
                             }
-                            .accessibilityIdentifier("settingsButton")
-
-                            Divider()
-
-                            // 连接状态指示器（空心圆圈）
-                            ConnectionStatusIcon(status: viewModel.gatewayClient?.connectionStatus ?? .disconnected)
                         }
-                    }
+                    #else
+                        ToolbarItem(placement: .automatic) {
+                            HStack(spacing: 8) {
+                                Button {
+                                    onShowSettings()
+                                } label: {
+                                    Image(systemName: "gear")
+                                }
+                                .accessibilityIdentifier("settingsButton")
+
+                                Divider()
+
+                                // 连接状态指示器（爱心形状）
+                                ConnectionStatusIcon(status: viewModel.gatewayClient?.connectionStatus ?? .disconnected)
+                            }
+                        }
+                    #endif
                 }
             }
         }

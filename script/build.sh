@@ -45,39 +45,9 @@ case $PLATFORM in
     ;;
   ios)
     BUILD_DIR="${PROJECT_DIR}/build/ios"
+    DESTINATION="platform=iOS Simulator"
     PLATFORM_NAME="iOS"
     NEEDS_BUILD_LOCK=false
-    
-    # 动态检测 iPhone 模拟器
-    echo "Finding available iPhone simulator..."
-    # 先获取所有可用的 iPhone 设备列表
-    ALL_IPHONES=$(xcrun simctl list devices available 2>/dev/null | grep "iPhone" | grep "Available" || true)
-    
-    if [ -n "$ALL_IPHONES" ]; then
-        # 有可用设备，提取第一个的 UDID
-        IPHONE_SIMULATOR=$(xcrun simctl list devices available -j 2>/dev/null | \
-            jq -r '.devices | to_entries[] | .value[] | select(.state == "Available") | select(.name | startswith("iPhone")) | .udid' 2>/dev/null | \
-            head -1)
-        
-        if [ -n "$IPHONE_SIMULATOR" ]; then
-            DESTINATION="platform=iOS Simulator,id=$IPHONE_SIMULATOR"
-            echo "✅ 找到 iPhone 模拟器：$DESTINATION"
-        else
-            # jq 失败，用 grep 方式获取
-            IPHONE_NAME=$(echo "$ALL_IPHONES" | head -1 | sed 's/.*\(iPhone [^)]*\).*/\1/' | xargs)
-            if [ -n "$IPHONE_NAME" ]; then
-                DESTINATION="platform=iOS Simulator,name=$IPHONE_NAME"
-                echo "✅ 找到 iPhone 模拟器 (grep): $DESTINATION"
-            else
-                DESTINATION='platform=iOS Simulator'
-                echo "⚠️ 使用通用 iOS Simulator 平台：$DESTINATION"
-            fi
-        fi
-    else
-        # 没有可用设备，使用最通用的配置
-        DESTINATION='platform=iOS Simulator'
-        echo "⚠️ 未找到可用 iPhone 模拟器，使用通用平台：$DESTINATION"
-    fi
     ;;
   ipados)
     BUILD_DIR="${PROJECT_DIR}/build/ipados"

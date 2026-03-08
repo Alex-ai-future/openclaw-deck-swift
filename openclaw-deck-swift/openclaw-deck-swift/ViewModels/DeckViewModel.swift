@@ -210,8 +210,8 @@ class DeckViewModel {
     @ObservationIgnored
     private var heartbeatTimer: Timer?
 
-    /// 心跳超时阈值（秒）
-    private let heartbeatTimeoutSeconds: TimeInterval = 20
+    /// 心跳超时阈值（秒）- 设置为 Gateway tick 周期（30s）的 1.5 倍，容忍 1 次丢失
+    private let heartbeatTimeoutSeconds: TimeInterval = 45
 
     /// UserDefaults 存储
     private let storage: UserDefaultsStorageProtocol
@@ -243,7 +243,7 @@ class DeckViewModel {
         heartbeatTimer?.invalidate()
         lastHeartbeatTime = Date()
 
-        logger.info("💓 Start heartbeat monitoring (interval: 10s, timeout: 20s)")
+        logger.info("💓 Start heartbeat monitoring (interval: 10s, timeout: 45s)")
 
         // 每 10 秒检查一次心跳
         heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in

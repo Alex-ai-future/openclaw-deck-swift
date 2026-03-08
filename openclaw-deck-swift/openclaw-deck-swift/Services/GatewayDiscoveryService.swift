@@ -3,6 +3,7 @@
 //
 // 局域网 Gateway 服务发现
 
+import Combine
 import Foundation
 import OSLog
 
@@ -27,7 +28,7 @@ struct GatewayService: Identifiable, Hashable {
 }
 
 /// 局域网 Gateway 发现服务
-final class GatewayDiscoveryService: ObservableObject {
+final class GatewayDiscoveryService: NSObject, ObservableObject {
     static let shared = GatewayDiscoveryService()
 
     @Published private(set) var gateways: [GatewayService] = []
@@ -41,12 +42,12 @@ final class GatewayDiscoveryService: ObservableObject {
     /// OpenClaw Gateway 服务类型
     private let serviceType = "_openclaw-gw._tcp"
 
-    private init() {}
+    override private init() {}
 
     // MARK: - 公开方法
 
     /// 开始扫描局域网 Gateway
-    func start() {
+    @objc func start() {
         guard !isScanning else {
             logger.warning("已在扫描中")
             return
@@ -67,7 +68,7 @@ final class GatewayDiscoveryService: ObservableObject {
     }
 
     /// 停止扫描
-    func stop() {
+    @objc func stop() {
         browser?.stop()
         browser = nil
         isScanning = false
@@ -75,7 +76,7 @@ final class GatewayDiscoveryService: ObservableObject {
     }
 
     /// 刷新扫描（先停止再开始）
-    func refresh() {
+    @objc func refresh() {
         logger.info("🔄 刷新扫描")
         stop()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -124,7 +125,7 @@ extension GatewayDiscoveryService: NetServiceDelegate {
         let gateway = GatewayService(
             name: sender.name,
             hostName: sender.hostName ?? "unknown",
-            port: sender.port,
+            port: Int32(sender.port),
             type: sender.type,
             domain: sender.domain ?? "local."
         )

@@ -418,6 +418,8 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBonjourServices = "_openclaw-gw._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要发现局域网内的 OpenClaw Gateway";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要语音识别权限来进行语音输入";
@@ -474,6 +476,8 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBonjourServices = "_openclaw-gw._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要发现局域网内的 OpenClaw Gateway";

@@ -48,7 +48,7 @@ struct DictationButton: View {
             }
         } label: {
             Image(systemName: speechRecognizer.isListening ? "mic.fill" : "mic")
-                .font(.title3)
+                .font(.system(size: 18, weight: .regular))
                 .foregroundStyle(speechRecognizer.isListening ? .red : .accentColor)
         }
         .buttonStyle(.glass)

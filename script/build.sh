@@ -50,16 +50,17 @@ case $PLATFORM in
     
     # 动态检测 iPhone 模拟器
     echo "Finding available iPhone simulator..."
-    IPHONE_SIMULATOR=$(xcrun simctl list devices available 'iPhone' -j 2>/dev/null | \
-        jq -r '.devices | to_entries[] | .value[] | select(.availability | contains("Available")) | .udid' | \
+    IPHONE_SIMULATOR=$(xcrun simctl list devices available -j 2>/dev/null | \
+        jq -r '.devices | to_entries[] | .value[] | select(.availability != null and (.availability | type == "string") and (.availability | contains("Available"))) | select(.name | startswith("iPhone")) | .udid' 2>/dev/null | \
         head -1)
     
     if [ -z "$IPHONE_SIMULATOR" ]; then
+        # 尝试使用 platform=iOS Simulator 让 xcodebuild 自动选择
         DESTINATION='platform=iOS Simulator,name=iPhone 16'
-        echo "Using generic iPhone destination: $DESTINATION"
+        echo "⚠️ 未找到可用 iPhone 模拟器，使用后备方案：$DESTINATION"
     else
         DESTINATION="platform=iOS Simulator,id=$IPHONE_SIMULATOR"
-        echo "Using iPhone simulator: $DESTINATION"
+        echo "✅ 找到 iPhone 模拟器：$DESTINATION"
     fi
     ;;
   ipados)

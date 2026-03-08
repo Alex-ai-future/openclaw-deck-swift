@@ -67,35 +67,6 @@ struct SessionColumnView: View {
         }
     }
 
-    /// 发送 Stop 请求 - 中断当前对话
-    private func sendStopMessage() {
-        guard let client = viewModel.gatewayClient else {
-            // Gateway 未连接，显示错误
-            viewModel.stopErrorText = "Gateway 未连接"
-            viewModel.showStopError = true
-            return
-        }
-
-        Task {
-            do {
-                // 不传 runId，让 Gateway 中止该 session 的所有活跃 run
-                // 这样更可靠，因为 runId 可能已经过期或不匹配
-                try await client.abortChat(sessionKey: session.sessionKey, runId: nil)
-                // 成功后更新状态
-                await MainActor.run {
-                    session.activeRunId = nil
-                    session.status = .idle
-                }
-            } catch {
-                // 失败时显示错误提示
-                await MainActor.run {
-                    viewModel.stopErrorText = "Stop 失败：\(error.localizedDescription)"
-                    viewModel.showStopError = true
-                }
-            }
-        }
-    }
-
     /// 确认发送 /new 消息
     private func confirmSendNewMessage() {
         // 设置选中的 Session
@@ -168,26 +139,8 @@ struct SessionColumnView: View {
                             .frame(width: 40, height: 40)
                         }
 
-                        // 快速操作按钮组
-                        // 判断状态
-                        let isProcessing = session.activeRunId != nil
-
-                        // Stop 按钮 - 优先级最高，无论是否选中，AI 处理中时都显示
-                        if isProcessing {
-                            Button {
-                                sendStopMessage()
-                            } label: {
-                                Image(systemName: "stop.circle")
-                                    .resizable()
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .frame(width: 24, height: 24)
-                                    .foregroundColor(.red)
-                            }
-                            .buttonStyle(.glass)
-                            .frame(width: 40, height: 40)
-                        }
-                        // 其他按钮只在选中时显示
-                        else if isSelected {
+                        // 快速操作按钮组 - 只在选中时显示
+                        if isSelected {
                             // 判断状态
                             let hasInput = !viewModel.globalInputState.inputText.isEmpty
 

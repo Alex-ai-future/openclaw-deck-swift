@@ -193,12 +193,6 @@ class DeckViewModel {
     /// 消息发送失败原因
     var messageSendErrorText: String = ""
 
-    /// 是否显示停止操作失败弹窗
-    var showStopError: Bool = false
-
-    /// 停止失败原因
-    var stopErrorText: String = ""
-
     /// 是否播放消息提示音
     var playSoundOnMessage: Bool = true {
         didSet {

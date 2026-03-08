@@ -134,10 +134,10 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 连接状态（计算属性）
     var connectionStatus: ConnectionStatus {
-        if connected {
+        if isConnecting {
+            .reconnecting // 🟠 连接中/重连中（优先检查）
+        } else if connected {
             .connected // 🟢 已连接
-        } else if isConnecting {
-            .reconnecting // 🟠 连接中/重连中
         } else {
             .disconnected // 🔴 断开
         }
@@ -182,10 +182,10 @@ class GatewayClient: GatewayClientProtocol {
     // MARK: - Public Methods
 
     /// 建立连接并完成握手
-    func connect() async {
-        guard !isConnecting else {
-            return
-        }
+    /// - Parameter silent: 是否静默连接（不触发 onConnection 回调，用于自动重连）
+    func connect(silent: Bool = false) async {
+        // ✅ 允许重连场景（isConnecting=true 时也可以连接）
+        // guard !isConnecting else { return }  ← 删除这个检查
 
         isConnecting = true
         connectionError = nil
@@ -227,13 +227,23 @@ class GatewayClient: GatewayClientProtocol {
             logger.error("Failed to receive connect challenge: \(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
-            onConnection?(false)
-            disconnect()
+
+            // ✅ 静默模式失败：不通知 UI，继续重试
+            if silent {
+                logger.info("🔄 Silent connect challenge failed, will retry...")
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    await self.connect(silent: true)
+                }
+            } else {
+                // 非静默模式失败：通知 UI
+                onConnection?(false)
+            }
             return
         }
 
         // Send connect request with nonce
-        await sendConnect()
+        await sendConnect(silent: silent)
     }
 
     /// Wait for connect.challenge event from Gateway
@@ -786,33 +796,33 @@ class GatewayClient: GatewayClientProtocol {
 
             connected = true
             connectionError = nil
-            isConnecting = false
+            isConnecting = false // ✅ 重连成功，清除连接中状态
 
-            // ✅ 静默模式不触发回调（用于自动重连）
-            if !silent {
-                onConnection?(true)
-            } else {
-                logger.debug("🔇 Silent connect: skipping onConnection callback")
-            }
+            logger.info("📊 State after connect: connected=\(self.connected), isConnecting=\(self.isConnecting), status=\(self.connectionStatus.rawValue)")
+
+            // ✅ 总是触发回调（通知 UI 状态变化）
+            onConnection?(true)
 
         } catch {
             logger.error("❌ connect 握手失败：\(error.localizedDescription)")
             connectionError = error.localizedDescription
             isConnecting = false
 
-            // ✅ 静默模式不触发回调（用于自动重连）
-            if !silent {
-                onConnection?(false)
-                disconnect() // 只有非静默模式才调用 disconnect()
-            } else {
-                logger.debug("🔇 Silent connect failed, will retry...")
-                // 静默模式失败：不调用 disconnect()，让重连逻辑继续
+            logger.info("📊 State after connect failure: connected=\(self.connected), isConnecting=\(self.isConnecting), silent=\(silent)")
+
+            // ✅ 静默模式失败：继续重试（因为用户期望连接）
+            if silent {
+                logger.info("🔄 Silent connect failed, will retry in 1s...")
                 // 延迟后再次尝试重连
                 Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
                     guard !Task.isCancelled else { return }
-                    await self.connect()
+                    await self.connect(silent: true)
                 }
+            } else {
+                // 非静默模式（用户手动连接）失败：通知 UI
+                logger.info("❌ Non-silent connect failed, notifying UI")
+                onConnection?(false)
             }
         }
     }
@@ -1038,12 +1048,16 @@ class GatewayClient: GatewayClientProtocol {
         isConnecting = true // 显示橙色（重连中）
 
         logger.info("🔄 Passive disconnect detected, starting auto-reconnect...")
+        logger.info("📊 State: connected=\(self.connected), isConnecting=\(self.isConnecting)")
+
+        // ✅ 通知 UI 状态变化（因为 connectionStatus 是计算属性，需要显式通知）
+        onConnection?(true)
 
         // 延迟 1 秒后重连（给网络恢复时间）
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             guard !Task.isCancelled else { return }
-            await self.connect() // 静默重连
+            await self.connect(silent: true) // 静默重连
         }
     }
 

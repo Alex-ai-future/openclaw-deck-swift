@@ -243,12 +243,15 @@ class DeckViewModel {
         heartbeatTimer?.invalidate()
         lastHeartbeatTime = Date()
 
+        logger.info("💓 Start heartbeat monitoring (interval: 10s, timeout: 20s)")
+
         // 每 10 秒检查一次心跳
         heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             guard let self else { return }
 
             if let lastHeartbeat = lastHeartbeatTime {
                 let timeSinceLastHeartbeat = Date().timeIntervalSince(lastHeartbeat)
+                logger.debug("💓 Heartbeat check: last=\(Int(timeSinceLastHeartbeat))s ago, timeout=\(self.heartbeatTimeoutSeconds)s")
 
                 // 超过 20 秒没心跳 = 断开，触发重连
                 if timeSinceLastHeartbeat > heartbeatTimeoutSeconds {
@@ -256,6 +259,8 @@ class DeckViewModel {
                     gatewayClient?.handleDisconnect()
                     stopHeartbeatMonitoring()
                 }
+            } else {
+                logger.warning("⚠️ Heartbeat check: no heartbeat received yet")
             }
         }
     }
@@ -341,7 +346,12 @@ class DeckViewModel {
         client.onConnection = { [weak self] connected in
             Task { @MainActor in
                 guard let self else { return }
-                if connected {
+
+                // ✅ 根据 connectionStatus 决定 UI 状态，而不是 connected 参数
+                let status = self.gatewayClient?.connectionStatus ?? .disconnected
+                logger.info("📊 onConnection: connected=\(connected), status=\(status.rawValue)")
+
+                if status == .connected {
                     logger.log("✅ Gateway 连接成功")
                     self.startHeartbeatMonitoring() // ✅ 启动心跳检测
 
@@ -355,11 +365,11 @@ class DeckViewModel {
                     // ✅ 重连成功，发送队列中的消息
                     await self.flushMessageQueue()
 
-                    // ✅ 只在初始化时显示加载动画，重连成功时不显示
+                    // ✅ 只在初始化时加载历史记录，重连成功时不加载
                     if self.appState.isLoading {
-                        // 🔧 内联 initializeAfterConnect() 的逻辑
-                        // 连接成功，更新进度
-                        self.appState = .connecting(.connecting, 0.5)
+                        // 初始化流程：加载会话和历史
+                        logger.log("📥 初始化：加载会话列表和历史...")
+
                         // 检查是否有会话列表
                         if self.sessionOrder.isEmpty {
                             logger.warning("⚠️ 没有会话列表，跳过消息加载")
@@ -368,33 +378,25 @@ class DeckViewModel {
                             await self.loadAllSessionHistory()
                         }
 
-                        // 所有数据加载完成，设置 100% 进度
-                        if case let .connecting(stage, _) = self.appState {
-                            self.appState = .connecting(stage, 1.0)
-                        }
-
-                        // 初始化完成，立即切换到 connected 状态（无延迟）
+                        // 初始化完成
                         self.appState = .connected
+                        logger.log("✅ 初始化完成，状态=\(self.appState)")
                     } else {
-                        // ✅ 重连成功，不显示加载动画
+                        // ✅ 重连成功，不重新加载历史，保持当前界面
                         self.appState = .connected
                         logger.log("✅ 重连成功，保持当前界面")
                     }
 
+                } else if status == .reconnecting {
+                    // ✅ 重连中：保持聊天页面，不回到欢迎页面
+                    logger.log("🔄 重连中，保持当前界面...")
+                    // 不修改 appState，保持当前状态
+
                 } else {
+                    // .disconnected：用户期望断开（手动断开）
                     logger.error("❌ Gateway 连接失败")
                     self.stopHeartbeatMonitoring() // ✅ 停止心跳检测
-
-                    // ✅ 检查是否是重连中（被动断开）
-                    // 如果是重连中，不回到欢迎页面，保持当前状态
-                    if self.gatewayClient?.connectionStatus == .reconnecting {
-                        logger.log("🔄 重连中，保持当前界面...")
-                        // 不设置 appState = .disconnected，保持当前状态
-                    } else {
-                        // 真正断开（手动断开或重连彻底失败）
-                        self.appState = .disconnected
-                    }
-                    // 获取错误信息
+                    self.appState = .disconnected
                     // 连接失败，错误信息已在 client 中
                 }
             }
@@ -403,8 +405,8 @@ class DeckViewModel {
         gatewayClient = client
         // 错误信息已在 client 中
 
-        // 异步连接 Gateway
-        await client.connect()
+        // 异步连接 Gateway（非静默，会触发 UI 回调）
+        await client.connect(silent: false)
     }
 
     /// 清除连接错误
@@ -758,8 +760,8 @@ class DeckViewModel {
         gatewayClient = client
         // 错误信息已在 client 中
 
-        // 异步连接 Gateway
-        await client.connect()
+        // 异步连接 Gateway（非静默，会触发 UI 回调）
+        await client.connect(silent: false)
     }
 
     /// 应用同步数据
@@ -1236,7 +1238,7 @@ class DeckViewModel {
         // 心跳事件 - 更新时间戳
         case "heartbeat":
             lastHeartbeatTime = Date()
-            logger.debug("💓 Heartbeat received")
+            logger.info("💓 Heartbeat received at \(Date().formatted())")
         // 忽略其他保活事件
         case "tick", "health":
             break

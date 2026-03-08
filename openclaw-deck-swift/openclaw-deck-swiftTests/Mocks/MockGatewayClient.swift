@@ -29,7 +29,7 @@ class MockGatewayClient: GatewayClientProtocol {
     /// 模拟消息历史
     var mockHistory: [ChatMessage] = []
 
-    func connect() async {
+    func connect(silent _: Bool = false) async {
         if simulatedDelay > 0 {
             try? await Task.sleep(nanoseconds: UInt64(simulatedDelay * 1_000_000_000))
         }

@@ -176,34 +176,19 @@ struct ContentView: View {
                 viewModel.isSyncing = false
             }
             Button("sync".localized) {
-                // 点"确定"：先关闭弹窗，再开始同步
+                // 点"确定"：直接重新创建 ViewModel（自动处理所有逻辑，包括冲突）
                 viewModel.isSyncing = false
                 Task {
-                    // ✅ 同步前先断开重连，确保连接可靠
-                    viewModel.gatewayClient?.disconnect()
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                    // ✅ 直接重新创建 ViewModel，自动处理所有逻辑（包括冲突）
+                    let newViewModel = DeckViewModel()
 
-                    // ✅ 重新建立连接
+                    // ✅ 用新的替换旧的
+                    self.viewModel = newViewModel
+
+                    // ✅ 新 ViewModel 会自动初始化
                     let gatewayUrl = UserDefaults.standard.string(forKey: "openclaw.deck.gatewayUrl") ?? "ws://127.0.0.1:18789"
                     let token = UserDefaults.standard.string(forKey: "openclaw.deck.token")
-                    await viewModel.initialize(url: gatewayUrl, token: token)
-
-                    // ✅ 等待连接完成（最多 10 秒）
-                    for _ in 0 ..< 20 {
-                        if viewModel.gatewayClient?.connected ?? false {
-                            break
-                        }
-                        try? await Task.sleep(nanoseconds: 500_000_000)
-                    }
-
-                    // ✅ 检查连接结果
-                    guard viewModel.gatewayClient?.connected ?? false else {
-                        logger.error("❌ 重连失败，无法同步")
-                        return
-                    }
-
-                    // ✅ 连接成功，开始同步
-                    await viewModel.handleSync()
+                    await newViewModel.initialize(url: gatewayUrl, token: token)
                 }
             }
             .tint(.blue)

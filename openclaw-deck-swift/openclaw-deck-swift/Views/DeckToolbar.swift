@@ -22,51 +22,47 @@ struct DeckToolbar: ToolbarContent {
     var showingSortSheet: Binding<Bool>?
 
     var body: some ToolbarContent {
-        // 左边：设置按钮 + 连接状态
+        // 左边：设置按钮（独立 ToolbarItem）
         #if os(iOS)
             ToolbarItem(placement: .topBarLeading) {
-                HStack(spacing: 8) {
-                    Button {
-                        if let onShowSettings {
-                            onShowSettings()
-                        } else {
-                            showingSettings = true
-                        }
-                    } label: {
-                        Image(systemName: "gear")
+                Button {
+                    if let onShowSettings {
+                        onShowSettings()
+                    } else {
+                        showingSettings = true
                     }
-                    .accessibilityIdentifier("settingsButton")
-
-                    Divider()
-
-                    // 连接状态指示器（爱心形状）
-                    ConnectionStatusIcon(
-                        status: viewModel?.gatewayClient?.connectionStatus ?? connectionStatus
-                    )
+                } label: {
+                    Image(systemName: "gear")
                 }
+                .accessibilityIdentifier("settingsButton")
+            }
+
+            // 连接状态指示器（独立 ToolbarItem，系统自动加间距）
+            ToolbarItem(placement: .topBarLeading) {
+                ConnectionStatusIcon(
+                    status: viewModel?.gatewayClient?.connectionStatus ?? connectionStatus
+                )
             }
 
         #else
             ToolbarItem(placement: .automatic) {
-                HStack(spacing: 8) {
-                    Button {
-                        if let onShowSettings {
-                            onShowSettings()
-                        } else {
-                            showingSettings = true
-                        }
-                    } label: {
-                        Image(systemName: "gear")
+                Button {
+                    if let onShowSettings {
+                        onShowSettings()
+                    } else {
+                        showingSettings = true
                     }
-                    .accessibilityIdentifier("settingsButton")
-
-                    Divider()
-
-                    // 连接状态指示器（爱心形状）
-                    ConnectionStatusIcon(
-                        status: viewModel?.gatewayClient?.connectionStatus ?? connectionStatus
-                    )
+                } label: {
+                    Image(systemName: "gear")
                 }
+                .accessibilityIdentifier("settingsButton")
+            }
+
+            // 连接状态指示器（独立 ToolbarItem，系统自动加间距）
+            ToolbarItem(placement: .automatic) {
+                ConnectionStatusIcon(
+                    status: viewModel?.gatewayClient?.connectionStatus ?? connectionStatus
+                )
             }
         #endif
 

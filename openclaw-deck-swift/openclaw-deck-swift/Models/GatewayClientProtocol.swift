@@ -29,6 +29,9 @@ protocol GatewayClientProtocol {
     /// 断开连接
     func disconnect()
 
+    /// 处理断开连接（被动断开 → 自动重连）
+    func handleDisconnect()
+
     /// 清除错误
     func clearError()
 

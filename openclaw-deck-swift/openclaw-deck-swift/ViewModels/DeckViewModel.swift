@@ -384,7 +384,16 @@ class DeckViewModel {
                 } else {
                     logger.error("❌ Gateway 连接失败")
                     self.stopHeartbeatMonitoring() // ✅ 停止心跳检测
-                    self.appState = .disconnected
+
+                    // ✅ 检查是否是重连中（被动断开）
+                    // 如果是重连中，不回到欢迎页面，保持当前状态
+                    if self.gatewayClient?.connectionStatus == .reconnecting {
+                        logger.log("🔄 重连中，保持当前界面...")
+                        // 不设置 appState = .disconnected，保持当前状态
+                    } else {
+                        // 真正断开（手动断开或重连彻底失败）
+                        self.appState = .disconnected
+                    }
                     // 获取错误信息
                     // 连接失败，错误信息已在 client 中
                 }
@@ -730,7 +739,17 @@ class DeckViewModel {
                 } else {
                     logger.error("❌ Gateway 连接失败")
                     self.stopHeartbeatMonitoring() // ✅ 停止心跳检测
-                    self.appState = .disconnected
+
+                    // ✅ 检查 connected 状态（用户期望的连接状态）
+                    // connected = false → 用户期望断开（手动断开）→ 回到欢迎页面
+                    // connected = true → 用户期望连接（被动断开）→ 保持当前界面，继续重连
+                    if self.gatewayClient?.connected ?? false {
+                        logger.log("🔄 用户期望连接，保持当前界面，继续重连...")
+                        // 不设置 appState = .disconnected
+                    } else {
+                        // 用户期望断开（手动断开）
+                        self.appState = .disconnected
+                    }
                     // 连接失败，错误信息已在 client 中
                 }
             }

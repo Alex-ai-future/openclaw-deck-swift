@@ -13,18 +13,13 @@ class MockGatewayClient: GatewayClientProtocol {
     var connected: Bool = true
     var connectionError: String?
     var connectionStatus: ConnectionStatus {
-        if connectionError != nil, !isAutoReconnecting {
-            .disconnected
-        } else if isAutoReconnecting {
-            .reconnecting
-        } else if connected, connectionError == nil {
+        if connected {
             .connected
         } else {
             .disconnected
         }
     }
 
-    var isAutoReconnecting: Bool = false
     var onEvent: ((GatewayEvent) -> Void)?
     var onConnection: ((Bool) -> Void)?
 
@@ -47,6 +42,15 @@ class MockGatewayClient: GatewayClientProtocol {
     func disconnect() {
         connected = false
         onConnection?(false)
+    }
+
+    func handleDisconnect() {
+        // Mock 实现：被动断开时触发重连
+        connected = false
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms 延迟
+            await self.connect()
+        }
     }
 
     func clearError() {

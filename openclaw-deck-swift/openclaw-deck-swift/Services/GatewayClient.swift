@@ -7,6 +7,7 @@
 import CryptoKit
 import Foundation
 import os
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "Gateway")
 
@@ -87,9 +88,6 @@ class GatewayClient: GatewayClientProtocol {
     /// 认证 Token（用户手动输入，不持久化存储）
     let token: String?
 
-    /// 是否为模拟模式（用于测试）
-    private let isMock: Bool
-
     // MARK: - State
 
     /// 连接状态（是否已连接）
@@ -101,23 +99,26 @@ class GatewayClient: GatewayClientProtocol {
     /// 是否正在连接
     internal(set) var isConnecting: Bool = false
 
-    /// WebSocket 任务（用于连接和通信）
-    private var webSocket: URLSessionWebSocketTask?
+    /// WebSocket 连接（可注入，用于测试）
+    private var webSocket: WebSocketConnection?
+
+    /// URL Session（可注入，用于测试）
+    private let urlSession: URLSession
 
     /// 待处理请求字典
-    private var pendingRequests: [String: PendingRequest] = [:]
+    var pendingRequests: [String: PendingRequest] = [:]
 
     /// 消息计数器（用于生成唯一 ID）
     private var messageCounter: Int = 0
 
     /// Connect nonce from challenge
-    private var connectNonce: String?
+    var connectNonce: String?
 
-    /// Whether connect request was sent
-    private var connectSent: Bool = false
+    /// Whether connect request was sent (internal for testing)
+    var connectSent: Bool = false
 
     /// Callback for waiting on connect challenge
-    private var challengeCallback: ((String) -> Void)?
+    var challengeCallback: ((String) -> Void)?
 
     /// Timeout timer for challenge
     private var challengeTimeoutTimer: Timer?
@@ -128,25 +129,47 @@ class GatewayClient: GatewayClientProtocol {
     // MARK: - Auto Reconnect
 
     /// 是否正在自动重连
-    private var isAutoReconnecting: Bool = false
+    var isAutoReconnecting: Bool = false
 
     /// 重连尝试次数
-    private var reconnectAttempts: Int = 0
+    var reconnectAttempts: Int = 0
+
+    // MARK: - Computed Properties
+
+    /// 连接状态（计算属性，优先判断断开和重连）
+    var connectionStatus: ConnectionStatus {
+        // 1. 断开连接（有错误且不在重连）
+        if connectionError != nil, !isAutoReconnecting {
+            .disconnected
+        }
+        // 2. 重试中
+        else if isAutoReconnecting {
+            .reconnecting
+        }
+        // 3. 已连接（connected = true 且无错误）
+        else if connected, connectionError == nil {
+            .connected
+        }
+        // 4. 其他情况（连接中、初始化等）
+        else {
+            .disconnected
+        }
+    }
 
     /// 当前重连延迟（纳秒）- 指数退避
-    private var currentReconnectDelay: UInt64 = 800_000_000 // 初始 800ms
+    var currentReconnectDelay: UInt64 = 800_000_000 // 初始 800ms
 
     /// 最大重连延迟（纳秒）
-    private let maxReconnectDelay: UInt64 = 15_000_000_000 // 15 秒
+    let maxReconnectDelay: UInt64 = 15_000_000_000 // 15 秒
 
     /// 指数退避系数
-    private let backoffMultiplier: Double = 1.7
+    let backoffMultiplier: Double = 1.7
 
     /// 最多重连次数
-    private let maxReconnectAttempts: Int = 10
+    let maxReconnectAttempts: Int = 10
 
-    /// 重连任务
-    private var reconnectTask: Task<Void, Never>?
+    /// 重连任务（内部可见，用于测试）
+    var reconnectTask: Task<Void, Never>?
 
     // MARK: - Callbacks
 
@@ -158,7 +181,7 @@ class GatewayClient: GatewayClientProtocol {
 
     // MARK: - Constants
 
-    private let requestTimeout: TimeInterval = 60
+    private let requestTimeout: TimeInterval = 180
     private let connectChallengeTimeout: TimeInterval = 15
     private let operatorScopes = ["operator.read", "operator.write", "operator.admin"]
     private let deviceIdentityStorageKey = "openclaw.deck.deviceIdentity.v1"
@@ -166,24 +189,28 @@ class GatewayClient: GatewayClientProtocol {
 
     // MARK: - Initialization
 
-    init(url: URL, token: String? = nil, isMock: Bool = false) {
+    /// 初始化 GatewayClient
+    /// - Parameters:
+    ///   - url: Gateway WebSocket URL
+    ///   - token: 认证 Token
+    ///   - urlSession: URLSession（可选注入，用于测试）
+    ///   - webSocket: WebSocket 连接（可选注入，用于测试）
+    init(
+        url: URL,
+        token: String? = nil,
+        urlSession: URLSession = .shared,
+        webSocket: WebSocketConnection? = nil
+    ) {
         self.url = url
         self.token = token
-        self.isMock = isMock
+        self.urlSession = urlSession
+        self.webSocket = webSocket
     }
 
     // MARK: - Public Methods
 
     /// 建立连接并完成握手
     func connect() async {
-        guard !isMock else {
-            connected = true
-            connectionError = nil
-            isConnecting = false
-            onConnection?(true)
-            return
-        }
-
         guard !isConnecting else {
             return
         }
@@ -193,15 +220,27 @@ class GatewayClient: GatewayClientProtocol {
         connectNonce = nil
         connectSent = false
 
-        let session = URLSession.shared
-        var request = URLRequest(url: url)
-        // Set Origin header - required by Gateway CORS policy
-        let origin = url.absoluteString
-            .replacingOccurrences(of: "ws://", with: "http://")
-            .replacingOccurrences(of: "wss://", with: "https://")
-        request.setValue(origin, forHTTPHeaderField: "Origin")
-        webSocket = session.webSocketTask(with: request)
+        // 使用注入的 WebSocket 或创建新的连接
+        if webSocket == nil {
+            var request = URLRequest(url: url)
+            // Set Origin header - required by Gateway CORS policy
+            let origin = url.absoluteString
+                .replacingOccurrences(of: "ws://", with: "http://")
+                .replacingOccurrences(of: "wss://", with: "https://")
+            request.setValue(origin, forHTTPHeaderField: "Origin")
+            webSocket = RealWebSocketConnection(
+                task: urlSession.webSocketTask(with: request)
+            )
+        }
         webSocket?.resume()
+
+        // 如果是 Mock WebSocket，快速返回成功
+        if webSocket is MockWebSocketConnection {
+            connected = true
+            isConnecting = false
+            onConnection?(true)
+            return
+        }
 
         // 开始接收消息
         await receiveMessage()
@@ -287,9 +326,9 @@ class GatewayClient: GatewayClientProtocol {
         connected = false
         isConnecting = false
 
-        // 取消 WebSocket
+        // 取消 WebSocket（但不设置为 nil，保留注入的 Mock WebSocket）
         webSocket?.cancel(with: .normalClosure, reason: nil)
-        webSocket = nil
+        // ⚠️ 注意：不清除 webSocket，这样多次 connect/disconnect 循环可以重用注入的 Mock
 
         // 拒绝所有待处理请求
         for (_, pending) in pendingRequests {
@@ -325,8 +364,8 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 发送请求并等待响应
     func request(method: String, params: [String: Any]? = nil) async throws -> GatewayResponse {
-        // 允许 mock 模式、已连接状态、或 connect 握手请求
-        guard isMock || connected || method == "connect" else {
+        // 允许已连接状态、或 connect 握手请求
+        guard connected || method == "connect" else {
             throw NSError(
                 domain: "GatewayClient",
                 code: -1,
@@ -334,14 +373,43 @@ class GatewayClient: GatewayClientProtocol {
             )
         }
 
-        if isMock {
+        // 如果是 Mock WebSocket，直接返回虚拟响应
+        if webSocket is MockWebSocketConnection {
             let id = nextId()
-            return GatewayResponse(
-                id: id,
-                ok: true,
-                payload: ["status": "success", "mock": true],
-                error: nil
-            )
+            // 根据方法类型返回不同的 Mock 响应
+            switch method {
+            case "agent":
+                return GatewayResponse(
+                    id: id,
+                    ok: true,
+                    payload: [
+                        "runId": "mock-run-\(id)",
+                        "status": "success",
+                    ],
+                    error: nil
+                )
+            case "chat.history":
+                return GatewayResponse(
+                    id: id,
+                    ok: true,
+                    payload: ["messages": []],
+                    error: nil
+                )
+            case "chat.abort":
+                return GatewayResponse(
+                    id: id,
+                    ok: true,
+                    payload: ["status": "aborted"],
+                    error: nil
+                )
+            default:
+                return GatewayResponse(
+                    id: id,
+                    ok: true,
+                    payload: ["status": "success", "mock": true],
+                    error: nil
+                )
+            }
         }
 
         let id = nextId()
@@ -367,13 +435,6 @@ class GatewayClient: GatewayClientProtocol {
         message: String,
         sessionKey: String? = nil
     ) async throws -> (runId: String, status: String) {
-        if isMock {
-            _ = try await request(
-                method: "agent", params: ["agentId": agentId, "message": message]
-            )
-            return ("mock-run-\(nextId())", "success")
-        }
-
         let idempotencyKey = "agent-\(Date().timeIntervalSince1970)-\(UUID().uuidString.prefix(6))"
 
         var params: [String: Any] = [
@@ -417,6 +478,11 @@ class GatewayClient: GatewayClientProtocol {
 
     /// 获取 Session 历史消息
     func getSessionHistory(sessionKey: String) async throws -> [ChatMessage]? {
+        // Mock 模式下直接返回 nil（表示没有历史）
+        if webSocket is MockWebSocketConnection {
+            return nil
+        }
+
         let result = try await request(
             method: "chat.history", params: ["sessionKey": sessionKey]
         )
@@ -462,12 +528,16 @@ class GatewayClient: GatewayClientProtocol {
             let roleLower = roleString.lowercased()
             if roleLower == "user" || roleLower == "assistant" {
                 // 过滤 assistant 空消息（user 消息即使是空也保留）
-                if roleLower == "assistant", text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if roleLower == "assistant",
+                   text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                {
                     continue
                 }
 
                 let role = MessageRole(rawValue: roleLower) ?? .assistant
-                let timestamp = Date(timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
+                let timestamp = Date(
+                    timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000
+                )
 
                 messages.append(
                     ChatMessage(
@@ -568,8 +638,10 @@ class GatewayClient: GatewayClientProtocol {
     /// 处理响应
     private func handleResponse(_ json: [String: Any]) {
         // 打印所有响应的完整 JSON 日志
-        if let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
-           let jsonString = String(data: jsonData, encoding: .utf8)
+        if let jsonData = try? JSONSerialization.data(
+            withJSONObject: json, options: .prettyPrinted
+        ),
+            let jsonString = String(data: jsonData, encoding: .utf8)
         {
             logger.info("📥 [Response] \(jsonString)")
         }
@@ -610,8 +682,10 @@ class GatewayClient: GatewayClientProtocol {
         guard let event = json["event"] as? String else { return }
 
         // 打印所有事件的完整 JSON 日志
-        if let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
-           let jsonString = String(data: jsonData, encoding: .utf8)
+        if let jsonData = try? JSONSerialization.data(
+            withJSONObject: json, options: .prettyPrinted
+        ),
+            let jsonString = String(data: jsonData, encoding: .utf8)
         {
             logger.info("📩 [Event] \(jsonString)")
         }
@@ -661,7 +735,9 @@ class GatewayClient: GatewayClientProtocol {
 
             // 打印所有发送请求的完整 JSON 日志
             if let jsonData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let prettyData = try? JSONSerialization.data(withJSONObject: jsonData, options: .prettyPrinted),
+               let prettyData = try? JSONSerialization.data(
+                   withJSONObject: jsonData, options: .prettyPrinted
+               ),
                let prettyString = String(data: prettyData, encoding: .utf8)
             {
                 logger.info("📤 [Request] \(prettyString)")
@@ -693,9 +769,9 @@ class GatewayClient: GatewayClientProtocol {
         return try JSONSerialization.data(withJSONObject: json)
     }
 
-    /// 发送 connect 握手
+    /// 发送 connect 握手（内部方法，用于测试）
     /// - Parameter silent: 是否静默连接（不触发 onConnection 回调）
-    private func sendConnect(silent: Bool = false) async {
+    func sendConnect(silent: Bool = false) async {
         if connectSent {
             return
         }
@@ -714,13 +790,14 @@ class GatewayClient: GatewayClientProtocol {
                 "client": [
                     "id": "gateway-client",
                     "version": "2026.2.16",
-                    "platform": "web",
-                    "mode": "webchat",
+                    "platform": "ios",
+                    "mode": "ui",
                 ],
                 "minProtocol": 3,
                 "maxProtocol": 3,
                 "role": "operator",
                 "scopes": operatorScopes,
+                "caps": ["tool-events"],
             ]
 
             // Add device identity if available
@@ -779,7 +856,7 @@ class GatewayClient: GatewayClientProtocol {
             version: version,
             deviceId: identity["id"] as! String,
             clientId: "gateway-client",
-            clientMode: "webchat",
+            clientMode: "ui",
             role: "operator",
             scopes: operatorScopes,
             signedAtMs: Int(signedAt),
@@ -854,7 +931,9 @@ class GatewayClient: GatewayClientProtocol {
                 var privateKeyData = base64UrlDecode(oldPrivateKeyBase64)
 
                 // If base64url decode failed or produced invalid size, try standard base64
-                if privateKeyData == nil || (privateKeyData!.count != 32 && privateKeyData!.count != 64) {
+                if privateKeyData == nil
+                    || (privateKeyData!.count != 32 && privateKeyData!.count != 64)
+                {
                     // Try standard base64 decode
                     var base64 = oldPrivateKeyBase64
                     // Add padding if needed
@@ -976,18 +1055,26 @@ class GatewayClient: GatewayClientProtocol {
         UserDefaults.standard.set(token, forKey: key)
     }
 
-    /// 处理断开连接
-    private func handleDisconnect() {
+    /// 处理断开连接（内部方法，用于测试）
+    func handleDisconnect() {
+        // Mock 模式下，只设置标志，不真正启动重连任务
+        if webSocket is MockWebSocketConnection {
+            isAutoReconnecting = true
+            return
+        }
+
         // ✅ 启动静默重连，不立即通知 UI
         startSilentReconnect()
     }
 
     /// 启动静默重连（后台自动重连，不影响 UI）
-    private func startSilentReconnect() {
+    func startSilentReconnect() {
         guard !isAutoReconnecting else {
             logger.warning("⚠️ Already reconnecting, skipping")
             return
         }
+
+        logger.info("🔄 Starting auto-reconnect in \(self.currentReconnectDelay / 1_000_000)ms...")
 
         reconnectTask?.cancel()
 
@@ -998,47 +1085,74 @@ class GatewayClient: GatewayClientProtocol {
             do {
                 try await Task.sleep(nanoseconds: self.currentReconnectDelay)
             } catch {
-                // Task cancelled
+                logger.info("⏹️ Auto-reconnect task cancelled")
                 return
             }
 
             // 检查是否还需要重连
-            guard self.isAutoReconnecting else { return }
+            guard self.isAutoReconnecting else {
+                logger.info("⏹️ Auto-reconnect cancelled, no longer needed")
+                return
+            }
 
+            logger.info("🚀 Executing auto-reconnect attempt...")
             await self.reconnect()
         }
     }
 
-    /// 执行重连（静默）
-    private func reconnect() async {
+    /// 执行重连（静默，内部方法用于测试）
+    func reconnect() async {
         isAutoReconnecting = true
         reconnectAttempts += 1
-        logger.info("🔄 Auto-reconnecting (attempt \(self.reconnectAttempts)/\(self.maxReconnectAttempts))...")
+
+        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        logger.info(
+            "🔄 Auto-reconnect attempt #\(self.reconnectAttempts)/\(self.maxReconnectAttempts)"
+        )
+        logger.info("📍 Current delay: \(self.currentReconnectDelay / 1_000_000)ms")
+        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         // 重置 WebSocket 连接
         webSocket?.cancel(with: .normalClosure, reason: nil)
-        webSocket = nil
+        // ⚠️ 不清除 webSocket，保留注入的 Mock WebSocket
 
         // ✅ 重置 connectNonce，让重连时重新等待新的 nonce
         connectNonce = nil
         connectSent = false
 
+        // 如果是 Mock WebSocket，快速返回成功
+        if webSocket is MockWebSocketConnection {
+            logger.info("🧪 Mock mode detected")
+            connected = true
+            isAutoReconnecting = false
+            reconnectAttempts = 0
+            currentReconnectDelay = 800_000_000
+            logger.info("✅ Mock reconnect succeeded")
+            logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            return
+        }
+
         do {
-            let session = URLSession.shared
+            logger.info("🔌 Creating new WebSocket connection...")
+            // 使用注入的 URLSession 创建新连接（真实连接）
             var request = URLRequest(url: url)
             let origin = url.absoluteString
                 .replacingOccurrences(of: "ws://", with: "http://")
                 .replacingOccurrences(of: "wss://", with: "https://")
             request.setValue(origin, forHTTPHeaderField: "Origin")
-            webSocket = session.webSocketTask(with: request)
+            webSocket = RealWebSocketConnection(
+                task: urlSession.webSocketTask(with: request)
+            )
             webSocket?.resume()
 
+            logger.info("⏳ Waiting for connection challenge...")
             // 开始接收消息
             await receiveMessage()
 
             // 等待连接挑战
             try await waitForChallenge()
 
+            logger.info("📤 Sending connect handshake (silent)...")
             // 发送 connect 握手（静默模式，不触发 UI 回调）
             await sendConnect(silent: true)
 
@@ -1048,14 +1162,22 @@ class GatewayClient: GatewayClientProtocol {
             connected = true
             currentReconnectDelay = 800_000_000 // 重置为初始值
             logger.info("✅ Auto-reconnect succeeded (silent)")
+            logger.info("📊 Reconnect attempts: \(self.reconnectAttempts)")
+            logger.info("📊 Connection state: connected=\(self.connected)")
+            logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         } catch {
-            logger.error("❌ Auto-reconnect attempt \(self.reconnectAttempts) failed: \(error.localizedDescription)")
+            logger.error("❌ Auto-reconnect attempt #\(self.reconnectAttempts) failed")
+            logger.error("📍 Error: \(error.localizedDescription)")
 
             // 检查是否达到最大重试次数
             if reconnectAttempts >= maxReconnectAttempts {
                 // ❌ 重连彻底失败，通知 UI
-                logger.error("❌ Auto-reconnect failed after \(self.maxReconnectAttempts) attempts, notifying UI")
+                logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                logger.error("❌ Auto-reconnect FAILED after \(self.maxReconnectAttempts) attempts")
+                logger.error("📍 Will notify UI and stop reconnecting")
+                logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
                 isAutoReconnecting = false
                 connected = false
                 isConnecting = false
@@ -1076,12 +1198,18 @@ class GatewayClient: GatewayClientProtocol {
                 onConnection?(false) // ← 现在才通知 UI
             } else {
                 // ✅ 继续下一次重连，增加延迟（指数退避）
+                logger.info("⏭️ Will retry with increased delay")
                 isAutoReconnecting = false
-                currentReconnectDelay = UInt64(min(
-                    Double(currentReconnectDelay) * backoffMultiplier,
-                    Double(maxReconnectDelay)
-                ))
-                logger.info("⏱️ 下次重连延迟：\(self.currentReconnectDelay / 1_000_000)ms")
+                currentReconnectDelay = UInt64(
+                    min(
+                        Double(currentReconnectDelay) * backoffMultiplier,
+                        Double(maxReconnectDelay)
+                    )
+                )
+                logger.info(
+                    "⏱️ Next retry delay: \(self.currentReconnectDelay / 1_000_000)ms (\(String(format: "%.1f", Double(self.currentReconnectDelay) / 1_000_000_000.0))s)"
+                )
+                logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 startSilentReconnect()
             }
         }

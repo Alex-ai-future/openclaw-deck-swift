@@ -20,6 +20,11 @@
 "cancel" = "取消";
 "delete" = "删除";
 "confirm" = "确认";
+"select_text" = "选择文本";
+"status_connected" = "已连接";
+"status_reconnecting" = "重连中";
+"status_disconnected" = "未连接";
+"device_status" = "设备状态";
 "continue" = "继续";
 "done" = "完成";
 "settings" = "设置";
@@ -293,3 +298,14 @@
 // MARK: - Connection Errors
 "connection_challenge_failed" = "无法连接到 Gateway，请检查网络后重试";
 "connection_handshake_failed" = "连接握手失败，请检查 Gateway 状态";
+
+// MARK: - Tool Messages
+"tool_messages" = "工具消息";
+"show_tool_messages" = "显示工具调用";
+
+// MARK: - Session Details (Refactored)
+"session_info" = "会话信息";
+"messages" = "消息";
+"timeline" = "时间线";
+"actions" = "操作";
+"session_actions_footer" = "归档可保存历史并继续，删除将永久移除所有数据";

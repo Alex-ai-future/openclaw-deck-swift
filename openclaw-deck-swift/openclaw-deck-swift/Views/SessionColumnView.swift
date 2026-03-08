@@ -22,13 +22,31 @@ struct SessionColumnView: View {
     @State private var showingSessionDetails = false
     @State private var scrollTargetId: String? // 待滚动的目标消息 ID
 
+    /// 过滤后的消息列表（根据 showToolMessages 开关）
+    private var filteredMessages: [ChatMessage] {
+        session.messages.filter { message in
+            // 始终显示 user 和 assistant 消息
+            if message.role == .user || message.role == .assistant {
+                return true
+            }
+            // 工具消息根据开关决定是否显示
+            if message.role == .tool {
+                return session.showToolMessages
+            }
+            // 其他角色不显示
+            return false
+        }
+    }
+
     /// 滚动到底部（手动点击按钮）
     private func scrollToBottom() {
-        guard let lastId = session.messages.last?.id else { return }
+        // 使用最后一条可见消息（根据 showToolMessages 过滤）
+        guard let lastVisibleMessage = session.getLastVisibleMessage() else { return }
+
         // 先清空再设置，强制触发 onChange（即使 ID 相同）
         scrollTargetId = nil
         DispatchQueue.main.async {
-            scrollTargetId = lastId
+            scrollTargetId = lastVisibleMessage.id
         }
     }
 
@@ -46,35 +64,6 @@ struct SessionColumnView: View {
                 to: session,
                 viewModel: viewModel
             )
-        }
-    }
-
-    /// 发送 Stop 请求 - 中断当前对话
-    private func sendStopMessage() {
-        guard let client = viewModel.gatewayClient else {
-            // Gateway 未连接，显示错误
-            viewModel.stopErrorText = "Gateway 未连接"
-            viewModel.showStopError = true
-            return
-        }
-
-        Task {
-            do {
-                // 不传 runId，让 Gateway 中止该 session 的所有活跃 run
-                // 这样更可靠，因为 runId 可能已经过期或不匹配
-                try await client.abortChat(sessionKey: session.sessionKey, runId: nil)
-                // 成功后更新状态
-                await MainActor.run {
-                    session.activeRunId = nil
-                    session.status = .idle
-                }
-            } catch {
-                // 失败时显示错误提示
-                await MainActor.run {
-                    viewModel.stopErrorText = "Stop 失败：\(error.localizedDescription)"
-                    viewModel.showStopError = true
-                }
-            }
         }
     }
 
@@ -130,24 +119,28 @@ struct SessionColumnView: View {
                             scrollToBottom()
                         }
 
-                        // 快速操作按钮组
-                        // 判断状态
-                        let isProcessing = session.activeRunId != nil
-
-                        // Stop 按钮 - 优先级最高，无论是否选中，AI 处理中时都显示
-                        if isProcessing {
+                        // 🔧 工具消息开关 - 只在选中时显示
+                        if isSelected {
                             Button {
-                                sendStopMessage()
+                                session.showToolMessages.toggle()
                             } label: {
-                                Image(systemName: "stop.circle")
-                                    .font(.title2)
-                                    .foregroundColor(.red)
+                                Image(
+                                    systemName: session.showToolMessages
+                                        ? "wrench.and.screwdriver.fill" : "wrench"
+                                )
+                                .resizable()
+                                .aspectRatio(1, contentMode: .fit)
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(
+                                    session.showToolMessages ? .green : .blue
+                                )
                             }
                             .buttonStyle(.glass)
-                            .frame(height: 40)
+                            .frame(width: 40, height: 40)
                         }
-                        // 其他按钮只在选中时显示
-                        else if isSelected {
+
+                        // 快速操作按钮组 - 只在选中时显示
+                        if isSelected {
                             // 判断状态
                             let hasInput = !viewModel.globalInputState.inputText.isEmpty
 
@@ -156,26 +149,29 @@ struct SessionColumnView: View {
                                 Button {
                                     sendInputMessage()
                                 } label: {
-                                    Image(systemName: "arrow.up.circle").accessibilityIdentifier(
-                                        "sendButton"
-                                    )
-                                    .font(.title2)
-                                    .foregroundColor(.blue)
+                                    Image(systemName: "arrow.up.circle")
+                                        .resizable()
+                                        .aspectRatio(1, contentMode: .fit)
+                                        .frame(width: 24, height: 24)
+                                        .foregroundColor(.blue)
+                                        .accessibilityIdentifier("sendButton")
                                 }
                                 .buttonStyle(.glass)
-                                .frame(height: 40)
+                                .frame(width: 40, height: 40)
                             }
                             // OK 按钮 - 输入框为空且 AI 未处理时显示
                             else {
                                 Button {
                                     sendOKMessage()
                                 } label: {
-                                    Text("ok".localized)
-                                        .font(.title3)
+                                    Image(systemName: "arrow.right.circle")
+                                        .resizable()
+                                        .aspectRatio(1, contentMode: .fit)
+                                        .frame(width: 24, height: 24)
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.glass)
-                                .frame(height: 40)
+                                .frame(width: 40, height: 40)
                             }
                         }
                     }
@@ -316,18 +312,18 @@ struct SessionColumnView: View {
                             }
 
                             // Messages
-                            ForEach(session.messages) { message in
+                            ForEach(filteredMessages) { message in
                                 MessageView(message: message)
                                     .id(message.id)
                             }
-                            .animation(.easeOut(duration: 0.05), value: session.messages)
+                            .animation(.easeOut(duration: 0.05), value: filteredMessages)
                         }
                     }
                 }
                 .padding()
             }
-            .onChange(of: session.messages.last?.id) { _, newLastMessageId in
-                if let lastId = newLastMessageId {
+            .onChange(of: session.getLastVisibleMessage()?.id) { _, newLastVisibleMessageId in
+                if let lastId = newLastVisibleMessageId {
                     scrollTargetId = lastId
                 }
             }
@@ -383,16 +379,34 @@ struct SessionColumnView: View {
     struct MessageView: View {
         let message: ChatMessage
         @State private var showFullContent = false
+        @State private var showSelectSheet = false
+        @State private var selectText: String = ""
 
         var body: some View {
-            // 只显示 user 和 assistant 消息
-            if message.role != .user, message.role != .assistant {
+            // 显示 user、assistant 和 tool 消息
+            if message.role != .user, message.role != .assistant, message.role != .tool {
                 EmptyView()
                 //      } else if message.text.isEmpty && !shouldShowEmptyMessage {
                 //        // 对于 assistant 空消息，只有在 streaming 时显示占位
                 //        EmptyView()
             } else {
                 messageBody
+                    .sheet(isPresented: $showSelectSheet) {
+                        // 纯文本选择 Sheet
+                        VStack {
+                            Text("select_text".localized)
+                                .font(.headline)
+                                .padding()
+
+                            TextEditor(text: $selectText)
+                                .font(.body)
+                                .textSelection(.enabled)
+                                .padding()
+                        }
+                        .onAppear {
+                            selectText = message.text
+                        }
+                    }
             }
         }
 
@@ -410,13 +424,20 @@ struct SessionColumnView: View {
                         .background(backgroundColor)
                         .cornerRadius(18, corners: cornerMask)
                         .contextMenu {
+                            // 复制全部
                             Button {
                                 UIPasteboard.general.string = message.text
-
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                 impactFeedback.impactOccurred()
                             } label: {
                                 Label("copy".localized, systemImage: "doc.on.doc")
+                            }
+
+                            // 选择文本
+                            Button {
+                                showSelectSheet = true
+                            } label: {
+                                Label("select_text".localized, systemImage: "text.cursor")
                             }
                         }
 
@@ -433,11 +454,12 @@ struct SessionColumnView: View {
 
         @ViewBuilder
         private var messageContent: some View {
-            if message.role == .assistant {
-                // 使用 MarkdownUI 支持链接点击
+            if message.role == .assistant || message.role == .tool {
+                // 使用 MarkdownUI 支持链接点击（助手和工具消息）
                 Markdown(message.text)
                     .font(.body)
                     .foregroundColor(.primary)
+                    .textSelection(.enabled)
                     .onOpenURL { url in
                         #if os(iOS) || os(visionOS)
                             UIApplication.shared.open(url)
@@ -447,6 +469,7 @@ struct SessionColumnView: View {
                 Text(message.text)
                     .font(.body)
                     .foregroundColor(.white)
+                    .textSelection(.enabled)
             }
         }
 
@@ -490,8 +513,8 @@ struct SessionColumnView: View {
         let message: ChatMessage
 
         var body: some View {
-            // 只显示 user 和 assistant 消息
-            if message.role != .user, message.role != .assistant {
+            // 显示 user、assistant 和 tool 消息
+            if message.role != .user, message.role != .assistant, message.role != .tool {
                 EmptyView()
             } else {
                 messageBody
@@ -525,7 +548,8 @@ struct SessionColumnView: View {
 
         @ViewBuilder
         private var messageContent: some View {
-            if message.role == .assistant {
+            if message.role == .assistant || message.role == .tool {
+                // 使用 MarkdownUI 支持链接点击（助手和工具消息）
                 Markdown(message.text)
                     .font(.body)
                     .foregroundColor(.primary)
@@ -539,6 +563,7 @@ struct SessionColumnView: View {
                 Text(message.text)
                     .font(.body)
                     .foregroundColor(.white)
+                    .textSelection(.enabled)
             }
         }
 

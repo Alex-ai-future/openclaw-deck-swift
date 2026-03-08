@@ -20,6 +20,11 @@
 "cancel" = "Cancel";
 "delete" = "Delete";
 "confirm" = "Confirm";
+"select_text" = "Select Text";
+"status_connected" = "Connected";
+"status_reconnecting" = "Reconnecting";
+"status_disconnected" = "Disconnected";
+"device_status" = "Device Status";
 "continue" = "Continue";
 "done" = "Done";
 "settings" = "Settings";
@@ -280,3 +285,14 @@
 // MARK: - Connection Errors
 "connection_challenge_failed" = "Failed to connect to Gateway, please check network and try again";
 "connection_handshake_failed" = "Connection handshake failed, please check Gateway status";
+
+// MARK: - Tool Messages
+"tool_messages" = "Tool Messages";
+"show_tool_messages" = "Show Tool Calls";
+
+// MARK: - Session Details (Refactored)
+"session_info" = "Session Info";
+"messages" = "Messages";
+"timeline" = "Timeline";
+"actions" = "Actions";
+"session_actions_footer" = "Archive saves history and continues, delete permanently removes all data";

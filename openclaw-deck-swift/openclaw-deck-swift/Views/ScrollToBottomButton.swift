@@ -16,11 +16,13 @@ struct ScrollToBottomButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "arrow.down.message")
-                .font(.title3)
+                .resizable()
+                .aspectRatio(1, contentMode: .fit)
+                .frame(width: 24, height: 24)
                 .foregroundColor(.blue)
         }
         .buttonStyle(.glass)
-        .frame(width: 36, height: 36)
+        .frame(width: 40, height: 40)
     }
 }
 

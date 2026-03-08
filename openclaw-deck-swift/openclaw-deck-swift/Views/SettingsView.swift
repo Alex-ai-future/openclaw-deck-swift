@@ -3,6 +3,7 @@
 //
 // Settings view - organized by functional groups
 
+import OSLog
 import SwiftUI
 
 struct SettingsView: View {
@@ -14,6 +15,10 @@ struct SettingsView: View {
     /// ViewModel binding for settings
     var viewModel: DeckViewModel?
 
+    /// Gateway 发现服务
+    @StateObject private var discovery = GatewayDiscoveryService.shared
+
+    private let logger = Logger(subsystem: "com.openclaw.deck", category: "SettingsView")
     private let languageManager = LanguageManager.shared
 
     @State private var hasChanges = false
@@ -36,7 +41,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // MARK: - 1. CONNECTION STATUS (Read-only)
+                // MARK: - 1. DEVICE STATUS (Read-only)
 
                 Section {
                     HStack {
@@ -51,7 +56,7 @@ struct SettingsView: View {
                         Spacer()
                     }
                 } header: {
-                    Label("connection".localized, systemImage: "network")
+                    Label("device_status".localized, systemImage: "iphone")
                 } footer: {
                     if isConnected {
                         Text(String(format: "gateway_url_format".localized, gatewayUrl))
@@ -135,7 +140,83 @@ struct SettingsView: View {
                     Text("notifications_and_cloud_sync_settings".localized)
                 }
 
-                // MARK: - 4. DEVICE MANAGEMENT
+                // MARK: - 4. LAN GATEWAY DISCOVERY
+
+                Section {
+                    // 扫描按钮
+                    Button {
+                        discovery.refresh()
+                    } label: {
+                        HStack {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                            Text("Scan LAN Gateway")
+                            Spacer()
+                            if discovery.isScanning {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            }
+                        }
+                    }
+                    .disabled(discovery.isScanning)
+
+                    // 发现结果列表
+                    if !discovery.gateways.isEmpty {
+                        ForEach(discovery.gateways) { gateway in
+                            Button {
+                                // 点击使用此 Gateway（使用主机名，更稳定）
+                                gatewayUrl = gateway.wsURL
+                                logger.info("✅ 已选择 Gateway: \(gateway.name) @ \(gateway.displayAddress)")
+                            } label: {
+                                VStack(alignment: .leading) {
+                                    Text(gateway.name)
+                                        .font(.headline)
+
+                                    HStack {
+                                        Image(systemName: "network")
+                                        Text(gateway.displayAddress)
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+
+                                    // IP 地址仅用于调试/诊断
+                                    if let ip = gateway.ipAddress {
+                                        HStack {
+                                            Image(systemName: "info.circle")
+                                            Text("IP: \(ip) (自动跟踪)")
+                                        }
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary.opacity(0.7))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 扫描状态提示
+                    if discovery.isScanning {
+                        HStack {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(.secondary)
+                                .rotationEffect(.degrees(360))
+                                .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: discovery.isScanning)
+                            Text("Scanning...")
+                                .foregroundColor(.secondary)
+                        }
+                        .font(.caption)
+                    } else if let lastScan = discovery.lastScanTime {
+                        Text("Last scan: " + lastScan.formatted(.relative(presentation: .named)))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                } header: {
+                    Label("LAN Gateway Discovery", systemImage: "wifi.router")
+                } footer: {
+                    Text("Scan and connect to Gateway on local network")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // MARK: - 5. DEVICE MANAGEMENT
 
                 Section {
                     Button {
@@ -166,7 +247,7 @@ struct SettingsView: View {
                     Text("clear_stored_device_identity_and_token".localized)
                 }
 
-                // MARK: - 5. DISCONNECT (Separate section for safety)
+                // MARK: - 6. DISCONNECT (Separate section for safety)
 
                 Section {
                     Button {
@@ -186,7 +267,7 @@ struct SettingsView: View {
                     Text("disconnect_from_gateway_and_return_to_welcome_screen".localized)
                 }
 
-                // MARK: - 6. HELP
+                // MARK: - 7. HELP
 
                 Section {
                     Link(
@@ -221,7 +302,7 @@ struct SettingsView: View {
                     Text("view_complete_usage_instructions_and_troubleshooting_guide".localized)
                 }
 
-                // MARK: - 7. ABOUT
+                // MARK: - 8. ABOUT
 
                 Section {
                     HStack {

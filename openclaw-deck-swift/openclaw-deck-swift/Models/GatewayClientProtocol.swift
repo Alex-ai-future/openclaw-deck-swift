@@ -14,6 +14,9 @@ protocol GatewayClientProtocol {
     /// 连接错误信息
     var connectionError: String? { get set }
 
+    /// 连接状态（计算属性）
+    var connectionStatus: ConnectionStatus { get }
+
     /// 事件回调
     var onEvent: ((GatewayEvent) -> Void)? { get set }
 

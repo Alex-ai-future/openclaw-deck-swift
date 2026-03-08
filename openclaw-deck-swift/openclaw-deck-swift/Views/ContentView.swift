@@ -123,12 +123,20 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     #endif
                 } else {
-                    // 加载中时显示 LoadingView
-                    LoadingView(appState: viewModel.appState)
+                    // 加载中时显示 LoadingView（带工具栏）
+                    LoadingView(
+                        appState: viewModel.appState,
+                        viewModel: viewModel,
+                        onShowSettings: { showingSettings = true }
+                    )
                 }
             } else if viewModel.appState.isLoading {
-                // ✅ 初始化连接中
-                LoadingView(appState: viewModel.appState)
+                // ✅ 初始化连接中（带工具栏）
+                LoadingView(
+                    appState: viewModel.appState,
+                    viewModel: viewModel,
+                    onShowSettings: { showingSettings = true }
+                )
             } else {
                 // ❌ 未连接
                 WelcomeView(
@@ -136,6 +144,7 @@ struct ContentView: View {
                     token: $token,
                     connectionError: viewModel.gatewayClient?.connectionError,
                     isConnecting: viewModel.appState.isLoading,
+                    connectionStatus: viewModel.gatewayClient?.connectionStatus ?? .disconnected,
                     onClearError: {
                         viewModel.clearConnectionError()
                     },
@@ -176,10 +185,19 @@ struct ContentView: View {
                 viewModel.isSyncing = false
             }
             Button("sync".localized) {
-                // 点"确定"：先关闭弹窗，再开始同步
+                // 点"确定"：直接重新创建 ViewModel（自动处理所有逻辑，包括冲突）
                 viewModel.isSyncing = false
                 Task {
-                    await viewModel.handleSync()
+                    // ✅ 直接重新创建 ViewModel，自动处理所有逻辑（包括冲突）
+                    let newViewModel = DeckViewModel()
+
+                    // ✅ 用新的替换旧的
+                    self.viewModel = newViewModel
+
+                    // ✅ 新 ViewModel 会自动初始化
+                    let gatewayUrl = UserDefaults.standard.string(forKey: "openclaw.deck.gatewayUrl") ?? "ws://127.0.0.1:18789"
+                    let token = UserDefaults.standard.string(forKey: "openclaw.deck.token")
+                    await newViewModel.initialize(url: gatewayUrl, token: token)
                 }
             }
             .tint(.blue)
@@ -302,6 +320,7 @@ struct WelcomeView: View {
     @Binding var token: String
     let connectionError: String?
     let isConnecting: Bool
+    let connectionStatus: ConnectionStatus
     let onClearError: () -> Void
     let onShowSettings: () -> Void
 
@@ -426,22 +445,36 @@ struct WelcomeView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            onShowSettings()
-                        } label: {
-                            Image(systemName: "gear")
-                                .font(.title2)
+                        HStack(spacing: 8) {
+                            Button {
+                                onShowSettings()
+                            } label: {
+                                Image(systemName: "gear")
+                                    .font(.title2)
+                            }
+
+                            Divider()
+
+                            // 连接状态指示器（空心圆圈）
+                            ConnectionStatusIcon(status: connectionStatus)
                         }
                     }
                 }
             #else
                 .toolbar {
                         ToolbarItem(placement: .automatic) {
-                            Button {
-                                onShowSettings()
-                            } label: {
-                                Image(systemName: "gear")
-                                    .font(.title2)
+                            HStack(spacing: 8) {
+                                Button {
+                                    onShowSettings()
+                                } label: {
+                                    Image(systemName: "gear")
+                                        .font(.title2)
+                                }
+
+                                Divider()
+
+                                // 连接状态指示器（空心圆圈）
+                                ConnectionStatusIcon(status: connectionStatus)
                             }
                         }
                     }

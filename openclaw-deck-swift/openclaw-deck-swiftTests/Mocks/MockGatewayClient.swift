@@ -12,6 +12,19 @@ import Foundation
 class MockGatewayClient: GatewayClientProtocol {
     var connected: Bool = true
     var connectionError: String?
+    var connectionStatus: ConnectionStatus {
+        if connectionError != nil, !isAutoReconnecting {
+            .disconnected
+        } else if isAutoReconnecting {
+            .reconnecting
+        } else if connected, connectionError == nil {
+            .connected
+        } else {
+            .disconnected
+        }
+    }
+
+    var isAutoReconnecting: Bool = false
     var onEvent: ((GatewayEvent) -> Void)?
     var onConnection: ((Bool) -> Void)?
 

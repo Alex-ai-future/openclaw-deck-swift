@@ -76,6 +76,9 @@ class SessionState: Hashable, Identifiable {
     /// 🆕 用户自定义名称（显示在 UI 上）
     var name: String?
 
+    /// 是否显示工具调用消息（临时状态，不持久化）
+    var showToolMessages: Bool = false
+
     /// 最后一条消息的时间
     var lastMessageAt: Date? {
         messages.last?.timestamp
@@ -142,5 +145,17 @@ class SessionState: Hashable, Identifiable {
     func clearMessages() {
         messages.removeAll()
         messageLoadState = .notLoaded
+    }
+
+    // MARK: - Visible Messages
+
+    /// 获取可见的最后一条消息（根据 showToolMessages 过滤）
+    func getLastVisibleMessage() -> ChatMessage? {
+        if showToolMessages {
+            messages.last
+        } else {
+            // 跳过工具消息，查找最后一条 user/assistant 消息
+            messages.last { $0.role != .tool }
+        }
     }
 }

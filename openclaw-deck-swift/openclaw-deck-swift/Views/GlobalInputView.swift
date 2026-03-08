@@ -35,7 +35,6 @@ struct GlobalInputView: View {
             #endif
 
             // 输入框
-            // 输入框
             TextField("message".localized, text: $state.inputText, axis: .vertical)
                 .font(.body)
                 .padding(.horizontal, 14)
@@ -48,18 +47,6 @@ struct GlobalInputView: View {
                 .onChange(of: state.inputText) { _, _ in
                     state.calculateTextHeight()
                 }
-                .overlay(
-                    Group {
-                        if state.inputText.isEmpty {
-                            Text("message".localized)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 14)
-                                .allowsHitTesting(false)
-                        }
-                    },
-                    alignment: .leading
-                )
                 .frame(height: state.textHeight)
                 .background(
                     GeometryReader { geometry in

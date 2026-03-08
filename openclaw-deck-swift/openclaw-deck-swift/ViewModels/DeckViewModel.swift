@@ -193,12 +193,6 @@ class DeckViewModel {
     /// 消息发送失败原因
     var messageSendErrorText: String = ""
 
-    /// 是否显示停止操作失败弹窗
-    var showStopError: Bool = false
-
-    /// 停止失败原因
-    var stopErrorText: String = ""
-
     /// 是否播放消息提示音
     var playSoundOnMessage: Bool = true {
         didSet {
@@ -334,10 +328,7 @@ class DeckViewModel {
                             self.appState = .connecting(stage, 1.0)
                         }
 
-                        // 短暂延迟，让用户看到 100%
-                        try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
-
-                        // 初始化完成，切换到 connected 状态
+                        // 初始化完成，立即切换到 connected 状态（无延迟）
                         self.appState = .connected
                     } else {
                         // ✅ 重连成功，不显示加载动画
@@ -519,6 +510,13 @@ class DeckViewModel {
             return
         }
 
+        // ✅ 如果有 Mock 实例，使用 Mock（即使没有配置 Cloudflare）
+        if CloudflareKV.mockInstance != nil {
+            logger.log("🧪 检测到 Mock Cloudflare，使用 Mock 实例")
+            await loadSessionsWithCloudflareSync()
+            return
+        }
+
         // 尝试从 Cloudflare 同步（如果已配置）
         if CloudflareKV.shared.isConfigured {
             logger.log("☁️ Cloudflare 已配置，开始同步...")
@@ -616,8 +614,6 @@ class DeckViewModel {
     /// 用户选择同步方案
     @MainActor
     func resolveSyncConflict(choice: String) async {
-        showingSyncConflict = false
-
         guard let localData = conflictLocalData, let remoteData = conflictRemoteData else {
             return
         }
@@ -626,20 +622,22 @@ class DeckViewModel {
         case "local":
             // Use local data (overwrite cloud)
             logger.log("✅ User selected: local data (\(localData.sessions.count) sessions)")
+            showingSyncConflict = false
             await applySyncData(localData)
 
         case "remote":
             // Use cloud data (merge with local)
             logger.log("✅ User selected: cloud data (\(remoteData.sessions.count) sessions)")
+            showingSyncConflict = false
             await applySyncData(remoteData)
 
         default:
-            // Cancel, do nothing
+            // Cancel, do nothing - 保持冲突状态
             logger.log("⚠️ User cancelled sync")
             return
         }
 
-        // Clear conflict data
+        // Clear conflict data (only after successful resolution)
         conflictLocalData = nil
         conflictRemoteData = nil
         conflictInfo = nil
@@ -869,6 +867,7 @@ class DeckViewModel {
     /// - Returns: 同步结果（成功/失败消息）
     @MainActor
     func syncAll() async -> Result<String, Error> {
+        // 先检查 Gateway 是否已连接
         guard gatewayClient?.connected ?? false else {
             return .failure(
                 NSError(
@@ -878,18 +877,28 @@ class DeckViewModel {
             )
         }
 
+        guard let gatewayUrl = UserDefaults.standard.string(forKey: "openclaw.deck.gatewayUrl"),
+              let url = URL(string: gatewayUrl)
+        else {
+            return .failure(
+                NSError(
+                    domain: "DeckViewModel", code: 400,
+                    userInfo: [NSLocalizedDescriptionKey: "Gateway URL not configured"]
+                )
+            )
+        }
+
         do {
             logger.info("🔄 Starting full sync...")
 
             // ✅ 立即显示加载动画
-            appState = .connecting(.fetchingSessions, 0.3)
+            appState = .connecting(.fetchingSessions, 0.1)
 
             // 1. 从 Cloudflare 同步 Session 列表
             let result = try await CloudflareKV.shared.syncAndGet()
 
             // 处理冲突情况
             if result.source == .conflict {
-                // 冲突时让用户选择（弹窗）
                 logger.info("⚠️ Conflict detected during sync, showing conflict dialog")
                 await handleSyncConflict(result: result)
                 return .failure(
@@ -909,18 +918,19 @@ class DeckViewModel {
 
             logger.info("✅ Session list updated: \(result.data.sessions.count) sessions")
 
-            // 2. 清空所有 Session 的当前消息
+            appState = .connecting(.fetchingMessages, 0.5)
+
+            // 清空所有 Session 的当前消息
             for session in sessions.values {
                 session.messages.removeAll()
                 session.messageLoadState = .notLoaded
             }
 
-            // 3. 重新加载所有 Session 的对话内容
-            await loadAllSessionHistory()
+            // 并发加载所有 Session 的对话内容
+            await loadAllSessionHistoryConcurrent()
 
-            logger.info("✅ Sync complete: \(result.data.sessions.count) sessions")
+            logger.info("✅ Sync complete (concurrent): \(result.data.sessions.count) sessions")
 
-            // ✅ 重置加载状态，避免卡在 100%
             appState = .connected
 
             return .success("Sync complete: \(result.data.sessions.count) sessions")
@@ -932,39 +942,46 @@ class DeckViewModel {
 
     // MARK: - Load History
 
-    /// 加载所有 Session 的历史消息
+    /// 加载所有 Session 的历史消息（已优化为并发版本）
     @MainActor
     func loadAllSessionHistory() async {
-        // 开始加载
-        appState = .connecting(.fetchingMessages, 0.8)
+        // 使用并发版本
+        await loadAllSessionHistoryConcurrent()
+    }
 
-        let totalCount = sessionOrder.count
-        var loadedCount = 0
-
-        logger.info("📥 开始加载所有会话历史，共 \(totalCount) 个会话...")
-
-        for session in sessionOrder.compactMap({ sessions[$0] }) {
-            logger.info("📥 [\(loadedCount + 1)/\(totalCount)] 加载会话：\(session.sessionId)")
-            await loadSessionHistory(sessionKey: session.sessionKey)
-            loadedCount += 1
-
-            // 更新进度（按会话数量）
-            if totalCount > 0 {
-                let progress = 0.8 + (Double(loadedCount) / Double(totalCount) * 0.2)
-                if case let .connecting(stage, _) = appState {
-                    appState = .connecting(stage, progress)
-                } else {
-                    // 如果 appState 不是 connecting，说明可能被中断了
-                    logger.warning("⚠️ 加载进度更新时 appState 不是 connecting: \(self.appState)")
-                }
-                logger.info(
-                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(progress * 100))%"
-                )
-            }
+    /// 加载单个 Session 的历史消息（保留用于向后兼容）
+    @MainActor
+    private func loadSessionHistoryLegacy(sessionKey: String) async {
+        guard let client = gatewayClient, client.connected else {
+            return
         }
 
-        // 所有历史加载完成（不设置 100%，由调用方统一设置）
-        logger.info("✅ 所有会话历史加载完成")
+        // 设置加载状态（大小写不敏感匹配）
+        if let session = sessions.values.first(where: {
+            $0.sessionKey.lowercased() == sessionKey.lowercased()
+        }) {
+            session.messageLoadState = .loading
+        }
+
+        do {
+            let messages = try await client.getSessionHistory(sessionKey: sessionKey) ?? []
+
+            // 更新 Session 的消息（大小写不敏感匹配）
+            if let session = sessions.values.first(where: {
+                $0.sessionKey.lowercased() == sessionKey.lowercased()
+            }) {
+                session.messages = messages
+                session.messageLoadState = .loaded
+                logger.info("  ↳ 加载 \(messages.count) 条消息")
+            }
+        } catch {
+            logger.error("❌ 加载 Session \(sessionKey) 历史失败：\(error.localizedDescription)")
+            if let session = sessions.values.first(where: {
+                $0.sessionKey.lowercased() == sessionKey.lowercased()
+            }) {
+                session.messageLoadState = .error(error.localizedDescription)
+            }
+        }
     }
 
     func loadSessionHistory(sessionKey: String) async {
@@ -1162,15 +1179,17 @@ class DeckViewModel {
     private func handleAgentEvent(_ event: GatewayEvent) {
         guard let payload = event.payload as? [String: Any],
               let runId = payload["runId"] as? String,
-              let stream = payload["stream"] as? String,
-              let sessionKey = payload["sessionKey"] as? String
+              let stream = payload["stream"] as? String
         else {
             logger.error("Invalid agent event payload")
             return
         }
 
-        // Find session by sessionKey (case-insensitive)
-        guard let session = findSession(sessionKey: sessionKey) else {
+        logger.info("📥 Agent event: stream=\(stream), runId=\(runId)")
+
+        // 查找对应的 session
+        guard let session = findSessionForEvent(event) else {
+            logger.warning("⚠️ Session not found for agent event: stream=\(stream)")
             return
         }
 
@@ -1182,17 +1201,20 @@ class DeckViewModel {
                 let delta = data["delta"] as? String
                 let text = data["text"] as? String
 
+                logger.info("📥 Assistant event: delta=\(delta?.count ?? 0) chars, text=\(text?.count ?? 0) chars, seq=\(seq ?? -1), runId=\(runId)")
+
                 // 如果有 seq，检查是否已处理（去重）
                 if let seq {
                     let alreadyProcessed = session.messages.contains { $0.seq == seq }
                     if alreadyProcessed {
+                        logger.debug("⏭️ Message already processed, skipping: seq=\(seq)")
                         return
                     }
                 }
 
                 // 优先使用 delta 追加（流式更新）
                 if let delta, !delta.isEmpty {
-                    appendToAssistantMessage(session: session, runId: runId, text: delta)
+                    appendToAssistantMessage(session: session, runId: runId, text: delta, seq: seq)
                 }
                 // 后备：使用 text（只在没有 delta 且没有同 runId 消息时）
                 else if let text, !text.isEmpty {
@@ -1202,6 +1224,8 @@ class DeckViewModel {
 
                     if !hasExistingMessage {
                         createAssistantMessage(session: session, runId: runId, text: text, seq: seq)
+                    } else {
+                        logger.warning("⚠️ Existing message found for runId=\(runId), skipping text")
                     }
                 }
             }
@@ -1222,20 +1246,15 @@ class DeckViewModel {
                     session.status = .idle
                     session.activeRunId = nil
 
-                    // 🎯 发送通知：无论前台后台都发
-                    if let lastMessage = session.messages.last,
-                       lastMessage.role == .assistant,
-                       !lastMessage.text.isEmpty
-                    {
-                        NotificationService.shared.sendNewMessageNotification(
-                            sessionName: session.sessionId,
-                            messageText: lastMessage.text
-                        )
+                    // 🎯 发送通知：agent 运行结束就通知（和消息类型无关）
+                    NotificationService.shared.sendNewMessageNotification(
+                        sessionName: session.sessionId,
+                        messageText: "任务完成"
+                    )
 
-                        // 🎵 播放提示音（如果启用）
-                        if playSoundOnMessage {
-                            SoundService.shared.playMessageNotification()
-                        }
+                    // 🎵 播放提示音（如果启用）- agent 完成就播放
+                    if playSoundOnMessage {
+                        SoundService.shared.playMessageNotification()
                     }
 
                     // 清除所有消息的 streaming 状态
@@ -1249,9 +1268,48 @@ class DeckViewModel {
                 }
             }
 
-        case "tool_use":
-            // 忽略工具调用事件，不显示
-            break
+        case "tool":
+            // 工具调用事件：{ data: { name: "exec", phase: "start"|"result", meta: "...", ... } }
+            if let data = payload["data"] as? [String: Any],
+               let toolName = data["name"] as? String
+            {
+                logger.info("🔍 Processing tool event: toolName=\(toolName)")
+
+                // 提取参数信息（优先使用 meta，其次使用 args）
+                var argsText: String?
+                if let meta = data["meta"] as? String, !meta.isEmpty {
+                    // 使用 meta 字段（包含工具调用的详细信息）
+                    argsText = meta
+                } else if let args = data["args"] as? [String: Any], !args.isEmpty {
+                    let params = args.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+                    if !params.isEmpty {
+                        argsText = params
+                    }
+                } else if let args = data["args"] as? String, !args.isEmpty {
+                    argsText = args
+                }
+
+                // 如果没有参数，不创建消息
+                guard let args = argsText else {
+                    logger.info("⚠️ Tool call has no args, skipping message: \(toolName)")
+                    return
+                }
+
+                // 创建工具调用消息
+                let toolMessage = ChatMessage(
+                    id: UUID().uuidString,
+                    role: .tool,
+                    text: "🔧 Tool: **\(toolName)**\nArgs: \(args)",
+                    timestamp: Date(),
+                    runId: runId,
+                    seq: payload["seq"] as? Int
+                )
+
+                session.messages.append(toolMessage)
+                logger.info("✅ Tool message added: sessionId=\(session.sessionId), messages.count=\(session.messages.count)")
+            } else {
+                logger.error("❌ Failed to parse tool event data")
+            }
 
         default:
             break
@@ -1429,43 +1487,50 @@ class DeckViewModel {
     }
 
     /// 追加内容到 assistant 消息（用于 delta 流式更新）
-    private func appendToAssistantMessage(session: SessionState, runId: String, text: String) {
+    private func appendToAssistantMessage(
+        session: SessionState, runId: String, text: String, seq: Int?
+    ) {
         // 设置状态为 streaming
         session.status = .streaming
 
-        // 查找最后一条同 runId 且 streaming 的消息
-        guard
-            let index = session.messages.enumerated().last(where: { _, msg in
-                msg.role == .assistant && msg.runId == runId && msg.streaming == true
-            })?.offset
-        else {
-            // 没有找到，创建一个新的
+        // ✅ 1. 用 seq 去重
+        if let seq, session.messages.contains(where: { $0.seq == seq }) {
+            logger.debug("⏭️ Message already processed, skipping: seq=\(seq)")
+            return
+        }
+
+        // ✅ 2. 检查最后一条消息
+        let lastMsg = session.messages.last
+        if let lastMsg, lastMsg.role == .assistant, lastMsg.streaming == true {
+            // 最后一条是 assistant 且还在 streaming → 追加
+            session.messages[session.messages.count - 1] = ChatMessage(
+                id: lastMsg.id,
+                role: lastMsg.role,
+                text: lastMsg.text + text,
+                timestamp: lastMsg.timestamp,
+                streaming: lastMsg.streaming,
+                thinking: lastMsg.thinking,
+                toolUse: lastMsg.toolUse,
+                runId: lastMsg.runId,
+                seq: lastMsg.seq ?? seq,
+                isLoaded: lastMsg.isLoaded
+            )
+            logger.debug("➕ Appended to last assistant message: runId=\(runId)")
+        } else {
+            // 最后一条是 tool / user / system 或 assistant 已结束 → 创建新消息
             let assistantMsg = ChatMessage(
                 id: UUID().uuidString,
                 role: .assistant,
                 text: text,
                 timestamp: Date(),
                 streaming: true,
-                runId: runId
+                runId: runId,
+                seq: seq
             )
             session.messages.append(assistantMsg)
             session.activeRunId = runId
-            return
+            logger.debug("➕ Created new assistant message: runId=\(runId), seq=\(seq ?? -1)")
         }
-
-        // 追加文本
-        let message = session.messages[index]
-        session.messages[index] = ChatMessage(
-            id: message.id,
-            role: message.role,
-            text: message.text + text,
-            timestamp: message.timestamp,
-            streaming: message.streaming,
-            thinking: message.thinking,
-            toolUse: message.toolUse,
-            runId: message.runId,
-            isLoaded: message.isLoaded
-        )
     }
 
     /// 处理 agent.content 事件（旧格式兼容）
@@ -1484,9 +1549,10 @@ class DeckViewModel {
 
         // 使用 runId 查找消息，如果没有 runId 则使用 activeRunId
         let runId = payload["runId"] as? String ?? session.activeRunId
+        let seq = payload["seq"] as? Int
 
         if let runId {
-            appendToAssistantMessage(session: session, runId: runId, text: text)
+            appendToAssistantMessage(session: session, runId: runId, text: text, seq: seq)
         } else {
             // 后备：追加到最后一条 assistant 消息
             if let lastMessage = session.messages.last, lastMessage.role == .assistant {
@@ -1507,13 +1573,7 @@ class DeckViewModel {
 
     /// 处理 agent.done 事件
     private func handleAgentDone(_ event: GatewayEvent) {
-        // 尝试从 sessionKey 提取 sessionId
-        if let session = sessionFromEvent(event) {
-            session.status = .idle
-            session.activeRunId = nil
-            return
-        }
-        // 后备：使用 findSessionForEvent
+        // 查找对应的 session
         if let session = findSessionForEvent(event) {
             session.status = .idle
             session.activeRunId = nil
@@ -1528,9 +1588,8 @@ class DeckViewModel {
             return
         }
 
-        // 尝试从 sessionKey 提取 sessionId
-        let session = sessionFromEvent(event) ?? findSessionForEvent(event)
-        guard let session else {
+        // 查找对应的 session
+        guard let session = findSessionForEvent(event) else {
             return
         }
 
@@ -1560,36 +1619,35 @@ class DeckViewModel {
         return nil
     }
 
-    /// 从事件中提取 sessionId（通过 sessionKey）
-    private func sessionFromEvent(_ event: GatewayEvent) -> SessionState? {
-        guard let payload = event.payload as? [String: Any],
-              let sessionKey = payload["sessionKey"] as? String
-        else {
+    /// 根据事件找到对应的 Session（严格使用 sessionKey 匹配）
+    private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
+        guard let payload = event.payload as? [String: Any] else {
+            logger.error("❌ Invalid event payload")
             return nil
         }
 
-        return findSession(sessionKey: sessionKey)
-    }
+        // ✅ 1. 从 payload 中提取 sessionKey
+        var sessionKey = payload["sessionKey"] as? String
 
-    /// 根据事件找到对应的 Session
-    private func findSessionForEvent(_ event: GatewayEvent) -> SessionState? {
-        // 优先通过 activeRunId 查找匹配的 Session
-        for session in sessions.values {
-            if let activeRunId = session.activeRunId {
-                // 如果事件 payload 中有 runId，进行匹配
-                if let payload = event.payload as? [String: Any],
-                   let eventRunId = payload["runId"] as? String
-                {
-                    if activeRunId == eventRunId {
-                        return session
-                    }
-                }
-                // 如果没有 runId 信息，返回第一个有 activeRunId 的 session
-                return session
-            }
+        // ✅ 2. 如果 payload 中没有，检查 payload.data
+        if sessionKey == nil || sessionKey!.isEmpty,
+           let data = payload["data"] as? [String: Any],
+           let dataSessionKey = data["sessionKey"] as? String
+        {
+            sessionKey = dataSessionKey
         }
 
-        // 如果没有找到 activeRunId，返回最后一个 session（作为后备）
-        return sessionOrder.last.flatMap { sessions[$0] }
+        // ✅ 3. 如果还是没有 sessionKey，返回 nil
+        guard let key = sessionKey, !key.isEmpty else {
+            logger.warning("⚠️ Event missing sessionKey: event=\(event.event)")
+            return nil
+        }
+
+        // ✅ 4. 严格使用 sessionKey 匹配
+        let session = findSession(sessionKey: key)
+        if session == nil {
+            logger.warning("⚠️ Session not found for sessionKey: \(key)")
+        }
+        return session
     }
 }

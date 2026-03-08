@@ -1,11 +1,11 @@
 // SessionDetailView.swift
 // OpenClaw Deck Swift
 //
-// Session 详情视图 - 极简布局
+// Session 详情视图 - 重构布局
 
 import SwiftUI
 
-/// Session 详情视图 - 极简布局
+/// Session 详情视图 - 重构布局
 struct SessionDetailView: View {
     let session: SessionState
     var viewModel: DeckViewModel?
@@ -16,72 +16,76 @@ struct SessionDetailView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // MARK: - 基础信息
+                // MARK: - 会话信息
 
-                Section("basic_info".localized) {
-                    HStack {
-                        Text("session_id_label".localized)
-                        Spacer()
-                        Text(session.sessionId)
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("session_key_label".localized)
-                        Spacer()
-                        Text(session.sessionKey)
-                            .font(.caption.monospaced())
-                            .foregroundColor(.secondary)
-                            .textSelection(.enabled)
-                    }
-
-                    if let context = session.context, !context.isEmpty {
+                Section {
+                    // 基础信息
+                    Group {
                         HStack {
-                            Text("session_context_label".localized)
+                            Text("session_id_label".localized)
                             Spacer()
-                            Text(context)
+                            Text(session.sessionId)
                                 .foregroundColor(.secondary)
-                                .textSelection(.enabled)
                         }
-                    }
-                }
-
-                // MARK: - 状态
-
-                Section("status".localized) {
-                    HStack {
-                        Text("status".localized)
-                        Spacer()
-                        Text(sessionStatusText)
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("processing_label".localized)
-                        Spacer()
-                        Text(session.status == .thinking || session.status == .streaming ? "yes".localized : "no".localized)
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("unread_messages_label".localized)
-                        Spacer()
-                        Text(session.hasUnreadMessage ? "yes".localized : "no".localized)
-                            .foregroundColor(.secondary)
-                    }
-
-                    if let runId = session.activeRunId {
                         HStack {
-                            Text("active_run_label".localized)
+                            Text("session_key_label".localized)
                             Spacer()
-                            Text(runId)
+                            Text(session.sessionKey)
                                 .font(.caption.monospaced())
                                 .foregroundColor(.secondary)
                                 .textSelection(.enabled)
                         }
+
+                        if let context = session.context, !context.isEmpty {
+                            HStack {
+                                Text("session_context_label".localized)
+                                Spacer()
+                                Text(context)
+                                    .foregroundColor(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                        }
                     }
+
+                    // 状态
+                    Group {
+                        HStack {
+                            Text("status".localized)
+                            Spacer()
+                            Text(sessionStatusText)
+                                .foregroundColor(.secondary)
+                        }
+                        HStack {
+                            Text("processing_label".localized)
+                            Spacer()
+                            Text(session.status == .thinking || session.status == .streaming ? "yes".localized : "no".localized)
+                                .foregroundColor(.secondary)
+                        }
+                        HStack {
+                            Text("unread_messages_label".localized)
+                            Spacer()
+                            Text(session.hasUnreadMessage ? "yes".localized : "no".localized)
+                                .foregroundColor(.secondary)
+                        }
+
+                        if let runId = session.activeRunId {
+                            HStack {
+                                Text("active_run_label".localized)
+                                Spacer()
+                                Text(runId)
+                                    .font(.caption.monospaced())
+                                    .foregroundColor(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                        }
+                    }
+                } header: {
+                    Label("session_info".localized, systemImage: "info.circle")
                 }
 
-                // MARK: - 消息统计
+                // MARK: - 消息
 
-                Section("message_stats".localized) {
+                Section {
                     HStack {
                         Text("total_messages_label".localized)
                         Spacer()
@@ -100,21 +104,34 @@ struct SessionDetailView: View {
                         Text("\(assistantMessageCount)")
                             .foregroundColor(.secondary)
                     }
+
+                    // 工具消息开关
+                    Toggle(
+                        "show_tool_messages".localized, systemImage: "wrench.and.screwdriver",
+                        isOn: .init(
+                            get: { session.showToolMessages },
+                            set: { session.showToolMessages = $0 }
+                        )
+                    )
+                } header: {
+                    Label("messages".localized, systemImage: "message")
                 }
 
-                // MARK: - 时间
+                // MARK: - 时间线
 
-                Section("timeline".localized) {
-                    if let lastActivity = session.lastMessageAt {
+                Section {
+                    // 最后一条可见消息的时间（根据 showToolMessages 过滤）
+                    if let lastMessage = session.getLastVisibleMessage() {
                         HStack {
                             Text("last_activity_label".localized)
                             Spacer()
-                            Text("\(formatRelativeDate(lastActivity)) (\(formatDateTime(lastActivity)))")
+                            Text("\(formatRelativeDate(lastMessage.timestamp)) (\(formatDateTime(lastMessage.timestamp)))")
                                 .foregroundColor(.secondary)
                                 .font(.caption2)
                         }
                     }
 
+                    // 第一条消息的时间
                     if let firstMessage = session.messages.first {
                         HStack {
                             Text("first_message_label".localized)
@@ -124,11 +141,8 @@ struct SessionDetailView: View {
                                 .font(.caption2)
                         }
                     }
-                }
 
-                // MARK: - 加载状态
-
-                Section("load_status".localized) {
+                    // 加载状态
                     HStack {
                         Text("history_load_label".localized)
                         Spacer()
@@ -145,11 +159,14 @@ struct SessionDetailView: View {
                         Text("loading_messages_ellipsis".localized)
                             .foregroundColor(.secondary)
                     }
+                } header: {
+                    Label("timeline".localized, systemImage: "clock")
                 }
 
-                // MARK: - 归档并继续
+                // MARK: - 操作
 
                 Section {
+                    // 归档并继续
                     Button {
                         showingArchiveAlert = true
                     } label: {
@@ -162,17 +179,8 @@ struct SessionDetailView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                } header: {
-                    Text("archive_section_header".localized)
-                } footer: {
-                    Text("archive_description".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
 
-                // MARK: - 危险操作
-
-                Section {
+                    // 删除会话
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
@@ -184,9 +192,9 @@ struct SessionDetailView: View {
                     }
                     .accessibilityIdentifier("deleteSessionButton")
                 } header: {
-                    Text("delete_section_header".localized)
+                    Label("actions".localized, systemImage: "gear")
                 } footer: {
-                    Text("delete_description".localized)
+                    Text("session_actions_footer".localized)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -157,7 +157,7 @@ struct SessionColumnView: View {
                                     systemName: session.showToolMessages
                                         ? "wrench.and.screwdriver.fill" : "wrench"
                                 )
-                                .font(.title3)
+                                .font(.title2)
                                 .foregroundColor(
                                     session.showToolMessages ? .blue : .secondary
                                 )

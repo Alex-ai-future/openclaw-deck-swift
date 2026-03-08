@@ -123,12 +123,20 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     #endif
                 } else {
-                    // 加载中时显示 LoadingView
-                    LoadingView(appState: viewModel.appState)
+                    // 加载中时显示 LoadingView（带工具栏）
+                    LoadingView(
+                        appState: viewModel.appState,
+                        viewModel: viewModel,
+                        onShowSettings: { showingSettings = true }
+                    )
                 }
             } else if viewModel.appState.isLoading {
-                // ✅ 初始化连接中
-                LoadingView(appState: viewModel.appState)
+                // ✅ 初始化连接中（带工具栏）
+                LoadingView(
+                    appState: viewModel.appState,
+                    viewModel: viewModel,
+                    onShowSettings: { showingSettings = true }
+                )
             } else {
                 // ❌ 未连接
                 WelcomeView(
@@ -136,6 +144,7 @@ struct ContentView: View {
                     token: $token,
                     connectionError: viewModel.gatewayClient?.connectionError,
                     isConnecting: viewModel.appState.isLoading,
+                    connectionStatus: viewModel.gatewayClient?.connectionStatus ?? .disconnected,
                     onClearError: {
                         viewModel.clearConnectionError()
                     },
@@ -311,6 +320,7 @@ struct WelcomeView: View {
     @Binding var token: String
     let connectionError: String?
     let isConnecting: Bool
+    let connectionStatus: ConnectionStatus
     let onClearError: () -> Void
     let onShowSettings: () -> Void
 
@@ -435,25 +445,39 @@ struct WelcomeView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            onShowSettings()
-                        } label: {
-                            Image(systemName: "gear")
-                                .font(.title2)
-                        }
-                    }
-                }
-            #else
-                .toolbar {
-                        ToolbarItem(placement: .automatic) {
+                        HStack(spacing: 8) {
                             Button {
                                 onShowSettings()
                             } label: {
                                 Image(systemName: "gear")
                                     .font(.title2)
                             }
+
+                            Divider()
+
+                            // 连接状态指示器（空心圆圈）
+                            ConnectionStatusIcon(status: connectionStatus)
                         }
                     }
+                }
+            #else
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        HStack(spacing: 8) {
+                            Button {
+                                onShowSettings()
+                            } label: {
+                                Image(systemName: "gear")
+                                    .font(.title2)
+                            }
+
+                            Divider()
+
+                            // 连接状态指示器（空心圆圈）
+                            ConnectionStatusIcon(status: connectionStatus)
+                        }
+                    }
+                }
             #endif
         }
     }

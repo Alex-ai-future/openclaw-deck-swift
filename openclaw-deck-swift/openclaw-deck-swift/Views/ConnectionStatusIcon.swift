@@ -8,7 +8,7 @@ import SwiftUI
 /// 连接状态图标 - 统一的空心圆圈样式
 struct ConnectionStatusIcon: View {
     let status: ConnectionStatus
-    
+
     var body: some View {
         Image(systemName: "circle")
             .foregroundColor(status.color)

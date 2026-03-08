@@ -462,22 +462,22 @@ struct WelcomeView: View {
                 }
             #else
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        HStack(spacing: 8) {
-                            Button {
-                                onShowSettings()
-                            } label: {
-                                Image(systemName: "gear")
-                                    .font(.title2)
+                        ToolbarItem(placement: .automatic) {
+                            HStack(spacing: 8) {
+                                Button {
+                                    onShowSettings()
+                                } label: {
+                                    Image(systemName: "gear")
+                                        .font(.title2)
+                                }
+
+                                Divider()
+
+                                // 连接状态指示器（空心圆圈）
+                                ConnectionStatusIcon(status: connectionStatus)
                             }
-
-                            Divider()
-
-                            // 连接状态指示器（空心圆圈）
-                            ConnectionStatusIcon(status: connectionStatus)
                         }
                     }
-                }
             #endif
         }
     }

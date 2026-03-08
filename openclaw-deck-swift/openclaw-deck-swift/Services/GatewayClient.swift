@@ -6,8 +6,8 @@
 
 import CryptoKit
 import Foundation
-import SwiftUI
 import os
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.openclaw.deck", category: "Gateway")
 
@@ -48,11 +48,11 @@ struct GatewaySessionStatus: Identifiable, Hashable {
     /// 从网关返回的 JSON 创建
     init?(from json: [String: Any]) {
         guard let key = json["key"] as? String,
-            let sessionId = json["sessionId"] as? String,
-            let kind = json["kind"] as? String,
-            let updatedAtMs = json["updatedAt"] as? Double,
-            let model = json["model"] as? String,
-            let contextTokens = json["contextTokens"] as? Int
+              let sessionId = json["sessionId"] as? String,
+              let kind = json["kind"] as? String,
+              let updatedAtMs = json["updatedAt"] as? Double,
+              let model = json["model"] as? String,
+              let contextTokens = json["contextTokens"] as? Int
         else {
             return nil
         }
@@ -157,10 +157,10 @@ class GatewayClient: GatewayClientProtocol {
     }
 
     /// 当前重连延迟（纳秒）- 指数退避
-    var currentReconnectDelay: UInt64 = 800_000_000  // 初始 800ms
+    var currentReconnectDelay: UInt64 = 800_000_000 // 初始 800ms
 
     /// 最大重连延迟（纳秒）
-    let maxReconnectDelay: UInt64 = 15_000_000_000  // 15 秒
+    let maxReconnectDelay: UInt64 = 15_000_000_000 // 15 秒
 
     /// 指数退避系数
     let backoffMultiplier: Double = 1.7
@@ -293,8 +293,7 @@ class GatewayClient: GatewayClientProtocol {
             }
 
             // Timeout after 6 seconds
-            _ = Timer.scheduledTimer(withTimeInterval: self.connectChallengeTimeout, repeats: false)
-            {
+            _ = Timer.scheduledTimer(withTimeInterval: self.connectChallengeTimeout, repeats: false) {
                 [weak self] _ in
                 guard let self else { return }
                 Task { @MainActor in
@@ -452,8 +451,8 @@ class GatewayClient: GatewayClientProtocol {
 
         // 解析响应
         guard let payload = result.payload as? [String: Any],
-            let runId = payload["runId"] as? String,
-            let status = payload["status"] as? String
+              let runId = payload["runId"] as? String,
+              let status = payload["status"] as? String
         else {
             throw NSError(
                 domain: "GatewayClient",
@@ -489,7 +488,7 @@ class GatewayClient: GatewayClientProtocol {
         )
 
         guard let payload = result.payload as? [String: Any],
-            let messagesData = payload["messages"] as? [[String: Any]]
+              let messagesData = payload["messages"] as? [[String: Any]]
         else {
             return nil
         }
@@ -520,7 +519,7 @@ class GatewayClient: GatewayClientProtocol {
 
             // 跳过 Gateway 注入的消息（子代理通知、系统消息等）
             if let model = data["model"] as? String,
-                model == "gateway-injected"
+               model == "gateway-injected"
             {
                 continue
             }
@@ -530,14 +529,15 @@ class GatewayClient: GatewayClientProtocol {
             if roleLower == "user" || roleLower == "assistant" {
                 // 过滤 assistant 空消息（user 消息即使是空也保留）
                 if roleLower == "assistant",
-                    text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                   text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 {
                     continue
                 }
 
                 let role = MessageRole(rawValue: roleLower) ?? .assistant
                 let timestamp = Date(
-                    timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000)
+                    timeIntervalSince1970: (data["timestamp"] as? Double ?? 0) / 1000
+                )
 
                 messages.append(
                     ChatMessage(
@@ -564,7 +564,7 @@ class GatewayClient: GatewayClientProtocol {
         let result = try await request(method: "sessions.list", params: params)
 
         guard let payload = result.payload as? [String: Any],
-            let sessions = payload["sessions"] as? [[String: Any]]
+              let sessions = payload["sessions"] as? [[String: Any]]
         else {
             return []
         }
@@ -583,13 +583,13 @@ class GatewayClient: GatewayClientProtocol {
             guard let self else { return }
 
             switch result {
-            case .success(let message):
+            case let .success(message):
                 switch message {
-                case .data(let data):
+                case let .data(data):
                     Task { @MainActor in
                         self.handleData(data)
                     }
-                case .string(let string):
+                case let .string(string):
                     Task { @MainActor in
                         self.handleString(string)
                     }
@@ -602,7 +602,7 @@ class GatewayClient: GatewayClientProtocol {
                     await self.receiveMessage()
                 }
 
-            case .failure(let error):
+            case let .failure(error):
                 logger.error("Receive error: \(error.localizedDescription)")
                 Task { @MainActor in
                     self.handleDisconnect()
@@ -620,7 +620,7 @@ class GatewayClient: GatewayClientProtocol {
     /// 处理数据消息
     private func handleData(_ data: Data) {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let type = json["type"] as? String
+              let type = json["type"] as? String
         else {
             return
         }
@@ -639,14 +639,15 @@ class GatewayClient: GatewayClientProtocol {
     private func handleResponse(_ json: [String: Any]) {
         // 打印所有响应的完整 JSON 日志
         if let jsonData = try? JSONSerialization.data(
-            withJSONObject: json, options: .prettyPrinted),
+            withJSONObject: json, options: .prettyPrinted
+        ),
             let jsonString = String(data: jsonData, encoding: .utf8)
         {
             logger.info("📥 [Response] \(jsonString)")
         }
 
         guard let id = json["id"] as? String,
-            let pending = pendingRequests.removeValue(forKey: id)
+              let pending = pendingRequests.removeValue(forKey: id)
         else {
             return
         }
@@ -682,7 +683,8 @@ class GatewayClient: GatewayClientProtocol {
 
         // 打印所有事件的完整 JSON 日志
         if let jsonData = try? JSONSerialization.data(
-            withJSONObject: json, options: .prettyPrinted),
+            withJSONObject: json, options: .prettyPrinted
+        ),
             let jsonString = String(data: jsonData, encoding: .utf8)
         {
             logger.info("📩 [Event] \(jsonString)")
@@ -690,7 +692,7 @@ class GatewayClient: GatewayClientProtocol {
 
         // Handle connect.challenge event for device auth
         if event == "connect.challenge", let payload = json["payload"] as? [String: Any],
-            let nonce = payload["nonce"] as? String
+           let nonce = payload["nonce"] as? String
         {
             // Received connect challenge
 
@@ -733,9 +735,10 @@ class GatewayClient: GatewayClientProtocol {
 
             // 打印所有发送请求的完整 JSON 日志
             if let jsonData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                let prettyData = try? JSONSerialization.data(
-                    withJSONObject: jsonData, options: .prettyPrinted),
-                let prettyString = String(data: prettyData, encoding: .utf8)
+               let prettyData = try? JSONSerialization.data(
+                   withJSONObject: jsonData, options: .prettyPrinted
+               ),
+               let prettyString = String(data: prettyData, encoding: .utf8)
             {
                 logger.info("📤 [Request] \(prettyString)")
             }
@@ -812,8 +815,8 @@ class GatewayClient: GatewayClientProtocol {
 
             // Check for device token in response
             if let payload = result.payload as? [String: Any],
-                let auth = payload["auth"] as? [String: Any],
-                let deviceToken = auth["deviceToken"] as? String
+               let auth = payload["auth"] as? [String: Any],
+               let deviceToken = auth["deviceToken"] as? String
             {
                 storeDeviceToken(deviceToken)
             }
@@ -843,7 +846,7 @@ class GatewayClient: GatewayClientProtocol {
     /// Build signed device identity
     private func buildSignedDeviceIdentity(nonce: String?) async throws -> [String: Any] {
         let identity = try loadOrCreateDeviceIdentity()
-        let signedAt = Date().timeIntervalSince1970 * 1000  // milliseconds
+        let signedAt = Date().timeIntervalSince1970 * 1000 // milliseconds
 
         // Use v2 protocol if nonce is provided
         let version = nonce != nil ? "v2" : "v1"
@@ -864,7 +867,7 @@ class GatewayClient: GatewayClientProtocol {
         // Sign the payload using Ed25519
         // privateKeySeed is stored as base64Url encoded 32-byte seed
         guard let privateKeySeedBase64 = identity["privateKeySeedBase64"] as? String,
-            let privateKeySeed = base64UrlDecode(privateKeySeedBase64)
+              let privateKeySeed = base64UrlDecode(privateKeySeedBase64)
         else {
             throw NSError(
                 domain: "GatewayClient", code: -5,
@@ -878,7 +881,7 @@ class GatewayClient: GatewayClientProtocol {
                 domain: "GatewayClient", code: -6,
                 userInfo: [
                     NSLocalizedDescriptionKey:
-                        "Incorrect private key seed size: \(privateKeySeed.count) bytes, expected 32"
+                        "Incorrect private key seed size: \(privateKeySeed.count) bytes, expected 32",
                 ]
             )
         }
@@ -904,14 +907,14 @@ class GatewayClient: GatewayClientProtocol {
     private func loadOrCreateDeviceIdentity() throws -> [String: Any] {
         // Try to load from UserDefaults
         if let data = UserDefaults.standard.data(forKey: deviceIdentityStorageKey),
-            let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            identity["id"] != nil, identity["publicKey"] != nil
+           let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           identity["id"] != nil, identity["publicKey"] != nil
         {
             // Check for new format (privateKeySeedBase64)
             if identity["privateKeySeedBase64"] != nil {
                 // Validate the key size
                 if let seedBase64 = identity["privateKeySeedBase64"] as? String,
-                    let seedData = base64UrlDecode(seedBase64)
+                   let seedData = base64UrlDecode(seedBase64)
                 {
                     if seedData.count == 32 {
                         return identity
@@ -943,7 +946,7 @@ class GatewayClient: GatewayClientProtocol {
                 if let privateKeyData {
                     // If old key was 64 bytes, extract just the 32-byte seed
                     if privateKeyData.count == 64 {
-                        let seedData = privateKeyData.subdata(in: 0..<32)
+                        let seedData = privateKeyData.subdata(in: 0 ..< 32)
                         var newIdentity = identity
                         newIdentity["privateKeySeedBase64"] = base64UrlEncode(seedData)
 
@@ -1104,7 +1107,8 @@ class GatewayClient: GatewayClientProtocol {
 
         logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         logger.info(
-            "🔄 Auto-reconnect attempt #\(self.reconnectAttempts)/\(self.maxReconnectAttempts)")
+            "🔄 Auto-reconnect attempt #\(self.reconnectAttempts)/\(self.maxReconnectAttempts)"
+        )
         logger.info("📍 Current delay: \(self.currentReconnectDelay / 1_000_000)ms")
         logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
@@ -1156,7 +1160,7 @@ class GatewayClient: GatewayClientProtocol {
             isAutoReconnecting = false
             reconnectAttempts = 0
             connected = true
-            currentReconnectDelay = 800_000_000  // 重置为初始值
+            currentReconnectDelay = 800_000_000 // 重置为初始值
             logger.info("✅ Auto-reconnect succeeded (silent)")
             logger.info("📊 Reconnect attempts: \(self.reconnectAttempts)")
             logger.info("📊 Connection state: connected=\(self.connected)")
@@ -1191,7 +1195,7 @@ class GatewayClient: GatewayClientProtocol {
                 }
                 pendingRequests.removeAll()
 
-                onConnection?(false)  // ← 现在才通知 UI
+                onConnection?(false) // ← 现在才通知 UI
             } else {
                 // ✅ 继续下一次重连，增加延迟（指数退避）
                 logger.info("⏭️ Will retry with increased delay")
@@ -1200,7 +1204,8 @@ class GatewayClient: GatewayClientProtocol {
                     min(
                         Double(currentReconnectDelay) * backoffMultiplier,
                         Double(maxReconnectDelay)
-                    ))
+                    )
+                )
                 logger.info(
                     "⏱️ Next retry delay: \(self.currentReconnectDelay / 1_000_000)ms (\(String(format: "%.1f", Double(self.currentReconnectDelay) / 1_000_000_000.0))s)"
                 )
@@ -1241,8 +1246,8 @@ class GatewayClient: GatewayClientProtocol {
     private func base64UrlDecode(_ string: String) -> Data? {
         var base64 =
             string
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
+                .replacingOccurrences(of: "-", with: "+")
+                .replacingOccurrences(of: "_", with: "/")
         // Add padding if needed
         while base64.count % 4 != 0 {
             base64.append("=")

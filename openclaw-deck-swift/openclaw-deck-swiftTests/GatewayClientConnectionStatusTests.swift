@@ -15,8 +15,8 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         mockWebSocket = MockWebSocketConnection()
-        client = GatewayClient(
-            url: try XCTUnwrap(URL(string: "ws://localhost:18789")),
+        client = try GatewayClient(
+            url: XCTUnwrap(URL(string: "ws://localhost:18789")),
             token: nil,
             urlSession: .shared,
             webSocket: mockWebSocket
@@ -75,7 +75,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
         print("\n3️⃣ 模拟网络断开...")
         client.connected = false
         client.connectionError = "network_error"
-        client.isAutoReconnecting = false  // 还没开始重连
+        client.isAutoReconnecting = false // 还没开始重连
 
         try await Task.sleep(nanoseconds: 100_000_000)
 
@@ -93,7 +93,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
 
         // ========== 4. 开始自动重连 ==========
         print("\n4️⃣ 开始自动重连...")
-        client.isAutoReconnecting = true  // 启动重连
+        client.isAutoReconnecting = true // 启动重连
 
         try await Task.sleep(nanoseconds: 100_000_000)
 
@@ -138,12 +138,12 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     // MARK: - 边界条件测试
 
     /// 测试重连中但错误被清除的边缘情况
-    func testConnectionStatus_ErrorClearedDuringReconnect() async throws {
+    func testConnectionStatus_ErrorClearedDuringReconnect() {
         print("\n🧪 测试：重连中但错误被清除")
 
         // 重连中但错误被清除（边缘情况）
         client.connected = false
-        client.connectionError = nil  // 错误已清除
+        client.connectionError = nil // 错误已清除
         client.isAutoReconnecting = true
 
         // 根据优先级：isAutoReconnecting > connectionError
@@ -156,7 +156,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     }
 
     /// 测试已连接但有错误的不一致状态
-    func testConnectionStatus_ConnectedButHasError() async throws {
+    func testConnectionStatus_ConnectedButHasError() {
         print("\n🧪 测试：已连接但有错误（不一致状态）")
 
         // 已连接但有错误（理论上不应该发生，但要测试）
@@ -175,7 +175,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     }
 
     /// 测试初始无错误但未连接的状态
-    func testConnectionStatus_InitialStateNoError() async throws {
+    func testConnectionStatus_InitialStateNoError() {
         print("\n🧪 测试：初始无错误但未连接")
 
         client.connected = false
@@ -191,12 +191,12 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     }
 
     /// 测试重连失败后达到最大重试次数
-    func testConnectionStatus_MaxRetriesReached() async throws {
+    func testConnectionStatus_MaxRetriesReached() {
         print("\n🧪 测试：重连失败达到最大次数")
 
         client.connected = false
         client.connectionError = "max_retries_reached"
-        client.isAutoReconnecting = false  // 达到最大次数后停止重连
+        client.isAutoReconnecting = false // 达到最大次数后停止重连
 
         XCTAssertEqual(
             client.connectionStatus, .disconnected,
@@ -209,7 +209,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     // MARK: - 状态转换测试
 
     /// 测试从断开到重连的状态转换
-    func testConnectionStatus_TransitionFromDisconnectedToReconnecting() async throws {
+    func testConnectionStatus_TransitionFromDisconnectedToReconnecting() {
         print("\n🧪 测试：从断开到重连的状态转换")
 
         // 初始断开
@@ -226,7 +226,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     }
 
     /// 测试从重连到成功的状态转换
-    func testConnectionStatus_TransitionFromReconnectingToConnected() async throws {
+    func testConnectionStatus_TransitionFromReconnectingToConnected() {
         print("\n🧪 测试：从重连到成功的状态转换")
 
         // 重连中

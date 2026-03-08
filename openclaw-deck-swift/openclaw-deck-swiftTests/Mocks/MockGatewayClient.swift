@@ -13,16 +13,17 @@ class MockGatewayClient: GatewayClientProtocol {
     var connected: Bool = true
     var connectionError: String?
     var connectionStatus: ConnectionStatus {
-        if connectionError != nil && !isAutoReconnecting {
-            return .disconnected
+        if connectionError != nil, !isAutoReconnecting {
+            .disconnected
         } else if isAutoReconnecting {
-            return .reconnecting
-        } else if connected && connectionError == nil {
-            return .connected
+            .reconnecting
+        } else if connected, connectionError == nil {
+            .connected
         } else {
-            return .disconnected
+            .disconnected
         }
     }
+
     var isAutoReconnecting: Bool = false
     var onEvent: ((GatewayEvent) -> Void)?
     var onConnection: ((Bool) -> Void)?

@@ -7,19 +7,19 @@ import SwiftUI
 
 /// 网络连接状态枚举
 enum ConnectionStatus: String {
-    case connected      // 已连接（绿色）
-    case reconnecting   // 重连中（橙黄色）
-    case disconnected   // 未连接/断开（红色）
+    case connected // 已连接（绿色）
+    case reconnecting // 重连中（橙黄色）
+    case disconnected // 未连接/断开（红色）
 
     /// 状态对应的颜色
     var color: Color {
         switch self {
         case .connected:
-            return .green
+            .green
         case .reconnecting:
-            return .orange
+            .orange
         case .disconnected:
-            return .red
+            .red
         }
     }
 
@@ -27,11 +27,11 @@ enum ConnectionStatus: String {
     var iconName: String {
         switch self {
         case .connected:
-            return "checkmark.circle.fill"
+            "checkmark.circle.fill"
         case .reconnecting:
-            return "arrow.clockwise"
+            "arrow.clockwise"
         case .disconnected:
-            return "xmark.circle.fill"
+            "xmark.circle.fill"
         }
     }
 }

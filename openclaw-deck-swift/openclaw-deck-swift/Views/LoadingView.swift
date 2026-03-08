@@ -10,14 +10,14 @@ struct LoadingView: View {
     let appState: AppState
     let viewModel: DeckViewModel?
     let onShowSettings: (() -> Void)?
-    
+
     /// 内部初始化（主流程使用）
     init(appState: AppState) {
         self.appState = appState
         self.viewModel = nil
         self.onShowSettings = nil
     }
-    
+
     /// 带工具栏的初始化（ContentView 使用）
     init(appState: AppState, viewModel: DeckViewModel, onShowSettings: @escaping () -> Void) {
         self.appState = appState
@@ -89,7 +89,7 @@ struct LoadingView: View {
             .animation(.easeInOut(duration: 0.3), value: progress)
             .toolbar {
                 // 只在有 ViewModel 时显示工具栏
-                if let viewModel = viewModel, let onShowSettings = onShowSettings {
+                if let viewModel, let onShowSettings {
                     ToolbarItem(placement: .topBarLeading) {
                         HStack(spacing: 8) {
                             Button {

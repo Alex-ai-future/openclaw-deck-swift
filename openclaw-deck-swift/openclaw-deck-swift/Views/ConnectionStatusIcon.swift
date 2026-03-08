@@ -18,10 +18,10 @@ struct ConnectionStatusIcon: View {
         Image(systemName: "heart.fill")
             .font(.system(size: 16, weight: .medium))
             .foregroundColor(status.color)
-            .scaleEffect(isAnimating && shouldAnimate ? 1.2 : 1.0)
+            .scaleEffect(isAnimating && shouldAnimate ? 1.4 : 1.0)
             .animation(
                 Animation
-                    .easeInOut(duration: 1.0)
+                    .easeInOut(duration: 0.5)
                     .repeatForever(autoreverses: true),
                 value: isAnimating
             )

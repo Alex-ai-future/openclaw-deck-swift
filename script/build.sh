@@ -50,17 +50,33 @@ case $PLATFORM in
     
     # 动态检测 iPhone 模拟器
     echo "Finding available iPhone simulator..."
-    IPHONE_SIMULATOR=$(xcrun simctl list devices available -j 2>/dev/null | \
-        jq -r '.devices | to_entries[] | .value[] | select(.availability != null and (.availability | type == "string") and (.availability | contains("Available"))) | select(.name | startswith("iPhone")) | .udid' 2>/dev/null | \
-        head -1)
+    # 先获取所有可用的 iPhone 设备列表
+    ALL_IPHONES=$(xcrun simctl list devices available 2>/dev/null | grep "iPhone" | grep "Available" || true)
     
-    if [ -z "$IPHONE_SIMULATOR" ]; then
-        # 尝试使用 platform=iOS Simulator 让 xcodebuild 自动选择
-        DESTINATION='platform=iOS Simulator,name=iPhone 16'
-        echo "⚠️ 未找到可用 iPhone 模拟器，使用后备方案：$DESTINATION"
+    if [ -n "$ALL_IPHONES" ]; then
+        # 有可用设备，提取第一个的 UDID
+        IPHONE_SIMULATOR=$(xcrun simctl list devices available -j 2>/dev/null | \
+            jq -r '.devices | to_entries[] | .value[] | select(.state == "Available") | select(.name | startswith("iPhone")) | .udid' 2>/dev/null | \
+            head -1)
+        
+        if [ -n "$IPHONE_SIMULATOR" ]; then
+            DESTINATION="platform=iOS Simulator,id=$IPHONE_SIMULATOR"
+            echo "✅ 找到 iPhone 模拟器：$DESTINATION"
+        else
+            # jq 失败，用 grep 方式获取
+            IPHONE_NAME=$(echo "$ALL_IPHONES" | head -1 | sed 's/.*\(iPhone [^)]*\).*/\1/' | xargs)
+            if [ -n "$IPHONE_NAME" ]; then
+                DESTINATION="platform=iOS Simulator,name=$IPHONE_NAME"
+                echo "✅ 找到 iPhone 模拟器 (grep): $DESTINATION"
+            else
+                DESTINATION='platform=iOS Simulator'
+                echo "⚠️ 使用通用 iOS Simulator 平台：$DESTINATION"
+            fi
+        fi
     else
-        DESTINATION="platform=iOS Simulator,id=$IPHONE_SIMULATOR"
-        echo "✅ 找到 iPhone 模拟器：$DESTINATION"
+        # 没有可用设备，使用最通用的配置
+        DESTINATION='platform=iOS Simulator'
+        echo "⚠️ 未找到可用 iPhone 模拟器，使用通用平台：$DESTINATION"
     fi
     ;;
   ipados)

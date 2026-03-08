@@ -27,6 +27,7 @@ final class DeckViewModelSyncTests: XCTestCase {
 
         mockGateway = MockGatewayClient()
         mockStorage = MockUserDefaultsStorage()
+        mockStorage.isTesting = false // ✅ 允许 Cloudflare 同步
     }
 
     override func tearDown() async throws {

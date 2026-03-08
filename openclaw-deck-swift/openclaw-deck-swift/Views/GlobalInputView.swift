@@ -27,7 +27,9 @@ struct GlobalInputView: View {
                         isInputFocused = false
                     } label: {
                         Image(systemName: "keyboard.chevron.compact.down")
-                            .font(.system(size: 18, weight: .regular))
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
                     }
                     .buttonStyle(.glass)
                     .frame(width: 36, height: 36)

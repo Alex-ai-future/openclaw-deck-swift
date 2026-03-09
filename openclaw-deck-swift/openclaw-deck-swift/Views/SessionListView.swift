@@ -76,7 +76,9 @@ struct SessionListView: View {
                     isSelected: true,
                     displayMode: .navigation // 导航模式：用 NavigationBar
                 )
+                #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .onAppear {
                     session.hasUnreadMessage = false
                 }

@@ -33,8 +33,6 @@ echo ""
 # Skipped tests:
 # - DeckViewModelTests: Swift 6 @Observable + @MainActor + XCTest compatibility issues
 # - GlobalInputStateTests: Creates DeckViewModel which hangs during initialization
-# - GatewayClientConnectionStatusTests: Requires real Gateway connection
-# - GatewayClientReconnectionTests: Requires real Gateway connection
 # Capture exit code properly when using tee
 set -o pipefail
 if xcodebuild test \
@@ -43,8 +41,6 @@ if xcodebuild test \
     -destination 'platform=macOS,name=My Mac' \
     -only-testing:"${SCHEME_NAME}Tests" \
     -skip-testing:"${SCHEME_NAME}UITests" \
-    -skip-testing:"${SCHEME_NAME}Tests.GatewayClientConnectionStatusTests" \
-    -skip-testing:"${SCHEME_NAME}Tests.GatewayClientReconnectionTests" \
     -resultBundlePath "$BUILD_DIR/TestResults.xcresult" \
     -parallel-testing-enabled NO \
     CODE_SIGN_IDENTITY="-" \

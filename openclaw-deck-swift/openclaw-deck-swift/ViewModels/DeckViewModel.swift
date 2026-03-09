@@ -1313,10 +1313,12 @@ class DeckViewModel {
                     session.status = .idle
                     session.activeRunId = nil
 
-                    // 🎯 发送通知：agent 运行结束就通知（和消息类型无关）
+                    // 🎯 发送通知：显示会话名 + 最后一条消息预览
+                    let displayName = session.name ?? session.sessionId
+                    let lastMessage = session.messages.last { !$0.text.isEmpty }?.text ?? "新消息"
                     NotificationService.shared.sendNewMessageNotification(
-                        sessionName: session.sessionId,
-                        messageText: "任务完成"
+                        sessionName: displayName,
+                        messageText: String(lastMessage.prefix(100))
                     )
 
                     // 🎵 播放提示音（如果启用）- agent 完成就播放

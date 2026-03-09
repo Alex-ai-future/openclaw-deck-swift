@@ -1309,6 +1309,12 @@ class DeckViewModel {
                     // ✅ 设置 activeRunId（此时 Gateway 已创建 AbortController）
                     session.activeRunId = runId
                 case "end":
+                    // ✅ 防止重复通知：检查是否已经处理过这个 runId 的 end 事件
+                    guard session.activeRunId == runId else {
+                        logger.info("🔕 跳过重复的 lifecycle.end：runId=\(runId), activeRunId=\(session.activeRunId ?? "nil")")
+                        return
+                    }
+
                     session.hasUnreadMessage = true // 总是标记为未读
                     session.status = .idle
                     session.activeRunId = nil

@@ -137,13 +137,14 @@ final class GatewayClientReconnectionTests: XCTestCase {
         XCTAssertEqual(connectionCallbacks.count(where: { $0 }), 1, "初始连接应该触发回调")
 
         // 被动断开并重连
+        // handleDisconnect() 会触发一次回调（通知 UI 开始重连）
         client.handleDisconnect()
 
         // 等待重连
         try? await Task.sleep(nanoseconds: 1_500_000_000)
 
-        // 验证：重连成功触发回调
-        XCTAssertEqual(connectionCallbacks.count(where: { $0 }), 2, "重连成功应该触发回调")
+        // 验证：重连成功触发回调（初始 1 + 断开通知 1 + 重连成功 1 = 3）
+        XCTAssertEqual(connectionCallbacks.count(where: { $0 }), 3, "重连成功应该触发回调")
     }
 
     // MARK: - 边界条件测试

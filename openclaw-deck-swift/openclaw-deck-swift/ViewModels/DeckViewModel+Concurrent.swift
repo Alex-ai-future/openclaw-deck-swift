@@ -36,16 +36,16 @@ extension DeckViewModel {
 
         // 并发配置
         let maxConcurrent = min(5, totalCount) // 最大 5 个并发
-        let timeout: TimeInterval = 30 // 单个会话超时 30 秒
 
         await withTaskGroup(of: (String, [ChatMessage]?).self) { group in
             var iterator = sessionsToLoad.makeIterator()
             var activeTasks = 0
             var loadedCount = 0
 
-            // 启动初始批次
+            // 启动初始批次（❌ 移除 @MainActor，让网络请求在后台执行）
             while activeTasks < maxConcurrent, let session = iterator.next() {
-                group.addTask { @MainActor in
+                group.addTask {
+                    // ✅ 网络请求在后台线程执行
                     do {
                         let messages = try await self.gatewayClient?.getSessionHistory(
                             sessionKey: session.sessionKey
@@ -60,26 +60,29 @@ extension DeckViewModel {
 
             // 收集结果并启动新任务
             for await (sessionKey, messages) in group {
-                // 更新 UI
-                self.updateSessionMessages(
-                    sessionKey: sessionKey,
-                    messages: messages ?? []
-                )
+                // ✅ 只在更新 UI 时切换到主线程
+                await MainActor.run {
+                    self.updateSessionMessages(
+                        sessionKey: sessionKey,
+                        messages: messages ?? []
+                    )
 
-                loadedCount += 1
-                activeTasks -= 1
+                    loadedCount += 1
+                    activeTasks -= 1
 
-                // 更新进度
-                let progress = 0.5 + (Double(loadedCount) / Double(totalCount) * 0.5)
-                appState = .connecting(.fetchingMessages, progress)
+                    // 更新进度
+                    let progress = 0.5 + (Double(loadedCount) / Double(totalCount) * 0.5)
+                    self.appState = .connecting(.fetchingMessages, progress)
 
-                logger.info(
-                    "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(progress * 100))%"
-                )
+                    logger.info(
+                        "✅ [\(loadedCount)/\(totalCount)] 会话加载完成，进度：\(Int(progress * 100))%"
+                    )
+                }
 
-                // 启动下一个任务
+                // 启动下一个任务（❌ 移除 @MainActor）
                 if let nextSession = iterator.next() {
-                    group.addTask { @MainActor in
+                    group.addTask {
+                        // ✅ 网络请求在后台线程执行
                         do {
                             let messages = try await self.gatewayClient?.getSessionHistory(
                                 sessionKey: nextSession.sessionKey

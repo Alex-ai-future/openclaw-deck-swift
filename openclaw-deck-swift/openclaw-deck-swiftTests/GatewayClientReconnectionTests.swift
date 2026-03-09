@@ -76,12 +76,11 @@ final class GatewayClientReconnectionTests: XCTestCase {
     func testManualDisconnect_clearsState() async {
         await client.connect()
 
-        // 添加一些待处理请求（使用 withCheckedContinuation 创建）
-        // 注意：这里只是为了测试，实际不会使用这些请求
-        let dummyContinuation: CheckedContinuation<GatewayResponse, Error> =
-            await withCheckedContinuation { _ in }
-        client.pendingRequests["test-id"] = PendingRequest(
-            continuation: dummyContinuation,
+        // 添加一个待处理请求（创建后立即恢复，避免泄露）
+        client.pendingRequests["test-id"] = await PendingRequest(
+            continuation: withCheckedContinuation { cont in
+                cont.resume(throwing: CancellationError()) // 立即恢复
+            },
             timeout: Task { try? await Task.sleep(nanoseconds: 1_000_000_000) }
         )
 

@@ -192,7 +192,15 @@ class GatewayClient: GatewayClientProtocol {
         connectNonce = nil
         connectSent = false
 
-        // ✅ 总是创建新的 WebSocket 连接（重连时必须关闭旧的）
+        // ✅ 如果是 Mock WebSocket（测试环境），保留它并快速返回成功
+        if webSocket is MockWebSocketConnection {
+            connected = true
+            isConnecting = false
+            onConnection?(true)
+            return
+        }
+
+        // ✅ 创建新的 WebSocket 连接（重连时必须关闭旧的）
         var request = URLRequest(url: url)
         // Set Origin header - required by Gateway CORS policy
         let origin = url.absoluteString
@@ -203,14 +211,6 @@ class GatewayClient: GatewayClientProtocol {
             task: urlSession.webSocketTask(with: request)
         )
         webSocket?.resume()
-
-        // 如果是 Mock WebSocket，快速返回成功
-        if webSocket is MockWebSocketConnection {
-            connected = true
-            isConnecting = false
-            onConnection?(true)
-            return
-        }
 
         // 开始接收消息
         await receiveMessage()
@@ -1067,8 +1067,11 @@ class GatewayClient: GatewayClientProtocol {
         onConnection?(true)
 
         // ✅ 先关闭旧 WebSocket 连接（重要！）
-        webSocket?.cancel(with: .normalClosure, reason: nil)
-        webSocket = nil // 清除旧连接，让 connect() 创建新连接
+        // 但如果是 Mock（测试环境），保留它以便重连时使用
+        if !(webSocket is MockWebSocketConnection) {
+            webSocket?.cancel(with: .normalClosure, reason: nil)
+            webSocket = nil // 清除旧连接，让 connect() 创建新连接
+        }
 
         // 延迟 1 秒后重连（给网络恢复时间）
         Task { @MainActor in

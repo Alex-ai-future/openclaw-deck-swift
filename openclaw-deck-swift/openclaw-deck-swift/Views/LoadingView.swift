@@ -42,11 +42,11 @@ struct LoadingView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 60))
                             .foregroundColor(.green)
-                            .transition(.scale.combined(with: .opacity))
+                        // ✅ 移除 transition 动画，避免重影
                     } else {
                         ProgressView()
                             .scaleEffect(1.5)
-                            .transition(.opacity)
+                        // ✅ 移除 transition 动画，避免重影
                     }
                 }
 
@@ -55,7 +55,7 @@ struct LoadingView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
-                    .animation(.easeInOut(duration: 0.3), value: stage?.title)
+                // ✅ 移除动画，避免文字重影
 
                 // 进度条（连接中状态显示）
                 if case .connecting = appState {
@@ -70,7 +70,7 @@ struct LoadingView: View {
                             .foregroundColor(.secondary)
                             .monospacedDigit()
                     }
-                    .transition(.opacity)
+                    // ✅ 移除 transition 动画，避免重影
                 }
 
                 // 副标题（详细说明）
@@ -79,14 +79,13 @@ struct LoadingView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
-                        .transition(.opacity)
+                    // ✅ 移除 transition 动画，避免文字重影
                 }
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.adaptiveBackground)
-            .animation(.easeInOut(duration: 0.3), value: stage)
-            .animation(.easeInOut(duration: 0.3), value: progress)
+            // ✅ 移除动画，避免进度条重影和跳跃
             .toolbar {
                 // 使用统一的 DeckToolbar 组件（简化模式：不传右侧按钮 Binding）
                 if let viewModel {

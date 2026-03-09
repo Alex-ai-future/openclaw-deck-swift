@@ -11,6 +11,12 @@ import SwiftUI
 struct openclaw_deck_swiftApp: App {
     @StateObject private var languageManager = LanguageManager.shared
 
+    #if os(macOS)
+        @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #else
+        @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
+
     init() {
         // 请求通知权限
         NotificationService.shared.requestPermission()

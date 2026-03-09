@@ -57,71 +57,59 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    /// 判断是否为 iPad
-    var isIPad: Bool {
-        DeviceUtils.isIPad
-    }
-
     var body: some View {
         Group {
             // 🧪 UI Test 模式：跳过连接检查，直接显示主界面
             if ProcessInfo.processInfo.environment["UITESTING"] == "YES" {
                 // UI Test 模式，显示主界面
-                #if os(macOS)
-                    DeckView(
-                        viewModel: viewModel,
-                        showingSettings: $showingSettings,
-                        showingNewSessionSheet: $showingNewSessionSheet
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                #elseif os(iOS)
-                    if isIPad {
+                // 📦 全局布局：内容区 + 全局输入框
+                VStack(spacing: 0) {
+                    // 内容区 - 使用 ViewThatFits 自动适配屏幕尺寸（iOS 16+）
+                    ViewThatFits(in: .horizontal) {
+                        // 宽屏 - 多列平铺布局（需要至少 700pt 宽度）
                         DeckView(
                             viewModel: viewModel,
                             showingSettings: $showingSettings,
                             showingNewSessionSheet: $showingNewSessionSheet
                         )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
+                        .frame(minWidth: 700, maxWidth: .infinity, maxHeight: .infinity)
+
+                        // 窄屏 - 单列列表布局（自动 fallback）
                         SessionListView(viewModel: viewModel)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                #else
-                    SessionListView(viewModel: viewModel)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                #endif
+
+                    // 全局输入框 - 固定在底部（所有视图共用）
+                    GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+                        await viewModel.sendCurrentInput()
+                    }
+                }
             } else if viewModel.gatewayClient?.connected ?? false {
                 // ✅ 已连接
                 if case .connected = viewModel.appState {
                     // 加载完成 → 显示聊天界面
-                    // 根据设备类型选择布局
-                    #if os(macOS)
-                        // macOS - 多列布局（类似 iPad）
-                        DeckView(
-                            viewModel: viewModel,
-                            showingSettings: $showingSettings,
-                            showingNewSessionSheet: $showingNewSessionSheet
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    #elseif os(iOS)
-                        if isIPad {
-                            // iPad - 多列布局
+                    // 📦 全局布局：内容区 + 全局输入框
+                    VStack(spacing: 0) {
+                        // 内容区 - 使用 ViewThatFits 自动适配屏幕尺寸（iOS 16+）
+                        ViewThatFits(in: .horizontal) {
+                            // 宽屏 - 多列平铺布局（需要至少 700pt 宽度）
                             DeckView(
                                 viewModel: viewModel,
                                 showingSettings: $showingSettings,
                                 showingNewSessionSheet: $showingNewSessionSheet
                             )
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else {
-                            // iPhone - 单列布局
+                            .frame(minWidth: 700, maxWidth: .infinity, maxHeight: .infinity)
+
+                            // 窄屏 - 单列列表布局（自动 fallback）
                             SessionListView(viewModel: viewModel)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
-                    #else
-                        // 其他平台 - 单列布局
-                        SessionListView(viewModel: viewModel)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    #endif
+
+                        // 全局输入框 - 固定在底部（所有视图共用）
+                        GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
+                            await viewModel.sendCurrentInput()
+                        }
+                    }
                 } else {
                     // 加载中时显示 LoadingView（带工具栏）
                     LoadingView(

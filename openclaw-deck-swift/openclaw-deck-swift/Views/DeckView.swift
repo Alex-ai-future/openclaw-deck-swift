@@ -36,54 +36,46 @@ struct DeckView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Session 列 - 占据剩余空间
-                sessionColumns
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Session 列 - 占据剩余空间
+            sessionColumns
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onChange(of: selectedSessionId) { _, newId in
+                    // Session 切换时通知 ViewModel
+                    viewModel.selectSession(newId)
 
-                // 全局输入视图 - 固定在底部
-                GlobalInputView(state: viewModel.globalInputState as! GlobalInputState) {
-                    await viewModel.sendCurrentInput()
+                    // 新选中的 Session 标记为已读
+                    if let sessionId = newId,
+                       let session = viewModel.sessions[sessionId]
+                    {
+                        session.hasUnreadMessage = false
+                    }
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: selectedSessionId) { _, newId in
-                // Session 切换时通知 ViewModel
-                viewModel.selectSession(newId)
-
-                // 新选中的 Session 标记为已读
-                if let sessionId = newId,
-                   let session = viewModel.sessions[sessionId]
-                {
-                    session.hasUnreadMessage = false
+                .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
+                    // ViewModel 的选中状态变化时，同步到本地 State
+                    selectedSessionId = newId
                 }
-            }
-            .onChange(of: viewModel.globalInputState.selectedSessionId) { _, newId in
-                // ViewModel 的选中状态变化时，同步到本地 State
-                selectedSessionId = newId
-            }
-            .task {
-                // 初始化选中状态：确保 ViewModel 有选中的 Session
-                if viewModel.globalInputState.selectedSessionId == nil,
-                   let firstSessionId = viewModel.sessionOrder.first
-                {
-                    viewModel.selectSession(firstSessionId)
+                .task {
+                    // 初始化选中状态：确保 ViewModel 有选中的 Session
+                    if viewModel.globalInputState.selectedSessionId == nil,
+                       let firstSessionId = viewModel.sessionOrder.first
+                    {
+                        viewModel.selectSession(firstSessionId)
+                    }
+                    selectedSessionId = viewModel.globalInputState.selectedSessionId
                 }
-                selectedSessionId = viewModel.globalInputState.selectedSessionId
-            }
-            .toolbar {
-                DeckToolbar(
-                    viewModel: viewModel,
-                    showingSettings: $showingSettings,
-                    showingNewSessionSheet: $showingNewSessionSheet,
-                    showingSortSheet: $showingSortSheet
-                )
-            }
-            // 注意：showingSettings 和 showingNewSessionSheet 由 ContentView 统一管理
-            // 这里只管理 showingSortSheet
-            .sheet(isPresented: $showingSortSheet) {
-                SessionSortView(viewModel: viewModel)
-            }
+                .toolbar {
+                    DeckToolbar(
+                        viewModel: viewModel,
+                        showingSettings: $showingSettings,
+                        showingNewSessionSheet: $showingNewSessionSheet,
+                        showingSortSheet: $showingSortSheet
+                    )
+                }
+                // 注意：showingSettings 和 showingNewSessionSheet 由 ContentView 统一管理
+                // 这里只管理 showingSortSheet
+                .sheet(isPresented: $showingSortSheet) {
+                    SessionSortView(viewModel: viewModel)
+                }
         }
     }
 
@@ -98,7 +90,8 @@ struct DeckView: View {
                         SessionColumnView(
                             session: session,
                             viewModel: viewModel,
-                            isSelected: sessionId == selectedSessionId
+                            isSelected: sessionId == selectedSessionId,
+                            displayMode: .embedded // 内嵌模式：用 topStatusBar
                         )
                         .frame(width: 400)
                         .transition(

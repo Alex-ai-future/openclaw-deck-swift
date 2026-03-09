@@ -43,7 +43,10 @@ struct SessionSortView: View {
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("sort_sessions".localized)
+            #if os(iOS)
+                .environment(\.editMode, .constant(.active))
+            #endif
+                .navigationTitle("sort_sessions".localized)
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif

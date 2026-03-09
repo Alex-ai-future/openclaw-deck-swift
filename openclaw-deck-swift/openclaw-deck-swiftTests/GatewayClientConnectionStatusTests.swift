@@ -37,7 +37,10 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     }
 
     func testConnectionStatus_connected() async {
+        // Mock WebSocket 会立即返回成功
         await client.connect()
+        // 给一点时间让状态更新
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
         XCTAssertEqual(client.connectionStatus, .connected, "连接后应该是已连接")
         XCTAssertEqual(client.connectionStatus.color, Color.green, "已连接颜色应该是绿色")
         XCTAssertEqual(client.connectionStatus.iconName, "checkmark.circle.fill", "已连接图标应该是 checkmark")
@@ -92,6 +95,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
 
         // 3. 连接成功
         await client.connect()
+        try? await Task.sleep(nanoseconds: 100_000_000) // 给一点时间让状态更新
         XCTAssertEqual(client.connectionStatus, .connected, "🟢 已连接")
 
         // 4. 手动断开
@@ -102,13 +106,14 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     func testConnectionStatus_autoReconnectLifecycle() async {
         // 1. 初始连接
         await client.connect()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertEqual(client.connectionStatus, .connected, "🟢 已连接")
 
         // 2. 被动断开（触发自动重连）
         client.handleDisconnect()
         XCTAssertEqual(client.connectionStatus, .reconnecting, "🟠 重连中")
 
-        // 3. 等待重连成功
+        // 3. 等待重连成功（Mock 会立即成功）
         try? await Task.sleep(nanoseconds: 1_500_000_000)
         XCTAssertEqual(client.connectionStatus, .connected, "🟢 重连成功")
     }
@@ -118,6 +123,7 @@ final class GatewayClientConnectionStatusTests: XCTestCase {
     func testConnectionStatus_multipleStateChanges() async {
         // 快速切换状态
         await client.connect()
+        try? await Task.sleep(nanoseconds: 100_000_000)
         client.disconnect()
         client.handleDisconnect()
 

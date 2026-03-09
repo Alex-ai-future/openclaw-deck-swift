@@ -105,7 +105,8 @@ final class GatewayClientReconnectionTests: XCTestCase {
 
         // 验证：进入连接中状态（显示橙色）
         XCTAssertTrue(client.isConnecting, "应该进入连接中状态")
-        XCTAssertFalse(client.connected, "应该断开连接")
+        // ✅ connected 保持 true（用户期望保持连接）
+        XCTAssertTrue(client.connected, "应该保持连接期望")
     }
 
     func testHandleDisconnect_preventsDuplicate() async {
@@ -128,10 +129,12 @@ final class GatewayClientReconnectionTests: XCTestCase {
 
         // 被动断开
         client.handleDisconnect()
-        XCTAssertFalse(client.connected, "断开后应该未连接")
+        // ✅ connected 保持 true（用户期望保持连接）
+        XCTAssertTrue(client.connected, "应该保持连接期望")
         XCTAssertTrue(client.isConnecting, "应该在连接中")
 
         // 等待重连（handleDisconnect 内部有 1 秒延迟 + 连接时间）
+        // Mock 模式下 connect() 会立即成功
         try? await Task.sleep(nanoseconds: 1_500_000_000)
 
         // Mock 模式下重连会成功

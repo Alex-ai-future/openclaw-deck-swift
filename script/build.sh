@@ -45,9 +45,22 @@ case $PLATFORM in
     ;;
   ios)
     BUILD_DIR="${PROJECT_DIR}/build/ios"
-    DESTINATION="platform=iOS Simulator"
     PLATFORM_NAME="iOS"
     NEEDS_BUILD_LOCK=false
+    
+    # 动态检测 iPhone 模拟器
+    echo "Finding available iPhone simulator..."
+    IPHONE_SIMULATOR=$(xcrun simctl list devices available 'iPhone' -j 2>/dev/null | \
+        jq -r '.devices | to_entries[] | .value[] | select(.availability | contains("Available")) | .udid' | \
+        head -1)
+    
+    if [ -z "$IPHONE_SIMULATOR" ]; then
+        DESTINATION='platform=iOS Simulator,name=iPhone 17'
+        echo "Using generic iPhone destination: $DESTINATION"
+    else
+        DESTINATION="platform=iOS Simulator,id=$IPHONE_SIMULATOR"
+        echo "Using iPhone simulator: $DESTINATION"
+    fi
     ;;
   ipados)
     BUILD_DIR="${PROJECT_DIR}/build/ipados"
